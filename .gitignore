@@ -28,6 +28,7 @@ data/
 # Auto-generated agent/tooling trees
 claude/
 .kittify/metadata.yaml
+skills-lock.json
 
 # Added by Spec Kitty CLI (auto-managed)
 .claude/
