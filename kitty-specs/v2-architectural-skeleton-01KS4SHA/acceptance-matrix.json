@@ -1,0 +1,39 @@
+{
+  "mission_slug": "v2-architectural-skeleton-01KS4SHA",
+  "mission_number": 1,
+  "mission_type": "software-dev",
+  "overall_verdict": "pass",
+  "criteria": [
+    {
+      "criterion_id": "AC-001",
+      "description": "Skeleton smoke tests pass on the merged mission branch.",
+      "proof_type": "automated_test",
+      "evidence": "uv run python -m pytest tests/test_skeleton.py -q -> 28 passed in 2.73s",
+      "pass_fail": "pass",
+      "verified_by": "gpt-5.4",
+      "verified_at": "2026-05-21T13:13:55Z",
+      "notes": "Covers the mission's executable acceptance contract, including the real seed_dim_metric path and hpipe console-script invocation."
+    },
+    {
+      "criterion_id": "AC-002",
+      "description": "The full pytest suite passes with the lane fixes merged into the mission branch.",
+      "proof_type": "automated_test",
+      "evidence": "uv run python -m pytest -q -> 53 passed in 30.55s",
+      "pass_fail": "pass",
+      "verified_by": "gpt-5.4",
+      "verified_at": "2026-05-21T13:13:55Z",
+      "notes": "Confirms the lane fixes do not regress the existing test suite."
+    },
+    {
+      "criterion_id": "AC-003",
+      "description": "Shipped parser contract docs match the mutable PluginParseResult implementation.",
+      "proof_type": "code_review",
+      "evidence": "Reviewed merged commit a956a05: src/premura/parsers/CONTRACT.md and src/premura/skills/parser-generator/SKILL.md now describe PluginParseResult as a mutable dataclass with rationale matching src/premura/parsers/base.py.",
+      "pass_fail": "pass",
+      "verified_by": "gpt-5.4",
+      "verified_at": "2026-05-21T13:13:55Z",
+      "notes": "Clears the prior contract drift that caused the earlier rollback."
+    }
+  ],
+  "negative_invariants": []
+}

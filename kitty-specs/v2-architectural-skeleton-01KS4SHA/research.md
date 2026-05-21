@@ -147,4 +147,4 @@ These were discovered during exploration and inform the implementation plan but 
 
 ## Closed unknowns
 
-All five entry-state unknowns are resolved. No `[NEEDS CLARIFICATION]` markers remain in `spec.md` or `plan.md`. The Phase 1 design proceeds with full information.
+All five entry-state unknowns are resolved. No unresolved clarification markers remain in `spec.md` or `plan.md`. The Phase 1 design proceeds with full information.

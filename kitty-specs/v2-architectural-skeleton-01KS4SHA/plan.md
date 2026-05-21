@@ -25,7 +25,7 @@ Land the v2 architectural skeleton: placeholder subpackages for the four data-fl
 **Constraints**: No new third-party deps (C-003). No CLI verbs beyond `install-skills` (C-004). Existing v1 flows keep current behavior (C-002). `derived:*` `metric_id` namespace reserved for engine layer (C-011). MCP and UI layers must not access DuckDB directly (C-012). Repo directory rename deferred to user (C-009).
 **Scale/Scope**: ~12 new files, ~3 modified files (cli.py, store/duck.py, dim_metric.yaml). ~107 new ontology rows. 1 new test file (`tests/test_skeleton.py`).
 
-No `[NEEDS CLARIFICATION]` markers — all design decisions settled during `/spec-kitty.plan` discovery.
+No unresolved clarification markers remain; all design decisions settled during `/spec-kitty.plan` discovery.
 
 ## Charter Check
 
