@@ -2,6 +2,7 @@
 
 Skipped if the file isn't present — keeps CI green elsewhere.
 """
+
 from __future__ import annotations
 
 import sqlite3
@@ -64,13 +65,8 @@ def test_ingest_smoke_then_idempotent(empty_warehouse):
     from premura import loader
 
     p = HealthConnectParser()
-    result = p.parse(REAL_EXPORT)
-    loader.load(
-        empty_warehouse,
-        result,
-        source_kind="health_connect",
-        source_dim_seed=p.source_dim_seed,
-    )
+    batch = p.parse(REAL_EXPORT)
+    loader.load(empty_warehouse, batch)
     fm = empty_warehouse.execute("SELECT COUNT(*) FROM hp.fact_measurement").fetchone()[0]
     fi = empty_warehouse.execute("SELECT COUNT(*) FROM hp.fact_interval").fetchone()[0]
     assert fm > 100_000, f"expected >>100k measurement rows, got {fm}"
@@ -83,13 +79,8 @@ def test_ingest_smoke_then_idempotent(empty_warehouse):
     assert 40 <= (w_max or 0) <= 200, f"weight max out of plausible kg range: {w_max}"
 
     p2 = HealthConnectParser()
-    result2 = p2.parse(REAL_EXPORT)
-    stats2 = loader.load(
-        empty_warehouse,
-        result2,
-        source_kind="health_connect",
-        source_dim_seed=p2.source_dim_seed,
-    )
+    batch2 = p2.parse(REAL_EXPORT)
+    stats2 = loader.load(empty_warehouse, batch2)
     assert stats2.rows_inserted == 0
     assert stats2.rows_skipped_dup > 0
     fm2 = empty_warehouse.execute("SELECT COUNT(*) FROM hp.fact_measurement").fetchone()[0]

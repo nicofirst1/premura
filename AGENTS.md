@@ -17,7 +17,7 @@ match: existing alias via `suggest_metric(X)` → `LOINC` for labs → `IEEE
 `vendor:<source>:<field>`.
 
 If no step applies, skip the field at parse time and surface it via
-`PluginParseResult.unmapped_metrics` for human review.
+`IngestBatch.unmapped_metrics` for human review.
 
 ## Agent skills
 

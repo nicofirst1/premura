@@ -16,7 +16,7 @@ dependencies such as ``langdetect`` and ``pycld3``, or translation libraries
 of any kind, until the local-only constraint is reconfirmed by spec.
 
 See ``src/premura/parsers/CONTRACT.md`` for how language detection feeds
-``PluginParseResult.language_detected``.
+``IngestBatch.language_detected``.
 """
 
 from __future__ import annotations

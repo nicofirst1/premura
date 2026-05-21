@@ -4,7 +4,8 @@ Tactics:
   - Open the file via stdlib sqlite3 (DuckDB's sqlite_scanner is fast for table-scans but
     has fewer affordances for the row-by-row work we do per series).
   - PRAGMA user_version + PRAGMA table_info per table: warn-and-skip on schema drift.
-  - JOIN application_info_table + device_info_table once, cache (app_info_id, device_info_id) -> source_id.
+  - JOIN application_info_table + device_info_table once, cache
+    (app_info_id, device_info_id) -> source_id.
 
 Critical conversions (PLAN.md):
   - `time` / `start_time` / `end_time` are milliseconds since epoch (UTC).
@@ -22,7 +23,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from .base import Interval, Measurement, ParseResult, file_sha256
+from .base import IngestBatch, Interval, Measurement, SourceDescriptor
 
 log = logging.getLogger(__name__)
 
@@ -94,7 +95,9 @@ SIMPLE_SPECS: list[_SimpleSpec] = [
     _SimpleSpec("weight_record_table", "weight", "weight", "kg", 1 / 1000),
     _SimpleSpec("body_fat_record_table", "body_fat_pct", "percentage", "pct"),
     _SimpleSpec("lean_body_mass_record_table", "lean_body_mass", "mass", "kg", 1 / 1000),
-    _SimpleSpec("body_water_mass_record_table", "body_water_mass", "body_water_mass", "kg", 1 / 1000),
+    _SimpleSpec(
+        "body_water_mass_record_table", "body_water_mass", "body_water_mass", "kg", 1 / 1000
+    ),
     _SimpleSpec("bone_mass_record_table", "bone_mass", "mass", "kg", 1 / 1000),
     _SimpleSpec("height_record_table", "height", "height", "m"),
     _SimpleSpec("oxygen_saturation_record_table", "spo2", "percentage", "pct"),
@@ -157,10 +160,27 @@ class HealthConnectParser:
     def __init__(self) -> None:
         self._app_cache: dict[int, tuple[str | None, str | None]] = {}
         self._device_cache: dict[int, tuple[str | None, str | None]] = {}
-        self.source_dim_seed: dict[str, dict] = {}
 
-    def parse(self, path: Path) -> ParseResult:
-        result = ParseResult(source_path=path, source_sha256=file_sha256(path))
+    def declares_metrics(self) -> list[str]:
+        return sorted(
+            {spec.metric_id for spec in SIMPLE_SPECS}
+            | {spec.metric_id for spec in INTERVAL_SPECS}
+            | {
+                "bp_diastolic",
+                "bp_systolic",
+                "exercise_session",
+                "heart_rate",
+                "mindfulness_session",
+                "sleep_session",
+                "sleep_stage",
+            }
+        )
+
+    def parse(self, path: Path) -> IngestBatch:
+        result = IngestBatch(
+            source_kind=SOURCE_KIND,
+            declared_metrics=self.declares_metrics(),
+        ).attach_source_artifact(path)
         with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as con:
             con.row_factory = sqlite3.Row
             self._check_version(con, result)
@@ -172,11 +192,12 @@ class HealthConnectParser:
             self._parse_sleep(con, result)
             self._parse_exercise(con, result)
             self._parse_mindfulness(con, result)
+        result.validate()
         return result
 
     # --- helpers ---
 
-    def _check_version(self, con: sqlite3.Connection, result: ParseResult) -> None:
+    def _check_version(self, con: sqlite3.Connection, result: IngestBatch) -> None:
         ver = con.execute("PRAGMA user_version").fetchone()[0]
         if ver != EXPECTED_USER_VERSION:
             note = f"HC user_version={ver} (expected {EXPECTED_USER_VERSION})"
@@ -193,33 +214,44 @@ class HealthConnectParser:
         for r in con.execute("SELECT row_id, manufacturer, model FROM device_info_table"):
             self._device_cache[r["row_id"]] = (r["manufacturer"], r["model"])
 
-    def _source_id(self, app_info_id: int | None, device_info_id: int | None) -> str:
+    def _source_id(
+        self,
+        result: IngestBatch,
+        app_info_id: int | None,
+        device_info_id: int | None,
+    ) -> str:
         pkg, app = self._app_cache.get(app_info_id or -1, (None, None))
         mfr, model = self._device_cache.get(device_info_id or -1, (None, None))
         pkg_part = pkg or "unknown"
         device_part = model or mfr or "unknown"
         source_id = f"hc:{pkg_part}|{device_part}"
-        self.source_dim_seed.setdefault(
+        result.source_descriptors.setdefault(
             source_id,
-            {
-                "app_package": pkg,
-                "app_name": app,
-                "device_manufacturer": mfr,
-                "device_model": model,
-            },
+            SourceDescriptor(
+                source_id=source_id,
+                source_kind=SOURCE_KIND,
+                app_package=pkg,
+                app_name=app,
+                device_manufacturer=mfr,
+                device_model=model,
+            ),
         )
         return source_id
 
     # --- simple instantaneous tables ---
 
-    def _parse_simple(self, con: sqlite3.Connection, result: ParseResult) -> None:
+    def _parse_simple(self, con: sqlite3.Connection, result: IngestBatch) -> None:
         for spec in SIMPLE_SPECS:
             cols = self._table_columns(con, spec.table)
             if not cols:
                 continue
             required = {
-                "uuid", "time", "zone_offset", spec.value_col,
-                "app_info_id", "device_info_id",
+                "uuid",
+                "time",
+                "zone_offset",
+                spec.value_col,
+                "app_info_id",
+                "device_info_id",
             }
             missing = required - cols
             if missing:
@@ -233,7 +265,7 @@ class HealthConnectParser:
             for r in con.execute(q):
                 if r["v"] is None:
                     continue
-                source_id = self._source_id(r["app_info_id"], r["device_info_id"])
+                source_id = self._source_id(result, r["app_info_id"], r["device_info_id"])
                 result.measurements.append(
                     Measurement(
                         ts_utc=_ts(r["time"]),
@@ -249,14 +281,18 @@ class HealthConnectParser:
 
     # --- simple intervals ---
 
-    def _parse_intervals(self, con: sqlite3.Connection, result: ParseResult) -> None:
+    def _parse_intervals(self, con: sqlite3.Connection, result: IngestBatch) -> None:
         for spec in INTERVAL_SPECS:
             cols = self._table_columns(con, spec.table)
             if not cols:
                 continue
             required = {
-                "uuid", "start_time", "end_time", "start_zone_offset",
-                "app_info_id", "device_info_id",
+                "uuid",
+                "start_time",
+                "end_time",
+                "start_zone_offset",
+                "app_info_id",
+                "device_info_id",
             }
             if spec.value_col:
                 required.add(spec.value_col)
@@ -271,7 +307,7 @@ class HealthConnectParser:
                 FROM {spec.table}
             """
             for r in con.execute(q):
-                source_id = self._source_id(r["app_info_id"], r["device_info_id"])
+                source_id = self._source_id(result, r["app_info_id"], r["device_info_id"])
                 v_raw = r["v"] if spec.value_col else None
                 v = None if v_raw is None else float(v_raw) * spec.transform
                 result.intervals.append(
@@ -290,7 +326,7 @@ class HealthConnectParser:
 
     # --- blood pressure (two metrics per row) ---
 
-    def _parse_blood_pressure(self, con: sqlite3.Connection, result: ParseResult) -> None:
+    def _parse_blood_pressure(self, con: sqlite3.Connection, result: IngestBatch) -> None:
         cols = self._table_columns(con, "blood_pressure_record_table")
         if not {"uuid", "time", "zone_offset", "systolic", "diastolic"}.issubset(cols):
             return
@@ -300,7 +336,7 @@ class HealthConnectParser:
             FROM blood_pressure_record_table
         """
         for r in con.execute(q):
-            source_id = self._source_id(r["app_info_id"], r["device_info_id"])
+            source_id = self._source_id(result, r["app_info_id"], r["device_info_id"])
             uuid_hex = _uuid_hex(r["uuid"])
             common = {
                 "ts_utc": _ts(r["time"]),
@@ -334,12 +370,14 @@ class HealthConnectParser:
 
     # --- heart rate series (parent + per-sample series) ---
 
-    def _parse_heart_rate_series(self, con: sqlite3.Connection, result: ParseResult) -> None:
+    def _parse_heart_rate_series(self, con: sqlite3.Connection, result: IngestBatch) -> None:
         parent_cols = self._table_columns(con, "heart_rate_record_table")
         series_cols = self._table_columns(con, "heart_rate_record_series_table")
         if not parent_cols or not series_cols:
             return
-        if not {"row_id", "uuid", "app_info_id", "device_info_id", "start_zone_offset"}.issubset(parent_cols):
+        if not {"row_id", "uuid", "app_info_id", "device_info_id", "start_zone_offset"}.issubset(
+            parent_cols
+        ):
             return
         if not {"parent_key", "beats_per_minute", "epoch_millis"}.issubset(series_cols):
             return
@@ -350,7 +388,7 @@ class HealthConnectParser:
             JOIN heart_rate_record_table p ON p.row_id = s.parent_key
         """
         for r in con.execute(q):
-            source_id = self._source_id(r["app_info_id"], r["device_info_id"])
+            source_id = self._source_id(result, r["app_info_id"], r["device_info_id"])
             parent_uuid = _uuid_hex(r["uuid"])
             result.measurements.append(
                 Measurement(
@@ -367,7 +405,7 @@ class HealthConnectParser:
 
     # --- sleep (session + stages) ---
 
-    def _parse_sleep(self, con: sqlite3.Connection, result: ParseResult) -> None:
+    def _parse_sleep(self, con: sqlite3.Connection, result: IngestBatch) -> None:
         sess_cols = self._table_columns(con, "sleep_session_record_table")
         if not sess_cols:
             return
@@ -378,7 +416,7 @@ class HealthConnectParser:
         """
         sess_map: dict[int, tuple[str | None, str, str | None]] = {}
         for r in con.execute(q_sess):
-            source_id = self._source_id(r["app_info_id"], r["device_info_id"])
+            source_id = self._source_id(result, r["app_info_id"], r["device_info_id"])
             uuid_hex = _uuid_hex(r["uuid"])
             tz = _offset_str(r["start_zone_offset"])
             sess_map[r["row_id"]] = (uuid_hex, source_id, tz)
@@ -398,7 +436,9 @@ class HealthConnectParser:
             )
 
         stage_cols = self._table_columns(con, "sleep_stages_table")
-        if not {"parent_key", "stage_start_time", "stage_end_time", "stage_type"}.issubset(stage_cols):
+        if not {"parent_key", "stage_start_time", "stage_end_time", "stage_type"}.issubset(
+            stage_cols
+        ):
             return
         q_st = """
             SELECT parent_key, stage_start_time, stage_end_time, stage_type
@@ -429,11 +469,13 @@ class HealthConnectParser:
 
     # --- exercise sessions ---
 
-    def _parse_exercise(self, con: sqlite3.Connection, result: ParseResult) -> None:
+    def _parse_exercise(self, con: sqlite3.Connection, result: IngestBatch) -> None:
         cols = self._table_columns(con, "exercise_session_record_table")
         if not cols:
             return
-        if not {"uuid", "start_time", "end_time", "start_zone_offset", "exercise_type"}.issubset(cols):
+        if not {"uuid", "start_time", "end_time", "start_zone_offset", "exercise_type"}.issubset(
+            cols
+        ):
             return
         q = """
             SELECT uuid, start_time, end_time, start_zone_offset,
@@ -442,7 +484,7 @@ class HealthConnectParser:
             FROM exercise_session_record_table
         """
         for r in con.execute(q):
-            source_id = self._source_id(r["app_info_id"], r["device_info_id"])
+            source_id = self._source_id(result, r["app_info_id"], r["device_info_id"])
             label = EXERCISE_TYPE_LABELS.get(r["exercise_type"], f"type_{r['exercise_type']}")
             result.intervals.append(
                 Interval(
@@ -466,7 +508,7 @@ class HealthConnectParser:
 
     # --- mindfulness sessions ---
 
-    def _parse_mindfulness(self, con: sqlite3.Connection, result: ParseResult) -> None:
+    def _parse_mindfulness(self, con: sqlite3.Connection, result: IngestBatch) -> None:
         cols = self._table_columns(con, "mindfulness_session_record_table")
         if not cols:
             return
@@ -478,7 +520,7 @@ class HealthConnectParser:
             FROM mindfulness_session_record_table
         """
         for r in con.execute(q):
-            source_id = self._source_id(r["app_info_id"], r["device_info_id"])
+            source_id = self._source_id(result, r["app_info_id"], r["device_info_id"])
             result.intervals.append(
                 Interval(
                     start_utc=_ts(r["start_time"]),

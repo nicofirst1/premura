@@ -188,12 +188,19 @@ def test_parsers_lookup_suggest_metric_stub_raises() -> None:
 
 
 def test_plugin_parser_contract_symbols_import() -> None:
-    """FR-008: ``PluginParser`` and ``PluginParseResult`` import from parsers.base."""
-    from premura.parsers.base import PluginParser, PluginParseResult
+    """FR-008: ``PluginParser`` and ``IngestBatch`` import from parsers.base."""
+    from premura.parsers.base import IngestBatch, PluginParser
 
-    # PluginParseResult is a dataclass with the three additive fields.
-    fields = set(PluginParseResult.__dataclass_fields__)
-    assert {"language_detected", "unmapped_metrics", "confidence"} <= fields
+    fields = set(IngestBatch.__dataclass_fields__)
+    assert {
+        "declared_metrics",
+        "measurements",
+        "intervals",
+        "source_descriptors",
+        "unmapped_metrics",
+        "language_detected",
+        "confidence",
+    } <= fields
 
     # PluginParser is a Protocol declaring the documented members.
     hints = get_type_hints(PluginParser)
@@ -203,14 +210,14 @@ def test_plugin_parser_contract_symbols_import() -> None:
 
 
 def test_plugin_parser_is_structural_subtype_of_parser() -> None:
-    """FR-008: ``PluginParser`` is a structural extension of v1 ``Parser``.
+    """FR-008: ``PluginParser`` is a structural extension of ``Parser``.
 
-    A class with the v1 ``Parser`` shape plus the plugin extras must satisfy
+    A class with the shared ``Parser`` shape plus the plugin extras must satisfy
     ``PluginParser`` via duck typing. We cannot use ``isinstance`` because
     neither protocol is declared ``runtime_checkable``; structural conformance
     is verified by attribute presence on a sample implementation.
     """
-    from premura.parsers.base import PluginParser, PluginParseResult
+    from premura.parsers.base import IngestBatch, PluginParser, SourceDescriptor
 
     class _SampleParser:
         source_kind = "_sample"
@@ -219,23 +226,29 @@ def test_plugin_parser_is_structural_subtype_of_parser() -> None:
         def declares_metrics(self) -> list[str]:
             return ["heart_rate"]
 
-        def parse(self, path: Path) -> PluginParseResult:  # noqa: ARG002
-            return PluginParseResult()
+        def parse(self, path: Path) -> IngestBatch:  # noqa: ARG002
+            batch = IngestBatch(
+                source_kind=self.source_kind,
+                declared_metrics=["heart_rate"],
+                source_descriptors={
+                    "_sample:device": SourceDescriptor(
+                        source_id="_sample:device",
+                        source_kind=self.source_kind,
+                    )
+                },
+            )
+            batch.validate()
+            return batch
 
     inst = _SampleParser()
     for attr in ("source_kind", "language_hint", "declares_metrics", "parse"):
         assert hasattr(inst, attr), f"sample plugin parser missing {attr}"
-    # The class compiles against the protocol type-hint at static-checker time;
-    # at runtime we just confirm the shape matches and the result is usable.
     result = inst.parse(Path("/dev/null"))
-    assert isinstance(result, PluginParseResult)
+    assert isinstance(result, IngestBatch)
     assert result.confidence == 1.0  # default per FR-008
-    # Cross-check the v1 Parser protocol is still importable and unchanged in
-    # the same module (the additive contract MUST NOT have removed it).
-    from premura.parsers.base import Interval, Measurement, Parser, ParseResult
+    from premura.parsers.base import Interval, Measurement, Parser
 
     assert Parser is not PluginParser
-    assert ParseResult is not PluginParseResult
     assert Measurement is not None and Interval is not None
 
 
@@ -433,9 +446,7 @@ def test_seed_handles_rows_with_and_without_new_keys(
 
 
 def _load_dim_metric_yaml() -> list[dict]:
-    yaml_text = (
-        resources.files("premura").joinpath("dim_metric.yaml").read_text(encoding="utf-8")
-    )
+    yaml_text = resources.files("premura").joinpath("dim_metric.yaml").read_text(encoding="utf-8")
     rows = yaml.safe_load(yaml_text) or []
     assert isinstance(rows, list)
     return rows
@@ -570,5 +581,3 @@ def test_hpipe_console_script_is_wired_and_invokable(tmp_path: Path) -> None:
     assert skill_file.read_bytes() == first_bytes, (
         "skill file was rewritten on idempotent second invocation"
     )
-
-

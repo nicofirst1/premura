@@ -21,7 +21,7 @@ Timestamp shapes encountered:
     * ISO date       (e.g. "2026-04-27")
     * LocalDateTime  (e.g. [2026, 5, 19, 5, 37, 39, 806000000])
 
-Unknown patterns are surfaced in ParseResult.notes so future format drift is visible
+Unknown patterns are surfaced in IngestBatch.notes so future format drift is visible
 without a code change being required to *detect* it.
 """
 
@@ -36,7 +36,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from .base import Interval, Measurement, ParseResult, file_sha256
+from .base import IngestBatch, Interval, Measurement, SourceDescriptor
 
 log = logging.getLogger(__name__)
 SOURCE_KIND = "garmin_gdpr"
@@ -189,8 +189,37 @@ _register(r"summarizedActivit.*\.json$", "_handle_activity_summary")
 class GarminGDPRParser:
     source_kind = SOURCE_KIND
 
-    def parse(self, path: Path) -> ParseResult:
-        result = ParseResult(source_path=path, source_sha256=file_sha256(path))
+    def declares_metrics(self) -> list[str]:
+        return [
+            "activity_summary",
+            "bp_diastolic",
+            "bp_systolic",
+            "daily_wellness",
+            "heart_rate",
+            "hrv_rmssd_overnight",
+            "hydration",
+            "intensity_minutes",
+            "resp_rate",
+            "resting_hr",
+            "sleep_deep_pct",
+            "sleep_rating",
+            "sleep_session",
+            "spo2",
+            "stress",
+            "training_load",
+            "training_readiness",
+            "vo2_max",
+        ]
+
+    def parse(self, path: Path) -> IngestBatch:
+        result = IngestBatch(
+            source_kind=SOURCE_KIND,
+            declared_metrics=self.declares_metrics(),
+        ).attach_source_artifact(path)
+        result.source_descriptors[DEFAULT_SOURCE_ID] = SourceDescriptor(
+            source_id=DEFAULT_SOURCE_ID,
+            source_kind=SOURCE_KIND,
+        )
         unknown: dict[str, int] = {}
         for member_name, payload in self._iter_json_members(path):
             handler = self._dispatch(member_name)
@@ -212,6 +241,7 @@ class GarminGDPRParser:
                 f"{name} ({n})" for name, n in sorted(unknown.items())[:10]
             )
             result.notes = (result.notes + "; " if result.notes else "") + note
+        result.validate()
         return result
 
     def _iter_json_members(self, path: Path) -> Iterator[tuple[str, bytes]]:
@@ -225,7 +255,9 @@ class GarminGDPRParser:
                 elif fname.endswith(".zip"):
                     with outer.open(info) as inner_fh, zipfile.ZipFile(inner_fh) as inner:
                         for inner_info in inner.infolist():
-                            if not inner_info.is_dir() and inner_info.filename.lower().endswith(".json"):
+                            if not inner_info.is_dir() and inner_info.filename.lower().endswith(
+                                ".json"
+                            ):
                                 yield inner_info.filename, inner.read(inner_info)
 
     def _dispatch(self, member_name: str):
@@ -248,8 +280,8 @@ class GarminGDPRParser:
 
     # ----------------------------- handlers --------------------------------
 
-    def _handle_health_status(self, docs: Any, result: ParseResult, *, member_name: str) -> None:
-        """healthStatusData: one record per day; nested `metrics[].type` carries HRV/HR/SPO2/SKIN_TEMP/RESPIRATION."""
+    def _handle_health_status(self, docs: Any, result: IngestBatch, *, member_name: str) -> None:
+        """healthStatusData: one record per day with nested metric types."""
         type_to_metric = {
             "HRV": ("hrv_rmssd_overnight", "ms"),
             "HR": ("resting_hr", "bpm"),
@@ -290,8 +322,8 @@ class GarminGDPRParser:
                     )
                 )
 
-    def _handle_sleep_data(self, docs: Any, result: ParseResult, *, member_name: str) -> None:
-        """One sleep session per record. Emits the session interval + several derived measurements."""
+    def _handle_sleep_data(self, docs: Any, result: IngestBatch, *, member_name: str) -> None:
+        """One sleep session per record plus related measurements."""
         for rec in self._iter_records(docs):
             start = _coerce_ts(rec.get("sleepStartTimestampGMT"))
             end = _coerce_ts(rec.get("sleepEndTimestampGMT"))
@@ -399,7 +431,7 @@ class GarminGDPRParser:
                     )
                 )
 
-    def _handle_blood_pressure(self, docs: Any, result: ParseResult, *, member_name: str) -> None:
+    def _handle_blood_pressure(self, docs: Any, result: IngestBatch, *, member_name: str) -> None:
         """BP file: metaData.calendarDate is a Java LocalDateTime array."""
         for rec in self._iter_records(docs):
             ts = _extract_record_ts(rec)
@@ -450,12 +482,16 @@ class GarminGDPRParser:
                     )
                 )
 
-    def _handle_hydration(self, docs: Any, result: ParseResult, *, member_name: str) -> None:
+    def _handle_hydration(self, docs: Any, result: IngestBatch, *, member_name: str) -> None:
         for rec in self._iter_records(docs):
             ts = _coerce_ts(rec.get("persistedTimestampGMT")) or _coerce_ts(rec.get("calendarDate"))
             if ts is None:
                 continue
-            uuid = (rec.get("uuid") or {}).get("uuid") if isinstance(rec.get("uuid"), dict) else rec.get("uuid")
+            uuid = (
+                (rec.get("uuid") or {}).get("uuid")
+                if isinstance(rec.get("uuid"), dict)
+                else rec.get("uuid")
+            )
             sweat_ml = _as_float(rec.get("estimatedSweatLossInML"))
             if sweat_ml is not None and sweat_ml > 0:
                 result.measurements.append(
@@ -472,7 +508,7 @@ class GarminGDPRParser:
                     )
                 )
 
-    def _handle_training_load(self, docs: Any, result: ParseResult, *, member_name: str) -> None:
+    def _handle_training_load(self, docs: Any, result: IngestBatch, *, member_name: str) -> None:
         for rec in self._iter_records(docs):
             ts = _extract_record_ts(rec)
             if ts is None:
@@ -494,7 +530,7 @@ class GarminGDPRParser:
                     )
                 )
 
-    def _handle_vo2_max(self, docs: Any, result: ParseResult, *, member_name: str) -> None:
+    def _handle_vo2_max(self, docs: Any, result: IngestBatch, *, member_name: str) -> None:
         for rec in self._iter_records(docs):
             ts = _extract_record_ts(rec)
             if ts is None:
@@ -511,12 +547,16 @@ class GarminGDPRParser:
                     source_kind=SOURCE_KIND,
                     value_num=v,
                     value_text=rec.get("sport"),
-                    source_uuid=_synthesize_uuid("vo2_max", rec.get("calendarDate"), rec.get("sport")),
+                    source_uuid=_synthesize_uuid(
+                        "vo2_max", rec.get("calendarDate"), rec.get("sport")
+                    ),
                     raw_payload=rec,
                 )
             )
 
-    def _handle_training_readiness(self, docs: Any, result: ParseResult, *, member_name: str) -> None:
+    def _handle_training_readiness(
+        self, docs: Any, result: IngestBatch, *, member_name: str
+    ) -> None:
         for rec in self._iter_records(docs):
             ts = _extract_record_ts(rec)
             if ts is None:
@@ -552,7 +592,7 @@ class GarminGDPRParser:
                     )
                 )
 
-    def _handle_daily_wellness(self, docs: Any, result: ParseResult, *, member_name: str) -> None:
+    def _handle_daily_wellness(self, docs: Any, result: IngestBatch, *, member_name: str) -> None:
         """UDS file: one record per day, deeply nested."""
         for rec in self._iter_records(docs):
             ts = _extract_record_ts(rec)
@@ -633,7 +673,7 @@ class GarminGDPRParser:
                 )
             )
 
-    def _handle_activity_summary(self, docs: Any, result: ParseResult, *, member_name: str) -> None:
+    def _handle_activity_summary(self, docs: Any, result: IngestBatch, *, member_name: str) -> None:
         for rec in self._iter_records(docs):
             ts = _extract_record_ts(rec)
             if ts is None:

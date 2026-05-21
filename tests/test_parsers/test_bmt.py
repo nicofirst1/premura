@@ -1,4 +1,5 @@
 """BMT parser — synthetic CSV with kg + lb config, custom column."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -28,6 +29,7 @@ def test_kg_default_preserves_weight(tmp_path):
 
 def test_lb_config_converts_to_kg(tmp_path, monkeypatch):
     from premura.config import settings
+
     monkeypatch.setattr(settings.parsers.bmt, "weight_unit", "lb")
     p = _write_csv(tmp_path)
     res = BMTParser().parse(p)
@@ -39,10 +41,8 @@ def test_custom_column_becomes_bmt_custom(tmp_path):
     p = _write_csv(tmp_path)
     res = BMTParser().parse(p)
     customs = [m.metric_id for m in res.measurements if m.metric_id.startswith("bmt_custom:")]
-    assert "bmt_custom:waistcm" in customs
-    # Custom columns carry unit='unknown'.
-    waist = next(m for m in res.measurements if m.metric_id == "bmt_custom:waistcm")
-    assert waist.unit == "unknown"
+    assert customs == []
+    assert "waistcm" in res.unmapped_metrics
 
 
 def test_dedupe_key_format(tmp_path):

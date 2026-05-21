@@ -1,4 +1,4 @@
-"""Shared parser types: Measurement, Interval, ParseResult, Parser protocol."""
+"""Shared parser types: Measurement, Interval, SourceDescriptor, IngestBatch."""
 
 from __future__ import annotations
 
@@ -31,11 +31,7 @@ class Measurement:
 
 @dataclass(slots=True)
 class Interval:
-    """A bounded observation (sleep stage, exercise session, daily step total).
-
-    `unit` is in-memory only — fact_interval does not store a unit column; the metric
-    determines the unit. Kept here so parsers can use a uniform constructor signature.
-    """
+    """A bounded observation (sleep stage, exercise session, daily step total)."""
 
     start_utc: datetime
     end_utc: datetime
@@ -56,111 +52,116 @@ class Interval:
 
 
 @dataclass(slots=True)
-class ParseResult:
-    """What a parser hands back to the loader."""
+class SourceDescriptor:
+    """Warehouse-facing provenance for one ``source_id`` in an ingest batch."""
 
+    source_id: str
+    source_kind: str
+    app_package: str | None = None
+    app_name: str | None = None
+    device_manufacturer: str | None = None
+    device_model: str | None = None
+
+
+@dataclass(slots=True)
+class IngestBatch:
+    """The parser-to-loader seam for one source artifact.
+
+    The batch contains only loadable rows plus the provenance and declarations
+    needed to validate them at the warehouse seam. Review metadata such as
+    ``unmapped_metrics`` stays on the batch, but never becomes a loadable row.
+    """
+
+    source_kind: str
+    declared_metrics: list[str]
     measurements: list[Measurement] = field(default_factory=list)
     intervals: list[Interval] = field(default_factory=list)
+    source_descriptors: dict[str, SourceDescriptor] = field(default_factory=dict)
+    unmapped_metrics: list[str] = field(default_factory=list)
     source_path: Path | None = None
     source_sha256: str | None = None
     notes: str | None = None
+    language_detected: str | None = None
+    confidence: float = 1.0
 
-    def extend(self, other: ParseResult) -> None:
+    def extend(self, other: IngestBatch) -> None:
         self.measurements.extend(other.measurements)
         self.intervals.extend(other.intervals)
+        self.source_descriptors.update(other.source_descriptors)
+        self.unmapped_metrics.extend(other.unmapped_metrics)
+        if other.notes:
+            self.notes = f"{self.notes}; {other.notes}" if self.notes else other.notes
+        if other.language_detected and self.language_detected is None:
+            self.language_detected = other.language_detected
 
     def __len__(self) -> int:
         return len(self.measurements) + len(self.intervals)
 
+    @property
+    def emitted_metrics(self) -> set[str]:
+        return {m.metric_id for m in self.measurements} | {i.metric_id for i in self.intervals}
+
+    def attach_source_artifact(self, path: Path) -> IngestBatch:
+        self.source_path = path
+        self.source_sha256 = file_sha256(path)
+        return self
+
+    def validate(self) -> None:
+        if not self.source_kind:
+            raise ValueError("IngestBatch requires source_kind")
+        if not self.declared_metrics:
+            raise ValueError("IngestBatch requires declared_metrics")
+        if not 0.0 <= self.confidence <= 1.0:
+            raise ValueError("IngestBatch confidence must be within [0.0, 1.0]")
+
+        declared = set(self.declared_metrics)
+        emitted = self.emitted_metrics
+        undeclared = emitted - declared
+        if undeclared:
+            raise ValueError(f"IngestBatch emitted undeclared metrics: {sorted(undeclared)}")
+
+        derived_metrics = {metric for metric in emitted if metric.startswith("derived:")}
+        if derived_metrics:
+            raise ValueError(f"Parsers must not emit derived metrics: {sorted(derived_metrics)}")
+
+        row_source_ids = {m.source_id for m in self.measurements} | {
+            i.source_id for i in self.intervals
+        }
+        missing_descriptors = row_source_ids - set(self.source_descriptors)
+        if missing_descriptors:
+            raise ValueError(
+                f"IngestBatch missing source descriptors for: {sorted(missing_descriptors)}"
+            )
+
+        mismatched_kinds = [
+            source_id
+            for source_id, descriptor in self.source_descriptors.items()
+            if descriptor.source_kind != self.source_kind
+        ]
+        if mismatched_kinds:
+            raise ValueError(
+                f"IngestBatch source descriptors must match source_kind={self.source_kind}: "
+                f"{sorted(mismatched_kinds)}"
+            )
+
 
 class Parser(Protocol):
-    """All parsers expose .parse(path) -> ParseResult."""
+    """All parsers expose ``parse(path) -> IngestBatch``."""
 
     source_kind: str
 
-    def parse(self, path: Path) -> ParseResult: ...
+    def declares_metrics(self) -> list[str]: ...
 
-
-# ---------------------------------------------------------------------------
-# Federated parser contract (additive — does not affect v1 parsers).
-#
-# These symbols define the Phase 2 plugin parser surface described by
-# ``src/premura/parsers/CONTRACT.md``. They are intentionally additive: the
-# existing ``Parser`` Protocol and ``ParseResult`` dataclass above remain the
-# canonical v1 contract and MUST NOT be migrated as part of this mission.
-# ---------------------------------------------------------------------------
-
-
-@dataclass
-class PluginParseResult(ParseResult):
-    """Federated-parser return type with mapping-quality metadata.
-
-    Extends :class:`ParseResult` with three additive fields that future
-    community-contributed parsers use to surface mapping gaps for human
-    review. See ``src/premura/parsers/CONTRACT.md`` for the full contract.
-
-    The planning contract document specifies ``frozen=True``; Python's
-    dataclass machinery forbids a frozen subclass of the non-frozen
-    :class:`ParseResult`, and ``T008`` of this WP requires that
-    ``ParseResult`` itself remain unchanged. The Phase 1 ship therefore
-    keeps the dataclass mutable to honour the stronger "do not touch
-    ParseResult" rule; a future mission may revisit the frozen requirement
-    if ``ParseResult`` itself is migrated to ``frozen=True``.
-    """
-
-    language_detected: str | None = None
-    """ISO 639-1 (or similar) code reported by ``_lang.detect_language`` on a
-    representative sample of the source file, or ``None`` when the parser did
-    not run detection. Local-only — no external API calls."""
-
-    unmapped_metrics: list[str] = field(default_factory=list)
-    """Raw vendor field names the parser deliberately skipped because the
-    decision tree in ``CONTRACT.md`` produced no canonical ``metric_id``. The
-    PR reviewer decides what to do with them."""
-
-    confidence: float = 1.0
-    """Parser's self-rating in ``[0.0, 1.0]`` for the batch as a whole. Used
-    later by Stage 2/3 to discount low-confidence sources when surfacing
-    signals. Defaults to ``1.0`` for parity with ``ParseResult``."""
+    def parse(self, path: Path) -> IngestBatch: ...
 
 
 class PluginParser(Parser, Protocol):
-    """Structural protocol for federated, community-contributed parsers.
-
-    A ``PluginParser`` is the v2 extensibility surface: any object satisfying
-    this Protocol can be discovered and invoked by the federated ingest
-    pipeline. The structural-subtype relationship with :class:`Parser` is
-    intentional — existing v1 parsers remain valid against the original
-    ``Parser`` Protocol without migration, while new plugins layer the
-    plugin-specific fields and methods on top.
-
-    Implementers MUST follow the decision tree in
-    ``src/premura/parsers/CONTRACT.md`` when resolving vendor fields to
-    canonical ``metric_id`` values, and MUST NOT emit any ``derived:*``
-    ``metric_id`` (those are reserved for the Stage 2 engine).
-    """
+    """Structural protocol for federated, community-contributed parsers."""
 
     language_hint: str | None
-    """Known source language as an ISO 639-1 code, or ``None`` when the
-    plugin defers detection to ``_lang.detect_language``."""
 
-    def declares_metrics(self) -> list[str]:
-        """Return every canonical ``metric_id`` ``parse()`` may emit.
-
-        Reviewers cross-check the returned list against the ``dim_metric.yaml``
-        rows the plugin's PR adds; the runtime may also use it for sanity
-        checks in a future implementation mission.
-        """
-        ...
-
-    def parse(self, path: Path) -> PluginParseResult:
-        """Parse ``path`` and return a :class:`PluginParseResult`.
-
-        Overrides the ``Parser.parse`` return type with the richer
-        plugin-flavored result. Implementations must populate
-        ``unmapped_metrics`` with any vendor fields the decision tree could
-        not resolve, rather than fabricating ``metric_id`` values.
-        """
+    def parse(self, path: Path) -> IngestBatch:
+        """Parse ``path`` and return an :class:`IngestBatch`."""
         ...
 
 

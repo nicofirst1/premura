@@ -25,7 +25,7 @@ from rich.table import Table
 
 from . import encrypt, notify, skills, upload
 from .config import settings
-from .loader import already_ingested, attach_source_metadata, load
+from .loader import already_ingested, load
 from .parsers.bmt import BMTParser
 from .parsers.garmin_gdpr import GarminGDPRParser
 from .parsers.health_connect import HealthConnectParser
@@ -80,7 +80,7 @@ def ingest(
 
 
 def _ingest_one(conn, source_key: str, override_path: Path | None) -> None:
-    parser_cls, source_kind = PARSER_REGISTRY[source_key]
+    parser_cls, _source_kind = PARSER_REGISTRY[source_key]
     candidate = override_path if override_path else _discover_input(source_key)
     if candidate is None:
         console.print(f"[yellow]no input found for {source_key}; skipping[/yellow]")
@@ -92,20 +92,17 @@ def _ingest_one(conn, source_key: str, override_path: Path | None) -> None:
     parser = parser_cls()
     console.print(f"[cyan]parsing[/cyan] {source_key} :: {candidate.name}")
     t0 = time.time()
-    result = parser.parse(candidate)
-    if not result.source_sha256:
-        attach_source_metadata(result, candidate)
+    batch = parser.parse(candidate)
     parse_dt = time.time() - t0
 
-    if already_ingested(conn, result.source_sha256):
+    if already_ingested(conn, batch.source_sha256):
         console.print(
-            f"  [dim]sha256 {result.source_sha256[:12]}… already ingested; skipping[/dim]"
+            f"  [dim]sha256 {batch.source_sha256[:12]}… already ingested; skipping[/dim]"
         )
         return
 
-    source_seed = getattr(parser, "source_dim_seed", None)
     t1 = time.time()
-    stats = load(conn, result, source_kind=source_kind, source_dim_seed=source_seed)
+    stats = load(conn, batch)
     load_dt = time.time() - t1
     console.print(
         f"  parse {parse_dt:.1f}s • load {load_dt:.1f}s • "

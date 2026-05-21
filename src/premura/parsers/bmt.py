@@ -27,7 +27,7 @@ from pathlib import Path
 from dateutil import parser as dtparser
 
 from ..config import settings
-from .base import Measurement, ParseResult, file_sha256
+from .base import IngestBatch, Measurement, SourceDescriptor
 
 log = logging.getLogger(__name__)
 SOURCE_KIND = "bmt"
@@ -68,7 +68,9 @@ def _parse_date(s: str) -> datetime | None:
         return None
 
 
-def _convert_to_canonical(value: float, src_unit: str | None, target_unit: str) -> tuple[float, str]:
+def _convert_to_canonical(
+    value: float, src_unit: str | None, target_unit: str
+) -> tuple[float, str]:
     """Return (value_in_target, target_unit). Unknown conversions pass through."""
     if not src_unit:
         return value, target_unit
@@ -97,10 +99,27 @@ def _convert_to_canonical(value: float, src_unit: str | None, target_unit: str) 
 class BMTParser:
     source_kind = SOURCE_KIND
 
-    def parse(self, path: Path) -> ParseResult:
-        result = ParseResult(source_path=path, source_sha256=file_sha256(path))
+    def declares_metrics(self) -> list[str]:
+        return sorted(
+            {metric_id for metric_id, _unit in LONG_METRIC_MAP.values()}
+            | {
+                "bmi",
+                "visceral_fat",
+            }
+        )
+
+    def parse(self, path: Path) -> IngestBatch:
+        result = IngestBatch(
+            source_kind=SOURCE_KIND,
+            declared_metrics=self.declares_metrics(),
+        ).attach_source_artifact(path)
+        result.source_descriptors["bmt:device"] = SourceDescriptor(
+            source_id="bmt:device",
+            source_kind=SOURCE_KIND,
+        )
         lines = self._read_data_lines(path)
         if not lines:
+            result.validate()
             return result
         # Detect format by inspecting the header row.
         header = next(iter(csv.reader([lines[0]])))
@@ -108,6 +127,7 @@ class BMTParser:
             self._parse_long_format(lines, result)
         else:
             self._parse_wide_format(lines, result)
+        result.validate()
         return result
 
     # --- shared file reader (strips '#'-prefix comments) ---
@@ -125,12 +145,12 @@ class BMTParser:
 
     # --- long format (current BMT app exports) ---
 
-    def _parse_long_format(self, lines: list[str], result: ParseResult) -> None:
+    def _parse_long_format(self, lines: list[str], result: IngestBatch) -> None:
         reader = csv.DictReader(lines)
         for row in reader:
             self._emit_long_row(row, result)
 
-    def _emit_long_row(self, row: dict[str, str], result: ParseResult) -> None:
+    def _emit_long_row(self, row: dict[str, str], result: IngestBatch) -> None:
         date_str = (row.get("Date") or "").strip()
         if not date_str:
             return
@@ -155,12 +175,11 @@ class BMTParser:
             metric_id, target_unit = spec
             value, unit_out = _convert_to_canonical(value, unit_in, target_unit)
         else:
-            metric_id = f"bmt_custom:{_slugify(m_name)}"
-            unit_out = unit_in or "unknown"
-
-        # Tag side onto custom metrics that are left/right specific (e.g. arm_left).
-        if metric_id.startswith("bmt_custom:") and side in ("left", "right"):
-            metric_id = f"{metric_id}_{side}"
+            unmapped = _slugify(m_name)
+            if side in ("left", "right"):
+                unmapped = f"{unmapped}_{side}"
+            result.unmapped_metrics.append(unmapped)
+            return
 
         result.measurements.append(
             Measurement(
@@ -177,7 +196,7 @@ class BMTParser:
 
     # --- legacy wide format ---
 
-    def _parse_wide_format(self, lines: list[str], result: ParseResult) -> None:
+    def _parse_wide_format(self, lines: list[str], result: IngestBatch) -> None:
         reader = csv.DictReader(lines)
         w_unit = settings.parsers.bmt.weight_unit
         h_unit = settings.parsers.bmt.length_unit
@@ -224,8 +243,8 @@ class BMTParser:
                     metric_id, unit, xform = spec
                     value = xform(value)
                 else:
-                    metric_id = f"bmt_custom:{_slugify(col)}"
-                    unit = "unknown"
+                    result.unmapped_metrics.append(_slugify(col))
+                    continue
                 result.measurements.append(
                     Measurement(
                         ts_utc=ts,

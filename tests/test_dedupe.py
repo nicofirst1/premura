@@ -1,17 +1,28 @@
 """Cross-source priority dedupe (tier 2)."""
+
 from __future__ import annotations
 
 from datetime import datetime
 
-from premura.loader import attach_source_metadata, load
-from premura.parsers.base import Measurement, ParseResult
+from premura.loader import load
+from premura.parsers.base import IngestBatch, Measurement, SourceDescriptor
 
 
-def _result_with_one(measurement: Measurement, path) -> ParseResult:
-    r = ParseResult(measurements=[measurement])
+def _batch_with_one(measurement: Measurement, path) -> IngestBatch:
     path.write_text("dummy")
-    attach_source_metadata(r, path)
-    return r
+    batch = IngestBatch(
+        source_kind=measurement.source_kind,
+        declared_metrics=[measurement.metric_id],
+        measurements=[measurement],
+        source_descriptors={
+            measurement.source_id: SourceDescriptor(
+                source_id=measurement.source_id,
+                source_kind=measurement.source_kind,
+            )
+        },
+    ).attach_source_artifact(path)
+    batch.validate()
+    return batch
 
 
 def test_garmin_gdpr_wins_over_health_connect(empty_warehouse, tmp_path):
@@ -37,13 +48,11 @@ def test_garmin_gdpr_wins_over_health_connect(empty_warehouse, tmp_path):
 
     load(
         empty_warehouse,
-        _result_with_one(g_m, tmp_path / "g.bin"),
-        source_kind="garmin_gdpr",
+        _batch_with_one(g_m, tmp_path / "g.bin"),
     )
     stats = load(
         empty_warehouse,
-        _result_with_one(hc_m, tmp_path / "hc.bin"),
-        source_kind="health_connect",
+        _batch_with_one(hc_m, tmp_path / "hc.bin"),
     )
     assert stats.rows_skipped_priority == 1
     assert stats.rows_inserted == 0
@@ -76,13 +85,11 @@ def test_garmin_after_hc_still_inserts(empty_warehouse, tmp_path):
     )
     load(
         empty_warehouse,
-        _result_with_one(hc_m, tmp_path / "hc.bin"),
-        source_kind="health_connect",
+        _batch_with_one(hc_m, tmp_path / "hc.bin"),
     )
     stats = load(
         empty_warehouse,
-        _result_with_one(g_m, tmp_path / "g.bin"),
-        source_kind="garmin_gdpr",
+        _batch_with_one(g_m, tmp_path / "g.bin"),
     )
     assert stats.rows_inserted == 1
     assert stats.rows_skipped_priority == 0
@@ -102,7 +109,7 @@ def test_native_dedupe_within_one_file(empty_warehouse, tmp_path):
         value_num=85.0,
         source_uuid="abc",
     )
-    load(empty_warehouse, _result_with_one(m, tmp_path / "a.bin"), source_kind="bmt")
-    stats = load(empty_warehouse, _result_with_one(m, tmp_path / "b.bin"), source_kind="bmt")
+    load(empty_warehouse, _batch_with_one(m, tmp_path / "a.bin"))
+    stats = load(empty_warehouse, _batch_with_one(m, tmp_path / "b.bin"))
     assert stats.rows_inserted == 0
     assert stats.rows_skipped_dup == 1

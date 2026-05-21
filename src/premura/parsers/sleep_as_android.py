@@ -22,7 +22,7 @@ from pathlib import Path
 
 from dateutil import tz
 
-from .base import Interval, Measurement, ParseResult, file_sha256
+from .base import IngestBatch, Interval, Measurement, SourceDescriptor
 
 log = logging.getLogger(__name__)
 SOURCE_KIND = "sleep_as_android"
@@ -41,10 +41,26 @@ class _Session:
 class SleepAsAndroidParser:
     source_kind = SOURCE_KIND
 
-    def parse(self, path: Path) -> ParseResult:
-        result = ParseResult(source_path=path, source_sha256=file_sha256(path))
+    def declares_metrics(self) -> list[str]:
+        return [
+            "sleep_actigraphy",
+            "sleep_deep_pct",
+            "sleep_rating",
+            "sleep_session",
+        ]
+
+    def parse(self, path: Path) -> IngestBatch:
+        result = IngestBatch(
+            source_kind=SOURCE_KIND,
+            declared_metrics=self.declares_metrics(),
+        ).attach_source_artifact(path)
+        result.source_descriptors["saa:device"] = SourceDescriptor(
+            source_id="saa:device",
+            source_kind=SOURCE_KIND,
+        )
         for s in self._iter_sessions(path):
             self._emit(s, result)
+        result.validate()
         return result
 
     def _iter_sessions(self, path: Path):
@@ -58,10 +74,12 @@ class SleepAsAndroidParser:
                     header = row
                     continue
                 if header is not None and len(row) == len(header) and row[0].isdigit():
-                    per_min = [(c, v) for c, v in zip(header, row, strict=False) if RE_HHMM.match(c)]
+                    per_min = [
+                        (c, v) for c, v in zip(header, row, strict=False) if RE_HHMM.match(c)
+                    ]
                     yield _Session(row=dict(zip(header, row, strict=False)), per_minute=per_min)
 
-    def _emit(self, s: _Session, result: ParseResult) -> None:
+    def _emit(self, s: _Session, result: IngestBatch) -> None:
         tz_name = s.row.get("Tz") or "UTC"
         tzinfo = tz.gettz(tz_name) or tz.UTC
         try:
@@ -91,8 +109,7 @@ class SleepAsAndroidParser:
                 local_tz=tz_name,
                 source_uuid=source_uuid,
                 raw_payload={
-                    k: v for k, v in s.row.items()
-                    if not RE_HHMM.match(k) and v not in ("", None)
+                    k: v for k, v in s.row.items() if not RE_HHMM.match(k) and v not in ("", None)
                 },
             )
         )

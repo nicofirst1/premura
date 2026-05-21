@@ -20,7 +20,7 @@ the first match:
 5. **`vendor:<source>:<field>`** as the fallback for source-specific concepts.
 
 If no step applies, do not invent a `metric_id`. Skip the field at parse time
-and surface it via `PluginParseResult.unmapped_metrics` for human review.
+and surface it via `IngestBatch.unmapped_metrics` for human review.
 
 Aliases recorded in `dim_metric.yaml` are restricted to **clinically standard
 names and abbreviations only** — not free-text search terms or marketing
@@ -30,7 +30,7 @@ phrasing.
 
 - **Parser plugin contract (agent-agnostic, authoritative):**
   `src/premura/parsers/CONTRACT.md` — defines `PluginParser`,
-  `PluginParseResult`, the full decision tree, the `derived:` namespace rule,
+  `IngestBatch`, the full decision tree, the `derived:` namespace rule,
   and the same-PR ontology rule.
 - **Claude Code skill (parser-generation walkthrough):**
   `src/premura/skills/parser-generator/SKILL.md` — installable via
