@@ -178,3 +178,4 @@ Review end-to-end from package data to installed file path. The key question is 
 - 2026-05-21T11:59:06Z – claude:opus-4-7:reviewer:reviewer – shell_pid=16062 – Done override: Mission v2-architectural-skeleton-01KS4SHA merged to master in 723bdeb
 - 2026-05-21T12:10:48Z – claude:opus-4-7:reviewer:reviewer – shell_pid=16062 – Mission review failed: rollback for unreachable advertised install-skills CLI path and skill contract drift
 - 2026-05-21T12:22:30Z – claude:opus-4-7:implementer:implementer – shell_pid=2137 – Started implementation via action command
+- 2026-05-21T12:31:01Z – claude:opus-4-7:implementer:implementer – shell_pid=2137 – uv run hpipe install-skills now works end-to-end from a synced checkout; pyproject [project.scripts] table fixed
