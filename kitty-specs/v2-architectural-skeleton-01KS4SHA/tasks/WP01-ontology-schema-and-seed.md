@@ -17,8 +17,8 @@ subtasks:
 - T002
 - T003
 - T004
-shell_pid: "42594"
-agent: "claude:opus-4-7:implementer:implementer"
+shell_pid: "84406"
+agent: "claude:opus-4-7:reviewer:reviewer"
 history:
 - timestamp: '2026-05-21T09:53:12Z'
   agent: gpt-5.4
@@ -235,3 +235,4 @@ The most important failure to catch is an implicit vocabulary migration hidden i
 
 - 2026-05-21T10:51:45Z – claude:opus-4-7:implementer:implementer – shell_pid=42594 – Assigned agent via action command
 - 2026-05-21T11:00:39Z – claude:opus-4-7:implementer:implementer – shell_pid=42594 – Ready for review: migration 002 adds 6 nullable ontology columns idempotently; seed_dim_metric() binds them with JSON aliases; dim_metric.yaml now has 180 rows (43 legacy + 137 new) — every row has non-empty category, all 105 lab:* rows have LOINC codes. All 25 tests pass.
+- 2026-05-21T11:01:15Z – claude:opus-4-7:reviewer:reviewer – shell_pid=84406 – Started review via action command
