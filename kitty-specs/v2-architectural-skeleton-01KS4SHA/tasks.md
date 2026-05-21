@@ -30,10 +30,10 @@
 
 | ID | Description | WP | Parallel |
 |---|---|---|---|
-| T001 | Add `002_dim_metric_ontology.sql` with the six nullable ontology columns and idempotent `ADD COLUMN IF NOT EXISTS` statements. | WP01 |  |
-| T002 | Extend `seed_dim_metric()` to read, insert, and update the six new ontology fields while preserving backward compatibility for rows missing those keys. | WP01 |  |
-| T003 | Add `category` to all existing legacy rows in `src/premura/dim_metric.yaml` without renaming legacy `metric_id`s. | WP01 |  |
-| T004 | Append the new ontology rows to `src/premura/dim_metric.yaml` so the seed reaches the required floor with clinically standard aliases and standards metadata. | WP01 |  |
+| T001 | Add `002_dim_metric_ontology.sql` with the six nullable ontology columns and idempotent `ADD COLUMN IF NOT EXISTS` statements. | WP01 |  | [D] |
+| T002 | Extend `seed_dim_metric()` to read, insert, and update the six new ontology fields while preserving backward compatibility for rows missing those keys. | WP01 |  | [D] |
+| T003 | Add `category` to all existing legacy rows in `src/premura/dim_metric.yaml` without renaming legacy `metric_id`s. | WP01 |  | [D] |
+| T004 | Append the new ontology rows to `src/premura/dim_metric.yaml` so the seed reaches the required floor with clinically standard aliases and standards metadata. | WP01 |  | [D] |
 | T005 | Create `src/premura/engine/_registry.py` with `SignalSpec`, `REGISTRY`, and the `@signal(...)` decorator contract. | WP02 |  |
 | T006 | Create `src/premura/engine/__init__.py` with the Stage 2 docstring, re-exports, and the five `NotImplementedError` API stubs. | WP02 |  |
 | T007 | Keep the engine surface import-safe and implementation-free so `REGISTRY` stays empty until future signal modules are imported. | WP02 |  |
@@ -70,10 +70,10 @@
 - Estimated prompt size: ~330 lines
 
 Included subtasks:
-- [ ] T001 Add `002_dim_metric_ontology.sql` with the six nullable ontology columns and idempotent `ADD COLUMN IF NOT EXISTS` statements. (WP01)
-- [ ] T002 Extend `seed_dim_metric()` to read, insert, and update the six new ontology fields while preserving backward compatibility for rows missing those keys. (WP01)
-- [ ] T003 Add `category` to all existing legacy rows in `src/premura/dim_metric.yaml` without renaming legacy `metric_id`s. (WP01)
-- [ ] T004 Append the new ontology rows to `src/premura/dim_metric.yaml` so the seed reaches the required floor with clinically standard aliases and standards metadata. (WP01)
+- [x] T001 Add `002_dim_metric_ontology.sql` with the six nullable ontology columns and idempotent `ADD COLUMN IF NOT EXISTS` statements. (WP01)
+- [x] T002 Extend `seed_dim_metric()` to read, insert, and update the six new ontology fields while preserving backward compatibility for rows missing those keys. (WP01)
+- [x] T003 Add `category` to all existing legacy rows in `src/premura/dim_metric.yaml` without renaming legacy `metric_id`s. (WP01)
+- [x] T004 Append the new ontology rows to `src/premura/dim_metric.yaml` so the seed reaches the required floor with clinically standard aliases and standards metadata. (WP01)
 
 Implementation sketch:
 1. Add the new SQL migration with comments explaining idempotency and nullability.
