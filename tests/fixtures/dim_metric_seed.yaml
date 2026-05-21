@@ -1,0 +1,41 @@
+# Fixture for FR-016 seed_dim_metric() coverage.
+# Exercises the full ontology contract:
+#   - row WITHOUT any of the six new ontology keys (legacy 5-field shape)
+#   - row WITH all six new keys present (full ontology shape, including
+#     multilingual ``aliases`` that must be JSON-serialized by the seed loader)
+#   - row WITH a partial subset of new keys (category + loinc only) to prove
+#     each key is read independently — not gated behind an all-or-nothing
+#     branch
+#
+# IMPORTANT: this fixture is consumed by tests/test_skeleton.py via
+# ``seed_dim_metric()`` itself (the production code path), not by ad-hoc SQL.
+# If you change ``seed_dim_metric`` to stop reading any of these YAML keys,
+# the FR-016 test will fail.
+
+- metric_id: _fixture_legacy_only
+  display_name: Fixture legacy row
+  canonical_unit: ct
+  value_kind: instantaneous
+  description: Legacy 5-field shape; no ontology keys.
+
+- metric_id: _fixture_full_ontology
+  display_name: Fixture full-ontology row
+  canonical_unit: bpm
+  value_kind: instantaneous
+  description: All six new keys, with multilingual aliases.
+  category: cardiovascular
+  validity_window: PT5M
+  missing_data_policy: none
+  aliases:
+    en: [HR, pulse]
+    it: [frequenza cardiaca]
+  loinc: "8867-4"
+  ieee1752: "ieee1752:hr"
+
+- metric_id: _fixture_partial_ontology
+  display_name: Fixture partial-ontology row
+  canonical_unit: mmHg
+  value_kind: instantaneous
+  description: Only category + loinc set; aliases/validity_window/etc. omitted.
+  category: cardiovascular
+  loinc: "8480-6"

@@ -21,12 +21,18 @@ from __future__ import annotations
 
 import importlib
 import importlib.resources as resources
+import json
+import subprocess
+import sys
+from importlib.metadata import entry_points
 from importlib.resources import files
 from pathlib import Path
 from typing import get_type_hints
 
 import pytest
 import yaml
+
+FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 # ---------------------------------------------------------------------------
 # T021 — Import + stub-behavior tests (FR-001..FR-008)
@@ -309,77 +315,119 @@ def test_migrations_are_idempotent(empty_warehouse) -> None:
     assert before == after, "migration introduced or removed columns on second run"
 
 
-def test_seed_handles_rows_with_and_without_new_keys(tmp_path: Path) -> None:
-    """FR-016: ``seed_dim_metric`` accepts both legacy and ontology-rich rows."""
-    import json
+def test_seed_handles_rows_with_and_without_new_keys(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """FR-016: ``seed_dim_metric()`` reads new ontology keys + serializes aliases.
 
+    Exercises the production path in ``src/premura/store/duck.py:seed_dim_metric``
+    by feeding it a fixture ``dim_metric.yaml`` (under ``tests/fixtures/``) with:
+
+      - one legacy 5-field row (no new ontology keys),
+      - one full-ontology row (all six new keys, including multilingual aliases),
+      - one partial-ontology row (category + loinc only).
+
+    Mutation guarantee: if ``seed_dim_metric()`` stops reading any of the six
+    new YAML keys, or breaks alias JSON serialization, this test fails.
+    Verified by mentally stubbing the function — see also the explicit alias
+    JSON round-trip assertion below.
+    """
     import duckdb
 
     from premura.store import duck
+
+    fixture_path = FIXTURES_DIR / "dim_metric_seed.yaml"
+    assert fixture_path.is_file(), "FR-016 fixture missing"
+    fixture_text = fixture_path.read_text(encoding="utf-8")
+
+    # Redirect ``resources.files("premura").joinpath("dim_metric.yaml").read_text``
+    # used inside ``seed_dim_metric`` to our fixture, without monkey-patching
+    # yaml.safe_load (so YAML parsing is still exercised by the production path).
+    class _FakeTraversable:
+        def __init__(self, text: str) -> None:
+            self._text = text
+
+        def read_text(self, encoding: str = "utf-8") -> str:  # noqa: ARG002
+            return self._text
+
+    class _FakeRoot:
+        def __init__(self, text: str) -> None:
+            self._text = text
+
+        def joinpath(self, name: str) -> _FakeTraversable:
+            assert name == duck.DIM_METRIC_YAML, f"unexpected resource lookup: {name}"
+            return _FakeTraversable(self._text)
+
+    real_files = duck.resources.files
+
+    def fake_files(package: str):
+        if package == "premura":
+            return _FakeRoot(fixture_text)
+        return real_files(package)
+
+    monkeypatch.setattr(duck.resources, "files", fake_files)
 
     db = tmp_path / "seed.duckdb"
     conn = duckdb.connect(str(db))
     try:
         duck.run_migrations(conn)
-        # Legacy-shape row (no new keys) and full-ontology row, both inserted
-        # via the production seed path's parametrised statement to mirror its
-        # behaviour exactly.
-        legacy = {
-            "metric_id": "_legacy_smoke",
-            "display_name": "Legacy smoke",
-            "canonical_unit": "ct",
-            "value_kind": "instantaneous",
-            "description": None,
-        }
-        rich = {
-            "metric_id": "_rich_smoke",
-            "display_name": "Rich smoke",
-            "canonical_unit": "ct",
-            "value_kind": "instantaneous",
-            "description": "with ontology",
-            "category": "cardiovascular",
-            "validity_window": "PT5M",
-            "missing_data_policy": "none",
-            "aliases": {"en": ["smoke"]},
-            "loinc": "00000-0",
-            "ieee1752": "ieee1752:0",
-        }
-        for row in (legacy, rich):
-            aliases = row.get("aliases")
-            aliases_json = json.dumps(aliases) if aliases else None
-            conn.execute(
-                """
-                INSERT INTO hp.dim_metric (
-                    metric_id, display_name, canonical_unit, value_kind, description,
-                    category, validity_window, missing_data_policy, aliases, loinc, ieee1752
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                [
-                    row["metric_id"],
-                    row["display_name"],
-                    row["canonical_unit"],
-                    row["value_kind"],
-                    row.get("description"),
-                    row.get("category"),
-                    row.get("validity_window"),
-                    row.get("missing_data_policy"),
-                    aliases_json,
-                    row.get("loinc"),
-                    row.get("ieee1752"),
-                ],
-            )
-        legacy_cat, legacy_loinc = conn.execute(
-            "SELECT category, loinc FROM hp.dim_metric WHERE metric_id = ?",
-            [legacy["metric_id"]],
+        # === PRODUCTION CALL — this is the heart of the FR-016 assertion. ===
+        row_count = duck.seed_dim_metric(conn)
+        assert row_count == 3, f"fixture should have seeded 3 rows, got {row_count}"
+
+        # Legacy row: all new ontology columns must be NULL.
+        legacy = conn.execute(
+            """
+            SELECT category, validity_window, missing_data_policy, aliases, loinc, ieee1752
+            FROM hp.dim_metric WHERE metric_id = '_fixture_legacy_only'
+            """
         ).fetchone()
-        assert legacy_cat is None
-        assert legacy_loinc is None
-        rich_cat, rich_loinc = conn.execute(
-            "SELECT category, loinc FROM hp.dim_metric WHERE metric_id = ?",
-            [rich["metric_id"]],
+        assert legacy is not None, "legacy fixture row was not seeded"
+        assert all(v is None for v in legacy), (
+            f"legacy row should have all-NULL ontology cols, got {legacy}"
+        )
+
+        # Full-ontology row: every new column populated, aliases JSON-serialized.
+        rich = conn.execute(
+            """
+            SELECT category, validity_window, missing_data_policy, aliases, loinc, ieee1752
+            FROM hp.dim_metric WHERE metric_id = '_fixture_full_ontology'
+            """
         ).fetchone()
+        assert rich is not None, "full-ontology fixture row was not seeded"
+        rich_cat, rich_win, rich_mdp, rich_aliases, rich_loinc, rich_ieee = rich
         assert rich_cat == "cardiovascular"
-        assert rich_loinc == "00000-0"
+        assert rich_win == "PT5M"
+        assert rich_mdp == "none"
+        assert rich_loinc == "8867-4"
+        assert rich_ieee == "ieee1752:hr"
+        # ``aliases`` MUST be JSON-serialized text (not a Python dict repr).
+        # Round-trip via json.loads to guarantee real JSON — this catches
+        # ``str(dict)`` regressions like {'en': ['HR', 'pulse']}.
+        assert isinstance(rich_aliases, str), (
+            f"aliases must be serialized to JSON text, got {type(rich_aliases)}"
+        )
+        parsed = json.loads(rich_aliases)
+        assert parsed == {"en": ["HR", "pulse"], "it": ["frequenza cardiaca"]}, (
+            f"aliases JSON did not round-trip: {parsed}"
+        )
+
+        # Partial-ontology row: only the keys the YAML supplied land non-NULL,
+        # the rest stay NULL — proves each key is read independently.
+        partial = conn.execute(
+            """
+            SELECT category, validity_window, missing_data_policy, aliases, loinc, ieee1752
+            FROM hp.dim_metric WHERE metric_id = '_fixture_partial_ontology'
+            """
+        ).fetchone()
+        assert partial is not None, "partial-ontology fixture row was not seeded"
+        p_cat, p_win, p_mdp, p_aliases, p_loinc, p_ieee = partial
+        assert p_cat == "cardiovascular"
+        assert p_loinc == "8480-6"
+        assert p_win is None
+        assert p_mdp is None
+        assert p_aliases is None
+        assert p_ieee is None
     finally:
         conn.close()
 
@@ -434,5 +482,93 @@ def test_cli_registers_install_skills_verb() -> None:
     cli = importlib.import_module("premura.cli")
     commands = {cmd.name for cmd in cli.app.registered_commands}
     assert "install-skills" in commands, f"expected install-skills verb, got {sorted(commands)}"
+
+
+def test_hpipe_console_script_is_wired_and_invokable(tmp_path: Path) -> None:
+    """FR-013: the ``hpipe`` console script is wired via ``[project.scripts]``
+    in ``pyproject.toml`` and ``hpipe install-skills`` is actually invokable
+    end-to-end (not just registered on the Typer app object).
+
+    Layer 1 — entry-point wiring: confirm ``importlib.metadata.entry_points``
+    exposes a ``console_scripts`` entry named ``hpipe`` resolving to
+    ``premura.cli:app``. If the ``[project.scripts]`` table is removed from
+    ``pyproject.toml`` (or the entry is renamed), this assertion fails.
+
+    Layer 2 — runtime invocation: shell out to the installed ``hpipe``
+    binary in ``.venv/bin/hpipe`` and confirm ``hpipe install-skills``
+    materializes the skill files in a temp project root with exit code 0
+    and is idempotent on the second invocation. This catches packaging
+    failures like ``Failed to spawn: hpipe`` that the Typer-registry check
+    cannot.
+
+    Mutation guarantee: deleting the ``[project.scripts]`` table from
+    ``pyproject.toml`` (or removing the ``hpipe`` line under it) causes
+    both layers to fail.
+    """
+    # ------------------------------------------------------------------
+    # Layer 1 — console_scripts entry point is declared and resolves.
+    # ------------------------------------------------------------------
+    eps = entry_points(group="console_scripts")
+    hpipe_eps = [ep for ep in eps if ep.name == "hpipe"]
+    assert hpipe_eps, (
+        "no console_scripts entry named 'hpipe' — is [project.scripts] hpipe "
+        "= 'premura.cli:app' still present in pyproject.toml?"
+    )
+    assert len(hpipe_eps) == 1, f"expected exactly one hpipe console_script, got {hpipe_eps}"
+    ep = hpipe_eps[0]
+    assert ep.value == "premura.cli:app", (
+        f"hpipe console_script points to {ep.value!r}, expected 'premura.cli:app'"
+    )
+    # Loading the entry point must produce the Typer app (real import, not stub).
+    loaded = ep.load()
+    cli_mod = importlib.import_module("premura.cli")
+    assert loaded is cli_mod.app, "console_script entry did not load the actual Typer app"
+
+    # ------------------------------------------------------------------
+    # Layer 2 — invoke the installed console script as a real subprocess.
+    # ------------------------------------------------------------------
+    hpipe_bin = Path(sys.executable).parent / "hpipe"
+    if not hpipe_bin.is_file():
+        pytest.skip(f"hpipe console script not installed at {hpipe_bin}")
+
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+
+    # First invocation: should write the skill file and exit 0.
+    result = subprocess.run(
+        [str(hpipe_bin), "install-skills"],
+        cwd=project_root,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert result.returncode == 0, (
+        f"hpipe install-skills exited {result.returncode}\n"
+        f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    )
+    skill_file = project_root / ".claude" / "skills" / "parser-generator" / "SKILL.md"
+    assert skill_file.is_file(), (
+        f"hpipe install-skills did not materialize {skill_file}; stdout={result.stdout}"
+    )
+    first_bytes = skill_file.read_bytes()
+
+    # Second invocation: must be idempotent — exit 0, "no changes", file untouched.
+    result2 = subprocess.run(
+        [str(hpipe_bin), "install-skills"],
+        cwd=project_root,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert result2.returncode == 0, (
+        f"second hpipe install-skills exited {result2.returncode}\n"
+        f"stdout:\n{result2.stdout}\nstderr:\n{result2.stderr}"
+    )
+    assert "no changes" in result2.stdout, (
+        f"expected 'no changes' on idempotent run, got: {result2.stdout!r}"
+    )
+    assert skill_file.read_bytes() == first_bytes, (
+        "skill file was rewritten on idempotent second invocation"
+    )
 
 
