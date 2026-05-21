@@ -234,3 +234,4 @@ The most important failure to catch is an implicit vocabulary migration hidden i
 ## Activity Log
 
 - 2026-05-21T10:51:45Z – claude:opus-4-7:implementer:implementer – shell_pid=42594 – Assigned agent via action command
+- 2026-05-21T11:00:39Z – claude:opus-4-7:implementer:implementer – shell_pid=42594 – Ready for review: migration 002 adds 6 nullable ontology columns idempotently; seed_dim_metric() binds them with JSON aliases; dim_metric.yaml now has 180 rows (43 legacy + 137 new) — every row has non-empty category, all 105 lab:* rows have LOINC codes. All 25 tests pass.
