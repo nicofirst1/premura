@@ -2,7 +2,7 @@
 
 > Status: proposal/archive. Strategy memo for prioritization, not a delivery contract.
 >
-> Companion to [VISION.md](VISION.md), [ROADMAP.md](ROADMAP.md), [PRIOR_ART_RESULTS.md](PRIOR_ART_RESULTS.md).
+> Companion to [VISION.md](VISION.md), [ROADMAP.md](ROADMAP.md), [PRIOR_ART_RESULTS.md](../research/PRIOR_ART_RESULTS.md).
 > Written 2026-05-20 to decide *how much time to invest* in v2 now that prior-art research confirms the gap.
 
 ## TL;DR
@@ -146,7 +146,7 @@ The cheapest decision is one you can revisit. Run Tier 2 for 6 weeks; reassess.
 
 ## Things we still don't know
 
-(Carried forward from [PRIOR_ART_RESULTS.md](PRIOR_ART_RESULTS.md) §6 + new questions raised by this analysis.)
+(Carried forward from [PRIOR_ART_RESULTS.md](../research/PRIOR_ART_RESULTS.md) §6 + new questions raised by this analysis.)
 
 - **Can `mcp-server-duckdb` open an `age`-encrypted file** without exposing plaintext to disk? If not, Pillar 3 + Pillar 6 need an architectural decision.
 - **What does the skill contract actually look like?** Claude Code's skill format is young; the parser-skill design is unproven.

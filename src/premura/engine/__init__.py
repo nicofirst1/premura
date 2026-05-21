@@ -67,7 +67,7 @@ def list_auto_safe() -> list[SignalSpec]:
     """Return all :class:`SignalSpec`\\s where ``auto_safe is True``.
 
     Used by the ingest loader's optional auto-precompute step
-    (see ``docs/UPDATE_STRATEGY.md``).
+    (see ``docs/architecture/UPDATE_STRATEGY.md``).
     """
     raise NotImplementedError("Stage 2 — see STAGES.md")
 

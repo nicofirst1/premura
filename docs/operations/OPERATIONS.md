@@ -2,8 +2,8 @@
 
 > Status: live reference. Operator commands and day-to-day run surface.
 >
-> Companion to [../README.md](../README.md) (setup), [STATUS.md](STATUS.md)
-> (current shipped state), and [SPEC.md](SPEC.md) (requirements).
+> Companion to [../README.md](../../README.md) (setup), [STATUS.md](STATUS.md)
+> (current shipped state), and [SPEC.md](../product/SPEC.md) (requirements).
 
 ## How to use it today
 

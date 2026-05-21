@@ -2,14 +2,14 @@
 
 > Status: live reference. Intended sequencing of future work, not a contract.
 >
-> Companion to [SPEC.md](SPEC.md), [ARCHITECTURE_HISTORY.md](ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](USERJOURNEY.md), [STATUS.md](STATUS.md), [STAGES.md](STAGES.md), [PROPOSAL_LABS.md](PROPOSAL_LABS.md).
+> Companion to [SPEC.md](SPEC.md), [ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](USERJOURNEY.md), [STATUS.md](../operations/STATUS.md), [STAGES.md](../architecture/STAGES.md), [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md).
 
-Items below are sorted by reasonable build order, not priority. Anything in v1 scope (SPEC §2) that is still ⏳ in [STATUS.md](STATUS.md) is the prerequisite for the rest.
+Items below are sorted by reasonable build order, not priority. Anything in v1 scope (SPEC §2) that is still ⏳ in [STATUS.md](../operations/STATUS.md) is the prerequisite for the rest.
 
 ## Current operating policy
 
 Drive upload remains **opt-in**, not automatic. For the current shipped behavior,
-see [STATUS.md](STATUS.md) and [README.md](../README.md).
+see [STATUS.md](../operations/STATUS.md) and [README.md](../../README.md).
 
 The user is actively writing more requirements; this section will grow.
 
@@ -35,7 +35,7 @@ The user is actively writing more requirements; this section will grow.
 
 ## New source class — clinical labs (blood / urine / stool)
 
-See [PROPOSAL_LABS.md](PROPOSAL_LABS.md) for the full proposal. Summary:
+See [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md) for the full proposal. Summary:
 
 - Adds a new source class — clinical lab PDFs — alongside the four wearable/app sources. Schema-free (existing long-format star already accepts it).
 - Prior art: an operator-local standalone OCR repo has already extracted a real multi-year, multi-language lab-PDF corpus into structured rows. We adopt its **name-normalisation maps, date heuristics, and value-quirk handlers** verbatim, but **not** its extraction engine wholesale — we first spike **[docling](https://github.com/docling-project/docling)** as a local-only, table-aware alternative to the prior repo's Claude-vision pipeline (which sends PHI to the Anthropic API; in tension with VISION Pillar 6).

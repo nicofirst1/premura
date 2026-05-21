@@ -2,11 +2,11 @@
 
 > Status: proposal/archive. Long-term trajectory, not a build contract.
 >
-> Companion to [SPEC.md](SPEC.md), [ARCHITECTURE_HISTORY.md](ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](USERJOURNEY.md), [STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md), [STAGES.md](STAGES.md), [PROPOSAL_LABS.md](PROPOSAL_LABS.md).
+> Companion to [SPEC.md](SPEC.md), [ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](USERJOURNEY.md), [STATUS.md](../operations/STATUS.md), [ROADMAP.md](ROADMAP.md), [STAGES.md](../architecture/STAGES.md), [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md).
 >
-> The **pillars below describe the trajectory**. For the orthogonal *data-flow shape* (Ingest → Signal processing → MCP → UI), see [STAGES.md](STAGES.md). Pillars and stages compose: a feature is located in pillars by intent and in stages by where it sits in the pipeline.
+> The **pillars below describe the trajectory**. For the orthogonal *data-flow shape* (Ingest → Signal processing → MCP → UI), see [STAGES.md](../architecture/STAGES.md). Pillars and stages compose: a feature is located in pillars by intent and in stages by where it sits in the pipeline.
 >
-> Captured 2026-05-20 as the project's scope expands from "personal pipeline for Nicolò" to **"open, extensible health-data unifier + AI tutor"**. The bare-bone v1 (the work tracked in [STATUS.md](STATUS.md)) is the foundation. Everything below is the trajectory we are deliberately *not* building yet.
+> Captured 2026-05-20 as the project's scope expands from "personal pipeline for Nicolò" to **"open, extensible health-data unifier + AI tutor"**. The bare-bone v1 (the work tracked in [STATUS.md](../operations/STATUS.md)) is the foundation. Everything below is the trajectory we are deliberately *not* building yet.
 
 ## What this is becoming
 
@@ -97,9 +97,9 @@ Health is GDPR Article 9 special-category data. The v1 contract holds at every f
 ## Deliberately deferred
 
 - **GUI.** The user signalled "open to it eventually" — not blocking on it. Everything in the interview / teaching layer will land first in CLI + MCP, where it's reusable by whatever front-end comes later.
-- **Drive auto-upload.** Now opt-in (see [STATUS.md](STATUS.md)). The encrypted artifact is returned to the user; they choose where it goes.
+- **Drive auto-upload.** Now opt-in (see [STATUS.md](../operations/STATUS.md)). The encrypted artifact is returned to the user; they choose where it goes.
 - **Hosted / multi-user.** Single-user, single-machine, by design. Could change *after* the extensibility + teaching layers are mature, never before.
 
 ## How this changes near-term work
 
-It mostly doesn't. The barebone v1 [STATUS.md](STATUS.md) work — close the launchd loop, verify age round-trip, dust off the wiki page — is unchanged. The vision above sets the *shape* of v2; concrete v2 work items are captured in [ROADMAP.md](ROADMAP.md).
+It mostly doesn't. The barebone v1 [STATUS.md](../operations/STATUS.md) work — close the launchd loop, verify age round-trip, dust off the wiki page — is unchanged. The vision above sets the *shape* of v2; concrete v2 work items are captured in [ROADMAP.md](ROADMAP.md).

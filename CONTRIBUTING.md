@@ -6,10 +6,10 @@ human working locally or an agent editing the repo.
 ## Start here
 
 - Read `README.md` for bootstrap and CLI usage.
-- Read `docs/STAGES.md` before moving logic across package boundaries.
+- Read `docs/architecture/STAGES.md` before moving logic across package boundaries.
 - Read `.kittify/charter/charter.md` for the current quality gates and risk
   boundaries.
-- If you are adding a new parser, also read `docs/PARSER_CONTRIBUTING.md` and
+- If you are adding a new parser, also read `docs/architecture/PARSER_CONTRIBUTING.md` and
   `src/premura/parsers/CONTRACT.md`.
 
 ## Setup
@@ -45,7 +45,7 @@ the task explicitly spans them.
 - `ui`: presentation, interview flow, and teaching. Do not read raw warehouse
   tables directly from here.
 
-Authoritative stage guidance lives in `docs/STAGES.md`.
+Authoritative stage guidance lives in `docs/architecture/STAGES.md`.
 
 ## Health-data and security rules
 
@@ -68,10 +68,10 @@ Authoritative stage guidance lives in `docs/STAGES.md`.
 
 ## Source of truth
 
-- Product and data-contract intent: `docs/SPEC.md`
-- Architecture and repo shape: `docs/ARCHITECTURE_HISTORY.md`
-- Stage boundaries: `docs/STAGES.md`
-- Warehouse update policy: `docs/UPDATE_STRATEGY.md`
+- Product and data-contract intent: `docs/product/SPEC.md`
+- Architecture and repo shape: `docs/architecture/ARCHITECTURE_HISTORY.md`
+- Stage boundaries: `docs/architecture/STAGES.md`
+- Warehouse update policy: `docs/architecture/UPDATE_STRATEGY.md`
 - Parser plugin contract: `src/premura/parsers/CONTRACT.md`
 - Parser-generation skill: `src/premura/skills/parser-generator/SKILL.md`
 

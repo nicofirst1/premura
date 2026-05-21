@@ -2,7 +2,7 @@
 
 Personal health-data warehouse. Ingests monthly dumps from **Health Connect, Garmin GDPR, Sleep as Android, Body Measurement Tracker** into a single encrypted DuckDB. Captures the metrics Health Connect doesn't bridge (HRV rMSSD overnight, stress, body battery, training load/readiness, VO₂ max, etc.).
 
-> Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [SPEC](docs/SPEC.md) · [Architecture History](docs/ARCHITECTURE_HISTORY.md) · [USERJOURNEY](docs/USERJOURNEY.md) · [STATUS](docs/STATUS.md) · [ROADMAP](docs/ROADMAP.md)
+> Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [SPEC](docs/product/SPEC.md) · [Architecture History](docs/architecture/ARCHITECTURE_HISTORY.md) · [USERJOURNEY](docs/product/USERJOURNEY.md) · [STATUS](docs/operations/STATUS.md) · [ROADMAP](docs/product/ROADMAP.md)
 > Contributor guide: [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
 ## Quick start
@@ -24,7 +24,7 @@ The `age` private key at `~/.config/premura/age.key` is the single secret. Lose 
 
 ## What's in the warehouse
 
-`hp.fact_measurement` (point-in-time) and `hp.fact_interval` (bounded events), joined to `hp.dim_metric` + `hp.dim_source`. See [STATUS.md](docs/STATUS.md) for live row counts and [SPEC.md §5](docs/SPEC.md) for the data contract.
+`hp.fact_measurement` (point-in-time) and `hp.fact_interval` (bounded events), joined to `hp.dim_metric` + `hp.dim_source`. See [STATUS.md](docs/operations/STATUS.md) for live row counts and [SPEC.md §5](docs/product/SPEC.md) for the data contract.
 
 Query directly:
 

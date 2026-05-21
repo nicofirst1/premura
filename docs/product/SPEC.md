@@ -2,7 +2,7 @@
 
 > Status: authoritative. Source of truth for what the system must do.
 >
-> Companion to [ARCHITECTURE_HISTORY.md](ARCHITECTURE_HISTORY.md) (implementation history), [USERJOURNEY.md](USERJOURNEY.md) (experience), [STATUS.md](STATUS.md) (what works today), and [ROADMAP.md](ROADMAP.md) (what's next).
+> Companion to [ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md) (implementation history), [USERJOURNEY.md](USERJOURNEY.md) (experience), [STATUS.md](../operations/STATUS.md) (what works today), and [ROADMAP.md](ROADMAP.md) (what's next).
 > This document is the source of truth for **what the system must do**, not how.
 
 ## 1. Purpose

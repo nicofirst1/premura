@@ -5,7 +5,7 @@
 
 - If you are changing Premura's codebase, start with `CONTRIBUTING.md`.
 - If you are adding or reviewing a federated parser, read
-  `docs/PARSER_CONTRIBUTING.md`, then `src/premura/parsers/CONTRACT.md`.
+  `docs/architecture/PARSER_CONTRIBUTING.md`, then `src/premura/parsers/CONTRACT.md`.
 - If you are using Claude Code to generate a parser, also read
   `src/premura/skills/parser-generator/SKILL.md`.
 
@@ -18,3 +18,17 @@ match: existing alias via `suggest_metric(X)` → `LOINC` for labs → `IEEE
 
 If no step applies, skip the field at parse time and surface it via
 `PluginParseResult.unmapped_metrics` for human review.
+
+## Agent skills
+
+### Issue tracker
+
+Issues for this repo are tracked in GitHub Issues for `nicofirst1/premura`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+This repo uses the canonical triage labels `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This repo is configured as single-context: skills should look for a root `CONTEXT.md` and `docs/adr/` when present. See `docs/agents/domain.md`.
