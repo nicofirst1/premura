@@ -1,4 +1,16 @@
 {
+  "acceptance_history": [
+    {
+      "acceptance_mode": "pr",
+      "accepted_at": "2026-05-21T13:14:40.409990+00:00",
+      "accepted_by": "nbrandizzi",
+      "accepted_from_commit": "6e7603947516cfc1264fe6bb74eeda4355ef6dc7"
+    }
+  ],
+  "acceptance_mode": "pr",
+  "accepted_at": "2026-05-21T13:14:40.409990+00:00",
+  "accepted_by": "nbrandizzi",
+  "accepted_from_commit": "6e7603947516cfc1264fe6bb74eeda4355ef6dc7",
   "created_at": "2026-05-21T08:13:22.632962+00:00",
   "friendly_name": "v2 architectural skeleton",
   "mission_id": "01KS4SHAJFA45WZYXS6XG8EFNE",
