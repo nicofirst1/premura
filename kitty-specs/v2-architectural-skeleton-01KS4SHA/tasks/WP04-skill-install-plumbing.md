@@ -16,6 +16,8 @@ subtasks:
 - T015
 - T016
 - T017
+agent: "claude:opus-4-7:implementer:implementer"
+shell_pid: "47545"
 history:
 - timestamp: '2026-05-21T09:53:12Z'
   agent: gpt-5.4
@@ -166,3 +168,7 @@ Expected outcomes:
 ## Reviewer Guidance
 
 Review end-to-end from package data to installed file path. The key question is whether the user can bootstrap the repo and have Claude discover the shipped skill without any manual copying.
+
+## Activity Log
+
+- 2026-05-21T11:24:44Z – claude:opus-4-7:implementer:implementer – shell_pid=47545 – Started implementation via action command
