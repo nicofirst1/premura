@@ -23,7 +23,7 @@ The existing `Measurement`, `Interval`, `ParseResult`, and `Parser` symbols in `
 
 | Column | Type | Constraint | Source |
 |---|---|---|---|
-| `metric_id` | `VARCHAR` | `PRIMARY KEY` | Canonical English name, may be prefixed (`lab:*`, `derived:*`, `vendor:<src>:*`, `bmt_custom:*`). |
+| `metric_id` | `VARCHAR` | `PRIMARY KEY` | Canonical English name, may be prefixed (`lab:*`, `derived:*`, `vendor:<src>:*`, `bmt_custom:*`). Broad invented domain prefixes are intentionally avoided in this mission. |
 | `display_name` | `VARCHAR` | `NOT NULL` | Human-readable label. |
 | `canonical_unit` | `VARCHAR` | `NOT NULL` | The unit every `Measurement` for this metric carries (e.g., `kg`, `bpm`, `mmol/L`). |
 | `value_kind` | `VARCHAR` | `NOT NULL` | One of: `instantaneous`, `aggregate`, `interval`. |
@@ -54,7 +54,7 @@ All six are nullable to preserve backward compatibility for the existing 43 rows
     ...
   }
   ```
-  Vendor field names (e.g., `"BodyBattery"`, `"body_battery_score"`) live in the `"en"` bucket per [Discovery Q from session — flat schema chosen].
+  Only clinically standard names and abbreviations belong in these buckets. Raw vendor-local labels (for example `"body_battery_score"`) stay out unless they are themselves standard.
 
 ### Migration
 
@@ -126,7 +126,7 @@ def seed_dim_metric(conn: duckdb.DuckDBPyConnection) -> int:
 
 ## 2. `dim_metric.yaml` — row shape
 
-### Existing 5-field shape (still valid for any backward-compat row)
+### Existing 5-field shape (still valid for legacy rows in this mission)
 
 ```yaml
 - metric_id: heart_rate
@@ -167,7 +167,7 @@ def seed_dim_metric(conn: duckdb.DuckDBPyConnection) -> int:
 | `category` | **required (FR-017)** | Coarse domain grouping. New for this mission. |
 | `validity_window` | recommended | ISO 8601 duration. Defaults to null = "no policy declared". |
 | `missing_data_policy` | recommended | One of the four documented values. Defaults to null = "treated as `none` at runtime". |
-| `aliases` | recommended | Multilingual + vendor synonyms. Empty / missing means lookup falls through to standards. |
+| `aliases` | recommended | Multilingual clinically standard names / abbreviations. Empty / missing means lookup falls through to standards. |
 | `loinc` | **required for `lab:*` rows** | Real LOINC code or `"[unmapped]"` placeholder. Quote the value if it starts with a digit (YAML safety). |
 | `ieee1752` | optional | Null where the standard doesn't cover the metric. |
 
@@ -181,6 +181,12 @@ def seed_dim_metric(conn: duckdb.DuckDBPyConnection) -> int:
   - CBC + chemistry + lipids + liver/kidney + electrolytes + thyroid + iron + vitamins + inflammation + endocrine: ~80 lab rows.
   - Urine starter: ~15 rows.
   - Stool starter: ~15 rows.
+
+### Canonical-vocabulary note
+
+- The current 43 legacy v1 rows keep their existing `metric_id`s in this mission.
+- This mission defines the future canonical-vocabulary policy but does **not** perform the legacy-ID rewrite.
+- The eventual rewrite will happen via a later **full rebuild from raw inputs**, not an in-place migration.
 
 ---
 
@@ -315,7 +321,8 @@ class PluginParseResult(ParseResult):
 
     unmapped_metrics: list[str] = field(default_factory=list)
     """Vendor field names the parser could NOT map to any canonical metric_id
-    (existing alias, LOINC, IEEE 1752.1, or vendor:* fallback). Surfaced for
+    (existing alias, LOINC, IEEE 1752.1, bare English canonical name, or
+    vendor:* fallback). Surfaced for
     human review per parsers/CONTRACT.md. Empty list = full ontology coverage."""
 
     confidence: float = 1.0

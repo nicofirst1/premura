@@ -45,24 +45,30 @@ Step 1: Existing-alias lookup
 
 Step 2: Domain-aware standards lookup
    2a. Is X a clinical lab marker?
-       YES → consult LOINC at https://loinc.org/search/
-             Propose: metric_id = "lab:<english_canonical_name>"
-                      loinc = "<LOINC code>"
-                      aliases.en = [..., X]   (back-fill so future parsers find it)
-             Add the new row to dim_metric.yaml in the SAME PR.
+        YES → consult LOINC at https://loinc.org/search/
+              Propose: metric_id = "lab:<english_canonical_name>"
+                       loinc = "<LOINC code>"
+                       aliases = clinically standard names / abbreviations only
+              Add the new row to dim_metric.yaml in the SAME PR.
 
    2b. Is X a wearable/physiological metric?
-       YES → consult IEEE 1752.1 schema.
-             Propose: metric_id = "<english_canonical_name>"   (no prefix)
-                      ieee1752 = "<IEEE code>"
-                      aliases.en = [..., X]
-             Add the new row to dim_metric.yaml in the SAME PR.
+        YES → consult IEEE 1752.1 schema.
+              Propose: metric_id = "<english_canonical_name>"   (no prefix)
+                       ieee1752 = "<IEEE code>"
+                       aliases = clinically standard names / abbreviations only
+              Add the new row to dim_metric.yaml in the SAME PR.
 
-   2c. Neither standard covers it:
-       Propose: metric_id = "vendor:<source>:<X>"
-                aliases = {}
-       Add the new row to dim_metric.yaml in the SAME PR.
-       The vendor: namespace makes "we coined this" explicit.
+   2c. Neither standard covers it, but the concept is real and reusable
+       across vendors:
+        Propose: metric_id = "<english_canonical_name>"   (no prefix)
+                 aliases = clinically standard names / abbreviations only
+        Add the new row to dim_metric.yaml in the SAME PR.
+
+   2d. The concept is source-specific or non-standard:
+        Propose: metric_id = "vendor:<source>:<X>"
+                 aliases = {}
+        Add the new row to dim_metric.yaml in the SAME PR.
+        The vendor: namespace makes "we coined this" explicit.
 
 Step 3: Genuinely irresolvable
    If for some reason the parser cannot decide (e.g., the field is structural
@@ -103,7 +109,8 @@ Agent writes src/premura/parsers/vendor_x.py implementing PluginParser.
        ▼
 Agent proposes any new dim_metric.yaml rows + aliases additions
 in the same commit. Standards-first: LOINC for labs, IEEE 1752.1
-for wearables, vendor:* fallback.
+for wearables, bare English canonical names for reusable concepts,
+`vendor:*` only as fallback.
        │
        ▼
 User runs locally: hpipe ingest data/inbox/vendor_x.zip
@@ -115,7 +122,8 @@ If happy → user (or agent) opens PR.
 PR reviewer cross-checks:
    - parser.declares_metrics() matches dim_metric.yaml additions
    - No derived:* metric_id emitted (C-011)
-   - aliases.en includes the vendor's exact field names
+   - aliases additions contain only clinically standard names / abbreviations
+     unless a raw field label is itself clinically standard
    - Tests added (at minimum a parse-a-fixture test)
        │
        ▼

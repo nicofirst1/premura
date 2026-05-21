@@ -89,7 +89,7 @@ All five live in `src/premura/engine/__init__.py`. In this skeleton mission, all
 
 ### `list_unavailable(domain: str, conn) -> list[SignalSpec]`
 
-**Semantics**: Return the subset of `list_by_domain(domain)` whose `inputs` are NOT all available per `check_inputs_available`. MCP uses this to build the `missing_inputs_report` it returns to Learn for user-facing "go get this lab" suggestions.
+**Semantics**: Return the subset of `list_by_domain(domain)` whose `inputs` are NOT all available per `check_inputs_available`. MCP uses this to build the `missing_inputs_report` it returns to the UI layer for user-facing "go get this lab" suggestions.
 
 **Behavior**:
 - Caller filters further by `priority` if they only want high-priority gaps.
@@ -149,12 +149,12 @@ The skeleton does not implement Mode B's loader integration. It commits the `aut
 
 ## Layering enforcement (C-012)
 
-The engine reads `hp.fact_measurement` directly. **`mcp/` and `learn/` MUST NOT**.
+The engine reads `hp.fact_measurement` directly. **`mcp/` and `ui/` MUST NOT**.
 
 - `mcp/` calls `engine.list_by_domain`, `engine.check_inputs_available`, `engine.compute`. Never `conn.execute("SELECT ... FROM hp.fact_measurement")`.
-- `learn/` calls `mcp.register_tools`. Never `engine.compute` directly; never reads DB.
+- `ui/` calls `mcp.register_tools`. Never `engine.compute` directly; never reads DB.
 
-The skeleton enforces this only via module docstrings (the docstrings of `mcp/__init__.py` and `learn/__init__.py` contain literal strings asserting these rules). A future import-graph linting step in CI may enforce it mechanically.
+The skeleton enforces this only via module docstrings (the docstrings of `mcp/__init__.py` and `ui/__init__.py` contain literal strings asserting these rules). A future import-graph linting step in CI may enforce it mechanically.
 
 ## What the skeleton ships vs. what implementation missions add
 
@@ -179,7 +179,7 @@ The skeleton enforces this only via module docstrings (the docstrings of `mcp/__
 - The engine `__init__.py` docstring contains the strings `"Stage 2"`, `"on-demand"`, `"auto-run"` (FR-001).
 - The `SignalSpec.revision` default is `"1"` (FR-002 verification).
 - `mcp/__init__.py` docstring contains `"never reads hp.fact_measurement directly"` (C-012 verification, FR-004).
-- `learn/__init__.py` docstring contains `"never reads hp.fact_measurement or calls engine directly"` (C-012 verification, FR-005).
+- `ui/__init__.py` docstring contains `"never reads hp.fact_measurement or calls engine directly"` (C-012 verification, FR-005).
 
 ## Open questions deferred to implementation missions
 

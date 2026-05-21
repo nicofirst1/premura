@@ -7,9 +7,11 @@
 
 ## Summary
 
-Land the v2 architectural skeleton: placeholder subpackages for the four data-flow stages (Ingest/parsers, Engine, MCP, Learn), the federated parser-generation contract (`PluginParser` Protocol + `PluginParseResult` dataclass + `parsers/CONTRACT.md` + `AGENTS.md` + shipped Claude skill), the engine signal-registry contract (`SignalSpec` + `@signal(...)` decorator + `REGISTRY` dict + 5 stub API functions including `check_inputs_available`/`list_unavailable` for the input-availability gate), the ontology schema extension (six new `dim_metric` columns + ~150 seeded rows with LOINC/IEEE-1752.1 cross-references + multilingual aliases), and the `hpipe install-skills` CLI verb wired through `ops/bootstrap.sh`. Plus `docs/UPDATE_STRATEGY.md` documenting the six DB-update kinds with the gaps queued for follow-up missions.
+Land the v2 architectural skeleton: placeholder subpackages for the four data-flow stages (Ingest/parsers, Engine, MCP, User interface), the federated parser-generation contract (`PluginParser` Protocol + `PluginParseResult` dataclass + `parsers/CONTRACT.md` + `AGENTS.md` + shipped Claude skill), the engine signal-registry contract (`SignalSpec` + `@signal(...)` decorator + `REGISTRY` dict + 5 stub API functions including `check_inputs_available`/`list_unavailable` for the input-availability gate), the ontology schema extension (six new `dim_metric` columns + ~150 seeded rows with LOINC/IEEE-1752.1 cross-references + clinically standard multilingual aliases), and the `hpipe install-skills` CLI verb wired through `ops/bootstrap.sh`. Plus `docs/UPDATE_STRATEGY.md` documenting the six DB-update kinds with the gaps queued for follow-up missions.
 
-**Skeleton-only**: every function raises `NotImplementedError`. No v1 file is modified. No new third-party dependencies. No new CLI verbs beyond `install-skills`. The deliverable is *contracts and file layout*, not behavior.
+**Skeleton-only**: every newly introduced stage function raises `NotImplementedError`. Existing v1 user-facing flows keep their current behavior; additive edits to existing files are allowed where needed for the skeleton. No new third-party dependencies. No new CLI verbs beyond `install-skills`. The deliverable is *contracts and file layout*, with `install-skills` as the one intentional behavioral addition.
+
+**Canonical vocabulary policy (defined now, rewrite deferred)**: common reusable observations stay as bare English canonical `metric_id`s (for example `weight`, `heart_rate`, `steps`, `spo2`); clinical lab analytes use `lab:*`; engine outputs reserve `derived:*`; `vendor:*` is fallback-only for source-specific concepts. Aliases retain clinically standard names and abbreviations only. Renaming the legacy v1 metric IDs to the final canonical vocabulary is explicitly deferred to a later **full-rebuild-from-raw** mission rather than handled in this skeleton PR.
 
 ## Technical Context
 
@@ -20,7 +22,7 @@ Land the v2 architectural skeleton: placeholder subpackages for the four data-fl
 **Target Platform**: macOS (development); the package is platform-portable but the launchd plist is macOS-only (out of scope here).
 **Project Type**: Single Python project, `src/`-layout (`src/premura/` is the package root).
 **Performance Goals**: Skeleton additions must add < 100ms to `hpipe doctor` wall-clock time (NFR-005). No other performance targets — no behavior ships.
-**Constraints**: No new third-party deps (C-003). No CLI verbs beyond `install-skills` (C-004). No v1 file modifications (C-002). `derived:*` `metric_id` namespace reserved for engine layer (C-011). MCP and Learn layers must not access DuckDB directly (C-012). Repo directory rename deferred to user (C-009).
+**Constraints**: No new third-party deps (C-003). No CLI verbs beyond `install-skills` (C-004). Existing v1 flows keep current behavior (C-002). `derived:*` `metric_id` namespace reserved for engine layer (C-011). MCP and UI layers must not access DuckDB directly (C-012). Repo directory rename deferred to user (C-009).
 **Scale/Scope**: ~12 new files, ~3 modified files (cli.py, store/duck.py, dim_metric.yaml). ~107 new ontology rows. 1 new test file (`tests/test_skeleton.py`).
 
 No `[NEEDS CLARIFICATION]` markers — all design decisions settled during `/spec-kitty.plan` discovery.
@@ -67,7 +69,7 @@ src/premura/
 │   └── _registry.py                  # SignalSpec dataclass, @signal decorator, REGISTRY dict
 ├── mcp/                              # NEW (Stage 3)
 │   └── __init__.py                   # docstring-only + 1 stub register_tools()
-├── learn/                            # NEW (Stage 4)
+├── ui/                               # NEW (Stage 4)
 │   └── __init__.py                   # docstring-only + 1 stub start_interview()
 ├── parsers/
 │   ├── base.py                       # MODIFY (append-only): PluginParseResult + PluginParser
@@ -101,7 +103,7 @@ tests/
 └── test_skeleton.py                  # NEW
 ```
 
-**Structure Decision**: Subpackages live as siblings under `src/premura/` (status quo layout, confirmed during discovery). The `engine/` subpackage uses a private `_registry.py` for the dataclass/decorator/dict; `__init__.py` re-exports the public symbols (`signal`, `SignalSpec`, `REGISTRY`) and adds the 5 stub API functions. All other new subpackages (`mcp/`, `learn/`, `parsers/_lang/`, `skills/`) are flat — `__init__.py` only. No multi-method classes, no Protocol ABC trees beyond `PluginParser` itself.
+**Structure Decision**: Subpackages live as siblings under `src/premura/` (status quo layout, confirmed during discovery). The `engine/` subpackage uses a private `_registry.py` for the dataclass/decorator/dict; `__init__.py` re-exports the public symbols (`signal`, `SignalSpec`, `REGISTRY`) and adds the 5 stub API functions. All other new subpackages (`mcp/`, `ui/`, `parsers/_lang/`, `skills/`) are flat — `__init__.py` only. No multi-method classes, no Protocol ABC trees beyond `PluginParser` itself.
 
 ## Build order
 
@@ -127,7 +129,7 @@ Atomic because: applying (1) without (2) leaves the new columns NULL on every se
 8. `src/premura/parsers/_lang/__init__.py` — `detect_language()` stub, "local-only" docstring.
 9. `src/premura/parsers/CONTRACT.md` — write the agent-agnostic contract document.
 10. `src/premura/mcp/__init__.py` — docstring-only stub.
-11. `src/premura/learn/__init__.py` — docstring-only stub.
+11. `src/premura/ui/__init__.py` — docstring-only stub.
 12. `src/premura/skills/parser-generator/SKILL.md` — stub skill manifest with frontmatter + reference to CONTRACT.md.
 13. `src/premura/skills/__init__.py` — `install_skills(target_root)` real function (small, ~30 lines: walk `importlib.resources.files("premura.skills")` for SKILL.md files; sha256-compare; copy if different; return written list).
 14. `src/premura/cli.py` — append `@app.command(name="install-skills")` verb that calls `skills.install_skills(Path.cwd())`.
@@ -239,7 +241,7 @@ uv run python -c "from premura.engine import signal, SignalSpec, REGISTRY; asser
 
 - **WP01** — Track A: ontology schema + loader + YAML seed (the atomic schema-data triple).
 - **WP02** — Track B: engine registry contract.
-- **WP03** — Track C: parser federation contract (base.py extension, lookup.py, _lang stub, CONTRACT.md, mcp + learn docstring stubs).
+- **WP03** — Track C: parser federation contract (base.py extension, lookup.py, _lang stub, CONTRACT.md, mcp + ui docstring stubs).
 - **WP04** — Track C: skill plumbing (parser-generator skill, install_skills function, install-skills CLI verb, bootstrap.sh hook).
 - **WP05** — Track D: cross-cutting docs (AGENTS.md, UPDATE_STRATEGY.md).
 - **WP06** — Smoke test (`tests/test_skeleton.py`) wrapping FR-001 through FR-017.

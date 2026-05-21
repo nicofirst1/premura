@@ -24,7 +24,7 @@
 - [x] Requirement types are separated (Functional / Non-Functional / Constraints)
   - Three separate tables in §3, §4, §5. ✅
 - [x] IDs are unique across FR-###, NFR-###, and C-### entries
-  - FR-001..011, NFR-001..007, C-001..010. No collisions. ✅
+  - FR-001..019, NFR-001..008, C-001..012. No collisions. ✅
 - [x] All requirement rows include a non-empty Status value
   - Every row has Status = "Draft". ✅
 - [x] Non-functional requirements include measurable thresholds
@@ -40,7 +40,7 @@
 - [x] Scope is clearly bounded
   - §2 has In-scope and Out-of-scope lists, both concrete. ✅
 - [x] Dependencies and assumptions identified
-  - §9 Assumptions explicitly lists the `health_digitalizatino` repo dependency, LOINC/IEEE source plan, no-bulk-edit conclusion, parallel-mission coordination. ✅
+  - §9 Assumptions explicitly lists the `health_digitalizatino` repo dependency, the clinically-standard-alias rule, LOINC/IEEE source plan, no-bulk-edit conclusion, and parallel-mission coordination. ✅
 
 ## Feature Readiness
 
@@ -56,6 +56,6 @@
 ## Notes
 
 - This is an **architectural skeleton mission**, so it is intentionally code-shaped at the contract level (Protocols, migrations, file paths, schema columns). The "no implementation details" rule is interpreted as "no behavioral implementation details" — there are none. File-tree and Protocol shapes ARE the deliverable.
-- The bulk-edit gate (DIRECTIVE_035) was evaluated during discovery; this mission does NOT trigger it (no same-string-across-files rename). See §9 Assumption #7.
+- The bulk-edit gate (DIRECTIVE_035) was evaluated during discovery; this mission does NOT trigger it because the canonical-vocabulary rewrite is explicitly deferred to a later full-rebuild mission. See §2 and §9.
 - The parallel v1-closeout mission has its own out-of-scope list in [V1_CLOSEOUT.md](../../docs/V1_CLOSEOUT.md); file scopes are disjoint by construction (§2 + C-002).
 - Items marked complete reflect the post-discovery spec. If subsequent reviews surface gaps, this checklist is the place to record them.
