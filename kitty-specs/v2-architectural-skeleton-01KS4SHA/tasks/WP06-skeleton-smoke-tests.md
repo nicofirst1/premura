@@ -19,6 +19,8 @@ subtasks:
 - T024
 - T025
 - T026
+agent: "claude:opus-4-7:implementer:implementer"
+shell_pid: "11032"
 history:
 - timestamp: '2026-05-21T09:53:12Z'
   agent: gpt-5.4
@@ -188,3 +190,7 @@ This WP's own validation is the verification ladder above. In review, the file s
 ## Reviewer Guidance
 
 Review the test file as the mission's executable acceptance contract. The most important question is whether a future maintainer could read `tests/test_skeleton.py` and understand exactly what the skeleton guarantees today.
+
+## Activity Log
+
+- 2026-05-21T11:42:49Z – claude:opus-4-7:implementer:implementer – shell_pid=11032 – Started implementation via action command
