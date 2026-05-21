@@ -20,8 +20,10 @@ with the package at:
 
 Read that file before you write any code. It defines:
 
-- `PluginParser` (structural protocol) and `PluginParseResult` (frozen
-  dataclass) — the exact symbols your parser must satisfy.
+- `PluginParser` (structural protocol) and `PluginParseResult` (dataclass
+  — treat as write-once even though it is not declared `frozen=True`; see
+  `CONTRACT.md` for the rationale) — the exact symbols your parser must
+  satisfy.
 - The decision tree mapping raw vendor field names onto canonical
   `metric_id` values.
 - Rules for `unmapped_metrics`, `language_detected`, and `confidence`.

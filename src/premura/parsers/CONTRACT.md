@@ -33,7 +33,13 @@ contract with no migration required.
 
 ### `PluginParseResult(ParseResult)`
 
-A frozen dataclass that extends `ParseResult` with three additive fields:
+A dataclass that extends `ParseResult` with three additive fields. It is
+intentionally **not** declared `frozen=True`: Python's dataclass machinery
+forbids a frozen subclass of the non-frozen `ParseResult`, and this mission
+requires `ParseResult` itself to stay unchanged. Treat the instance as
+write-once at parse time even though the runtime does not enforce
+immutability — see the matching note on `PluginParseResult` in
+`src/premura/parsers/base.py`. Fields:
 
 - `language_detected: str | None = None` — code returned by
   `_lang.detect_language()` (or `None` if not run). Local-only — no
