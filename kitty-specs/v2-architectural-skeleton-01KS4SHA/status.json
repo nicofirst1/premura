@@ -1,7 +1,7 @@
 {
-  "event_count": 45,
-  "last_event_id": "01KS57436F7PJC3T87V5YPZZWE",
-  "materialized_at": "2026-05-21T12:10:48.911776+00:00",
+  "event_count": 47,
+  "last_event_id": "01KS57BDV81M3AX500T3P28YM8",
+  "materialized_at": "2026-05-21T12:14:49.192135+00:00",
   "mission_number": "1",
   "mission_slug": "v2-architectural-skeleton-01KS4SHA",
   "mission_type": "software-dev",
@@ -12,9 +12,9 @@
     "claimed": 0,
     "done": 3,
     "for_review": 0,
-    "in_progress": 0,
+    "in_progress": 1,
     "in_review": 0,
-    "planned": 3
+    "planned": 2
   },
   "work_packages": {
     "WP01": {
@@ -32,11 +32,11 @@
       "last_transition_at": "2026-05-21T11:59:03.233921+00:00"
     },
     "WP03": {
-      "actor": "user",
+      "actor": "implement-command",
       "force_count": 3,
-      "lane": "planned",
-      "last_event_id": "01KS57436F7PJC3T87V5YPZZWE",
-      "last_transition_at": "2026-05-21T12:10:48.911776+00:00"
+      "lane": "in_progress",
+      "last_event_id": "01KS57BDV81M3AX500T3P28YM8",
+      "last_transition_at": "2026-05-21T12:14:49.192135+00:00"
     },
     "WP04": {
       "actor": "user",
