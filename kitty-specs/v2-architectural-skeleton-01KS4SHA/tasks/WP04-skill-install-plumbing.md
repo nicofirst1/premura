@@ -16,8 +16,8 @@ subtasks:
 - T015
 - T016
 - T017
-agent: "claude:opus-4-7:implementer:implementer"
-shell_pid: "47545"
+agent: "claude:opus-4-7:reviewer:reviewer"
+shell_pid: "16062"
 history:
 - timestamp: '2026-05-21T09:53:12Z'
   agent: gpt-5.4
@@ -173,3 +173,4 @@ Review end-to-end from package data to installed file path. The key question is 
 
 - 2026-05-21T11:24:44Z – claude:opus-4-7:implementer:implementer – shell_pid=47545 – Started implementation via action command
 - 2026-05-21T11:29:10Z – claude:opus-4-7:implementer:implementer – shell_pid=47545 – Ready for review: parser-generator SKILL.md bundled under src/premura/skills/parser-generator/, install_skills(target_root) helper exposed in src/premura/skills/__init__.py with sha256 idempotency, hpipe install-skills CLI verb wired (verified via uv run hpipe --help and end-to-end smoke test in /tmp), bootstrap.sh gated by HPIPE_SKIP_SKILLS and [[ -t 0 ]]. 25 tests pass, ruff clean.
+- 2026-05-21T11:29:44Z – claude:opus-4-7:reviewer:reviewer – shell_pid=16062 – Started review via action command
