@@ -240,3 +240,4 @@ The highest-value check is whether the shipped `CONTRACT.md` fully matches the s
 - 2026-05-21T12:19:56Z – claude:opus-4-7:reviewer:reviewer – shell_pid=20147 – Aligned CONTRACT.md and parser-generator/SKILL.md with mutable PluginParseResult; explained constraint inline
 - 2026-05-21T12:20:16Z – claude:opus-4-7:reviewer:reviewer – shell_pid=76298 – Started review via action command
 - 2026-05-21T12:22:02Z – claude:opus-4-7:reviewer:reviewer – shell_pid=76298 – Review passed: CONTRACT.md and parser-generator/SKILL.md now correctly describe PluginParseResult as a mutable dataclass with inline rationale matching base.py; code unchanged (mutable @dataclass preserves T008's ParseResult-unchanged constraint); 52/52 tests green.
+- 2026-05-21T13:15:48Z – claude:opus-4-7:reviewer:reviewer – shell_pid=76298 – Moved to done
