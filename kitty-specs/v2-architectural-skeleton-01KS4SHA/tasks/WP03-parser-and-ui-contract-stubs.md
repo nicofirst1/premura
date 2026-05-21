@@ -19,8 +19,8 @@ subtasks:
 - T011
 - T012
 - T013
-agent: "claude:opus-4-7:implementer:implementer"
-shell_pid: "77625"
+agent: "claude:opus-4-7:reviewer:reviewer"
+shell_pid: "93528"
 history:
 - timestamp: '2026-05-21T09:53:12Z'
   agent: gpt-5.4
@@ -230,3 +230,4 @@ The highest-value check is whether the shipped `CONTRACT.md` fully matches the s
 
 - 2026-05-21T11:13:18Z – claude:opus-4-7:implementer:implementer – shell_pid=77625 – Started implementation via action command
 - 2026-05-21T11:20:48Z – claude:opus-4-7:implementer:implementer – shell_pid=77625 – Ready for review: PluginParser Protocol + PluginParseResult added to parsers/base.py (additive); parsers/lookup.py, parsers/_lang/__init__.py, parsers/CONTRACT.md, mcp/__init__.py, ui/__init__.py created with required literal docstrings and NotImplementedError stubs; 25/25 existing tests green; ruff clean on owned files
+- 2026-05-21T11:21:25Z – claude:opus-4-7:reviewer:reviewer – shell_pid=93528 – Started review via action command
