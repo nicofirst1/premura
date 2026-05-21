@@ -13,6 +13,8 @@ subtasks:
 - T005
 - T006
 - T007
+agent: "claude:opus-4-7:implementer:implementer"
+shell_pid: "54117"
 history:
 - timestamp: '2026-05-21T09:53:12Z'
   agent: gpt-5.4
@@ -150,3 +152,7 @@ And after implementation, expect these behaviors:
 ## Reviewer Guidance
 
 Review against the spec line-by-line. This WP should be intentionally boring: exact fields, exact stubs, exact docstring intent, no extra architecture.
+
+## Activity Log
+
+- 2026-05-21T11:05:27Z – claude:opus-4-7:implementer:implementer – shell_pid=54117 – Started implementation via action command
