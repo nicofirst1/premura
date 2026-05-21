@@ -158,3 +158,4 @@ Review against the spec line-by-line. This WP should be intentionally boring: ex
 - 2026-05-21T11:05:27Z – claude:opus-4-7:implementer:implementer – shell_pid=54117 – Started implementation via action command
 - 2026-05-21T11:10:02Z – claude:opus-4-7:implementer:implementer – shell_pid=54117 – Ready for review: engine registry _registry.py and Stage 2 stub API in __init__.py; REGISTRY empty at import, decorator round-trips, 5 stubs raise NotImplementedError, ruff/pytest clean (25 tests still pass)
 - 2026-05-21T11:10:32Z – claude:opus-4-7:reviewer:reviewer – shell_pid=34228 – Started review via action command
+- 2026-05-21T11:12:50Z – claude:opus-4-7:reviewer:reviewer – shell_pid=34228 – Review passed: engine registry surface matches spec exactly (frozen SignalSpec with all 8 fields, REGISTRY empty at import, decorator round-trips, 5 stubs raise NotImplementedError referencing STAGES.md); 25 tests pass; ruff clean; changes confined to src/premura/engine/.
