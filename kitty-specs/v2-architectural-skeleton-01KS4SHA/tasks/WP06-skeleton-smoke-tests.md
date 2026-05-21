@@ -19,8 +19,8 @@ subtasks:
 - T024
 - T025
 - T026
-agent: "claude:opus-4-7:implementer:implementer"
-shell_pid: "79811"
+agent: "claude:opus-4-7:reviewer:reviewer"
+shell_pid: "36682"
 history:
 - timestamp: '2026-05-21T09:53:12Z'
   agent: gpt-5.4
@@ -201,3 +201,4 @@ Review the test file as the mission's executable acceptance contract. The most i
 - 2026-05-21T12:10:47Z – claude:opus-4-7:reviewer:reviewer – shell_pid=66332 – Mission review failed: rollback for false-positive acceptance coverage and missing real CLI-path verification
 - 2026-05-21T12:39:39Z – claude:opus-4-7:implementer:implementer – shell_pid=79811 – Started implementation via action command
 - 2026-05-21T12:46:07Z – claude:opus-4-7:implementer:implementer – shell_pid=79811 – FR-016 test now calls seed_dim_metric() directly; install-skills test resolves and invokes the console_scripts entry, not just Typer registration. Reminder: 44-line checklist evidence still pending re-apply on master per WP05 review note.
+- 2026-05-21T12:46:40Z – claude:opus-4-7:reviewer:reviewer – shell_pid=36682 – Started review via action command
