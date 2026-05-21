@@ -8,8 +8,9 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>{{ program }}</string>
-        <string>{{ program_arg }}</string>
+{%- for arg in program_args %}
+        <string>{{ arg }}</string>
+{%- endfor %}
     </array>
 
     <key>WorkingDirectory</key>

@@ -480,8 +480,7 @@ def install_launchd() -> None:
     program = shutil.which("uv") or "/opt/homebrew/bin/uv"
     rendered = Template(template_text).render(
         label=settings.launchd_label,
-        program=program,
-        program_arg="run hpipe run-monthly",
+        program_args=[program, "run", "hpipe", "run-monthly"],
         working_dir=str(Path.cwd()),
         log_out=str(settings.log_dir / "out.log"),
         log_err=str(settings.log_dir / "err.log"),
