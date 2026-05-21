@@ -37,12 +37,12 @@
 | T005 | Create `src/premura/engine/_registry.py` with `SignalSpec`, `REGISTRY`, and the `@signal(...)` decorator contract. | WP02 |  | [D] |
 | T006 | Create `src/premura/engine/__init__.py` with the Stage 2 docstring, re-exports, and the five `NotImplementedError` API stubs. | WP02 |  | [D] |
 | T007 | Keep the engine surface import-safe and implementation-free so `REGISTRY` stays empty until future signal modules are imported. | WP02 |  | [D] |
-| T008 | Append `PluginParseResult` to `src/premura/parsers/base.py` without altering existing parser types or behaviors. | WP03 |  |
-| T009 | Append the additive `PluginParser` Protocol to `src/premura/parsers/base.py` with `language_hint`, `declares_metrics()`, and the narrowed parse return type. | WP03 |  |
-| T010 | [P] Create `src/premura/parsers/lookup.py` with the reverse-index docstring and `suggest_metric()` stub. | WP03 | [P] |
-| T011 | [P] Create `src/premura/parsers/_lang/__init__.py` with the local-only language-detection/translation TODO contract and stub. | WP03 | [P] |
-| T012 | Create `src/premura/parsers/CONTRACT.md` with the standards-first parser workflow, alias rules, and reserved-namespace guidance. | WP03 |  |
-| T013 | [P] Create `src/premura/mcp/__init__.py` and `src/premura/ui/__init__.py` with their stage docstrings, stubs, and layering assertions. | WP03 | [P] |
+| T008 | Append `PluginParseResult` to `src/premura/parsers/base.py` without altering existing parser types or behaviors. | WP03 |  | [D] |
+| T009 | Append the additive `PluginParser` Protocol to `src/premura/parsers/base.py` with `language_hint`, `declares_metrics()`, and the narrowed parse return type. | WP03 |  | [D] |
+| T010 | [P] Create `src/premura/parsers/lookup.py` with the reverse-index docstring and `suggest_metric()` stub. | WP03 | [D] |
+| T011 | [P] Create `src/premura/parsers/_lang/__init__.py` with the local-only language-detection/translation TODO contract and stub. | WP03 | [D] |
+| T012 | Create `src/premura/parsers/CONTRACT.md` with the standards-first parser workflow, alias rules, and reserved-namespace guidance. | WP03 |  | [D] |
+| T013 | [P] Create `src/premura/mcp/__init__.py` and `src/premura/ui/__init__.py` with their stage docstrings, stubs, and layering assertions. | WP03 | [D] |
 | T014 | Create the shipped parser-generator skill manifest at `src/premura/skills/parser-generator/SKILL.md`. | WP04 |  |
 | T015 | Implement `src/premura/skills/__init__.py::install_skills()` using package resources and sha256-based idempotency. | WP04 |  |
 | T016 | Extend `src/premura/cli.py` with `hpipe install-skills`, including human-readable output for writes vs. no-op runs. | WP04 |  |
@@ -136,12 +136,12 @@ Reviewer focus:
 - Estimated prompt size: ~430 lines
 
 Included subtasks:
-- [ ] T008 Append `PluginParseResult` to `src/premura/parsers/base.py` without altering existing parser types or behaviors. (WP03)
-- [ ] T009 Append the additive `PluginParser` Protocol to `src/premura/parsers/base.py` with `language_hint`, `declares_metrics()`, and the narrowed parse return type. (WP03)
-- [ ] T010 [P] Create `src/premura/parsers/lookup.py` with the reverse-index docstring and `suggest_metric()` stub. (WP03)
-- [ ] T011 [P] Create `src/premura/parsers/_lang/__init__.py` with the local-only language-detection/translation TODO contract and stub. (WP03)
-- [ ] T012 Create `src/premura/parsers/CONTRACT.md` with the standards-first parser workflow, alias rules, and reserved-namespace guidance. (WP03)
-- [ ] T013 [P] Create `src/premura/mcp/__init__.py` and `src/premura/ui/__init__.py` with their stage docstrings, stubs, and layering assertions. (WP03)
+- [x] T008 Append `PluginParseResult` to `src/premura/parsers/base.py` without altering existing parser types or behaviors. (WP03)
+- [x] T009 Append the additive `PluginParser` Protocol to `src/premura/parsers/base.py` with `language_hint`, `declares_metrics()`, and the narrowed parse return type. (WP03)
+- [x] T010 [P] Create `src/premura/parsers/lookup.py` with the reverse-index docstring and `suggest_metric()` stub. (WP03)
+- [x] T011 [P] Create `src/premura/parsers/_lang/__init__.py` with the local-only language-detection/translation TODO contract and stub. (WP03)
+- [x] T012 Create `src/premura/parsers/CONTRACT.md` with the standards-first parser workflow, alias rules, and reserved-namespace guidance. (WP03)
+- [x] T013 [P] Create `src/premura/mcp/__init__.py` and `src/premura/ui/__init__.py` with their stage docstrings, stubs, and layering assertions. (WP03)
 
 Implementation sketch:
 1. Make the append-only additions to `parsers/base.py` first so the rest of the parser surface has a committed type contract.
