@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.resources as resources
+import json
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -40,21 +41,41 @@ def _migration_paths() -> Iterable[Path]:
 
 
 def seed_dim_metric(conn: duckdb.DuckDBPyConnection) -> int:
-    """Insert / upsert rows from dim_metric.yaml. Returns row count present after seed."""
+    """Insert / upsert rows from dim_metric.yaml. Returns row count present after seed.
+
+    Reads the legacy 5-field shape (metric_id, display_name, canonical_unit, value_kind,
+    description) plus the six ontology fields introduced by migration 002:
+    category, validity_window, missing_data_policy, aliases, loinc, ieee1752.
+
+    Rows omitting any of the new keys seed with NULL for those columns. The
+    ``aliases`` field is serialized to JSON text (DuckDB JSON column) only when
+    present; otherwise NULL.
+    """
     yaml_text = (
         resources.files("premura").joinpath(DIM_METRIC_YAML).read_text(encoding="utf-8")
     )
     data = yaml.safe_load(yaml_text) or []
     for row in data:
+        aliases = row.get("aliases")
+        aliases_json = json.dumps(aliases) if aliases else None
         conn.execute(
             """
-            INSERT INTO hp.dim_metric (metric_id, display_name, canonical_unit, value_kind, description)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO hp.dim_metric (
+                metric_id, display_name, canonical_unit, value_kind, description,
+                category, validity_window, missing_data_policy, aliases, loinc, ieee1752
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT (metric_id) DO UPDATE SET
-                display_name   = excluded.display_name,
-                canonical_unit = excluded.canonical_unit,
-                value_kind     = excluded.value_kind,
-                description    = excluded.description
+                display_name        = excluded.display_name,
+                canonical_unit      = excluded.canonical_unit,
+                value_kind          = excluded.value_kind,
+                description         = excluded.description,
+                category            = excluded.category,
+                validity_window     = excluded.validity_window,
+                missing_data_policy = excluded.missing_data_policy,
+                aliases             = excluded.aliases,
+                loinc               = excluded.loinc,
+                ieee1752            = excluded.ieee1752
             """,
             [
                 row["metric_id"],
@@ -62,6 +83,12 @@ def seed_dim_metric(conn: duckdb.DuckDBPyConnection) -> int:
                 row["canonical_unit"],
                 row["value_kind"],
                 row.get("description"),
+                row.get("category"),
+                row.get("validity_window"),
+                row.get("missing_data_policy"),
+                aliases_json,
+                row.get("loinc"),
+                row.get("ieee1752"),
             ],
         )
     return conn.execute("SELECT COUNT(*) FROM hp.dim_metric").fetchone()[0]

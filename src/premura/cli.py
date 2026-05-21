@@ -1,7 +1,7 @@
 """`hpipe` CLI — entry point for the premura pipeline.
 
 Verbs: ingest, status, export, upload, run-monthly, doctor, gc, install-launchd,
-uninstall-launchd.
+uninstall-launchd, install-skills.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from jinja2 import Template
 from rich.console import Console
 from rich.table import Table
 
-from . import encrypt, notify, upload
+from . import encrypt, notify, skills, upload
 from .config import settings
 from .loader import already_ingested, attach_source_metadata, load
 from .parsers.bmt import BMTParser
@@ -498,6 +498,28 @@ def uninstall_launchd() -> None:
         console.print(f"[green]removed[/green] {plist_path}")
     else:
         console.print(f"[yellow]no plist at {plist_path}[/yellow]")
+
+
+# ============================================================================
+# install-skills
+# ============================================================================
+
+
+@app.command(name="install-skills")
+def install_skills() -> None:
+    """Copy bundled Claude Code skills into ``./.claude/skills/``.
+
+    Idempotent: re-running prints ``no changes`` when on-disk files already
+    match the shipped package data (sha256-compared). Intended to be invoked
+    from a project root; ``bootstrap.sh`` calls this automatically on
+    interactive shells unless ``HPIPE_SKIP_SKILLS=1``.
+    """
+    written = skills.install_skills(Path.cwd())
+    if not written:
+        console.print("no changes")
+        return
+    for path in written:
+        console.print(str(path))
 
 
 # ============================================================================

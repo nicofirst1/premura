@@ -2,6 +2,12 @@
 # Append-only; never repurpose an existing metric_id.
 # value_kind: 'instantaneous' = single point-in-time, 'aggregate' = pre-summarized (e.g. daily),
 #             'interval' = has start/end (lives in hp.fact_interval).
+#
+# WP01 (v2 skeleton) adds six ontology fields to every row that needs them:
+#   category, validity_window, missing_data_policy, aliases, loinc, ieee1752
+# Legacy v1 metric_ids are preserved as-is; the eventual canonical-vocabulary
+# rewrite (e.g. namespacing) is deferred to a later full-rebuild mission.
+# `lab:*` rows MUST carry a `loinc` value (real code or the literal "[unmapped]").
 
 # === Cardio / autonomic ===
 - metric_id: heart_rate
@@ -9,175 +15,346 @@
   canonical_unit: bpm
   value_kind: instantaneous
   description: Instantaneous heart rate sample.
+  category: cardiovascular
+  validity_window: PT5M
+  missing_data_policy: none
+  aliases:
+    en: [HR, pulse, heart rate]
+    it: [frequenza cardiaca, polso]
+    de: [Herzfrequenz, Puls]
 
 - metric_id: resting_hr
   display_name: Resting heart rate
   canonical_unit: bpm
   value_kind: aggregate
   description: Daily resting heart rate.
+  category: cardiovascular
+  validity_window: P1D
+  missing_data_policy: last_observation_carried_forward
+  aliases:
+    en: [RHR, resting heart rate]
+    it: [frequenza cardiaca a riposo]
+    de: [Ruhepuls, Ruheherzfrequenz]
 
 - metric_id: hrv_rmssd
   display_name: HRV (rMSSD)
   canonical_unit: ms
   value_kind: instantaneous
   description: Generic HRV rMSSD (used by HC + BMT-style sources).
+  category: cardiovascular
+  validity_window: PT1H
+  missing_data_policy: none
+  aliases:
+    en: [rMSSD, HRV rMSSD]
+    it: [HRV rMSSD]
+    de: [HRV rMSSD]
 
 - metric_id: hrv_rmssd_overnight
   display_name: HRV (rMSSD, overnight)
   canonical_unit: ms
   value_kind: aggregate
   description: Garmin overnight rMSSD summary.
+  category: cardiovascular
+  validity_window: P1D
+  missing_data_policy: none
+  aliases:
+    en: [overnight rMSSD, nightly HRV]
+    it: [HRV notturno]
+    de: [nächtliche HRV]
 
 - metric_id: hrv_rmssd_snapshot
   display_name: HRV (rMSSD, Health Snapshot)
   canonical_unit: ms
   value_kind: instantaneous
   description: Garmin Health Snapshot rMSSD reading.
+  category: cardiovascular
+  validity_window: PT1H
+  missing_data_policy: none
 
 - metric_id: resp_rate
   display_name: Respiratory rate
   canonical_unit: breaths_per_min
   value_kind: instantaneous
+  category: cardiovascular
+  validity_window: PT5M
+  missing_data_policy: none
+  aliases:
+    en: [respiratory rate, RR, breathing rate]
+    it: [frequenza respiratoria]
+    de: [Atemfrequenz]
 
 - metric_id: spo2
   display_name: Oxygen saturation
   canonical_unit: pct
   value_kind: instantaneous
+  category: cardiovascular
+  validity_window: PT5M
+  missing_data_policy: none
+  aliases:
+    en: [SpO2, oxygen saturation, SaO2]
+    it: [saturazione di ossigeno, ossimetria]
+    de: [Sauerstoffsättigung]
 
 - metric_id: stress
   display_name: Stress (0-100)
   canonical_unit: score_0_100
   value_kind: instantaneous
   description: Garmin proprietary stress score.
+  category: wellness
+  validity_window: PT1H
+  missing_data_policy: none
 
 - metric_id: body_battery
   display_name: Body Battery (0-100)
   canonical_unit: score_0_100
   value_kind: instantaneous
   description: Garmin proprietary energy gauge.
+  category: wellness
+  validity_window: PT1H
+  missing_data_policy: none
 
 - metric_id: training_load
   display_name: Training load
   canonical_unit: score
   value_kind: aggregate
+  category: fitness
+  validity_window: P1D
+  missing_data_policy: last_observation_carried_forward
 
 - metric_id: training_status
   display_name: Training status
   canonical_unit: enum
   value_kind: aggregate
+  category: fitness
+  validity_window: P7D
+  missing_data_policy: last_observation_carried_forward
 
 - metric_id: training_readiness
   display_name: Training readiness
   canonical_unit: score_0_100
   value_kind: aggregate
+  category: fitness
+  validity_window: P1D
+  missing_data_policy: none
 
 # === Pressure / sugar / temperature ===
 - metric_id: bp_systolic
   display_name: Blood pressure (systolic)
   canonical_unit: mmHg
   value_kind: instantaneous
+  category: cardiovascular
+  validity_window: P1D
+  missing_data_policy: none
+  aliases:
+    en: [systolic blood pressure, SBP]
+    it: [pressione sistolica]
+    de: [systolischer Blutdruck]
 
 - metric_id: bp_diastolic
   display_name: Blood pressure (diastolic)
   canonical_unit: mmHg
   value_kind: instantaneous
+  category: cardiovascular
+  validity_window: P1D
+  missing_data_policy: none
+  aliases:
+    en: [diastolic blood pressure, DBP]
+    it: [pressione diastolica]
+    de: [diastolischer Blutdruck]
 
 - metric_id: blood_glucose
   display_name: Blood glucose
   canonical_unit: mmol_per_l
   value_kind: instantaneous
+  category: metabolic
+  validity_window: PT1H
+  missing_data_policy: none
+  aliases:
+    en: [glucose, blood sugar, BG]
+    it: [glicemia]
+    de: [Blutzucker, Glukose]
 
 - metric_id: body_temperature
   display_name: Body temperature
   canonical_unit: celsius
   value_kind: instantaneous
+  category: vital_signs
+  validity_window: PT1H
+  missing_data_policy: none
+  aliases:
+    en: [temperature, core temperature]
+    it: [temperatura corporea]
+    de: [Körpertemperatur]
 
 - metric_id: skin_temperature
   display_name: Skin temperature delta
   canonical_unit: celsius
   value_kind: instantaneous
+  category: vital_signs
+  validity_window: PT1H
+  missing_data_policy: none
 
 # === Body composition ===
 - metric_id: weight
   display_name: Body weight
   canonical_unit: kg
   value_kind: instantaneous
+  category: body_composition
+  validity_window: P1W
+  missing_data_policy: last_observation_carried_forward
+  aliases:
+    en: [body weight, mass]
+    it: [peso corporeo, peso]
+    de: [Körpergewicht, Gewicht]
 
 - metric_id: body_fat_pct
   display_name: Body fat (%)
   canonical_unit: pct
   value_kind: instantaneous
+  category: body_composition
+  validity_window: P1W
+  missing_data_policy: last_observation_carried_forward
+  aliases:
+    en: [body fat percentage, BF%]
+    it: [percentuale di grasso corporeo]
+    de: [Körperfettanteil]
 
 - metric_id: lean_body_mass
   display_name: Lean body mass
   canonical_unit: kg
   value_kind: instantaneous
+  category: body_composition
+  validity_window: P1W
+  missing_data_policy: last_observation_carried_forward
 
 - metric_id: body_water_mass
   display_name: Body water mass
   canonical_unit: kg
   value_kind: instantaneous
+  category: body_composition
+  validity_window: P1W
+  missing_data_policy: last_observation_carried_forward
 
 - metric_id: bone_mass
   display_name: Bone mass
   canonical_unit: kg
   value_kind: instantaneous
+  category: body_composition
+  validity_window: P1M
+  missing_data_policy: last_observation_carried_forward
 
 - metric_id: muscle_mass
   display_name: Muscle mass
   canonical_unit: kg
   value_kind: instantaneous
+  category: body_composition
+  validity_window: P1W
+  missing_data_policy: last_observation_carried_forward
 
 - metric_id: bmi
   display_name: Body mass index
   canonical_unit: kg_per_m2
   value_kind: instantaneous
+  category: body_composition
+  validity_window: P1W
+  missing_data_policy: last_observation_carried_forward
+  aliases:
+    en: [BMI]
+    it: [indice di massa corporea]
+    de: [Body-Mass-Index, BMI]
 
 - metric_id: visceral_fat
   display_name: Visceral fat (index)
   canonical_unit: index
   value_kind: instantaneous
+  category: body_composition
+  validity_window: P1W
+  missing_data_policy: last_observation_carried_forward
 
 - metric_id: height
   display_name: Height
   canonical_unit: m
   value_kind: instantaneous
+  category: body_composition
+  validity_window: P1Y
+  missing_data_policy: last_observation_carried_forward
+  aliases:
+    en: [stature]
+    it: [altezza, statura]
+    de: [Körpergröße]
 
 # === Energy / activity ===
 - metric_id: steps
   display_name: Steps
   canonical_unit: count
   value_kind: interval
+  category: activity
+  validity_window: P1D
+  missing_data_policy: none
+  aliases:
+    en: [step count]
+    it: [passi]
+    de: [Schritte]
 
 - metric_id: distance
   display_name: Distance
   canonical_unit: m
   value_kind: interval
+  category: activity
+  validity_window: P1D
+  missing_data_policy: none
+  aliases:
+    en: [distance traveled]
+    it: [distanza]
+    de: [Distanz, Strecke]
 
 - metric_id: active_kcal
   display_name: Active calories
   canonical_unit: kcal
   value_kind: interval
+  category: activity
+  validity_window: P1D
+  missing_data_policy: none
 
 - metric_id: total_kcal
   display_name: Total calories
   canonical_unit: kcal
   value_kind: interval
+  category: activity
+  validity_window: P1D
+  missing_data_policy: none
 
 - metric_id: vo2_max
   display_name: VO2 max
   canonical_unit: ml_per_kg_per_min
   value_kind: aggregate
+  category: fitness
+  validity_window: P1M
+  missing_data_policy: last_observation_carried_forward
+  aliases:
+    en: [VO2max, maximal oxygen uptake]
+    it: [VO2max, massimo consumo di ossigeno]
+    de: [VO2max, maximale Sauerstoffaufnahme]
 
 - metric_id: bmr
   display_name: Basal metabolic rate
   canonical_unit: kcal_per_day
   value_kind: aggregate
+  category: metabolic
+  validity_window: P1M
+  missing_data_policy: last_observation_carried_forward
+  aliases:
+    en: [BMR, basal metabolic rate]
+    it: [metabolismo basale]
+    de: [Grundumsatz]
 
 - metric_id: hydration
   display_name: Hydration
   canonical_unit: l
   value_kind: instantaneous
+  category: nutrition
+  validity_window: P1D
+  missing_data_policy: none
 
 # === Sleep ===
 - metric_id: sleep_session
@@ -185,28 +362,43 @@
   canonical_unit: enum
   value_kind: interval
   description: Outer wrapper interval spanning the whole sleep period.
+  category: sleep
+  validity_window: P1D
+  missing_data_policy: none
 
 - metric_id: sleep_stage
   display_name: Sleep stage
   canonical_unit: enum
   value_kind: interval
   description: Sub-interval inside a sleep_session; value_text in {awake, light, deep, rem, unknown}.
+  category: sleep
+  validity_window: P1D
+  missing_data_policy: none
 
 - metric_id: sleep_actigraphy
   display_name: Sleep actigraphy
   canonical_unit: index
   value_kind: instantaneous
   description: Per-minute motion-derived score from Sleep as Android.
+  category: sleep
+  validity_window: P1D
+  missing_data_policy: none
 
 - metric_id: sleep_rating
   display_name: Sleep rating
   canonical_unit: score
   value_kind: aggregate
+  category: sleep
+  validity_window: P1D
+  missing_data_policy: none
 
 - metric_id: sleep_deep_pct
   display_name: Sleep deep (%)
   canonical_unit: pct
   value_kind: aggregate
+  category: sleep
+  validity_window: P1D
+  missing_data_policy: none
 
 # === Exercise / wellness ===
 - metric_id: exercise_session
@@ -214,25 +406,1468 @@
   canonical_unit: enum
   value_kind: interval
   description: HC exercise session with exercise_type code in value_text.
+  category: activity
+  validity_window: P1D
+  missing_data_policy: none
 
 - metric_id: mindfulness_session
   display_name: Mindfulness session
   canonical_unit: enum
   value_kind: interval
+  category: wellness
+  validity_window: P1D
+  missing_data_policy: none
 
 - metric_id: intensity_minutes
   display_name: Intensity minutes
   canonical_unit: min
   value_kind: aggregate
+  category: activity
+  validity_window: P1D
+  missing_data_policy: none
 
 - metric_id: activity_summary
   display_name: Activity summary
   canonical_unit: enum
   value_kind: interval
   description: Garmin per-activity summary row.
+  category: activity
+  validity_window: P1D
+  missing_data_policy: none
 
 - metric_id: daily_wellness
   display_name: Daily wellness rollup
   canonical_unit: composite
   value_kind: aggregate
   description: Garmin UDS daily aggregate (resting HR, steps, intensity minutes), payload in raw_payload.
+  category: wellness
+  validity_window: P1D
+  missing_data_policy: none
+
+# === Wearable expansion (WP01) ===
+- metric_id: max_hr
+  display_name: Maximum heart rate
+  canonical_unit: bpm
+  value_kind: aggregate
+  description: Daily maximum heart rate observed.
+  category: cardiovascular
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: min_hr
+  display_name: Minimum heart rate
+  canonical_unit: bpm
+  value_kind: aggregate
+  description: Daily minimum heart rate observed.
+  category: cardiovascular
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: average_hr
+  display_name: Average heart rate
+  canonical_unit: bpm
+  value_kind: aggregate
+  description: Daily average heart rate.
+  category: cardiovascular
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: hrv_sdnn
+  display_name: HRV (SDNN)
+  canonical_unit: ms
+  value_kind: instantaneous
+  description: Standard deviation of NN intervals.
+  category: cardiovascular
+  validity_window: PT1H
+  missing_data_policy: none
+  aliases:
+    en: [SDNN]
+
+- metric_id: hrv_pnn50
+  display_name: HRV (pNN50)
+  canonical_unit: pct
+  value_kind: instantaneous
+  description: Percentage of successive NN intervals differing by more than 50 ms.
+  category: cardiovascular
+  validity_window: PT1H
+  missing_data_policy: none
+  aliases:
+    en: [pNN50]
+
+- metric_id: hrv_lf_hf_ratio
+  display_name: HRV LF/HF ratio
+  canonical_unit: ratio
+  value_kind: instantaneous
+  description: Ratio of low-frequency to high-frequency HRV power.
+  category: cardiovascular
+  validity_window: PT1H
+  missing_data_policy: none
+
+- metric_id: pulse_pressure
+  display_name: Pulse pressure
+  canonical_unit: mmHg
+  value_kind: instantaneous
+  description: Difference between systolic and diastolic blood pressure.
+  category: cardiovascular
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: mean_arterial_pressure
+  display_name: Mean arterial pressure
+  canonical_unit: mmHg
+  value_kind: instantaneous
+  description: Average arterial blood pressure across one cardiac cycle.
+  category: cardiovascular
+  validity_window: P1D
+  missing_data_policy: none
+  aliases:
+    en: [MAP]
+
+- metric_id: respiratory_rate_sleep
+  display_name: Respiratory rate (sleep)
+  canonical_unit: breaths_per_min
+  value_kind: aggregate
+  description: Average respiratory rate during sleep.
+  category: sleep
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: spo2_overnight_avg
+  display_name: Overnight SpO2 average
+  canonical_unit: pct
+  value_kind: aggregate
+  description: Average oxygen saturation overnight.
+  category: sleep
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: spo2_overnight_min
+  display_name: Overnight SpO2 minimum
+  canonical_unit: pct
+  value_kind: aggregate
+  description: Minimum oxygen saturation overnight.
+  category: sleep
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: sleep_light_pct
+  display_name: Sleep light (%)
+  canonical_unit: pct
+  value_kind: aggregate
+  category: sleep
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: sleep_rem_pct
+  display_name: Sleep REM (%)
+  canonical_unit: pct
+  value_kind: aggregate
+  category: sleep
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: sleep_awake_pct
+  display_name: Sleep awake (%)
+  canonical_unit: pct
+  value_kind: aggregate
+  category: sleep
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: sleep_efficiency
+  display_name: Sleep efficiency
+  canonical_unit: pct
+  value_kind: aggregate
+  description: Ratio of time asleep to time in bed.
+  category: sleep
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: sleep_latency
+  display_name: Sleep latency
+  canonical_unit: min
+  value_kind: aggregate
+  description: Time taken to fall asleep.
+  category: sleep
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: wake_after_sleep_onset
+  display_name: Wake after sleep onset
+  canonical_unit: min
+  value_kind: aggregate
+  description: Total time awake after initially falling asleep.
+  category: sleep
+  validity_window: P1D
+  missing_data_policy: none
+  aliases:
+    en: [WASO]
+
+- metric_id: snoring_duration
+  display_name: Snoring duration
+  canonical_unit: min
+  value_kind: aggregate
+  category: sleep
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: cadence
+  display_name: Step cadence
+  canonical_unit: steps_per_min
+  value_kind: instantaneous
+  description: Steps per minute during ambulation.
+  category: activity
+  validity_window: PT5M
+  missing_data_policy: none
+
+- metric_id: speed
+  display_name: Speed
+  canonical_unit: m_per_s
+  value_kind: instantaneous
+  category: activity
+  validity_window: PT5M
+  missing_data_policy: none
+
+- metric_id: pace
+  display_name: Pace
+  canonical_unit: s_per_km
+  value_kind: instantaneous
+  category: activity
+  validity_window: PT5M
+  missing_data_policy: none
+
+- metric_id: elevation_gain
+  display_name: Elevation gain
+  canonical_unit: m
+  value_kind: interval
+  category: activity
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: floors_climbed
+  display_name: Floors climbed
+  canonical_unit: count
+  value_kind: interval
+  category: activity
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: power
+  display_name: Power output
+  canonical_unit: W
+  value_kind: instantaneous
+  description: Mechanical power output (cycling/running).
+  category: fitness
+  validity_window: PT5M
+  missing_data_policy: none
+
+- metric_id: ftp
+  display_name: Functional threshold power
+  canonical_unit: W
+  value_kind: aggregate
+  category: fitness
+  validity_window: P1M
+  missing_data_policy: last_observation_carried_forward
+  aliases:
+    en: [FTP]
+
+- metric_id: lactate_threshold_hr
+  display_name: Lactate threshold heart rate
+  canonical_unit: bpm
+  value_kind: aggregate
+  category: fitness
+  validity_window: P3M
+  missing_data_policy: last_observation_carried_forward
+
+- metric_id: recovery_time
+  display_name: Recovery time
+  canonical_unit: h
+  value_kind: instantaneous
+  description: Estimated hours until full recovery (Garmin proprietary).
+  category: fitness
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: fitness_age
+  display_name: Fitness age
+  canonical_unit: yr
+  value_kind: aggregate
+  category: fitness
+  validity_window: P1M
+  missing_data_policy: last_observation_carried_forward
+
+- metric_id: race_predictor_5k
+  display_name: Race predictor 5K
+  canonical_unit: s
+  value_kind: aggregate
+  category: fitness
+  validity_window: P1M
+  missing_data_policy: last_observation_carried_forward
+
+- metric_id: race_predictor_10k
+  display_name: Race predictor 10K
+  canonical_unit: s
+  value_kind: aggregate
+  category: fitness
+  validity_window: P1M
+  missing_data_policy: last_observation_carried_forward
+
+- metric_id: race_predictor_half_marathon
+  display_name: Race predictor half marathon
+  canonical_unit: s
+  value_kind: aggregate
+  category: fitness
+  validity_window: P1M
+  missing_data_policy: last_observation_carried_forward
+
+- metric_id: race_predictor_marathon
+  display_name: Race predictor marathon
+  canonical_unit: s
+  value_kind: aggregate
+  category: fitness
+  validity_window: P1M
+  missing_data_policy: last_observation_carried_forward
+
+# === Lab: Complete blood count (CBC) ===
+- metric_id: lab:wbc
+  display_name: White blood cell count
+  canonical_unit: 10^9_per_l
+  value_kind: instantaneous
+  description: Total leukocyte count in peripheral blood.
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [WBC, leukocytes, white blood cells]
+    it: [globuli bianchi, leucociti]
+    de: [Leukozyten, weiße Blutkörperchen]
+  loinc: "6690-2"
+
+- metric_id: lab:rbc
+  display_name: Red blood cell count
+  canonical_unit: 10^12_per_l
+  value_kind: instantaneous
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [RBC, erythrocytes]
+    it: [globuli rossi, eritrociti]
+    de: [Erythrozyten, rote Blutkörperchen]
+  loinc: "789-8"
+
+- metric_id: lab:hemoglobin
+  display_name: Hemoglobin
+  canonical_unit: g_per_dl
+  value_kind: instantaneous
+  description: Total haemoglobin in blood, principal oxygen carrier.
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [Hb, Hgb, hemoglobin]
+    it: [emoglobina, Hb]
+    de: [Hämoglobin, Hb]
+  loinc: "718-7"
+
+- metric_id: lab:hematocrit
+  display_name: Hematocrit
+  canonical_unit: pct
+  value_kind: instantaneous
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [Hct, hematocrit, PCV]
+    it: [ematocrito]
+    de: [Hämatokrit]
+  loinc: "4544-3"
+
+- metric_id: lab:mcv
+  display_name: Mean corpuscular volume
+  canonical_unit: fl
+  value_kind: instantaneous
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [MCV]
+  loinc: "787-2"
+
+- metric_id: lab:mch
+  display_name: Mean corpuscular hemoglobin
+  canonical_unit: pg
+  value_kind: instantaneous
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [MCH]
+  loinc: "785-6"
+
+- metric_id: lab:mchc
+  display_name: Mean corpuscular hemoglobin concentration
+  canonical_unit: g_per_dl
+  value_kind: instantaneous
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [MCHC]
+  loinc: "786-4"
+
+- metric_id: lab:rdw
+  display_name: Red cell distribution width
+  canonical_unit: pct
+  value_kind: instantaneous
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [RDW, RDW-CV]
+  loinc: "788-0"
+
+- metric_id: lab:platelets
+  display_name: Platelet count
+  canonical_unit: 10^9_per_l
+  value_kind: instantaneous
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [PLT, platelets, thrombocytes]
+    it: [piastrine]
+    de: [Thrombozyten]
+  loinc: "777-3"
+
+- metric_id: lab:mpv
+  display_name: Mean platelet volume
+  canonical_unit: fl
+  value_kind: instantaneous
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [MPV]
+  loinc: "32623-1"
+
+- metric_id: lab:neutrophils_pct
+  display_name: Neutrophils (%)
+  canonical_unit: pct
+  value_kind: instantaneous
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "770-8"
+
+- metric_id: lab:lymphocytes_pct
+  display_name: Lymphocytes (%)
+  canonical_unit: pct
+  value_kind: instantaneous
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "736-9"
+
+- metric_id: lab:monocytes_pct
+  display_name: Monocytes (%)
+  canonical_unit: pct
+  value_kind: instantaneous
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "5905-5"
+
+- metric_id: lab:eosinophils_pct
+  display_name: Eosinophils (%)
+  canonical_unit: pct
+  value_kind: instantaneous
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "713-8"
+
+- metric_id: lab:basophils_pct
+  display_name: Basophils (%)
+  canonical_unit: pct
+  value_kind: instantaneous
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "706-2"
+
+# === Lab: Lipid panel ===
+- metric_id: lab:total_cholesterol
+  display_name: Total cholesterol
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:lipids
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    en: [total cholesterol, TC]
+    it: [colesterolo totale]
+    de: [Gesamtcholesterin]
+  loinc: "2093-3"
+
+- metric_id: lab:hdl
+  display_name: HDL cholesterol
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:lipids
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    en: [HDL, HDL-C, good cholesterol]
+    it: [colesterolo HDL]
+    de: [HDL-Cholesterin]
+  loinc: "2085-9"
+
+- metric_id: lab:ldl
+  display_name: LDL cholesterol
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:lipids
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    en: [LDL, LDL-C]
+    it: [colesterolo LDL]
+    de: [LDL-Cholesterin]
+  loinc: "2089-1"
+
+- metric_id: lab:triglycerides
+  display_name: Triglycerides
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:lipids
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    en: [TG, triglycerides]
+    it: [trigliceridi]
+    de: [Triglyzeride]
+  loinc: "2571-8"
+
+- metric_id: lab:non_hdl
+  display_name: Non-HDL cholesterol
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:lipids
+  validity_window: P6M
+  missing_data_policy: none
+  loinc: "43396-1"
+
+- metric_id: lab:apolipoprotein_b
+  display_name: Apolipoprotein B
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:lipids
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    en: [ApoB]
+  loinc: "1884-6"
+
+- metric_id: lab:lipoprotein_a
+  display_name: Lipoprotein (a)
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:lipids
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [Lp(a)]
+  loinc: "10835-7"
+
+# === Lab: Metabolic / glucose ===
+- metric_id: lab:fasting_glucose
+  display_name: Fasting plasma glucose
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:metabolic
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [FPG, fasting glucose]
+    it: [glicemia a digiuno]
+    de: [Nüchternblutzucker]
+  loinc: "1558-6"
+
+- metric_id: lab:hba1c
+  display_name: Hemoglobin A1c
+  canonical_unit: pct
+  value_kind: instantaneous
+  description: Glycated hemoglobin reflecting average glycemia over ~3 months.
+  category: blood:metabolic
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [HbA1c, glycated hemoglobin, A1C]
+    it: [emoglobina glicata]
+    de: [HbA1c, glykiertes Hämoglobin]
+  loinc: "4548-4"
+
+- metric_id: lab:insulin_fasting
+  display_name: Fasting insulin
+  canonical_unit: uIU_per_ml
+  value_kind: instantaneous
+  category: blood:metabolic
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "1554-5"
+
+- metric_id: lab:c_peptide
+  display_name: C-peptide
+  canonical_unit: ng_per_ml
+  value_kind: instantaneous
+  category: blood:metabolic
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "1986-9"
+
+- metric_id: lab:homa_ir
+  display_name: HOMA-IR
+  canonical_unit: index
+  value_kind: instantaneous
+  description: Homeostasis model assessment of insulin resistance.
+  category: blood:metabolic
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [HOMA-IR]
+  loinc: "[unmapped]"
+
+# === Lab: Liver panel ===
+- metric_id: lab:ast
+  display_name: Aspartate aminotransferase
+  canonical_unit: U_per_l
+  value_kind: instantaneous
+  category: blood:liver
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [AST, SGOT]
+    it: [AST, transaminasi GOT]
+    de: [AST, GOT]
+  loinc: "1920-8"
+
+- metric_id: lab:alt
+  display_name: Alanine aminotransferase
+  canonical_unit: U_per_l
+  value_kind: instantaneous
+  category: blood:liver
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [ALT, SGPT]
+    it: [ALT, transaminasi GPT]
+    de: [ALT, GPT]
+  loinc: "1742-6"
+
+- metric_id: lab:alkaline_phosphatase
+  display_name: Alkaline phosphatase
+  canonical_unit: U_per_l
+  value_kind: instantaneous
+  category: blood:liver
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [ALP, ALK PHOS]
+    it: [fosfatasi alcalina]
+    de: [alkalische Phosphatase]
+  loinc: "6768-6"
+
+- metric_id: lab:ggt
+  display_name: Gamma-glutamyl transferase
+  canonical_unit: U_per_l
+  value_kind: instantaneous
+  category: blood:liver
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [GGT, gamma-GT]
+    it: [gamma-GT]
+    de: [Gamma-GT]
+  loinc: "2324-2"
+
+- metric_id: lab:bilirubin_total
+  display_name: Total bilirubin
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:liver
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [TBIL, total bilirubin]
+    it: [bilirubina totale]
+    de: [Gesamtbilirubin]
+  loinc: "1975-2"
+
+- metric_id: lab:bilirubin_direct
+  display_name: Direct bilirubin
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:liver
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "1968-7"
+
+- metric_id: lab:albumin
+  display_name: Albumin
+  canonical_unit: g_per_dl
+  value_kind: instantaneous
+  category: blood:liver
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [albumin, ALB]
+    it: [albumina]
+    de: [Albumin]
+  loinc: "1751-7"
+
+- metric_id: lab:total_protein
+  display_name: Total protein
+  canonical_unit: g_per_dl
+  value_kind: instantaneous
+  category: blood:liver
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "2885-2"
+
+# === Lab: Kidney panel ===
+- metric_id: lab:creatinine
+  display_name: Serum creatinine
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:kidney
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [creatinine, Cr]
+    it: [creatinina]
+    de: [Kreatinin]
+  loinc: "2160-0"
+
+- metric_id: lab:bun
+  display_name: Blood urea nitrogen
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:kidney
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [BUN, urea nitrogen]
+    it: [azotemia, BUN]
+    de: [Harnstoff-Stickstoff]
+  loinc: "3094-0"
+
+- metric_id: lab:urea
+  display_name: Urea
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:kidney
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "22664-7"
+
+- metric_id: lab:egfr
+  display_name: Estimated glomerular filtration rate
+  canonical_unit: ml_per_min_per_173m2
+  value_kind: instantaneous
+  category: blood:kidney
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [eGFR]
+  loinc: "62238-1"
+
+- metric_id: lab:cystatin_c
+  display_name: Cystatin C
+  canonical_unit: mg_per_l
+  value_kind: instantaneous
+  category: blood:kidney
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "33863-2"
+
+- metric_id: lab:uric_acid
+  display_name: Uric acid
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:kidney
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [uric acid, urate]
+    it: [acido urico]
+    de: [Harnsäure]
+  loinc: "3084-1"
+
+# === Lab: Electrolytes ===
+- metric_id: lab:sodium
+  display_name: Sodium
+  canonical_unit: mmol_per_l
+  value_kind: instantaneous
+  category: blood:electrolytes
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [Na, sodium]
+    it: [sodio]
+    de: [Natrium]
+  loinc: "2951-2"
+
+- metric_id: lab:potassium
+  display_name: Potassium
+  canonical_unit: mmol_per_l
+  value_kind: instantaneous
+  category: blood:electrolytes
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [K, potassium]
+    it: [potassio]
+    de: [Kalium]
+  loinc: "2823-3"
+
+- metric_id: lab:chloride
+  display_name: Chloride
+  canonical_unit: mmol_per_l
+  value_kind: instantaneous
+  category: blood:electrolytes
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [Cl, chloride]
+    it: [cloro]
+    de: [Chlorid]
+  loinc: "2075-0"
+
+- metric_id: lab:calcium
+  display_name: Calcium
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:electrolytes
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [Ca, calcium]
+    it: [calcio]
+    de: [Kalzium]
+  loinc: "17861-6"
+
+- metric_id: lab:magnesium
+  display_name: Magnesium
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:electrolytes
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [Mg, magnesium]
+    it: [magnesio]
+    de: [Magnesium]
+  loinc: "19123-9"
+
+- metric_id: lab:phosphorus
+  display_name: Phosphorus
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:electrolytes
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "2777-1"
+
+- metric_id: lab:bicarbonate
+  display_name: Bicarbonate
+  canonical_unit: mmol_per_l
+  value_kind: instantaneous
+  category: blood:electrolytes
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [HCO3, bicarbonate]
+  loinc: "1963-8"
+
+# === Lab: Thyroid ===
+- metric_id: lab:tsh
+  display_name: Thyroid stimulating hormone
+  canonical_unit: mIU_per_l
+  value_kind: instantaneous
+  category: blood:thyroid
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    en: [TSH]
+    it: [TSH]
+    de: [TSH]
+  loinc: "3016-3"
+
+- metric_id: lab:free_t4
+  display_name: Free thyroxine
+  canonical_unit: ng_per_dl
+  value_kind: instantaneous
+  category: blood:thyroid
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    en: [FT4, free T4]
+  loinc: "3024-7"
+
+- metric_id: lab:free_t3
+  display_name: Free triiodothyronine
+  canonical_unit: pg_per_ml
+  value_kind: instantaneous
+  category: blood:thyroid
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    en: [FT3, free T3]
+  loinc: "3051-0"
+
+- metric_id: lab:anti_tpo
+  display_name: Anti-thyroid peroxidase antibody
+  canonical_unit: IU_per_ml
+  value_kind: instantaneous
+  category: blood:thyroid
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [anti-TPO, TPOAb]
+  loinc: "8099-5"
+
+- metric_id: lab:anti_tg
+  display_name: Anti-thyroglobulin antibody
+  canonical_unit: IU_per_ml
+  value_kind: instantaneous
+  category: blood:thyroid
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [anti-Tg, TgAb]
+  loinc: "8098-7"
+
+# === Lab: Iron / vitamins ===
+- metric_id: lab:iron
+  display_name: Serum iron
+  canonical_unit: ug_per_dl
+  value_kind: instantaneous
+  category: blood:iron
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [Fe, iron]
+    it: [ferro, sideremia]
+    de: [Eisen]
+  loinc: "2498-4"
+
+- metric_id: lab:ferritin
+  display_name: Ferritin
+  canonical_unit: ng_per_ml
+  value_kind: instantaneous
+  category: blood:iron
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [ferritin]
+    it: [ferritina]
+    de: [Ferritin]
+  loinc: "2276-4"
+
+- metric_id: lab:transferrin
+  display_name: Transferrin
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:iron
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "3034-6"
+
+- metric_id: lab:tibc
+  display_name: Total iron binding capacity
+  canonical_unit: ug_per_dl
+  value_kind: instantaneous
+  category: blood:iron
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [TIBC]
+  loinc: "2500-7"
+
+- metric_id: lab:transferrin_saturation
+  display_name: Transferrin saturation
+  canonical_unit: pct
+  value_kind: instantaneous
+  category: blood:iron
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "2502-3"
+
+- metric_id: lab:vitamin_d_25oh
+  display_name: 25-hydroxy vitamin D
+  canonical_unit: ng_per_ml
+  value_kind: instantaneous
+  category: blood:vitamins
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    en: [25(OH)D, vitamin D]
+    it: [vitamina D, 25-OH-D]
+    de: [Vitamin D, 25-OH-D]
+  loinc: "1989-3"
+
+- metric_id: lab:vitamin_b12
+  display_name: Vitamin B12
+  canonical_unit: pg_per_ml
+  value_kind: instantaneous
+  category: blood:vitamins
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [B12, cobalamin]
+    it: [vitamina B12]
+    de: [Vitamin B12]
+  loinc: "2132-9"
+
+- metric_id: lab:folate
+  display_name: Folate
+  canonical_unit: ng_per_ml
+  value_kind: instantaneous
+  category: blood:vitamins
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [folate, folic acid]
+    it: [acido folico]
+    de: [Folsäure]
+  loinc: "2284-8"
+
+- metric_id: lab:homocysteine
+  display_name: Homocysteine
+  canonical_unit: umol_per_l
+  value_kind: instantaneous
+  category: blood:vitamins
+  validity_window: P1Y
+  missing_data_policy: none
+  loinc: "13965-9"
+
+# === Lab: Inflammation ===
+- metric_id: lab:crp
+  display_name: C-reactive protein
+  canonical_unit: mg_per_l
+  value_kind: instantaneous
+  category: blood:inflammation
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [CRP]
+    it: [proteina C reattiva, PCR]
+    de: [CRP]
+  loinc: "1988-5"
+
+- metric_id: lab:hs_crp
+  display_name: High-sensitivity CRP
+  canonical_unit: mg_per_l
+  value_kind: instantaneous
+  category: blood:inflammation
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [hs-CRP]
+  loinc: "30522-7"
+
+- metric_id: lab:esr
+  display_name: Erythrocyte sedimentation rate
+  canonical_unit: mm_per_h
+  value_kind: instantaneous
+  category: blood:inflammation
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [ESR, sed rate]
+    it: [VES]
+    de: [BSG]
+  loinc: "4537-7"
+
+# === Lab: Endocrine ===
+- metric_id: lab:cortisol_serum
+  display_name: Serum cortisol
+  canonical_unit: ug_per_dl
+  value_kind: instantaneous
+  category: blood:endocrine
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    en: [cortisol]
+    it: [cortisolo]
+    de: [Kortisol]
+  loinc: "2143-6"
+
+- metric_id: lab:testosterone_total
+  display_name: Total testosterone
+  canonical_unit: ng_per_dl
+  value_kind: instantaneous
+  category: blood:endocrine
+  validity_window: P6M
+  missing_data_policy: none
+  loinc: "2986-8"
+
+- metric_id: lab:testosterone_free
+  display_name: Free testosterone
+  canonical_unit: pg_per_ml
+  value_kind: instantaneous
+  category: blood:endocrine
+  validity_window: P6M
+  missing_data_policy: none
+  loinc: "2991-8"
+
+- metric_id: lab:estradiol
+  display_name: Estradiol
+  canonical_unit: pg_per_ml
+  value_kind: instantaneous
+  category: blood:endocrine
+  validity_window: P6M
+  missing_data_policy: none
+  loinc: "2243-4"
+
+- metric_id: lab:shbg
+  display_name: Sex hormone binding globulin
+  canonical_unit: nmol_per_l
+  value_kind: instantaneous
+  category: blood:endocrine
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    en: [SHBG]
+  loinc: "13967-5"
+
+- metric_id: lab:psa
+  display_name: Prostate-specific antigen
+  canonical_unit: ng_per_ml
+  value_kind: instantaneous
+  category: blood:endocrine
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [PSA]
+  loinc: "2857-1"
+
+# === Lab: Coagulation ===
+- metric_id: lab:pt
+  display_name: Prothrombin time
+  canonical_unit: s
+  value_kind: instantaneous
+  category: blood:coagulation
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [PT]
+  loinc: "5902-2"
+
+- metric_id: lab:inr
+  display_name: International normalized ratio
+  canonical_unit: ratio
+  value_kind: instantaneous
+  category: blood:coagulation
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [INR]
+  loinc: "6301-6"
+
+- metric_id: lab:fibrinogen
+  display_name: Fibrinogen
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:coagulation
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "3255-7"
+
+- metric_id: lab:d_dimer
+  display_name: D-dimer
+  canonical_unit: ng_per_ml
+  value_kind: instantaneous
+  category: blood:coagulation
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "30240-6"
+
+# === Lab: Urine ===
+- metric_id: lab:urine_ph
+  display_name: Urine pH
+  canonical_unit: ph
+  value_kind: instantaneous
+  category: urine
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "5803-2"
+
+- metric_id: lab:urine_specific_gravity
+  display_name: Urine specific gravity
+  canonical_unit: ratio
+  value_kind: instantaneous
+  category: urine
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "5811-5"
+
+- metric_id: lab:urine_protein
+  display_name: Urine protein
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: urine
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "2888-6"
+
+- metric_id: lab:urine_albumin
+  display_name: Urine albumin
+  canonical_unit: mg_per_l
+  value_kind: instantaneous
+  category: urine
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "14957-5"
+
+- metric_id: lab:urine_glucose
+  display_name: Urine glucose
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: urine
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "5792-7"
+
+- metric_id: lab:urine_ketones
+  display_name: Urine ketones
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: urine
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "2514-8"
+
+- metric_id: lab:urine_bilirubin
+  display_name: Urine bilirubin
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: urine
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "5770-3"
+
+- metric_id: lab:urine_urobilinogen
+  display_name: Urine urobilinogen
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: urine
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "20405-7"
+
+- metric_id: lab:urine_nitrite
+  display_name: Urine nitrite
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: urine
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "5802-4"
+
+- metric_id: lab:urine_leukocyte_esterase
+  display_name: Urine leukocyte esterase
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: urine
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "5799-2"
+
+- metric_id: lab:urine_blood
+  display_name: Urine blood
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: urine
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "5794-3"
+
+- metric_id: lab:urine_creatinine
+  display_name: Urine creatinine
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: urine
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "2161-8"
+
+- metric_id: lab:urine_microalbumin_creatinine_ratio
+  display_name: Urine microalbumin to creatinine ratio
+  canonical_unit: mg_per_g
+  value_kind: instantaneous
+  category: urine
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [ACR, UACR]
+  loinc: "14959-1"
+
+- metric_id: lab:urine_24h_volume
+  display_name: 24-hour urine volume
+  canonical_unit: ml
+  value_kind: aggregate
+  category: urine
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "3167-4"
+
+- metric_id: lab:urine_sodium
+  display_name: Urine sodium
+  canonical_unit: mmol_per_l
+  value_kind: instantaneous
+  category: urine
+  validity_window: P3M
+  missing_data_policy: none
+  loinc: "2955-3"
+
+# === Lab: Stool ===
+- metric_id: lab:stool_occult_blood
+  display_name: Stool occult blood
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: stool
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [FOBT, FIT]
+  loinc: "14563-1"
+
+- metric_id: lab:stool_calprotectin
+  display_name: Stool calprotectin
+  canonical_unit: ug_per_g
+  value_kind: instantaneous
+  category: stool
+  validity_window: P6M
+  missing_data_policy: none
+  loinc: "38445-3"
+
+- metric_id: lab:stool_lactoferrin
+  display_name: Stool lactoferrin
+  canonical_unit: ug_per_g
+  value_kind: instantaneous
+  category: stool
+  validity_window: P6M
+  missing_data_policy: none
+  loinc: "[unmapped]"
+
+- metric_id: lab:stool_elastase
+  display_name: Stool pancreatic elastase
+  canonical_unit: ug_per_g
+  value_kind: instantaneous
+  category: stool
+  validity_window: P1Y
+  missing_data_policy: none
+  loinc: "26910-0"
+
+- metric_id: lab:stool_ph
+  display_name: Stool pH
+  canonical_unit: ph
+  value_kind: instantaneous
+  category: stool
+  validity_window: P6M
+  missing_data_policy: none
+  loinc: "12231-7"
+
+- metric_id: lab:stool_fat
+  display_name: Stool fat
+  canonical_unit: g_per_24h
+  value_kind: aggregate
+  category: stool
+  validity_window: P6M
+  missing_data_policy: none
+  loinc: "[unmapped]"
+
+- metric_id: lab:stool_reducing_substances
+  display_name: Stool reducing substances
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: stool
+  validity_window: P6M
+  missing_data_policy: none
+  loinc: "[unmapped]"
+
+- metric_id: lab:stool_weight
+  display_name: Stool weight
+  canonical_unit: g
+  value_kind: instantaneous
+  category: stool
+  validity_window: P6M
+  missing_data_policy: none
+  loinc: "[unmapped]"
+
+- metric_id: lab:stool_culture
+  display_name: Stool culture
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: stool
+  validity_window: P1Y
+  missing_data_policy: none
+  loinc: "624-7"
+
+- metric_id: lab:stool_ova_parasites
+  display_name: Stool ova and parasites
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: stool
+  validity_window: P1Y
+  missing_data_policy: none
+  loinc: "10701-1"
+
+- metric_id: lab:stool_c_difficile_toxin
+  display_name: Stool C. difficile toxin
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: stool
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [C. diff toxin, C. difficile toxin]
+  loinc: "13957-6"
+
+- metric_id: lab:stool_h_pylori_antigen
+  display_name: Stool H. pylori antigen
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: stool
+  validity_window: P1Y
+  missing_data_policy: none
+  loinc: "32781-7"
+
+- metric_id: lab:stool_giardia_antigen
+  display_name: Stool Giardia antigen
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: stool
+  validity_window: P1Y
+  missing_data_policy: none
+  loinc: "31785-9"
+
+- metric_id: lab:stool_rotavirus_antigen
+  display_name: Stool rotavirus antigen
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: stool
+  validity_window: P1Y
+  missing_data_policy: none
+  loinc: "5867-7"
+
+- metric_id: lab:stool_white_blood_cells
+  display_name: Stool white blood cells
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: stool
+  validity_window: P1Y
+  missing_data_policy: none
+  loinc: "10371-3"

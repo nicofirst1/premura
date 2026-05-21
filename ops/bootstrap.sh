@@ -40,6 +40,15 @@ echo ">>> Step 2/5: Python deps (uv sync)"
 uv sync
 uv sync --extra dev
 
+# Install bundled Claude Code skills into ./.claude/skills/.
+# Skip when HPIPE_SKIP_SKILLS=1 or when stdin is not a TTY (CI / pipelines).
+if [[ "${HPIPE_SKIP_SKILLS:-0}" != "1" && -t 0 ]]; then
+    echo "    Installing bundled Claude Code skills"
+    uv run hpipe install-skills
+else
+    echo "    Skipping 'hpipe install-skills' (non-interactive or HPIPE_SKIP_SKILLS=1)"
+fi
+
 echo ">>> Step 3/5: Config directory"
 mkdir -p "${CONFIG_DIR}"
 chmod 700 "${CONFIG_DIR}"
