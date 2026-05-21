@@ -1,0 +1,238 @@
+# Controlled vocabulary for hp.dim_metric.
+# Append-only; never repurpose an existing metric_id.
+# value_kind: 'instantaneous' = single point-in-time, 'aggregate' = pre-summarized (e.g. daily),
+#             'interval' = has start/end (lives in hp.fact_interval).
+
+# === Cardio / autonomic ===
+- metric_id: heart_rate
+  display_name: Heart rate
+  canonical_unit: bpm
+  value_kind: instantaneous
+  description: Instantaneous heart rate sample.
+
+- metric_id: resting_hr
+  display_name: Resting heart rate
+  canonical_unit: bpm
+  value_kind: aggregate
+  description: Daily resting heart rate.
+
+- metric_id: hrv_rmssd
+  display_name: HRV (rMSSD)
+  canonical_unit: ms
+  value_kind: instantaneous
+  description: Generic HRV rMSSD (used by HC + BMT-style sources).
+
+- metric_id: hrv_rmssd_overnight
+  display_name: HRV (rMSSD, overnight)
+  canonical_unit: ms
+  value_kind: aggregate
+  description: Garmin overnight rMSSD summary.
+
+- metric_id: hrv_rmssd_snapshot
+  display_name: HRV (rMSSD, Health Snapshot)
+  canonical_unit: ms
+  value_kind: instantaneous
+  description: Garmin Health Snapshot rMSSD reading.
+
+- metric_id: resp_rate
+  display_name: Respiratory rate
+  canonical_unit: breaths_per_min
+  value_kind: instantaneous
+
+- metric_id: spo2
+  display_name: Oxygen saturation
+  canonical_unit: pct
+  value_kind: instantaneous
+
+- metric_id: stress
+  display_name: Stress (0-100)
+  canonical_unit: score_0_100
+  value_kind: instantaneous
+  description: Garmin proprietary stress score.
+
+- metric_id: body_battery
+  display_name: Body Battery (0-100)
+  canonical_unit: score_0_100
+  value_kind: instantaneous
+  description: Garmin proprietary energy gauge.
+
+- metric_id: training_load
+  display_name: Training load
+  canonical_unit: score
+  value_kind: aggregate
+
+- metric_id: training_status
+  display_name: Training status
+  canonical_unit: enum
+  value_kind: aggregate
+
+- metric_id: training_readiness
+  display_name: Training readiness
+  canonical_unit: score_0_100
+  value_kind: aggregate
+
+# === Pressure / sugar / temperature ===
+- metric_id: bp_systolic
+  display_name: Blood pressure (systolic)
+  canonical_unit: mmHg
+  value_kind: instantaneous
+
+- metric_id: bp_diastolic
+  display_name: Blood pressure (diastolic)
+  canonical_unit: mmHg
+  value_kind: instantaneous
+
+- metric_id: blood_glucose
+  display_name: Blood glucose
+  canonical_unit: mmol_per_l
+  value_kind: instantaneous
+
+- metric_id: body_temperature
+  display_name: Body temperature
+  canonical_unit: celsius
+  value_kind: instantaneous
+
+- metric_id: skin_temperature
+  display_name: Skin temperature delta
+  canonical_unit: celsius
+  value_kind: instantaneous
+
+# === Body composition ===
+- metric_id: weight
+  display_name: Body weight
+  canonical_unit: kg
+  value_kind: instantaneous
+
+- metric_id: body_fat_pct
+  display_name: Body fat (%)
+  canonical_unit: pct
+  value_kind: instantaneous
+
+- metric_id: lean_body_mass
+  display_name: Lean body mass
+  canonical_unit: kg
+  value_kind: instantaneous
+
+- metric_id: body_water_mass
+  display_name: Body water mass
+  canonical_unit: kg
+  value_kind: instantaneous
+
+- metric_id: bone_mass
+  display_name: Bone mass
+  canonical_unit: kg
+  value_kind: instantaneous
+
+- metric_id: muscle_mass
+  display_name: Muscle mass
+  canonical_unit: kg
+  value_kind: instantaneous
+
+- metric_id: bmi
+  display_name: Body mass index
+  canonical_unit: kg_per_m2
+  value_kind: instantaneous
+
+- metric_id: visceral_fat
+  display_name: Visceral fat (index)
+  canonical_unit: index
+  value_kind: instantaneous
+
+- metric_id: height
+  display_name: Height
+  canonical_unit: m
+  value_kind: instantaneous
+
+# === Energy / activity ===
+- metric_id: steps
+  display_name: Steps
+  canonical_unit: count
+  value_kind: interval
+
+- metric_id: distance
+  display_name: Distance
+  canonical_unit: m
+  value_kind: interval
+
+- metric_id: active_kcal
+  display_name: Active calories
+  canonical_unit: kcal
+  value_kind: interval
+
+- metric_id: total_kcal
+  display_name: Total calories
+  canonical_unit: kcal
+  value_kind: interval
+
+- metric_id: vo2_max
+  display_name: VO2 max
+  canonical_unit: ml_per_kg_per_min
+  value_kind: aggregate
+
+- metric_id: bmr
+  display_name: Basal metabolic rate
+  canonical_unit: kcal_per_day
+  value_kind: aggregate
+
+- metric_id: hydration
+  display_name: Hydration
+  canonical_unit: l
+  value_kind: instantaneous
+
+# === Sleep ===
+- metric_id: sleep_session
+  display_name: Sleep session
+  canonical_unit: enum
+  value_kind: interval
+  description: Outer wrapper interval spanning the whole sleep period.
+
+- metric_id: sleep_stage
+  display_name: Sleep stage
+  canonical_unit: enum
+  value_kind: interval
+  description: Sub-interval inside a sleep_session; value_text in {awake, light, deep, rem, unknown}.
+
+- metric_id: sleep_actigraphy
+  display_name: Sleep actigraphy
+  canonical_unit: index
+  value_kind: instantaneous
+  description: Per-minute motion-derived score from Sleep as Android.
+
+- metric_id: sleep_rating
+  display_name: Sleep rating
+  canonical_unit: score
+  value_kind: aggregate
+
+- metric_id: sleep_deep_pct
+  display_name: Sleep deep (%)
+  canonical_unit: pct
+  value_kind: aggregate
+
+# === Exercise / wellness ===
+- metric_id: exercise_session
+  display_name: Exercise session
+  canonical_unit: enum
+  value_kind: interval
+  description: HC exercise session with exercise_type code in value_text.
+
+- metric_id: mindfulness_session
+  display_name: Mindfulness session
+  canonical_unit: enum
+  value_kind: interval
+
+- metric_id: intensity_minutes
+  display_name: Intensity minutes
+  canonical_unit: min
+  value_kind: aggregate
+
+- metric_id: activity_summary
+  display_name: Activity summary
+  canonical_unit: enum
+  value_kind: interval
+  description: Garmin per-activity summary row.
+
+- metric_id: daily_wellness
+  display_name: Daily wellness rollup
+  canonical_unit: composite
+  value_kind: aggregate
+  description: Garmin UDS daily aggregate (resting HR, steps, intensity minutes), payload in raw_payload.
