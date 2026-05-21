@@ -172,3 +172,4 @@ Review end-to-end from package data to installed file path. The key question is 
 ## Activity Log
 
 - 2026-05-21T11:24:44Z – claude:opus-4-7:implementer:implementer – shell_pid=47545 – Started implementation via action command
+- 2026-05-21T11:29:10Z – claude:opus-4-7:implementer:implementer – shell_pid=47545 – Ready for review: parser-generator SKILL.md bundled under src/premura/skills/parser-generator/, install_skills(target_root) helper exposed in src/premura/skills/__init__.py with sha256 idempotency, hpipe install-skills CLI verb wired (verified via uv run hpipe --help and end-to-end smoke test in /tmp), bootstrap.sh gated by HPIPE_SKIP_SKILLS and [[ -t 0 ]]. 25 tests pass, ruff clean.
