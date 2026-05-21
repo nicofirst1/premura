@@ -22,8 +22,8 @@ subtasks:
 - T011
 - T012
 - T013
-agent: claude:opus-4-7:reviewer:reviewer
-shell_pid: '20147'
+agent: "claude:opus-4-7:reviewer:reviewer"
+shell_pid: "76298"
 history:
 - timestamp: '2026-05-21T09:53:12Z'
   agent: gpt-5.4
@@ -238,3 +238,4 @@ The highest-value check is whether the shipped `CONTRACT.md` fully matches the s
 - 2026-05-21T11:59:04Z – claude:opus-4-7:reviewer:reviewer – shell_pid=93528 – Done override: Mission v2-architectural-skeleton-01KS4SHA merged to master in 723bdeb
 - 2026-05-21T12:10:49Z – claude:opus-4-7:reviewer:reviewer – shell_pid=93528 – Mission review failed: rollback for parser contract drift on PluginParseResult mutability
 - 2026-05-21T12:19:56Z – claude:opus-4-7:reviewer:reviewer – shell_pid=20147 – Aligned CONTRACT.md and parser-generator/SKILL.md with mutable PluginParseResult; explained constraint inline
+- 2026-05-21T12:20:16Z – claude:opus-4-7:reviewer:reviewer – shell_pid=76298 – Started review via action command
