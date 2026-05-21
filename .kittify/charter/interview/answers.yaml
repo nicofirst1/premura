@@ -1,0 +1,122 @@
+schema_version: "1.0.0"
+mission: "software-dev"
+profile: "comprehensive"
+answers:
+  project_intent: >
+    Premura is a personal-health-data warehouse and pipeline (Python 3.11, uv,
+    DuckDB, age, rclone) that ingests monthly GDPR-style dumps from Garmin
+    Connect, Android Health Connect, Sleep as Android, and Body Measurement
+    Tracker into a single locally-owned encrypted DuckDB. The project shipped
+    v1 on 2026-05-21 and is now being hardened for open-source release while
+    remaining a single-operator system. The full functional and non-functional
+    spec (including the GDPR Article 9 security posture and the encrypt-before-
+    upload guarantee) lives in docs/SPEC.md and is the authoritative source
+    of system requirements; this charter governs how we work, not what the
+    system does.
+  languages_frameworks: >
+    Python 3.11 (single language, no frontend). Core libraries: typer + rich
+    (CLI), pydantic + pydantic-settings (config), DuckDB 1.1, polars (parse
+    + transform), structlog (logging), jinja2 (launchd plist), pyarrow,
+    python-ulid. Dev tooling: uv (package + virtualenv manager), pytest +
+    pytest-cov, ruff (lint + format), mypy (types). No other languages or
+    frameworks are in scope.
+  testing_requirements: >
+    pytest is the test framework. Tests live in tests/ and currently number
+    25 passing tests, including a real-export regression for Health Connect,
+    fixture-based parser unit tests, an age round-trip suite, and a launchd
+    plist plutil-lint test. No formal coverage floor is enforced; new
+    parsers and any code that touches health data should ship with at least
+    one fixture-based test, and pytest must be green before any change is
+    handed off for review. TDD is not mandated. The @pytest.mark.regression
+    suite is allowed to be skipped when real export files are absent.
+  quality_gates: >
+    Before review handoff: ruff (lint + format) clean, mypy clean for the
+    changed scope, pytest -q green. Pre-existing failures unrelated to the
+    change must be called out explicitly, not hidden. No pre-commit hook is
+    required, but the same gates run locally are the de-facto merge gate.
+    Static type hints are expected on public functions; runtime input
+    validation lives at the parser/CLI boundary (pydantic, defensive
+    PRAGMA table_info checks for the HC parser).
+  review_policy: >
+    Single-maintainer project: the operator is the only reviewer today and
+    self-reviews via the spec-kitty implement-review loop (kitty-specs/*
+    work packages). External contributions arrive as GitHub PRs and require
+    at least one maintainer approval plus all quality gates green before
+    merge. CI is not currently configured; review correctness is the merge
+    gate. Conventional commits are NOT required; commit messages should be
+    descriptive and reference the spec-kitty work package or doctrine action
+    when applicable.
+  performance_targets: >
+    Soft targets from SPEC §4 NFR-Performance, not pass/fail: full HC ingest
+    (~200 MB export) under 60 s on M-series Mac; monthly end-to-end run
+    (Garmin GDPR included) under 10 minutes for a ~500 MB zip; resulting
+    DuckDB warehouse under 1 GB before encryption after five years of
+    history. CLI commands should respond in under 2 s for the non-ingest
+    verbs (status, doctor, gc).
+  deployment_constraints: >
+    Primary platform: macOS (launchd-scheduled monthly run). Linux/Windows
+    are out of v1 scope but the warehouse file and encrypted artifacts MUST
+    remain platform-portable (stock age + DuckDB ≥1.1). master is the
+    single long-lived branch; feature work happens in spec-kitty worktrees
+    under .worktrees/ and is merged back to master via the spec-kitty merge
+    workflow. Release artifacts are git tags (v1.0.0 is the current release);
+    semver applies once external users exist. No CI/CD, no container, no
+    server-side deploy — this is a CLI tool installed via uv.
+  documentation_policy: >
+    docs/SPEC.md, docs/PLAN.md, docs/STATUS.md, docs/USERJOURNEY.md, and
+    docs/ROADMAP.md form the canonical documentation set and MUST stay in
+    sync with shipping behavior; STATUS.md is updated at the end of each
+    mission. README.md is the operator quick-start. As the project opens
+    to external users, every release tag MUST be accompanied by a
+    CHANGELOG entry and a license file at the repo root; user-visible CLI
+    changes MUST be reflected in README.md. spec-kitty mission artifacts
+    in kitty-specs/ are the source of truth for in-flight work and are not
+    duplicated into docs/.
+  risk_boundaries: >
+    Three non-negotiable governance boundaries for this project:
+    (1) No live API scraping — ingestion uses official user-initiated
+    exports only (GDPR dumps, HC auto-export files, app-export CSVs).
+    python-garminconnect-style logins, Google Fit REST, and Apple HealthKit
+    are out of scope.
+    (2) Local-first / offline by default — the pipeline MUST run end-to-end
+    with no network. Drive upload is opt-in (hpipe upload), never part of
+    the automated monthly run. hpipe doctor and all read paths MUST NOT
+    phone home.
+    (3) Single-operator assumption — the system is built for one operator
+    who is also the data subject. Multi-user, shared-account, and
+    multi-tenant features are explicitly out of scope; PRs that introduce
+    them are rejected.
+    These complement (and do not replace) the security NFRs in SPEC §4
+    (age-encryption mandatory before any cloud upload, age.key chmod 0600,
+    no PHI in logs/tests/commits).
+  amendment_process: >
+    The charter is amended by editing .kittify/charter/charter.md directly
+    and running `spec-kitty charter sync --json`. Material amendments
+    (changing a risk boundary, lowering a quality gate, adding/removing a
+    directive) MUST be committed in a dedicated commit whose message starts
+    with "charter:" and links to the spec-kitty mission or issue that
+    motivated the change. Editorial fixes (typos, clarifications) may ride
+    in any commit. The interview answers in this file are the editable
+    source for regeneration; if the charter diverges from these answers,
+    regenerate rather than hand-edit downstream YAML.
+  exception_policy: >
+    Quality-gate exceptions (e.g., a known-failing mypy line that is
+    pre-existing scope) MUST be called out explicitly in the work package
+    or PR description with a one-line rationale; silent skips are not
+    permitted. Risk-boundary exceptions (live API access, multi-user
+    surface, online-only behavior) are not allowed under this charter —
+    a feature that requires breaching one of the three risk boundaries
+    requires a charter amendment first. SPEC-level security requirements
+    (encryption, key permissions) admit no exceptions.
+selected_paradigms: []
+selected_directives:
+  - DIRECTIVE_010
+  - DIRECTIVE_024
+  - DIRECTIVE_028
+  - DIRECTIVE_030
+  - DIRECTIVE_033
+available_tools:
+  - spec-kitty
+  - git
+  - efficient-local-tooling
+  - python-review-checks
