@@ -47,9 +47,9 @@
 | T015 | Implement `src/premura/skills/__init__.py::install_skills()` using package resources and sha256-based idempotency. | WP04 |  | [D] |
 | T016 | Extend `src/premura/cli.py` with `hpipe install-skills`, including human-readable output for writes vs. no-op runs. | WP04 |  | [D] |
 | T017 | Extend `ops/bootstrap.sh` to run `hpipe install-skills` behind `HPIPE_SKIP_SKILLS` and TTY gating. | WP04 |  | [D] |
-| T018 | [P] Create repo-root `AGENTS.md` with the standards-first rule and links to `parsers/CONTRACT.md` and the shipped skill. | WP05 | [P] |
-| T019 | [P] Create `docs/UPDATE_STRATEGY.md` covering the six update kinds and their handled vs. deferred status. | WP05 | [P] |
-| T020 | Align both new docs with the deferred full-rebuild canonical-vocabulary policy and Stage 4 `ui/` terminology. | WP05 |  |
+| T018 | [P] Create repo-root `AGENTS.md` with the standards-first rule and links to `parsers/CONTRACT.md` and the shipped skill. | WP05 | [D] |
+| T019 | [P] Create `docs/UPDATE_STRATEGY.md` covering the six update kinds and their handled vs. deferred status. | WP05 | [D] |
+| T020 | Align both new docs with the deferred full-rebuild canonical-vocabulary policy and Stage 4 `ui/` terminology. | WP05 |  | [D] |
 | T021 | Add import-surface and stub-raising tests in `tests/test_skeleton.py` for the engine, MCP/UI, parser stubs, and parser base additions. | WP06 |  |
 | T022 | Add skill packaging and idempotency tests in `tests/test_skeleton.py`, covering resource lookup and install behavior. | WP06 |  |
 | T023 | Add ontology migration, seed-shape, row-count, and nullable-backward-compat tests in `tests/test_skeleton.py`. | WP06 |  |
@@ -208,9 +208,9 @@ Reviewer focus:
 - Estimated prompt size: ~240 lines
 
 Included subtasks:
-- [ ] T018 [P] Create repo-root `AGENTS.md` with the standards-first rule and links to `parsers/CONTRACT.md` and the shipped skill. (WP05)
-- [ ] T019 [P] Create `docs/UPDATE_STRATEGY.md` covering the six update kinds and their handled vs. deferred status. (WP05)
-- [ ] T020 Align both new docs with the deferred full-rebuild canonical-vocabulary policy and Stage 4 `ui/` terminology. (WP05)
+- [x] T018 [P] Create repo-root `AGENTS.md` with the standards-first rule and links to `parsers/CONTRACT.md` and the shipped skill. (WP05)
+- [x] T019 [P] Create `docs/UPDATE_STRATEGY.md` covering the six update kinds and their handled vs. deferred status. (WP05)
+- [x] T020 Align both new docs with the deferred full-rebuild canonical-vocabulary policy and Stage 4 `ui/` terminology. (WP05)
 
 Implementation sketch:
 1. Add the short repo-root agent pointer doc first so the top-level navigation exists.
