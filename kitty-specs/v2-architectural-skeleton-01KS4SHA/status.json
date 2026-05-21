@@ -1,7 +1,7 @@
 {
-  "event_count": 42,
-  "last_event_id": "01KS56ERD47DGPJ0Y8MA11FGZ0",
-  "materialized_at": "2026-05-21T11:59:09.732853+00:00",
+  "event_count": 45,
+  "last_event_id": "01KS57436F7PJC3T87V5YPZZWE",
+  "materialized_at": "2026-05-21T12:10:48.911776+00:00",
   "mission_number": "1",
   "mission_slug": "v2-architectural-skeleton-01KS4SHA",
   "mission_type": "software-dev",
@@ -10,11 +10,11 @@
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
-    "done": 6,
+    "done": 3,
     "for_review": 0,
     "in_progress": 0,
     "in_review": 0,
-    "planned": 0
+    "planned": 3
   },
   "work_packages": {
     "WP01": {
@@ -33,17 +33,17 @@
     },
     "WP03": {
       "actor": "user",
-      "force_count": 2,
-      "lane": "done",
-      "last_event_id": "01KS56EKKBN5Q0K4G5A2PZRHGT",
-      "last_transition_at": "2026-05-21T11:59:04.811228+00:00"
+      "force_count": 3,
+      "lane": "planned",
+      "last_event_id": "01KS57436F7PJC3T87V5YPZZWE",
+      "last_transition_at": "2026-05-21T12:10:48.911776+00:00"
     },
     "WP04": {
       "actor": "user",
-      "force_count": 2,
-      "lane": "done",
-      "last_event_id": "01KS56EN60WHGT8W14Q1NTN5DN",
-      "last_transition_at": "2026-05-21T11:59:06.432682+00:00"
+      "force_count": 3,
+      "lane": "planned",
+      "last_event_id": "01KS5742D9Y9Q0J9SV4CSWFSY8",
+      "last_transition_at": "2026-05-21T12:10:48.105601+00:00"
     },
     "WP05": {
       "actor": "user",
@@ -54,10 +54,10 @@
     },
     "WP06": {
       "actor": "user",
-      "force_count": 2,
-      "lane": "done",
-      "last_event_id": "01KS56ERD47DGPJ0Y8MA11FGZ0",
-      "last_transition_at": "2026-05-21T11:59:09.732853+00:00"
+      "force_count": 3,
+      "lane": "planned",
+      "last_event_id": "01KS5741HFK8R3CKA93AV5WT95",
+      "last_transition_at": "2026-05-21T12:10:47.215908+00:00"
     }
   }
 }
