@@ -203,3 +203,4 @@ Review the test file as the mission's executable acceptance contract. The most i
 - 2026-05-21T12:46:07Z – claude:opus-4-7:implementer:implementer – shell_pid=79811 – FR-016 test now calls seed_dim_metric() directly; install-skills test resolves and invokes the console_scripts entry, not just Typer registration. Reminder: 44-line checklist evidence still pending re-apply on master per WP05 review note.
 - 2026-05-21T12:46:40Z – claude:opus-4-7:reviewer:reviewer – shell_pid=36682 – Started review via action command
 - 2026-05-21T12:50:34Z – claude:opus-4-7:reviewer:reviewer – shell_pid=36682 – Review passed: FR-016 mutation (stub seed_dim_metric) breaks test_seed_handles_rows_with_and_without_new_keys; pyproject.toml mutation (remove hpipe entry) breaks test_hpipe_console_script_is_wired_and_invokable; full suite 53/53 green.
+- 2026-05-21T13:15:50Z – claude:opus-4-7:reviewer:reviewer – shell_pid=36682 – Moved to done
