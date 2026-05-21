@@ -17,7 +17,8 @@ subtasks:
 - T002
 - T003
 - T004
-shell_pid: '42594'
+shell_pid: "42594"
+agent: "claude:opus-4-7:implementer:implementer"
 history:
 - timestamp: '2026-05-21T09:53:12Z'
   agent: gpt-5.4
@@ -229,3 +230,7 @@ Review this WP in three passes:
 3. seed data policy correctness.
 
 The most important failure to catch is an implicit vocabulary migration hidden inside the YAML diff.
+
+## Activity Log
+
+- 2026-05-21T10:51:45Z – claude:opus-4-7:implementer:implementer – shell_pid=42594 – Assigned agent via action command
