@@ -50,12 +50,12 @@
 | T018 | [P] Create repo-root `AGENTS.md` with the standards-first rule and links to `parsers/CONTRACT.md` and the shipped skill. | WP05 | [D] |
 | T019 | [P] Create `docs/UPDATE_STRATEGY.md` covering the six update kinds and their handled vs. deferred status. | WP05 | [D] |
 | T020 | Align both new docs with the deferred full-rebuild canonical-vocabulary policy and Stage 4 `ui/` terminology. | WP05 |  | [D] |
-| T021 | Add import-surface and stub-raising tests in `tests/test_skeleton.py` for the engine, MCP/UI, parser stubs, and parser base additions. | WP06 |  |
-| T022 | Add skill packaging and idempotency tests in `tests/test_skeleton.py`, covering resource lookup and install behavior. | WP06 |  |
-| T023 | Add ontology migration, seed-shape, row-count, and nullable-backward-compat tests in `tests/test_skeleton.py`. | WP06 |  |
-| T024 | Organize the smoke tests so they clearly trace back to FR-001 through FR-017 without relying on unrelated v1 test files. | WP06 |  |
-| T025 | Run the requested verification commands (`pytest`, `doctor`, `ruff`, `mypy`) and fix test/support issues surfaced by the new skeleton files. | WP06 |  |
-| T026 | Update `kitty-specs/v2-architectural-skeleton-01KS4SHA/checklists/requirements.md` to reflect the post-implementation state. | WP06 |  |
+| T021 | Add import-surface and stub-raising tests in `tests/test_skeleton.py` for the engine, MCP/UI, parser stubs, and parser base additions. | WP06 |  | [D] |
+| T022 | Add skill packaging and idempotency tests in `tests/test_skeleton.py`, covering resource lookup and install behavior. | WP06 |  | [D] |
+| T023 | Add ontology migration, seed-shape, row-count, and nullable-backward-compat tests in `tests/test_skeleton.py`. | WP06 |  | [D] |
+| T024 | Organize the smoke tests so they clearly trace back to FR-001 through FR-017 without relying on unrelated v1 test files. | WP06 |  | [D] |
+| T025 | Run the requested verification commands (`pytest`, `doctor`, `ruff`, `mypy`) and fix test/support issues surfaced by the new skeleton files. | WP06 |  | [D] |
+| T026 | Update `kitty-specs/v2-architectural-skeleton-01KS4SHA/checklists/requirements.md` to reflect the post-implementation state. | WP06 |  | [D] |
 
 ## Work Packages
 
@@ -239,12 +239,12 @@ Reviewer focus:
 - Estimated prompt size: ~420 lines
 
 Included subtasks:
-- [ ] T021 Add import-surface and stub-raising tests in `tests/test_skeleton.py` for the engine, MCP/UI, parser stubs, and parser base additions. (WP06)
-- [ ] T022 Add skill packaging and idempotency tests in `tests/test_skeleton.py`, covering resource lookup and install behavior. (WP06)
-- [ ] T023 Add ontology migration, seed-shape, row-count, and nullable-backward-compat tests in `tests/test_skeleton.py`. (WP06)
-- [ ] T024 Organize the smoke tests so they clearly trace back to FR-001 through FR-017 without relying on unrelated v1 test files. (WP06)
-- [ ] T025 Run the requested verification commands (`pytest`, `doctor`, `ruff`, `mypy`) and fix test/support issues surfaced by the new skeleton files. (WP06)
-- [ ] T026 Update `kitty-specs/v2-architectural-skeleton-01KS4SHA/checklists/requirements.md` to reflect the post-implementation state. (WP06)
+- [x] T021 Add import-surface and stub-raising tests in `tests/test_skeleton.py` for the engine, MCP/UI, parser stubs, and parser base additions. (WP06)
+- [x] T022 Add skill packaging and idempotency tests in `tests/test_skeleton.py`, covering resource lookup and install behavior. (WP06)
+- [x] T023 Add ontology migration, seed-shape, row-count, and nullable-backward-compat tests in `tests/test_skeleton.py`. (WP06)
+- [x] T024 Organize the smoke tests so they clearly trace back to FR-001 through FR-017 without relying on unrelated v1 test files. (WP06)
+- [x] T025 Run the requested verification commands (`pytest`, `doctor`, `ruff`, `mypy`) and fix test/support issues surfaced by the new skeleton files. (WP06)
+- [x] T026 Update `kitty-specs/v2-architectural-skeleton-01KS4SHA/checklists/requirements.md` to reflect the post-implementation state. (WP06)
 
 Implementation sketch:
 1. Build out the new test file in logical groups: imports/stubs, skill plumbing, ontology/migration.
