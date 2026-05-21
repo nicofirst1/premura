@@ -19,6 +19,8 @@ subtasks:
 - T011
 - T012
 - T013
+agent: "claude:opus-4-7:implementer:implementer"
+shell_pid: "77625"
 history:
 - timestamp: '2026-05-21T09:53:12Z'
   agent: gpt-5.4
@@ -223,3 +225,7 @@ Review this WP in two passes:
 2. exact contract/docstring wording in the new stub/document files.
 
 The highest-value check is whether the shipped `CONTRACT.md` fully matches the spec-approved vocabulary policy.
+
+## Activity Log
+
+- 2026-05-21T11:13:18Z – claude:opus-4-7:implementer:implementer – shell_pid=77625 – Started implementation via action command
