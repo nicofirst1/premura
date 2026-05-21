@@ -1,4 +1,8 @@
 # Prior-Art Research — Results
+> Status: proposal/archive. Research output used for strategy, not a runtime contract.
+>
+> Research brief: [`PRIOR_ART_BRIEF.md`](PRIOR_ART_BRIEF.md)
+>
 > Generated: 2026-05-20
 > Time budget used: ~45 minutes
 > Phases completed: 1 / 2 / 3 / 4

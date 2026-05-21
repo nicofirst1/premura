@@ -1,5 +1,7 @@
 # Warehouse update strategy
 
+> Status: authoritative. Source of truth for warehouse update kinds and support level.
+>
 > Companion to [STAGES.md](STAGES.md) and the engine surface at
 > `src/premura/engine/__init__.py`. Defines the six shapes a warehouse update
 > can take and which ones the v2 architectural skeleton handles today versus

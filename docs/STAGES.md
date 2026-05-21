@@ -1,6 +1,8 @@
 # premura — Stages
 
-> Companion to [VISION.md](VISION.md), [SPEC.md](SPEC.md), [ROADMAP.md](ROADMAP.md), [FEATURE_BLOOD.md](FEATURE_BLOOD.md).
+> Status: authoritative. Source of truth for cross-stage architecture boundaries.
+>
+> Companion to [VISION.md](VISION.md), [SPEC.md](SPEC.md), [ROADMAP.md](ROADMAP.md), [PROPOSAL_LABS.md](PROPOSAL_LABS.md).
 > Captured 2026-05-21. Complements VISION.md — does **not** replace the pillar framing. The pillars are the *trajectory*; the stages below are the *data-flow shape*. A feature is located in pillars by intent and in stages by where it sits in the pipeline.
 
 ## The four stages
@@ -31,10 +33,10 @@ Data moves through the system in a strict order. Each stage has a different cont
 
 ### 1. Ingest
 
-Parsers turn a vendor artifact into rows in `hp.fact_measurement` / `hp.fact_interval` per the long-format star schema in PLAN.md.
+Parsers turn a vendor artifact into rows in `hp.fact_measurement` / `hp.fact_interval` per the long-format star schema documented in [ARCHITECTURE_HISTORY.md](ARCHITECTURE_HISTORY.md).
 
 - Today: HC `.db`, Garmin GDPR `.zip`, Sleep as Android CSV, BMT CSV.
-- Coming: blood / urine / stool lab PDFs (see [FEATURE_BLOOD.md](FEATURE_BLOOD.md)), continuous glucose, additional wearables.
+- Coming: blood / urine / stool lab PDFs (see [PROPOSAL_LABS.md](PROPOSAL_LABS.md)), continuous glucose, additional wearables.
 - No derivation, no imputation, no analysis. Ingest stores **what was observed, in canonical units, with provenance**.
 - Idempotent (sha256 + `dedupe_key UNIQUE`), append-only.
 

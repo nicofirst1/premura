@@ -1,11 +1,13 @@
 # premura — Current Status
 
-> Companion to [SPEC.md](SPEC.md), [PLAN.md](PLAN.md), [USERJOURNEY.md](USERJOURNEY.md), [ROADMAP.md](ROADMAP.md).
+> Status: live reference. Snapshot of what is true and shipped today.
+>
+> Companion to [SPEC.md](SPEC.md), [ARCHITECTURE_HISTORY.md](ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](USERJOURNEY.md), [ROADMAP.md](ROADMAP.md).
 > Snapshot date: **2026-05-21**.
 
 ## TL;DR
 
-**v1 closed 2026-05-21 — tagged `v1.0.0`.** The four-source ingest pipeline is **operational**. The DuckDB warehouse contains ~3.5 years of HC data plus the full set of Garmin-only metrics that PLAN.md flagged as the original motivation: **HRV rMSSD overnight, stress, training load, training readiness, VO₂ max, skin temperature, hydration, sleep score, respiration**. Re-ingest of any source is idempotent.
+**v1 closed 2026-05-21 — tagged `v1.0.0`.** The four-source ingest pipeline is **operational**. The DuckDB warehouse contains ~3.5 years of HC data plus the full set of Garmin-only metrics that [ARCHITECTURE_HISTORY.md](ARCHITECTURE_HISTORY.md) flagged as the original motivation: **HRV rMSSD overnight, stress, training load, training readiness, VO₂ max, skin temperature, hydration, sleep score, respiration**. Re-ingest of any source is idempotent.
 
 **Policy change (2026-05-20)**: as the project starts looking like a real application for others, Drive upload is now **opt-in**, not part of the automated monthly run. `hpipe run-monthly` ends with the encrypted `.age` artifact sitting in `data/exports/YYYY-MM/`; the user decides whether to `hpipe upload` (or hand the file off to another sync mechanism). The `age` private key is stored locally by default, with a password-manager recipe (Bitwarden as a reference) in [`ops/bootstrap.sh`](../ops/bootstrap.sh).
 
@@ -61,7 +63,7 @@ Row counts shown here are *shape illustrations* from a single operator's pipelin
 | FR | Met? | Notes |
 |---|:---:|---|
 | FR-1 HC ingestion | ✅ | Verified against a real `health_connect_export.db`; row counts match the parser's coverage report. |
-| FR-2 Garmin GDPR | ✅ | All metrics listed in PLAN's per-source table now appear at least once — see counts above. |
+| FR-2 Garmin GDPR | ✅ | All metrics listed in `ARCHITECTURE_HISTORY.md`'s per-source table now appear at least once — see counts above. |
 | FR-3 Sleep as Android | ✅ | Parser + unit tests pass on synthetic fixtures (per-minute actigraphy, DST-safe wall-clock advancement). Live-SAA exercise dropped from v1 scope (operator no longer plans to export from SAA). |
 | FR-4 BMT with config-driven units | ✅ | Long-format file uses per-row units; wide-format fallback still respects `parsers.bmt.weight_unit` config. |
 | FR-5 Dedupe within + across | ✅ | Demonstrated: re-ingest same file → 0 inserted; loader skips lower-priority overlapping rows. |
@@ -74,23 +76,11 @@ Row counts shown here are *shape illustrations* from a single operator's pipelin
 ## Known limitations
 
 - **Health Connect HR-series uniqueness collisions**: parser emits ~3 rows that share `parent_uuid + epoch_millis` with siblings; Polars dedupes them before insert (in-batch). Counted as `rows_inserted` minus actual table delta — currently invisible in stats. Cosmetic only.
-- **Wide-format BMT** with no `Time` column: timestamps land at 00:00:00 local; not a regression vs PLAN but worth flagging.
-- **No FIT-file (per-activity stream) ingestion** — PLAN §"Out of scope (v1)" calls this out explicitly.
+- **Wide-format BMT** with no `Time` column: timestamps land at 00:00:00 local; not a regression vs the historical architecture plan but worth flagging.
+- **No FIT-file (per-activity stream) ingestion** — `ARCHITECTURE_HISTORY.md` marks this as out of scope for v1.
 - **`fact_interval` has no `unit` column**; we carry it in memory only. Fine for now; would need a migration if downstream queries want it.
 
-## How to use it today
+## Operations
 
-```bash
-# put inputs in data/inbox/ (HC .db, Garmin GDPR .zip, SAA/BMT .csv), then:
-uv run hpipe ingest                      # autodiscovers all four sources
-uv run hpipe status                      # current row counts
-uv run hpipe export --month 2026-05      # snapshot + tarball + age-encrypt
-uv run hpipe upload --month 2026-05      # rclone to gdrive:<your-configured-remote-path>/2026/05/
-uv run hpipe doctor                      # preflight checks
-uv run hpipe install-launchd             # macOS scheduled run on day 1 @ 10:00
-```
-
-Direct SQL:
-```bash
-duckdb -readonly data/duck/health.duckdb
-```
+See [OPERATIONS.md](OPERATIONS.md) for the current operator command surface and
+day-to-day runbook.

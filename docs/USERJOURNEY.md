@@ -1,6 +1,8 @@
 # premura — User Journey
 
-> Companion to [SPEC.md](SPEC.md) (what the system must do), [PLAN.md](PLAN.md) (how it's built), [STATUS.md](STATUS.md) (what works today), and [ROADMAP.md](ROADMAP.md) (what's next).
+> Status: authoritative. Source of truth for the intended human experience over time.
+>
+> Companion to [SPEC.md](SPEC.md) (what the system must do), [ARCHITECTURE_HISTORY.md](ARCHITECTURE_HISTORY.md) (how it was built), [STATUS.md](STATUS.md) (what works today), and [ROADMAP.md](ROADMAP.md) (what's next).
 > This document is the source of truth for **the human experience over time**.
 
 ## Persona

@@ -2,7 +2,8 @@
 
 Personal health-data warehouse. Ingests monthly dumps from **Health Connect, Garmin GDPR, Sleep as Android, Body Measurement Tracker** into a single encrypted DuckDB. Captures the metrics Health Connect doesn't bridge (HRV rMSSD overnight, stress, body battery, training load/readiness, VO₂ max, etc.).
 
-> Docs live in [`docs/`](docs/): [SPEC](docs/SPEC.md) · [PLAN](docs/PLAN.md) · [USERJOURNEY](docs/USERJOURNEY.md) · [STATUS](docs/STATUS.md) · [ROADMAP](docs/ROADMAP.md)
+> Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [SPEC](docs/SPEC.md) · [Architecture History](docs/ARCHITECTURE_HISTORY.md) · [USERJOURNEY](docs/USERJOURNEY.md) · [STATUS](docs/STATUS.md) · [ROADMAP](docs/ROADMAP.md)
+> Contributor guide: [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
 ## Quick start
 

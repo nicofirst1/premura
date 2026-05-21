@@ -1,12 +1,15 @@
 # premura — Roadmap
 
-> Companion to [SPEC.md](SPEC.md), [PLAN.md](PLAN.md), [USERJOURNEY.md](USERJOURNEY.md), [STATUS.md](STATUS.md), [STAGES.md](STAGES.md), [FEATURE_BLOOD.md](FEATURE_BLOOD.md).
+> Status: live reference. Intended sequencing of future work, not a contract.
+>
+> Companion to [SPEC.md](SPEC.md), [ARCHITECTURE_HISTORY.md](ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](USERJOURNEY.md), [STATUS.md](STATUS.md), [STAGES.md](STAGES.md), [PROPOSAL_LABS.md](PROPOSAL_LABS.md).
 
 Items below are sorted by reasonable build order, not priority. Anything in v1 scope (SPEC §2) that is still ⏳ in [STATUS.md](STATUS.md) is the prerequisite for the rest.
 
-## Policy change (2026-05-20)
+## Current operating policy
 
-The project is starting to look like a real application — not just a personal pipeline — so Drive upload is now **opt-in**, not automatic. `run-monthly` stops at the encrypted artifact; the user runs `hpipe upload` manually or moves the file by other means. The `age` private key has two recommended storage paths: local file (default) or a password-manager secure note (Bitwarden recipe in `ops/bootstrap.sh`; other vaults follow the same pattern).
+Drive upload remains **opt-in**, not automatic. For the current shipped behavior,
+see [STATUS.md](STATUS.md) and [README.md](../README.md).
 
 The user is actively writing more requirements; this section will grow.
 
@@ -32,7 +35,7 @@ The user is actively writing more requirements; this section will grow.
 
 ## New source class — clinical labs (blood / urine / stool)
 
-See [FEATURE_BLOOD.md](FEATURE_BLOOD.md) for the full spec. Summary:
+See [PROPOSAL_LABS.md](PROPOSAL_LABS.md) for the full proposal. Summary:
 
 - Adds a new source class — clinical lab PDFs — alongside the four wearable/app sources. Schema-free (existing long-format star already accepts it).
 - Prior art: an operator-local standalone OCR repo has already extracted a real multi-year, multi-language lab-PDF corpus into structured rows. We adopt its **name-normalisation maps, date heuristics, and value-quirk handlers** verbatim, but **not** its extraction engine wholesale — we first spike **[docling](https://github.com/docling-project/docling)** as a local-only, table-aware alternative to the prior repo's Claude-vision pipeline (which sends PHI to the Anthropic API; in tension with VISION Pillar 6).

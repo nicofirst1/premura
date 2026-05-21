@@ -1,6 +1,8 @@
 # premura — Vision
 
-> Companion to [SPEC.md](SPEC.md), [PLAN.md](PLAN.md), [USERJOURNEY.md](USERJOURNEY.md), [STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md), [STAGES.md](STAGES.md), [FEATURE_BLOOD.md](FEATURE_BLOOD.md).
+> Status: proposal/archive. Long-term trajectory, not a build contract.
+>
+> Companion to [SPEC.md](SPEC.md), [ARCHITECTURE_HISTORY.md](ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](USERJOURNEY.md), [STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md), [STAGES.md](STAGES.md), [PROPOSAL_LABS.md](PROPOSAL_LABS.md).
 >
 > The **pillars below describe the trajectory**. For the orthogonal *data-flow shape* (Ingest → Signal processing → MCP → UI), see [STAGES.md](STAGES.md). Pillars and stages compose: a feature is located in pillars by intent and in stages by where it sits in the pipeline.
 >
