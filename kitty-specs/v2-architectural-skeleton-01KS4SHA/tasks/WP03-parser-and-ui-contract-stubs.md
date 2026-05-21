@@ -229,3 +229,4 @@ The highest-value check is whether the shipped `CONTRACT.md` fully matches the s
 ## Activity Log
 
 - 2026-05-21T11:13:18Z – claude:opus-4-7:implementer:implementer – shell_pid=77625 – Started implementation via action command
+- 2026-05-21T11:20:48Z – claude:opus-4-7:implementer:implementer – shell_pid=77625 – Ready for review: PluginParser Protocol + PluginParseResult added to parsers/base.py (additive); parsers/lookup.py, parsers/_lang/__init__.py, parsers/CONTRACT.md, mcp/__init__.py, ui/__init__.py created with required literal docstrings and NotImplementedError stubs; 25/25 existing tests green; ruff clean on owned files
