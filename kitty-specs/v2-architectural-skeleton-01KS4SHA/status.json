@@ -2,7 +2,7 @@
   "event_count": 36,
   "last_event_id": "01KS56971PXVHWFDGY9PP97YKV",
   "materialized_at": "2026-05-21T11:56:08.118805+00:00",
-  "mission_number": "",
+  "mission_number": "1",
   "mission_slug": "v2-architectural-skeleton-01KS4SHA",
   "mission_type": "software-dev",
   "summary": {
