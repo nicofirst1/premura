@@ -6,5 +6,7 @@
   "mission_slug": "v2-architectural-skeleton-01KS4SHA",
   "mission_type": "software-dev",
   "slug": "v2-architectural-skeleton-01KS4SHA",
-  "target_branch": "master"
+  "target_branch": "master",
+  "vcs": "git",
+  "source_description": "Add placeholder-only subpackages for the four v2 stages (signals, mcp, learn, _lang stub at ingest), extend parsers.base with an additive PluginParser Protocol, ship a parser-generator Claude Code skill inside the package with an install-skills CLI verb, extend dim_metric schema and seed ~150 ontology rows with LOINC/IEEE-1752.1 cross-references. Skeleton only — no v2 implementations, no v1 close-out (delegated to docs/V1_CLOSEOUT.md), no rename (user handles separately)."
 }
