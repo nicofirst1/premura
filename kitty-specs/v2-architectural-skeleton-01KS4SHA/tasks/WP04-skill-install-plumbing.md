@@ -16,8 +16,8 @@ subtasks:
 - T015
 - T016
 - T017
-agent: "claude:opus-4-7:implementer:implementer"
-shell_pid: "2137"
+agent: "claude:opus-4-7:reviewer:reviewer"
+shell_pid: "92202"
 history:
 - timestamp: '2026-05-21T09:53:12Z'
   agent: gpt-5.4
@@ -179,3 +179,4 @@ Review end-to-end from package data to installed file path. The key question is 
 - 2026-05-21T12:10:48Z – claude:opus-4-7:reviewer:reviewer – shell_pid=16062 – Mission review failed: rollback for unreachable advertised install-skills CLI path and skill contract drift
 - 2026-05-21T12:22:30Z – claude:opus-4-7:implementer:implementer – shell_pid=2137 – Started implementation via action command
 - 2026-05-21T12:31:01Z – claude:opus-4-7:implementer:implementer – shell_pid=2137 – uv run hpipe install-skills now works end-to-end from a synced checkout; pyproject [project.scripts] table fixed
+- 2026-05-21T12:31:37Z – claude:opus-4-7:reviewer:reviewer – shell_pid=92202 – Started review via action command
