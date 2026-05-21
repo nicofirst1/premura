@@ -1,0 +1,63 @@
+{
+  "event_count": 6,
+  "last_event_id": "01KS4ZQHJAF1C7CS285J6MR8T7",
+  "materialized_at": "2026-05-21T10:01:37.610894+00:00",
+  "mission_number": "",
+  "mission_slug": "v2-architectural-skeleton-01KS4SHA",
+  "mission_type": "software-dev",
+  "summary": {
+    "approved": 0,
+    "blocked": 0,
+    "canceled": 0,
+    "claimed": 0,
+    "done": 0,
+    "for_review": 0,
+    "in_progress": 0,
+    "in_review": 0,
+    "planned": 6
+  },
+  "work_packages": {
+    "WP01": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KS4ZQHDMKJC1GXE6X3DBQ3TN",
+      "last_transition_at": "2026-05-21T10:01:37.460992+00:00"
+    },
+    "WP02": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KS4ZQHJ1X0T02J1KWNWJWNVS",
+      "last_transition_at": "2026-05-21T10:01:37.601769+00:00"
+    },
+    "WP03": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KS4ZQHJ49RHZAE7W937HZH71",
+      "last_transition_at": "2026-05-21T10:01:37.604112+00:00"
+    },
+    "WP04": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KS4ZQHJ6GGSTS6Y4K5JQ10MP",
+      "last_transition_at": "2026-05-21T10:01:37.606375+00:00"
+    },
+    "WP05": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KS4ZQHJ82VVMFFVFJ1AT3QP3",
+      "last_transition_at": "2026-05-21T10:01:37.608653+00:00"
+    },
+    "WP06": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KS4ZQHJAF1C7CS285J6MR8T7",
+      "last_transition_at": "2026-05-21T10:01:37.610894+00:00"
+    }
+  }
+}
