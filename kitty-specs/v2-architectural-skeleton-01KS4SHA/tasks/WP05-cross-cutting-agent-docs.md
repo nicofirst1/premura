@@ -133,3 +133,4 @@ Read these docs from a newcomer perspective: could a contributor find the parser
 ## Activity Log
 
 - 2026-05-21T11:33:02Z – claude:opus-4-7:implementer:implementer – shell_pid=62575 – Started implementation via action command
+- 2026-05-21T11:39:12Z – claude:opus-4-7:implementer:implementer – shell_pid=62575 – Ready for review: AGENTS.md (standards-first rule + pointers to CONTRACT.md and parser-generator SKILL.md) and docs/UPDATE_STRATEGY.md (six update kinds; (a)/(b)/(c) handled, (d)/(e)/(f) deferred). All backticked paths verified to exist; 25/25 tests still pass.
