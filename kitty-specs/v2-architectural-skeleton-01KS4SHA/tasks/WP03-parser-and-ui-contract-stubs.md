@@ -12,6 +12,9 @@ requirement_refs:
 planning_base_branch: master
 merge_target_branch: master
 branch_strategy: Planning artifacts for this feature were generated on master. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into master unless the human explicitly redirects the landing branch.
+base_branch: kitty/mission-v2-architectural-skeleton-01KS4SHA
+base_commit: d530b084ba4492e8e67bbbfed0462ddcdb7b40c6
+created_at: '2026-05-21T12:14:49.060767+00:00'
 subtasks:
 - T008
 - T009
@@ -20,7 +23,7 @@ subtasks:
 - T012
 - T013
 agent: "claude:opus-4-7:reviewer:reviewer"
-shell_pid: "93528"
+shell_pid: "76298"
 history:
 - timestamp: '2026-05-21T09:53:12Z'
   agent: gpt-5.4
@@ -234,3 +237,6 @@ The highest-value check is whether the shipped `CONTRACT.md` fully matches the s
 - 2026-05-21T11:24:10Z – claude:opus-4-7:reviewer:reviewer – shell_pid=93528 – Review passed: PluginParser Protocol + PluginParseResult appended additively to parsers/base.py (ParseResult byte-for-byte unchanged); lookup.py, _lang/, CONTRACT.md, mcp/, ui/ stubs all carry required verbatim docstring tokens and raise NotImplementedError; 25/25 tests green, ruff clean on owned files; frozen=True deviation on PluginParseResult accepted because Python forbids frozen subclass of non-frozen ParseResult and T008 mandates ParseResult unchanged
 - 2026-05-21T11:59:04Z – claude:opus-4-7:reviewer:reviewer – shell_pid=93528 – Done override: Mission v2-architectural-skeleton-01KS4SHA merged to master in 723bdeb
 - 2026-05-21T12:10:49Z – claude:opus-4-7:reviewer:reviewer – shell_pid=93528 – Mission review failed: rollback for parser contract drift on PluginParseResult mutability
+- 2026-05-21T12:19:56Z – claude:opus-4-7:reviewer:reviewer – shell_pid=20147 – Aligned CONTRACT.md and parser-generator/SKILL.md with mutable PluginParseResult; explained constraint inline
+- 2026-05-21T12:20:16Z – claude:opus-4-7:reviewer:reviewer – shell_pid=76298 – Started review via action command
+- 2026-05-21T12:22:02Z – claude:opus-4-7:reviewer:reviewer – shell_pid=76298 – Review passed: CONTRACT.md and parser-generator/SKILL.md now correctly describe PluginParseResult as a mutable dataclass with inline rationale matching base.py; code unchanged (mutable @dataclass preserves T008's ParseResult-unchanged constraint); 52/52 tests green.
