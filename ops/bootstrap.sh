@@ -37,8 +37,13 @@ if [[ "${HPIPE_SKIP_RCLONE:-0}" != "1" ]]; then
 fi
 
 echo ">>> Step 2/5: Python deps (uv sync)"
-uv sync
-uv sync --extra dev
+# Reinstall the local `premura` editable wheel so console scripts declared in
+# `[project.scripts]` (e.g. `hpipe`) are always materialized in `.venv/bin/`.
+# Plain `uv sync` is incremental and will NOT rewrite bin scripts when the
+# entry_points table changes without a version bump, which has left stale
+# checkouts unable to invoke `uv run hpipe`.
+uv sync --reinstall-package premura
+uv sync --extra dev --reinstall-package premura
 
 # Install bundled Claude Code skills into ./.claude/skills/.
 # Skip when HPIPE_SKIP_SKILLS=1 or when stdin is not a TTY (CI / pipelines).
