@@ -34,9 +34,9 @@
 | T002 | Extend `seed_dim_metric()` to read, insert, and update the six new ontology fields while preserving backward compatibility for rows missing those keys. | WP01 |  | [D] |
 | T003 | Add `category` to all existing legacy rows in `src/premura/dim_metric.yaml` without renaming legacy `metric_id`s. | WP01 |  | [D] |
 | T004 | Append the new ontology rows to `src/premura/dim_metric.yaml` so the seed reaches the required floor with clinically standard aliases and standards metadata. | WP01 |  | [D] |
-| T005 | Create `src/premura/engine/_registry.py` with `SignalSpec`, `REGISTRY`, and the `@signal(...)` decorator contract. | WP02 |  |
-| T006 | Create `src/premura/engine/__init__.py` with the Stage 2 docstring, re-exports, and the five `NotImplementedError` API stubs. | WP02 |  |
-| T007 | Keep the engine surface import-safe and implementation-free so `REGISTRY` stays empty until future signal modules are imported. | WP02 |  |
+| T005 | Create `src/premura/engine/_registry.py` with `SignalSpec`, `REGISTRY`, and the `@signal(...)` decorator contract. | WP02 |  | [D] |
+| T006 | Create `src/premura/engine/__init__.py` with the Stage 2 docstring, re-exports, and the five `NotImplementedError` API stubs. | WP02 |  | [D] |
+| T007 | Keep the engine surface import-safe and implementation-free so `REGISTRY` stays empty until future signal modules are imported. | WP02 |  | [D] |
 | T008 | Append `PluginParseResult` to `src/premura/parsers/base.py` without altering existing parser types or behaviors. | WP03 |  |
 | T009 | Append the additive `PluginParser` Protocol to `src/premura/parsers/base.py` with `language_hint`, `declares_metrics()`, and the narrowed parse return type. | WP03 |  |
 | T010 | [P] Create `src/premura/parsers/lookup.py` with the reverse-index docstring and `suggest_metric()` stub. | WP03 | [P] |
@@ -105,9 +105,9 @@ Reviewer focus:
 - Estimated prompt size: ~260 lines
 
 Included subtasks:
-- [ ] T005 Create `src/premura/engine/_registry.py` with `SignalSpec`, `REGISTRY`, and the `@signal(...)` decorator contract. (WP02)
-- [ ] T006 Create `src/premura/engine/__init__.py` with the Stage 2 docstring, re-exports, and the five `NotImplementedError` API stubs. (WP02)
-- [ ] T007 Keep the engine surface import-safe and implementation-free so `REGISTRY` stays empty until future signal modules are imported. (WP02)
+- [x] T005 Create `src/premura/engine/_registry.py` with `SignalSpec`, `REGISTRY`, and the `@signal(...)` decorator contract. (WP02)
+- [x] T006 Create `src/premura/engine/__init__.py` with the Stage 2 docstring, re-exports, and the five `NotImplementedError` API stubs. (WP02)
+- [x] T007 Keep the engine surface import-safe and implementation-free so `REGISTRY` stays empty until future signal modules are imported. (WP02)
 
 Implementation sketch:
 1. Implement the minimal registry data model in `_registry.py` exactly per the documented fields/defaults.
