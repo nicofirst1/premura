@@ -16,8 +16,8 @@ subtasks:
 - T015
 - T016
 - T017
-agent: "claude:opus-4-7:reviewer:reviewer"
-shell_pid: "16062"
+agent: "claude:opus-4-7:implementer:implementer"
+shell_pid: "2137"
 history:
 - timestamp: '2026-05-21T09:53:12Z'
   agent: gpt-5.4
@@ -177,3 +177,4 @@ Review end-to-end from package data to installed file path. The key question is 
 - 2026-05-21T11:32:35Z – claude:opus-4-7:reviewer:reviewer – shell_pid=16062 – Review passed: parser-generator SKILL.md bundled with valid frontmatter pointing at WP03's parsers/CONTRACT.md; install_skills() is generic (discovers any SKILL.md child dir), sha256-idempotent, and end-to-end verified (first run wrote /tmp/.../SKILL.md, second run printed 'no changes'). CLI verb hpipe install-skills wired, bootstrap.sh gated by HPIPE_SKIP_SKILLS and [[ -t 0 ]], 25/25 tests pass, ruff clean on touched files.
 - 2026-05-21T11:59:06Z – claude:opus-4-7:reviewer:reviewer – shell_pid=16062 – Done override: Mission v2-architectural-skeleton-01KS4SHA merged to master in 723bdeb
 - 2026-05-21T12:10:48Z – claude:opus-4-7:reviewer:reviewer – shell_pid=16062 – Mission review failed: rollback for unreachable advertised install-skills CLI path and skill contract drift
+- 2026-05-21T12:22:30Z – claude:opus-4-7:implementer:implementer – shell_pid=2137 – Started implementation via action command
