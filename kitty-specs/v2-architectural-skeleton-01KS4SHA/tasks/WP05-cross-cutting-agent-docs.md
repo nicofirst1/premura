@@ -12,6 +12,8 @@ subtasks:
 - T018
 - T019
 - T020
+agent: "claude:opus-4-7:implementer:implementer"
+shell_pid: "62575"
 history:
 - timestamp: '2026-05-21T09:53:12Z'
   agent: gpt-5.4
@@ -127,3 +129,7 @@ Manual review expectations:
 ## Reviewer Guidance
 
 Read these docs from a newcomer perspective: could a contributor find the parser contract quickly, understand the standards-first rule, and understand why a future full rebuild exists? If not, tighten the wording.
+
+## Activity Log
+
+- 2026-05-21T11:33:02Z – claude:opus-4-7:implementer:implementer – shell_pid=62575 – Started implementation via action command
