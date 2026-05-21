@@ -43,10 +43,10 @@
 | T011 | [P] Create `src/premura/parsers/_lang/__init__.py` with the local-only language-detection/translation TODO contract and stub. | WP03 | [D] |
 | T012 | Create `src/premura/parsers/CONTRACT.md` with the standards-first parser workflow, alias rules, and reserved-namespace guidance. | WP03 |  | [D] |
 | T013 | [P] Create `src/premura/mcp/__init__.py` and `src/premura/ui/__init__.py` with their stage docstrings, stubs, and layering assertions. | WP03 | [D] |
-| T014 | Create the shipped parser-generator skill manifest at `src/premura/skills/parser-generator/SKILL.md`. | WP04 |  |
-| T015 | Implement `src/premura/skills/__init__.py::install_skills()` using package resources and sha256-based idempotency. | WP04 |  |
-| T016 | Extend `src/premura/cli.py` with `hpipe install-skills`, including human-readable output for writes vs. no-op runs. | WP04 |  |
-| T017 | Extend `ops/bootstrap.sh` to run `hpipe install-skills` behind `HPIPE_SKIP_SKILLS` and TTY gating. | WP04 |  |
+| T014 | Create the shipped parser-generator skill manifest at `src/premura/skills/parser-generator/SKILL.md`. | WP04 |  | [D] |
+| T015 | Implement `src/premura/skills/__init__.py::install_skills()` using package resources and sha256-based idempotency. | WP04 |  | [D] |
+| T016 | Extend `src/premura/cli.py` with `hpipe install-skills`, including human-readable output for writes vs. no-op runs. | WP04 |  | [D] |
+| T017 | Extend `ops/bootstrap.sh` to run `hpipe install-skills` behind `HPIPE_SKIP_SKILLS` and TTY gating. | WP04 |  | [D] |
 | T018 | [P] Create repo-root `AGENTS.md` with the standards-first rule and links to `parsers/CONTRACT.md` and the shipped skill. | WP05 | [P] |
 | T019 | [P] Create `docs/UPDATE_STRATEGY.md` covering the six update kinds and their handled vs. deferred status. | WP05 | [P] |
 | T020 | Align both new docs with the deferred full-rebuild canonical-vocabulary policy and Stage 4 `ui/` terminology. | WP05 |  |
@@ -173,10 +173,10 @@ Reviewer focus:
 - Estimated prompt size: ~320 lines
 
 Included subtasks:
-- [ ] T014 Create the shipped parser-generator skill manifest at `src/premura/skills/parser-generator/SKILL.md`. (WP04)
-- [ ] T015 Implement `src/premura/skills/__init__.py::install_skills()` using package resources and sha256-based idempotency. (WP04)
-- [ ] T016 Extend `src/premura/cli.py` with `hpipe install-skills`, including human-readable output for writes vs. no-op runs. (WP04)
-- [ ] T017 Extend `ops/bootstrap.sh` to run `hpipe install-skills` behind `HPIPE_SKIP_SKILLS` and TTY gating. (WP04)
+- [x] T014 Create the shipped parser-generator skill manifest at `src/premura/skills/parser-generator/SKILL.md`. (WP04)
+- [x] T015 Implement `src/premura/skills/__init__.py::install_skills()` using package resources and sha256-based idempotency. (WP04)
+- [x] T016 Extend `src/premura/cli.py` with `hpipe install-skills`, including human-readable output for writes vs. no-op runs. (WP04)
+- [x] T017 Extend `ops/bootstrap.sh` to run `hpipe install-skills` behind `HPIPE_SKIP_SKILLS` and TTY gating. (WP04)
 
 Implementation sketch:
 1. Write the shipped skill manifest so it points back to `src/premura/parsers/CONTRACT.md` instead of embedding the decision tree.
