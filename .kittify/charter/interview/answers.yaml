@@ -31,9 +31,18 @@ answers:
     Connect. Any code that touches health data ships with at least one
     fixture-based test, and `pytest -q` must be green before review
     handoff. The `@pytest.mark.regression` suite may be skipped when
-    real export files are absent. TDD is not mandated but is encouraged
-    for parsing code and for any logic that influences user-facing
-    health interpretation.
+    real export files are absent. Test-first development is required
+    for new behavior (DIRECTIVE_034): a failing test must precede the
+    production code that motivates it; cycles run in minutes, not
+    hours; horizontal slicing -- writing a batch of tests before any
+    implementation -- is prohibited because it codifies imagined
+    behavior. Tests verify behavior through public interfaces
+    (DIRECTIVE_036): inside-boundary collaborators are not patched or
+    imported to drive business logic; assertions target observable
+    outputs (CLI exits, DuckDB row counts, file bytes, raised
+    exceptions). Outside-boundary substitutes -- subprocess wrappers
+    around `age`/`rclone`, `shutil.which`, config parameters --
+    remain permitted.
   quality_gates: >
     Before review handoff: ruff (lint + format) clean, mypy clean for the
     changed scope, `pytest -q` green. Code must stay modular -- avoid
@@ -73,16 +82,19 @@ answers:
     is a CLI tool installed via uv. As an agent-facing layer is added,
     it inherits the same local-first stance unless explicitly amended.
   documentation_policy: >
-    docs/SPEC.md, docs/PLAN.md, docs/STATUS.md, docs/USERJOURNEY.md,
-    docs/VISION.md, and docs/ROADMAP.md form the canonical documentation
-    set and MUST stay in sync with shipping behavior; STATUS.md is
-    updated at the end of each mission. README.md is the operator/user
-    quick-start. As external users arrive, every release tag MUST be
-    accompanied by a CHANGELOG entry and a license file at the repo
-    root; user-visible CLI or agent-surface changes MUST be reflected
-    in README.md and the relevant docs. spec-kitty mission artifacts in
-    kitty-specs/ are the source of truth for in-flight work and are
-    not duplicated into docs/.
+    docs/product/SPEC.md, docs/architecture/ARCHITECTURE_HISTORY.md,
+    docs/operations/STATUS.md, docs/product/USERJOURNEY.md,
+    docs/product/VISION.md, and docs/product/ROADMAP.md form the
+    canonical documentation set and MUST stay in sync with shipping
+    behavior; STATUS.md is updated at the end of each mission. Docs are
+    grouped by content domain (product/, architecture/, operations/,
+    research/); see docs/README.md for the full index. README.md is the
+    operator/user quick-start. As external users arrive, every release
+    tag MUST be accompanied by a CHANGELOG entry and a license file at
+    the repo root; user-visible CLI or agent-surface changes MUST be
+    reflected in README.md and the relevant docs. spec-kitty mission
+    artifacts in kitty-specs/ are the source of truth for in-flight
+    work and are not duplicated into docs/.
   risk_boundaries: >
     Non-negotiable governance boundaries for this project:
     (1) No live API scraping for personal health data -- ingestion uses
@@ -129,6 +141,8 @@ selected_directives:
   - DIRECTIVE_028
   - DIRECTIVE_030
   - DIRECTIVE_033
+  - DIRECTIVE_034
+  - DIRECTIVE_036
 available_tools:
   - spec-kitty
   - git
