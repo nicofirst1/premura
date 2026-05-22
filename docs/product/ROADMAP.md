@@ -2,7 +2,9 @@
 
 > Status: live reference. Intended sequencing of future work, not a contract.
 >
-> Companion to [SPEC.md](SPEC.md), [ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](USERJOURNEY.md), [STATUS.md](../operations/STATUS.md), [STAGES.md](../architecture/STAGES.md), [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md).
+> Companion to [SPEC.md](SPEC.md), [ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](USERJOURNEY.md), [STATUS.md](../operations/STATUS.md), [STAGES.md](../architecture/STAGES.md), [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md), [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md).
+>
+> For the **current planning surface** — milestones, missions, tasks, and their sequencing — see [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md). This doc retains the prose narrative and the deferred-items backlog; missions and tasks are tracked there (and, once created, in GitHub issues).
 
 Items below are sorted by reasonable build order, not priority. Anything in v1 scope (SPEC §2) that is still ⏳ in [STATUS.md](../operations/STATUS.md) is the prerequisite for the rest.
 
@@ -15,27 +17,25 @@ The user is actively writing more requirements; this section will grow.
 
 ## Near-term — close out v1 barebone
 
-1. **Live encrypt round-trip**
-   - `hpipe export --month 2026-05` against the real warehouse, `age -d` decrypt, byte-diff against source warehouse. Verify SPEC FR-6.
-2. **Launchd installation on the host Mac**
-   - `hpipe install-launchd` then `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.example.premura.monthly.plist` (label is operator-configurable).
-   - Drive a `launchctl kickstart` test, confirm the macOS notification fires.
-3. **Real SAA ingest on the next monthly cadence**
+> Shipped items from this section have been pruned. Live encrypt round-trip and launchd installation both completed 2026-05-21 — see [STATUS.md](../operations/STATUS.md). The remaining open residue is tracked as `v1.1 closeout` in [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md).
+
+1. **Real SAA ingest on the next monthly cadence** (bootstrap task T2)
    - The synthetic-CSV unit tests pass, but the format is permissive enough that the first real export likely surfaces a parser quirk. Catch it on the first live run.
-4. **Wiki hub page** in the operator's personal knowledge wiki per PLAN §"Wiki integration". (Separate repo, location operator-specific — needs cross-repo write authorization.)
-5. **Optional password-manager CLI helper** — wrap the recipe in bootstrap.sh into a small `ops/bw_backup_key.sh` so users don't have to copy-paste. Skip until requested; the manual recipe is fine for now.
+2. **Wiki hub page** in the operator's personal knowledge wiki (bootstrap task T3). Separate repo, location operator-specific — needs cross-repo write authorization.
 
 ## Mid-term — analytical layer
 
-5. **Read-only DuckDB views** for common slices: daily summary join, sleep+HRV daily, training load + readiness, weight + body composition over time.
+> Deferred from the first roadmap pass — see [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md) §"Items I Would Not Pull Into The First Roadmap Pass." These are real future work, not abandoned.
+
+1. **Read-only DuckDB views** for common slices: daily summary join, sleep+HRV daily, training load + readiness, weight + body composition over time.
    - Lives as `migrations/002_views.sql`; analysts open the warehouse read-only and `SELECT * FROM hp.v_daily_summary` instead of memorizing the long-format schema.
-6. **HRV/respiration sample-level expansion** from Garmin (currently we only have daily aggregates from `healthStatusData`; the per-3-min or per-minute samples live in other files we haven't decoded yet — surface them via the "unhandled files" log already in the parser).
-7. **Per-activity FIT-file decoding** (PLAN §"Out of scope (v1)" — explicitly deferred). Brings power, cadence, GPS, lap structure into `fact_interval`.
-8. **Backfill historical Garmin dumps** — Garmin's 2-year health / 5-year activity horizon means each monthly dump still contains older rows. The `dedupe_key UNIQUE` + cross-source priority already make this safe to do today; just need a script that walks a `data/archive/garmin/*.zip` directory.
+2. **HRV/respiration sample-level expansion** from Garmin (currently we only have daily aggregates from `healthStatusData`; the per-3-min or per-minute samples live in other files we haven't decoded yet — surface them via the "unhandled files" log already in the parser).
+3. **Per-activity FIT-file decoding** (PLAN §"Out of scope (v1)" — explicitly deferred). Brings power, cadence, GPS, lap structure into `fact_interval`.
+4. **Backfill historical Garmin dumps** — Garmin's 2-year health / 5-year activity horizon means each monthly dump still contains older rows. The `dedupe_key UNIQUE` + cross-source priority already make this safe to do today; just need a script that walks a `data/archive/garmin/*.zip` directory.
 
 ## New source class — clinical labs (blood / urine / stool)
 
-See [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md) for the full proposal. Summary:
+> Tracked as mission **M3** in [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md). See [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md) for the full design proposal. Summary:
 
 - Adds a new source class — clinical lab PDFs — alongside the four wearable/app sources. Schema-free (existing long-format star already accepts it).
 - Prior art: an operator-local standalone OCR repo has already extracted a real multi-year, multi-language lab-PDF corpus into structured rows. We adopt its **name-normalisation maps, date heuristics, and value-quirk handlers** verbatim, but **not** its extraction engine wholesale — we first spike **[docling](https://github.com/docling-project/docling)** as a local-only, table-aware alternative to the prior repo's Claude-vision pipeline (which sends PHI to the Anthropic API; in tension with VISION Pillar 6).
@@ -45,6 +45,8 @@ See [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md) for the full proposal. Summ
 Estimated effort: 4–5 days once a docling spike confirms extraction quality on a real lab-PDF corpus.
 
 ## Big idea — health-research MCP server
+
+> Tracked as missions **M1** (spike) and **M2** (first analytical server, warehouse-query tools only — stats and PubMed deferred to follow-on missions) in [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md). The full surface described below is the long-term shape, not the M2 scope.
 
 A single MCP server that exposes:
 
@@ -77,6 +79,8 @@ Worth building, with two caveats:
 This would turn the warehouse from a passive store into an **inferential** workbench — the original payoff of bypassing Health Connect.
 
 ## Smaller follow-ups
+
+> Also deferred from the first roadmap pass — see [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md) §"Items I Would Not Pull Into The First Roadmap Pass." Per the partition rule, items here that introduce a new CLI verb or schema change (e.g. `hpipe inspect`, `fact_interval.unit`) will be reclassified as missions, not tasks, when they reach the active backlog.
 
 - **`hpipe inspect <file>`** subcommand that runs each parser's dispatcher in dry-run mode and prints the file→handler routing + any unhandled-filename log. Replaces the inline-Python exploration that built the v1 Garmin handler set.
 - **`hpipe gc` extension** to also prune `data/raw/` (currently only `data/exports/`), with a `--dry-run` flag.
