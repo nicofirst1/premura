@@ -29,6 +29,7 @@ data/
 claude/
 .kittify/metadata.yaml
 skills-lock.json
+.agents/
 
 # Added by Spec Kitty CLI (auto-managed)
 .claude/
