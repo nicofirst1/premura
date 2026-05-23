@@ -2537,8 +2537,10 @@ dev = [
 ]
 lab = [
     { name = "docling" },
-    { name = "mlx-vlm" },
     { name = "onnxruntime" },
+]
+lab-vlm = [
+    { name = "mlx-vlm" },
 ]
 
 [package.metadata]
@@ -2547,7 +2549,7 @@ requires-dist = [
     { name = "duckdb", specifier = ">=1.1,<2" },
     { name = "jinja2", specifier = ">=3.1,<4" },
     { name = "mcp", specifier = ">=1.27,<2" },
-    { name = "mlx-vlm", marker = "extra == 'lab'", specifier = ">=0.5.0" },
+    { name = "mlx-vlm", marker = "extra == 'lab-vlm'", specifier = ">=0.5.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.13" },
     { name = "onnxruntime", marker = "extra == 'lab'", specifier = ">=1.26.0" },
     { name = "polars", specifier = ">=1.12,<2" },
@@ -2565,7 +2567,7 @@ requires-dist = [
     { name = "typer", specifier = ">=0.12,<1" },
     { name = "tzlocal", specifier = ">=5.2,<6" },
 ]
-provides-extras = ["lab", "dev"]
+provides-extras = ["lab", "lab-vlm", "dev"]
 
 [[package]]
 name = "propcache"

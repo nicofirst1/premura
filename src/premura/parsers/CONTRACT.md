@@ -24,6 +24,7 @@ First-party parsers and plugin parsers now target the same seam.
 The parser-to-loader seam for one source artifact. `IngestBatch` contains only loadable rows plus the provenance and review metadata needed to validate them at the warehouse seam. Relevant fields:
 
 - `measurements` / `intervals` — loadable rows only.
+- `clinical_notes` — optional narrative commentary / diagnosis text that belongs in the report but not in the numeric fact tables.
 - `declared_metrics` — the canonical `metric_id` values this parser is allowed to emit.
 - `source_descriptors` — provenance used to upsert `hp.dim_source` without out-of-band parser state.
 - `unmapped_metrics` — raw vendor fields deliberately skipped because the decision tree produced no canonical `metric_id`.

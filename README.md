@@ -45,7 +45,7 @@ hpipe run-monthly                   # full ingest+encrypt pipeline (no upload st
 hpipe install-launchd / uninstall-launchd
 ```
 
-Experimental: `hpipe ingest --source lab PATH` uses local docling extraction for real PDFs. Install it with `uv sync --extra lab` or `pip install premura[lab]`. Plain-text lab fixtures are still accepted for parser testing.
+Experimental: `hpipe ingest --source lab PATH` uses local docling extraction for real PDFs. Install the base extractor stack with `uv sync --extra lab` or `pip install premura[lab]`. The Apple-Silicon stool-report VLM path is separate: `uv sync --extra lab-vlm` or `pip install premura[lab-vlm]`. Plain-text lab fixtures are still accepted for parser testing.
 
 ## MCP surface
 

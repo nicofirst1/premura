@@ -14,6 +14,7 @@ def test_schema_creates_expected_tables(empty_warehouse):
     assert names == [
         "dim_metric",
         "dim_source",
+        "fact_clinical_note",
         "fact_interval",
         "fact_measurement",
         "ingest_run",

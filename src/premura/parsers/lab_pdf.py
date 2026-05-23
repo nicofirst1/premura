@@ -13,8 +13,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from .base import IngestBatch, Measurement, SkippedRow, SourceDescriptor
-from .lab_extract import extract_report_text
+from .base import ClinicalNote, IngestBatch, Measurement, SkippedRow, SourceDescriptor
+from .lab_extract import contains_diagnostic_language, extract_report
 from .lookup import metric_definition, metric_ids, suggest_metric
 
 SOURCE_KIND = "lab_pdf"
@@ -44,6 +44,8 @@ _UNIT_ALIASES = {
     "fl": "fl",
     "pg": "pg",
     "g/dl": "g_per_dl",
+    "g/g": "ug_per_g",
+    "g/100g": "g_per_100g",
     "k/ul": "10^9_per_l",
     "m/ul": "10^12_per_l",
     "mila/mmc": "10^9_per_l",
@@ -51,6 +53,11 @@ _UNIT_ALIASES = {
     "mg/l": "mg_per_l",
     "mg/1": "mg_per_l",
     "u/l": "U_per_l",
+    "u/": "U_per_l",
+    "ug/g": "ug_per_g",
+    "ug/ml": "ug_per_ml",
+    "umol/l": "umol_per_l",
+    "molli": "umol_per_l",
     "/nl": "10^9_per_l",
     "/pl": "10^12_per_l",
     "10^9/l": "10^9_per_l",
@@ -83,7 +90,8 @@ class LabPdfParser:
         return sorted(metric_ids(prefix="lab:"))
 
     def parse(self, path: Path) -> IngestBatch:
-        text = extract_report_text(path)
+        report = extract_report(path)
+        text = report.measurement_text
         collection_dt = _extract_collection_datetime(text, path)
         source_id = _extract_source_id(text, path)
 
@@ -123,6 +131,14 @@ class LabPdfParser:
             raise ValueError(
                 "lab_pdf parser found no tabular lab rows; extractor-normalized text is required"
             )
+
+        note = _clinical_note_from_report(
+            report.commentary_text,
+            ts_utc=collection_dt,
+            source_id=source_id,
+        )
+        if note is not None:
+            result.clinical_notes.append(note)
 
         result.validate()
         return result
@@ -173,6 +189,13 @@ def _measurement_from_row(
     if definition is None:
         return None, _RowIssue("missing_metric_definition", f"missing ontology row: {metric_id}")
 
+    lowered_value = _normalize_text(row.raw_value)
+    if lowered_value in _SKIP_VALUES:
+        return None, _RowIssue(
+            "deferred_result",
+            f"skipped {row.test_name}: deferred result marker {row.raw_value!r}",
+        )
+
     parsed_num, parsed_text = _parse_value(row.raw_value)
     normalized_unit = _normalize_unit(row.raw_unit) if row.raw_unit else None
     if parsed_num is None and parsed_text is None and normalized_unit is None:
@@ -186,6 +209,9 @@ def _measurement_from_row(
         )
 
     canonical_unit = definition["canonical_unit"]
+    if normalized_unit is not None and _looks_like_non_unit_token(row.raw_unit or ""):
+        normalized_unit = None
+
     normalized_unit = normalized_unit or canonical_unit
     if parsed_num is not None and normalized_unit != canonical_unit:
         return None, _RowIssue(
@@ -313,10 +339,27 @@ def _normalize_unit(value: str) -> str:
 
 
 def _normalize_test_name(value: str) -> str:
+    # OCR/table extraction on CBC panels commonly appends source qualifiers like
+    # ``(eb)``, ``glum``, and ``v.a.`` after the real marker name. Strip only the
+    # observed corpus-specific noise tokens here; do not strip a bare ``s``.
     normalized = re.sub(r"\([^)]*\)", " ", value)
     normalized = normalized.replace('"', " ")
-    normalized = re.sub(r"\b(?:eb|s|glum|va)\b", " ", normalized, flags=re.IGNORECASE)
+    normalized = re.sub(r"\b(?:eb|glum|va)\b", " ", normalized, flags=re.IGNORECASE)
     return re.sub(r"\s+", " ", normalized).strip()
+
+
+def _looks_like_non_unit_token(value: str) -> bool:
+    normalized = _normalize_text(value)
+    if not normalized:
+        return True
+    # ``FE`` and ``BIOL`` are corpus-specific footer / specimen tags seen on the
+    # Biovis stool VLM output. ``fcel`` is another VLM artifact from threshold
+    # cells like ``<70<fcel>`` and must not be treated as a unit.
+    if normalized in {"fe", "biol"}:
+        return True
+    if any(token in normalized for token in ("<", ">", "fcel")):
+        return True
+    return False
 
 
 def _measurement_uuid(metric_id: str, source_id: str, collection_dt: datetime) -> str:
@@ -348,6 +391,27 @@ def _looks_like_non_result_row(parts: list[str]) -> bool:
 def _record_row_issue(result: IngestBatch, row: _ParsedRow, *, reason: str, message: str) -> None:
     result.skipped_rows.append(SkippedRow(raw_field=row.test_name, reason=reason))
     result.notes = f"{result.notes}; {message}" if result.notes else message
+
+
+def _clinical_note_from_report(
+    text: str | None,
+    *,
+    ts_utc: datetime,
+    source_id: str,
+) -> ClinicalNote | None:
+    if text is None:
+        return None
+    payload = {
+        "note_kind": "commentary",
+        "contains_diagnostic_language": contains_diagnostic_language(text),
+    }
+    return ClinicalNote(
+        ts_utc=ts_utc,
+        source_id=source_id,
+        source_kind=SOURCE_KIND,
+        text=text,
+        raw_payload=payload,
+    )
 
 
 def _slugify(value: str) -> str:

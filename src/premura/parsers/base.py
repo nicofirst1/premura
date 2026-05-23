@@ -1,4 +1,4 @@
-"""Shared parser types: Measurement, Interval, SourceDescriptor, IngestBatch."""
+"""Shared parser types: Measurement, Interval, ClinicalNote, SourceDescriptor, IngestBatch."""
 
 from __future__ import annotations
 
@@ -64,6 +64,23 @@ class SourceDescriptor:
 
 
 @dataclass(slots=True)
+class ClinicalNote:
+    """Narrative commentary or diagnosis text extracted from one report."""
+
+    ts_utc: datetime
+    source_id: str
+    source_kind: str
+    text: str
+    language: str | None = None
+    raw_payload: dict[str, Any] | None = None
+
+    @property
+    def dedupe_key(self) -> str:
+        payload = f"{self.source_kind}|{self.source_id}|{self.ts_utc.isoformat()}|{self.text}"
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+@dataclass(slots=True)
 class SkippedRow:
     """One source row that resolved to no loadable measurement or interval."""
 
@@ -84,6 +101,7 @@ class IngestBatch:
     declared_metrics: list[str]
     measurements: list[Measurement] = field(default_factory=list)
     intervals: list[Interval] = field(default_factory=list)
+    clinical_notes: list[ClinicalNote] = field(default_factory=list)
     source_descriptors: dict[str, SourceDescriptor] = field(default_factory=dict)
     unmapped_metrics: list[str] = field(default_factory=list)
     skipped_rows: list[SkippedRow] = field(default_factory=list)
@@ -96,6 +114,7 @@ class IngestBatch:
     def extend(self, other: IngestBatch) -> None:
         self.measurements.extend(other.measurements)
         self.intervals.extend(other.intervals)
+        self.clinical_notes.extend(other.clinical_notes)
         self.source_descriptors.update(other.source_descriptors)
         self.unmapped_metrics.extend(other.unmapped_metrics)
         self.skipped_rows.extend(other.skipped_rows)
@@ -134,9 +153,11 @@ class IngestBatch:
         if derived_metrics:
             raise ValueError(f"Parsers must not emit derived metrics: {sorted(derived_metrics)}")
 
-        row_source_ids = {m.source_id for m in self.measurements} | {
-            i.source_id for i in self.intervals
-        }
+        row_source_ids = (
+            {m.source_id for m in self.measurements}
+            | {i.source_id for i in self.intervals}
+            | {n.source_id for n in self.clinical_notes}
+        )
         missing_descriptors = row_source_ids - set(self.source_descriptors)
         if missing_descriptors:
             raise ValueError(

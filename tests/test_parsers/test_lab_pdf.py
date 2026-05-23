@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -41,6 +42,7 @@ Transaminasi GPT | 18 | U/L | <40
     result = LabPdfParser().parse(report)
 
     assert result.source_descriptors["lab:centro-analisi-alfa"].source_kind == "lab_pdf"
+    assert result.clinical_notes == []
     metrics = {measurement.metric_id for measurement in result.measurements}
     assert {"lab:wbc", "lab:hemoglobin", "lab:triglycerides", "lab:ast", "lab:alt"} <= metrics
     assert all(
@@ -60,21 +62,26 @@ Test | Value | Unit
 Stool culture | negativ | enum
 Stool ova and parasites | ASSENTI | enum
 Stool white blood cells | folgt | enum
+
+Beurteilung: stool markers remain stable.
 """,
     )
 
     result = LabPdfParser().parse(report)
 
     by_metric = {measurement.metric_id: measurement for measurement in result.measurements}
+    assert len(result.clinical_notes) == 1
+    assert result.clinical_notes[0].raw_payload is not None
+    assert result.clinical_notes[0].raw_payload["contains_diagnostic_language"] is True
     assert by_metric["lab:stool_culture"].value_num is None
     assert by_metric["lab:stool_culture"].value_text == "negativ"
     assert by_metric["lab:stool_ova_parasites"].value_text == "assenti"
     assert "lab:stool_white_blood_cells" not in by_metric
     assert [(row.raw_field, row.reason) for row in result.skipped_rows] == [
-        ("Stool white blood cells", "unparseable_value")
+        ("Stool white blood cells", "deferred_result")
     ]
     assert result.notes is not None
-    assert "unsupported value 'folgt'" in result.notes
+    assert "deferred result marker 'folgt'" in result.notes
 
 
 def test_lab_pdf_parser_falls_back_to_filename_date_and_tracks_unmapped(tmp_path: Path) -> None:
@@ -182,18 +189,141 @@ def test_lab_pdf_parser_uses_docling_path_for_real_pdf_bytes(
 
     monkeypatch.setattr(
         lab_extract,
-        "_extract_pdf_text_with_docling",
-        lambda path: """
+        "_extract_pdf_with_docling",
+        lambda path: (
+            """
 Laboratory: Centro Analisi Alfa
 Accettazione del: 2026-04-12
 Test | Value | Unit | Range
 Hb | 14.1 | g/dL | 13.0-17.0
 """,
+            "",
+        ),
     )
 
     result = LabPdfParser().parse(report)
 
     assert [measurement.metric_id for measurement in result.measurements] == ["lab:hemoglobin"]
+
+
+def test_lab_extract_dispatches_stool_reports_to_vlm_measurements(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    report = tmp_path / "stool-report.pdf"
+    report.write_bytes(b"%PDF-1.7\n%fake-pdf")
+
+    monkeypatch.setattr(
+        lab_extract,
+        "_extract_pdf_with_docling",
+        lambda path: ("standard-markdown", "Pankreaselastase im Stuhl\nBeurteilung"),
+    )
+    monkeypatch.setattr(lab_extract, "_extract_pdf_text_with_vlm", lambda path: "vlm-table")
+
+    extracted = lab_extract.extract_report(report)
+
+    assert extracted.measurement_text == "vlm-table"
+    assert extracted.commentary_text == "Pankreaselastase im Stuhl\nBeurteilung"
+    assert extracted.measurement_extractor == "docling-vlm"
+    assert extracted.commentary_extractor == "docling-standard"
+
+
+def test_lab_extract_keeps_blood_reports_on_standard_docling(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    report = tmp_path / "blood-report.pdf"
+    report.write_bytes(b"%PDF-1.7\n%fake-pdf")
+
+    monkeypatch.setattr(
+        lab_extract,
+        "_extract_pdf_with_docling",
+        lambda path: ("| Hb | 14.1 | g/dL |", "plain blood text"),
+    )
+
+    extracted = lab_extract.extract_report(report)
+
+    assert extracted.measurement_text == "| Hb | 14.1 | g/dL |"
+    assert extracted.commentary_text is None
+    assert extracted.measurement_extractor == "docling-standard"
+
+
+def test_lab_pdf_parser_handles_stool_vlm_rows_with_commentary(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    report = tmp_path / "20240131-stool-vlm.pdf"
+    report.write_bytes(b"%PDF-1.7\n%fake-pdf")
+
+    monkeypatch.setattr(
+        "premura.parsers.lab_pdf.extract_report",
+        lambda path: lab_extract.ExtractedLabReport(
+            measurement_text="""
+| Pankreaselastase im Stuhl | 91,32 | g/g | >200 | 137,86 | FE |
+| Gallensauren im Stuhl | 46,85 | mollI | <70<fcel> | FE | |
+| Hamoglobin im Stuhl immunologisch | <10<fcel> | <10<fcel> | | | |
+| Calprotectin | <17,90<fcel> | <50<fcel> | FE | | |
+| Alpha 1-Antitrypsin | 6,0 | mg/dl | <27,5<fcel> | FE | |
+| Anti-Transglutaminase AK i. Stuhl | 60,76 | U/ | <100<fcel> | FE | |
+| Quant. Nachweis von Stickstoff | 0,20 | g/100g | <1,0 | FE | |
+| Quant. Nachweis von Zucker | 3,60 | g/100g | <2,5 | FE | |
+| Quant. Nachweis von Wasser | 84,50 | g/100g | 75 - 85 | FE | |
+""",
+            commentary_text="Beurteilung: stool profile still abnormal but improved.",
+            measurement_extractor="docling-vlm",
+            commentary_extractor="docling-standard",
+        ),
+    )
+
+    result = LabPdfParser().parse(report)
+
+    metrics = {measurement.metric_id for measurement in result.measurements}
+    assert {
+        "lab:stool_elastase",
+        "lab:stool_bile_acids",
+        "lab:stool_hemoglobin_immunologic",
+        "lab:stool_calprotectin",
+        "lab:stool_alpha_1_antitrypsin",
+        "lab:stool_anti_transglutaminase",
+        "lab:stool_nitrogen",
+        "lab:stool_sugar",
+        "lab:stool_water",
+    } <= metrics
+    assert len(result.clinical_notes) == 1
+
+
+def test_loader_persists_clinical_notes(empty_warehouse, tmp_path: Path) -> None:
+    from premura.parsers.base import ClinicalNote, IngestBatch, SourceDescriptor
+    from premura.store.loader import load
+
+    path = tmp_path / "note.txt"
+    path.write_text("placeholder", encoding="utf-8")
+    batch = IngestBatch(
+        source_kind="lab_pdf",
+        declared_metrics=["lab:hemoglobin"],
+        source_descriptors={
+            "lab:testlab": SourceDescriptor(source_id="lab:testlab", source_kind="lab_pdf")
+        },
+        clinical_notes=[
+            ClinicalNote(
+                ts_utc=datetime(2026, 5, 10),
+                source_id="lab:testlab",
+                source_kind="lab_pdf",
+                text="Diagnostic impression: mild abnormality remains.",
+                raw_payload={"contains_diagnostic_language": True},
+            )
+        ],
+    ).attach_source_artifact(path)
+    batch.validate()
+
+    stats = load(empty_warehouse, batch)
+
+    assert stats.rows_inserted == 1
+    row = empty_warehouse.execute(
+        "SELECT text FROM hp.fact_clinical_note WHERE source_id = 'lab:testlab'"
+    ).fetchone()
+    assert row is not None
+    assert "Diagnostic impression" in row[0]
 
 
 def test_real_pdf_requires_docling_when_not_installed(

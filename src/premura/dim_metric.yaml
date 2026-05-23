@@ -1744,6 +1744,18 @@
     en: [FOBT, FIT]
   loinc: "14563-1"
 
+- metric_id: lab:stool_hemoglobin_immunologic
+  display_name: Stool hemoglobin (immunologic)
+  canonical_unit: ug_per_g
+  value_kind: instantaneous
+  category: stool
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [hemoglobin in stool immunologic, stool hemoglobin immunologic]
+    de: [hamoglobin im stuhl immunologisch, haemoglobin im stuhl immunologisch]
+  loinc: "14563-1"
+
 - metric_id: lab:stool_calprotectin
   display_name: Stool calprotectin
   canonical_unit: ug_per_g
@@ -1751,6 +1763,8 @@
   category: stool
   validity_window: P6M
   missing_data_policy: none
+  aliases:
+    en: [calprotectin]
   loinc: "38445-3"
 
 - metric_id: lab:stool_lactoferrin
@@ -1769,6 +1783,9 @@
   category: stool
   validity_window: P1Y
   missing_data_policy: none
+  aliases:
+    en: [pancreatic elastase, stool elastase]
+    de: [pankreaselastase im stuhl]
   loinc: "26910-0"
 
 - metric_id: lab:stool_ph
@@ -1782,11 +1799,14 @@
 
 - metric_id: lab:stool_fat
   display_name: Stool fat
-  canonical_unit: g_per_24h
+  canonical_unit: g_per_100g
   value_kind: aggregate
   category: stool
   validity_window: P6M
   missing_data_policy: none
+  aliases:
+    en: [quantitative fat, fat quantitative]
+    de: [quant. nachweis von fett]
   loinc: "[unmapped]"
 
 - metric_id: lab:stool_reducing_substances
@@ -1871,6 +1891,90 @@
   validity_window: P1Y
   missing_data_policy: none
   loinc: "10371-3"
+
+- metric_id: lab:stool_bile_acids
+  display_name: Stool bile acids
+  canonical_unit: umol_per_l
+  value_kind: instantaneous
+  category: stool
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    en: [bile acids in stool]
+    de: [gallensauren im stuhl]
+  loinc: "[unmapped]"
+
+- metric_id: lab:stool_alpha_1_antitrypsin
+  display_name: Stool alpha-1-antitrypsin
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: stool
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    en: [alpha 1-antitrypsin]
+    de: [alpha 1-antitrypsin]
+  loinc: "[unmapped]"
+
+- metric_id: lab:stool_secretory_iga
+  display_name: Stool secretory IgA
+  canonical_unit: ug_per_ml
+  value_kind: instantaneous
+  category: stool
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    en: [secretory iga, siga]
+    de: [sekretorisches immunglobulin a, slga]
+  loinc: "[unmapped]"
+
+- metric_id: lab:stool_anti_transglutaminase
+  display_name: Stool anti-transglutaminase antibodies
+  canonical_unit: U_per_l
+  value_kind: instantaneous
+  category: stool
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    en: [anti-transglutaminase antibodies stool]
+    de: [anti-transglutaminase ak i. stuhl, anti-transglutaminase ak i stuhl]
+  loinc: "[unmapped]"
+
+- metric_id: lab:stool_nitrogen
+  display_name: Stool nitrogen
+  canonical_unit: g_per_100g
+  value_kind: instantaneous
+  category: stool
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    en: [quantitative determination of nitrogen]
+    de: [quant. nachweis von stickstoff]
+  loinc: "[unmapped]"
+
+- metric_id: lab:stool_sugar
+  display_name: Stool sugar
+  canonical_unit: g_per_100g
+  value_kind: instantaneous
+  category: stool
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    en: [quantitative determination of sugar]
+    de: [quant. nachweis von zucker]
+  loinc: "[unmapped]"
+
+- metric_id: lab:stool_water
+  display_name: Stool water
+  canonical_unit: g_per_100g
+  value_kind: instantaneous
+  category: stool
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    en: [quantitative determination of water]
+    de: [quant. nachweis von wasser]
+  loinc: "[unmapped]"
 
 # === Derived: first sparse lab ratios ===
 - metric_id: derived:ldl_hdl_ratio

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -96,7 +97,8 @@ def load(conn: duckdb.DuckDBPyConnection, batch: IngestBatch) -> LoadStats:
         _upsert_source_descriptors(conn, batch)
         plan = DedupePlanner().plan(conn, batch, batch_id=batch_id)
         _persist_plan(conn, plan)
-        stats.rows_inserted = plan.rows_inserted
+        note_count = _persist_clinical_notes(conn, batch, batch_id=batch_id)
+        stats.rows_inserted = plan.rows_inserted + note_count
         stats.rows_skipped_dup = plan.rows_skipped_dup
         stats.rows_skipped_priority = plan.rows_skipped_priority
         finish_ingest_run(conn, batch_id=batch_id, stats=stats, notes=batch.notes)
@@ -172,6 +174,44 @@ def _persist_plan(conn: duckdb.DuckDBPyConnection, plan: DedupePlan) -> None:
             )
         finally:
             conn.unregister("planned_intervals")
+
+
+def _persist_clinical_notes(
+    conn: duckdb.DuckDBPyConnection,
+    batch: IngestBatch,
+    *,
+    batch_id: str,
+) -> int:
+    if not batch.clinical_notes:
+        return 0
+
+    rows = [
+        (
+            note.ts_utc,
+            note.source_id,
+            note.language,
+            note.text,
+            note.dedupe_key,
+            batch_id,
+            None if note.raw_payload is None else json.dumps(note.raw_payload),
+        )
+        for note in batch.clinical_notes
+    ]
+    conn.executemany(
+        """
+        INSERT INTO hp.fact_clinical_note (
+            ts_utc, source_id, language, text, dedupe_key, ingest_batch, raw_payload
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (dedupe_key) DO NOTHING
+        """,
+        rows,
+    )
+    row = conn.execute(
+        "SELECT COUNT(*) FROM hp.fact_clinical_note WHERE ingest_batch = ?",
+        [batch_id],
+    ).fetchone()
+    return int(row[0]) if row else 0
 __all__ = [
     "LoadStats",
     "already_ingested",

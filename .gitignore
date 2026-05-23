@@ -59,3 +59,4 @@ skills-lock.json
 .kittify/missions/__pycache__/
 .kittify/runtime/
 .kittify/workspaces/
+.worktrees/

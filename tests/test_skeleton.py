@@ -186,6 +186,7 @@ def test_plugin_parser_contract_symbols_import() -> None:
         "declared_metrics",
         "measurements",
         "intervals",
+        "clinical_notes",
         "source_descriptors",
         "unmapped_metrics",
         "skipped_rows",
