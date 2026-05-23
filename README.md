@@ -50,13 +50,18 @@ hpipe install-launchd / uninstall-launchd
 Early Stage 3 analytical server entrypoint:
 
 ```bash
-premura-mcp
+uv run premura-mcp
+uv run premura-mcp --warehouse-path /absolute/path/to/health.duckdb
 ```
+
+By default it resolves the warehouse from `HPIPE_DATA_DIR/duck/health.duckdb`.
 
 Current tools:
 
 - `query_warehouse`
 - `list_metrics`
 - `metric_summary`
+
+`query_warehouse` returns up to 200 rows by default and accepts `max_rows` up to 1000.
 
 Tests: `uv run python -m pytest -q` (17 passing).

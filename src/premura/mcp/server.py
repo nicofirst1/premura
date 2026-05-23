@@ -16,6 +16,8 @@ from ..config import settings
 from ..store import duck
 
 _READ_ONLY_PREFIXES = ("select", "with", "describe", "show")
+_DEFAULT_QUERY_MAX_ROWS = 200
+_MAX_QUERY_MAX_ROWS = 1000
 
 
 def query_warehouse(
@@ -23,15 +25,25 @@ def query_warehouse(
     params: Sequence[object] | None = None,
     *,
     warehouse_path: Path | None = None,
+    max_rows: int = _DEFAULT_QUERY_MAX_ROWS,
 ) -> dict[str, Any]:
     """Execute one read-only query against the warehouse and return JSON-safe rows."""
     _ensure_read_only_sql(sql)
+    _ensure_bounded_positive_int("max_rows", max_rows, maximum=_MAX_QUERY_MAX_ROWS)
     conn = duck.connect(warehouse_path or settings.warehouse_path, read_only=True)
     try:
         result = conn.execute(sql, params or [])
         columns = [col[0] for col in (result.description or [])]
-        rows = [_row_to_dict(columns, row) for row in result.fetchall()]
-        return {"columns": columns, "rows": rows, "row_count": len(rows)}
+        fetched_rows = result.fetchmany(max_rows + 1)
+        truncated = len(fetched_rows) > max_rows
+        rows = [_row_to_dict(columns, row) for row in fetched_rows[:max_rows]]
+        return {
+            "columns": columns,
+            "rows": rows,
+            "row_count": len(rows),
+            "max_rows": max_rows,
+            "truncated": truncated,
+        }
     finally:
         conn.close()
 
@@ -40,6 +52,8 @@ def list_metrics(
     *, warehouse_path: Path | None = None, limit: int = 50, offset: int = 0
 ) -> list[dict[str, Any]]:
     """List canonical metrics with lightweight warehouse coverage counts."""
+    _ensure_non_negative_int("limit", limit)
+    _ensure_non_negative_int("offset", offset)
     result = query_warehouse(
         """
         SELECT
@@ -72,6 +86,8 @@ def list_metrics(
 
 def metric_summary(metric_id: str, *, warehouse_path: Path | None = None) -> dict[str, Any] | None:
     """Return metadata and basic numeric coverage for one canonical metric."""
+    if not metric_id.strip():
+        raise ValueError("metric_id must not be empty")
     metadata = query_warehouse(
         """
         SELECT metric_id, display_name, canonical_unit, value_kind, description, category,
@@ -137,6 +153,18 @@ def _ensure_read_only_sql(sql: str) -> None:
         raise ValueError("query_warehouse accepts exactly one read-only statement")
     if not body.lower().startswith(_READ_ONLY_PREFIXES):
         raise ValueError("query_warehouse only allows read-only SQL")
+
+
+def _ensure_non_negative_int(name: str, value: int) -> None:
+    if value < 0:
+        raise ValueError(f"{name} must be >= 0")
+
+
+def _ensure_bounded_positive_int(name: str, value: int, *, maximum: int) -> None:
+    if value < 1:
+        raise ValueError(f"{name} must be >= 1")
+    if value > maximum:
+        raise ValueError(f"{name} must be <= {maximum}")
 
 
 def _row_to_dict(columns: list[str], row: Sequence[object]) -> dict[str, Any]:

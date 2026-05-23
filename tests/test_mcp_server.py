@@ -49,6 +49,7 @@ def test_query_warehouse_returns_rows_from_read_only_connection(tmp_path: Path) 
     assert result["row_count"] == 2
     assert result["columns"] == ["metric_id", "display_name"]
     assert len(result["rows"]) == 2
+    assert result["truncated"] is False
     assert result["rows"][0]["metric_id"] < result["rows"][1]["metric_id"]
 
 
@@ -59,6 +60,31 @@ def test_query_warehouse_rejects_non_read_queries(tmp_path: Path) -> None:
         query_warehouse(
             "DELETE FROM hp.dim_metric",
             warehouse_path=_initialized_warehouse(tmp_path),
+        )
+
+
+def test_query_warehouse_truncates_large_result_sets(tmp_path: Path) -> None:
+    from premura.mcp.server import query_warehouse
+
+    result = query_warehouse(
+        "SELECT metric_id FROM hp.dim_metric ORDER BY metric_id",
+        warehouse_path=_initialized_warehouse(tmp_path),
+        max_rows=1,
+    )
+
+    assert result["row_count"] == 1
+    assert result["max_rows"] == 1
+    assert result["truncated"] is True
+
+
+def test_query_warehouse_rejects_invalid_max_rows(tmp_path: Path) -> None:
+    from premura.mcp.server import query_warehouse
+
+    with pytest.raises(ValueError, match="max_rows"):
+        query_warehouse(
+            "SELECT 1",
+            warehouse_path=_initialized_warehouse(tmp_path),
+            max_rows=0,
         )
 
 
@@ -111,6 +137,23 @@ def test_metric_summary_returns_none_for_missing_metric(tmp_path: Path) -> None:
     assert metric_summary("missing_metric", warehouse_path=_initialized_warehouse(tmp_path)) is None
 
 
+def test_list_metrics_rejects_negative_paging_arguments(tmp_path: Path) -> None:
+    from premura.mcp.server import list_metrics
+
+    with pytest.raises(ValueError, match="limit"):
+        list_metrics(warehouse_path=_initialized_warehouse(tmp_path), limit=-1)
+
+    with pytest.raises(ValueError, match="offset"):
+        list_metrics(warehouse_path=_initialized_warehouse(tmp_path), offset=-1)
+
+
+def test_metric_summary_rejects_blank_metric_id(tmp_path: Path) -> None:
+    from premura.mcp.server import metric_summary
+
+    with pytest.raises(ValueError, match="metric_id"):
+        metric_summary("   ", warehouse_path=_initialized_warehouse(tmp_path))
+
+
 def test_build_server_registers_expected_tools() -> None:
     from premura.mcp.entrypoint import build_server
 
@@ -127,14 +170,13 @@ def test_build_server_registers_expected_tools() -> None:
 
 def test_stdio_mcp_server_exposes_tools(tmp_path: Path) -> None:
     data_dir = _initialized_data_dir(tmp_path)
+    warehouse_path = data_dir / "duck" / "health.duckdb"
 
     async def run() -> None:
-        env = dict(os.environ)
-        env["HPIPE_DATA_DIR"] = str(data_dir)
         params = StdioServerParameters(
             command="uv",
-            args=["run", "premura-mcp"],
-            env=env,
+            args=["run", "premura-mcp", "--warehouse-path", str(warehouse_path)],
+            env=dict(os.environ),
             cwd=Path(__file__).resolve().parent.parent,
         )
         async with stdio_client(params) as (read_stream, write_stream):
@@ -151,6 +193,18 @@ def test_stdio_mcp_server_exposes_tools(tmp_path: Path) -> None:
                 assert metrics.isError is False
                 assert metrics.structuredContent is not None
                 assert metrics.structuredContent["count"] == 2
+
+                query = await session.call_tool(
+                    "query_warehouse",
+                    {
+                        "sql": "SELECT metric_id FROM hp.dim_metric ORDER BY metric_id",
+                        "max_rows": 1,
+                    },
+                )
+                assert query.isError is False
+                assert query.structuredContent is not None
+                assert query.structuredContent["row_count"] == 1
+                assert query.structuredContent["truncated"] is True
 
                 summary = await session.call_tool("metric_summary", {"metric_id": "weight"})
                 assert summary.isError is False
