@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from premura.parsers import lab_extract
 from premura.parsers.lab_pdf import LabPdfParser
 from premura.parsers.lookup import suggest_metric
 
@@ -69,7 +70,9 @@ Stool white blood cells | folgt | enum
     assert by_metric["lab:stool_culture"].value_text == "negativ"
     assert by_metric["lab:stool_ova_parasites"].value_text == "assenti"
     assert "lab:stool_white_blood_cells" not in by_metric
-    assert "stool-white-blood-cells:unparseable_value" in result.unmapped_metrics
+    assert [(row.raw_field, row.reason) for row in result.skipped_rows] == [
+        ("Stool white blood cells", "unparseable_value")
+    ]
     assert result.notes is not None
     assert "unsupported value 'folgt'" in result.notes
 
@@ -91,7 +94,8 @@ WBC | <1.0 x 10^4 | 10^9/L
     assert result.measurements[0].metric_id == "lab:wbc"
     assert result.measurements[0].value_num == 10000.0
     assert result.measurements[0].ts_utc.date().isoformat() == "2026-04-15"
-    assert result.unmapped_metrics == ["unknown-analyte:unknown_metric"]
+    assert result.unmapped_metrics == ["unknown-analyte"]
+    assert result.skipped_rows == []
 
 
 def test_lab_pdf_parser_records_unit_mismatches_instead_of_dropping_silently(
@@ -113,7 +117,7 @@ Hb | 14.1 | g/L | 13.0-17.0
 
     assert result.measurements == []
     assert result.source_descriptors["lab:centro-analisi-alfa"].source_kind == "lab_pdf"
-    assert result.unmapped_metrics == ["hb:unit_mismatch"]
+    assert [(row.raw_field, row.reason) for row in result.skipped_rows] == [("Hb", "unit_mismatch")]
     assert result.notes is not None
     assert "does not match 'g_per_dl'" in result.notes
 
@@ -133,7 +137,9 @@ Stool culture | brown | enum
     result = LabPdfParser().parse(report)
 
     assert result.measurements == []
-    assert result.unmapped_metrics == ["stool-culture:unparseable_value"]
+    assert [(row.raw_field, row.reason) for row in result.skipped_rows] == [
+        ("Stool culture", "unparseable_value")
+    ]
     assert result.notes is not None
     assert "unsupported value 'brown'" in result.notes
 
@@ -164,4 +170,43 @@ def test_lab_pdf_parser_rejects_non_tabular_text(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ValueError, match="no tabular lab rows"):
+        LabPdfParser().parse(report)
+
+
+def test_lab_pdf_parser_uses_docling_path_for_real_pdf_bytes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    report = tmp_path / "2026-04-12-docling.pdf"
+    report.write_bytes(b"%PDF-1.7\n%fake-pdf")
+
+    monkeypatch.setattr(
+        lab_extract,
+        "_extract_pdf_text_with_docling",
+        lambda path: """
+Laboratory: Centro Analisi Alfa
+Accettazione del: 2026-04-12
+Test | Value | Unit | Range
+Hb | 14.1 | g/dL | 13.0-17.0
+""",
+    )
+
+    result = LabPdfParser().parse(report)
+
+    assert [measurement.metric_id for measurement in result.measurements] == ["lab:hemoglobin"]
+
+
+def test_real_pdf_requires_docling_when_not_installed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    report = tmp_path / "2026-04-12-docling-missing.pdf"
+    report.write_bytes(b"%PDF-1.7\n%fake-pdf")
+
+    def _raise() -> None:
+        raise RuntimeError("docling is required for real PDF lab ingestion")
+
+    monkeypatch.setattr(lab_extract, "_build_docling_converter", _raise)
+
+    with pytest.raises(RuntimeError, match="docling is required"):
         LabPdfParser().parse(report)

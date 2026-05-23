@@ -64,6 +64,14 @@ class SourceDescriptor:
 
 
 @dataclass(slots=True)
+class SkippedRow:
+    """One source row that resolved to no loadable measurement or interval."""
+
+    raw_field: str
+    reason: str
+
+
+@dataclass(slots=True)
 class IngestBatch:
     """The parser-to-loader seam for one source artifact.
 
@@ -78,6 +86,7 @@ class IngestBatch:
     intervals: list[Interval] = field(default_factory=list)
     source_descriptors: dict[str, SourceDescriptor] = field(default_factory=dict)
     unmapped_metrics: list[str] = field(default_factory=list)
+    skipped_rows: list[SkippedRow] = field(default_factory=list)
     source_path: Path | None = None
     source_sha256: str | None = None
     notes: str | None = None
@@ -89,6 +98,7 @@ class IngestBatch:
         self.intervals.extend(other.intervals)
         self.source_descriptors.update(other.source_descriptors)
         self.unmapped_metrics.extend(other.unmapped_metrics)
+        self.skipped_rows.extend(other.skipped_rows)
         if other.notes:
             self.notes = f"{self.notes}; {other.notes}" if self.notes else other.notes
         if other.language_detected and self.language_detected is None:

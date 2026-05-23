@@ -45,7 +45,7 @@ hpipe run-monthly                   # full ingest+encrypt pipeline (no upload st
 hpipe install-launchd / uninstall-launchd
 ```
 
-Experimental: `hpipe ingest --source lab PATH` parses extractor-normalized lab-report text from PDF files while the docling extraction path is still being evaluated.
+Experimental: `hpipe ingest --source lab PATH` uses local docling extraction for real PDFs. Install it with `uv sync --extra lab` or `pip install premura[lab]`. Plain-text lab fixtures are still accepted for parser testing.
 
 ## MCP surface
 

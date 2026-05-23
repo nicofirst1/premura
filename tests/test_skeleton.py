@@ -188,6 +188,7 @@ def test_plugin_parser_contract_symbols_import() -> None:
         "intervals",
         "source_descriptors",
         "unmapped_metrics",
+        "skipped_rows",
         "language_detected",
         "confidence",
     } <= fields

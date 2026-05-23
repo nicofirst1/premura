@@ -1,8 +1,7 @@
-"""Clinical lab parser over extractor-normalized PDF text.
+"""Clinical lab parser over extracted report text.
 
-This parser intentionally stays extraction-engine-agnostic for now. It expects
-the chosen extractor (docling or a fallback) to yield text where result-table
-rows are preserved line-by-line, typically with ``|`` or tab separators.
+Real PDFs are extracted locally with docling. Plain-text inputs are still
+accepted as already-normalized fixtures so the parser logic stays testable.
 """
 
 from __future__ import annotations
@@ -14,7 +13,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from .base import IngestBatch, Measurement, SourceDescriptor
+from .base import IngestBatch, Measurement, SkippedRow, SourceDescriptor
+from .lab_extract import extract_report_text
 from .lookup import metric_definition, metric_ids, suggest_metric
 
 SOURCE_KIND = "lab_pdf"
@@ -40,9 +40,19 @@ _DATE_PATTERNS = (
 _FILENAME_DATE = re.compile(r"(?P<value>\d{4}[-_]?\d{2}[-_]?\d{2})")
 _UNIT_ALIASES = {
     "%": "pct",
+    "f": "fl",
+    "fl": "fl",
+    "pg": "pg",
     "g/dl": "g_per_dl",
+    "k/ul": "10^9_per_l",
+    "m/ul": "10^12_per_l",
+    "mila/mmc": "10^9_per_l",
     "mg/dl": "mg_per_dl",
+    "mg/l": "mg_per_l",
+    "mg/1": "mg_per_l",
     "u/l": "U_per_l",
+    "/nl": "10^9_per_l",
+    "/pl": "10^12_per_l",
     "10^9/l": "10^9_per_l",
     "10^12/l": "10^12_per_l",
     "10e9/l": "10^9_per_l",
@@ -73,7 +83,7 @@ class LabPdfParser:
         return sorted(metric_ids(prefix="lab:"))
 
     def parse(self, path: Path) -> IngestBatch:
-        text = self._extract_text(path)
+        text = extract_report_text(path)
         collection_dt = _extract_collection_datetime(text, path)
         source_id = _extract_source_id(text, path)
 
@@ -88,13 +98,13 @@ class LabPdfParser:
         parsed_any_row = False
         for row in _iter_rows(text):
             parsed_any_row = True
-            metric_id = suggest_metric(row.test_name)
+            metric_id = suggest_metric(_normalize_test_name(row.test_name))
             if metric_id is None or not metric_id.startswith("lab:"):
-                _record_row_issue(
-                    result,
-                    row,
-                    reason="unknown_metric",
-                    message=f"unmapped lab field: {row.test_name}",
+                result.unmapped_metrics.append(_slugify(row.test_name))
+                result.notes = (
+                    f"{result.notes}; unmapped lab field: {row.test_name}"
+                    if result.notes
+                    else f"unmapped lab field: {row.test_name}"
                 )
                 continue
 
@@ -117,13 +127,6 @@ class LabPdfParser:
         result.validate()
         return result
 
-    def _extract_text(self, path: Path) -> str:
-        data = path.read_bytes()
-        text = data.decode("utf-8-sig", errors="replace").strip()
-        if not text:
-            raise ValueError(f"empty lab report: {path}")
-        return text
-
 
 def _iter_rows(text: str) -> list[_ParsedRow]:
     rows: list[_ParsedRow] = []
@@ -133,11 +136,17 @@ def _iter_rows(text: str) -> list[_ParsedRow]:
             continue
         if "|" in line:
             parts = [part.strip() for part in line.split("|")]
+            while parts and not parts[0]:
+                parts.pop(0)
+            while parts and not parts[-1]:
+                parts.pop()
         elif "\t" in line:
             parts = [part.strip() for part in line.split("\t")]
         else:
             continue
         if len(parts) < 2:
+            continue
+        if all(re.fullmatch(r"-+", part) for part in parts if part):
             continue
         if _looks_like_header(parts[0], parts[1]) or _looks_like_non_result_row(parts):
             continue
@@ -165,6 +174,11 @@ def _measurement_from_row(
         return None, _RowIssue("missing_metric_definition", f"missing ontology row: {metric_id}")
 
     parsed_num, parsed_text = _parse_value(row.raw_value)
+    normalized_unit = _normalize_unit(row.raw_unit) if row.raw_unit else None
+    if parsed_num is None and parsed_text is None and normalized_unit is None:
+        split_num, split_text, split_unit = _split_value_and_unit(row.raw_value)
+        parsed_num, parsed_text = split_num, split_text
+        normalized_unit = split_unit
     if parsed_num is None and parsed_text is None:
         return None, _RowIssue(
             "unparseable_value",
@@ -172,7 +186,7 @@ def _measurement_from_row(
         )
 
     canonical_unit = definition["canonical_unit"]
-    normalized_unit = _normalize_unit(row.raw_unit) if row.raw_unit else canonical_unit
+    normalized_unit = normalized_unit or canonical_unit
     if parsed_num is not None and normalized_unit != canonical_unit:
         return None, _RowIssue(
             "unit_mismatch",
@@ -219,12 +233,37 @@ def _parse_value(raw_value: str) -> tuple[float | None, str | None]:
         exponent = int(scientific.group(2))
         return mantissa * (10**exponent), None
 
+    numeric_search = re.search(r"[<>]?\s*(\d+(?:[.,]\d+)?)", lowered)
+    if numeric_search is not None:
+        try:
+            return float(numeric_search.group(1).replace(",", ".")), None
+        except ValueError:
+            pass
+
     numeric = lowered.replace(",", ".")
     numeric = re.sub(r"^[<>]\s*", "", numeric)
     try:
         return float(numeric), None
     except ValueError:
         return None, None
+
+
+def _split_value_and_unit(raw_value: str) -> tuple[float | None, str | None, str | None]:
+    compact = raw_value.replace(" ", "")
+    ordered_units = sorted(
+        _UNIT_ALIASES.items(),
+        key=lambda item: len(item[0]),
+        reverse=True,
+    )
+    for alias, canonical in ordered_units:
+        unit_token = alias.replace(" ", "")
+        if not compact.lower().endswith(unit_token.lower()):
+            continue
+        value_part = compact[: -len(unit_token)]
+        parsed_num, parsed_text = _parse_value(value_part)
+        if parsed_num is not None or parsed_text is not None:
+            return parsed_num, parsed_text, canonical
+    return None, None, None
 
 
 def _extract_collection_datetime(text: str, path: Path) -> datetime:
@@ -273,6 +312,13 @@ def _normalize_unit(value: str) -> str:
     return _UNIT_ALIASES.get(normalized, value.strip())
 
 
+def _normalize_test_name(value: str) -> str:
+    normalized = re.sub(r"\([^)]*\)", " ", value)
+    normalized = normalized.replace('"', " ")
+    normalized = re.sub(r"\b(?:eb|s|glum|va)\b", " ", normalized, flags=re.IGNORECASE)
+    return re.sub(r"\s+", " ", normalized).strip()
+
+
 def _measurement_uuid(metric_id: str, source_id: str, collection_dt: datetime) -> str:
     return f"{metric_id}:{source_id}:{collection_dt.isoformat(sep=' ')}"
 
@@ -300,7 +346,7 @@ def _looks_like_non_result_row(parts: list[str]) -> bool:
 
 
 def _record_row_issue(result: IngestBatch, row: _ParsedRow, *, reason: str, message: str) -> None:
-    result.unmapped_metrics.append(f"{_slugify(row.test_name)}:{reason}")
+    result.skipped_rows.append(SkippedRow(raw_field=row.test_name, reason=reason))
     result.notes = f"{result.notes}; {message}" if result.notes else message
 
 

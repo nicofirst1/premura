@@ -27,6 +27,7 @@ The parser-to-loader seam for one source artifact. `IngestBatch` contains only l
 - `declared_metrics` — the canonical `metric_id` values this parser is allowed to emit.
 - `source_descriptors` — provenance used to upsert `hp.dim_source` without out-of-band parser state.
 - `unmapped_metrics` — raw vendor fields deliberately skipped because the decision tree produced no canonical `metric_id`.
+- `skipped_rows` — source rows that resolved to a canonical metric but still produced no loadable row (for example unit mismatch, unsupported qualitative value, or a deferred follow-up marker).
 - `language_detected` — code returned by `_lang.detect_language()` when used.
 - `confidence` — parser self-rating for the batch.
 
@@ -42,7 +43,7 @@ For each field `X` in a vendor dump, resolve it to a canonical `metric_id` using
 4. **Bare English canonical name.** For a reusable concept not covered by the above standards, propose a new row with `metric_id = "<english_canonical_name>"`.
 5. **`vendor:*` fallback.** For source-specific or non-standard concepts, propose `metric_id = "vendor:<source>:<X>"`.
 
-If no step applies because the field is structural metadata or genuinely ambiguous, do **not** invent a `metric_id`. Skip the field at parse time, append `X` to `IngestBatch.unmapped_metrics`, and let the reviewer decide whether it should become a canonical metric in a future PR.
+If no step applies because the field is structural metadata or genuinely ambiguous, do **not** invent a `metric_id`. Skip the field at parse time, append `X` to `IngestBatch.unmapped_metrics`, and let the reviewer decide whether it should become a canonical metric in a future PR. If the field *does* resolve to a canonical metric but the row still cannot become a measurement or interval, surface it via `IngestBatch.skipped_rows` with a reason instead.
 
 ## Alias rule
 
@@ -66,4 +67,4 @@ When reviewing a parser PR, confirm:
 - The ontology diff includes every newly emitted canonical metric.
 - New aliases are clinically standard names or abbreviations only.
 - The parser ships at least one fixture-driven test.
-- Any field surfaced in `unmapped_metrics` includes a PR note explaining why it was skipped.
+- Any field surfaced in `unmapped_metrics` or `skipped_rows` includes a PR note explaining why it was skipped.
