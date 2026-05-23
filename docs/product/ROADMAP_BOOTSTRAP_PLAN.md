@@ -1,27 +1,29 @@
-# Premura Roadmap Bootstrap Plan
+# Premura Initial Roadmap Plan
 
-> Status: review draft. Proposed application of the planning-system plan to Premura's current docs. No GitHub issues, labels, milestones, boards, specs, or doc edits have been created by this draft.
+> Status: review draft. Proposed application of the planning system to Premura's current docs. No GitHub issues, labels, milestones, boards, or specs have been created by this draft. Doc edits driven by this plan are committed separately (see git log — e.g. `ROADMAP.md` reconciliation landed at `c11fc8c`).
+>
+> **Naming note**: this doc is filed at `docs/product/ROADMAP_BOOTSTRAP_PLAN.md`. The word "bootstrap" collides with `ops/bootstrap.sh` (operational setup script). The doc's content avoids the word; a file rename is pending and will be a separate small commit.
 
 ## Purpose
 
-Turn the approved planning system into an initial concrete roadmap for Premura.
+Turn the approved planning system into the first concrete roadmap for Premura.
 
 This file answers:
 
 - what roadmap items already exist in the docs
-- which ones should become missions vs tasks under the current partition rule
-- what milestone shape makes sense for the next pass
-- what I would create first once the user approves execution
+- which ones become missions under the partition rule
+- what milestone shape makes sense for the first pass
+- what would be created first once execution is approved
 
 ## Inputs Used
 
 - `docs/operations/STATUS.md`
+- `docs/product/FULL_APP_DEVELOPMENT_PLAN.md`
 - `docs/product/ROADMAP.md`
 - `docs/product/RISK_OPPORTUNITY.md`
 - `docs/research/PROPOSAL_LABS.md`
 - `docs/architecture/STAGES.md`
 - `docs/architecture/UPDATE_STRATEGY.md`
-- `docs/product/USERJOURNEY.md`
 - `docs/agents/issue-tracker.md`
 - `docs/agents/triage-labels.md`
 - `/tmp/premura-planning-handoff-2026-05-22.md`
@@ -30,29 +32,37 @@ This file answers:
 
 - The planning-system handoff is accepted in substance and is the process to apply.
 - This pass instantiates the roadmap; it does not execute it.
-- The current doc set is slightly ahead of `ROADMAP.md` in a few places, so the first roadmap pass should trust shipped-state docs over stale roadmap prose.
+- This plan is the near-term execution layer for Phases 1 and 2 in `docs/product/FULL_APP_DEVELOPMENT_PLAN.md`, not a competing phase plan.
+- `ROADMAP.md` has been reconciled against shipped state (commit `c11fc8c`), so this plan starts from remaining open work.
+- The active backlog is **missions-only** — no tasks. SAA real-export validation and the wiki hub page are both deferred (wiki: "once we have a proper codebase"; SAA: file an issue if and when the next real export breaks something).
 
-## What I Would Do First
+## What Would Be Done First
 
-1. Reconcile `docs/product/ROADMAP.md` against `docs/operations/STATUS.md` so already-shipped items stop looking open.
-2. Convert the remaining open work in the docs into one initial roadmap backlog with explicit `mission` or `task` classification.
-3. Create the canonical label vocabulary first: the 5 bare triage labels plus the agreed prefix families.
-4. Create three initial milestone buckets from the docs' natural sequencing: `v1.1 closeout`, `v2.0 analytical surface`, `v2.1 labs`.
-5. Create one GitHub roadmap issue per mission and one GitHub issue per task.
-6. Do not design the full Projects v2 board taxonomy yet; per the planning-system plan, board fields and views should be designed after `M1` completes.
-7. Start with the `mcp-server-duckdb + age` spike mission, because the docs already identify it as the highest-leverage uncertainty.
+1. Create the minimal canonical label vocabulary: 5 bare triage labels + `stage:*` (5) + `type:*` (6). No `pillar:*` or `priority:*` yet.
+2. Create two milestones from the docs' natural sequencing: `v2.0 analytical surface`, `v2.1 labs`.
+3. Create one GitHub tracking issue per mission (3 total), titled with `[M1]`/`[M2]`/`[M3]` prefixes.
+4. Do not design the full Projects v2 board taxonomy yet — board fields and views are designed after M1 completes.
+5. Start with the `mcp+age` spike (M1), the highest-leverage open uncertainty per `RISK_OPPORTUNITY.md:151`.
+
+## Discipline rules
+
+### Tag-cut on milestone close
+
+When `v2.0 analytical surface` closes (M1 + M2 done), cut tag `v2.0.0`. When `v2.1 labs` closes (M3 done), cut `v2.1.0`. Tags are restore points: someone with the encrypted Drive snapshot + age key + a tag can reproduce the pipeline at a known state.
+
+### Mission title format
+
+`[M1] <descriptive title>`, `[M2] ...`, etc. Sorts cleanly in issue lists; grep-able in commits.
+
+### Cross-stage labeling
+
+The planning-system handoff said "one stage per issue." Relax that: missions that genuinely span stages get multiple `stage:*` labels. M3 spans Stage 1 (parser) and Stage 2 (validity windows, missing-data policy, derived ratios), so it carries both `stage:ingest` and `stage:engine`.
+
+### Decomposition surface
+
+Each mission has **one** GitHub tracking issue. Intra-mission decomposition (e.g. M3's slices) lives inside `kitty-specs/<slug>/` as work packages when `/spec-kitty.specify` runs. Cross-mission dependencies (M2 blocked by M1, M3's Stage-3 sub-work blocked by M1 + M2) are encoded as "blocked by" comments on the tracking issues.
 
 ## Proposed Milestones
-
-### `v1.1 closeout`
-
-Purpose: close the remaining small shipped-surface residue from v1 and clean up roadmap/doc drift.
-
-Candidate contents:
-
-- Real Sleep as Android ingest on the next live monthly cadence
-- Project wiki hub page
-- Roadmap/doc reconciliation pass so `ROADMAP.md` matches `STATUS.md`
 
 ### `v2.0 analytical surface`
 
@@ -60,122 +70,79 @@ Purpose: answer the storage/MCP boundary question, then build the first real Sta
 
 Candidate contents:
 
-- `mcp-server-duckdb + age` compatibility spike
-- First MCP analytical server mission
-- Any ADR needed to lock the encrypted-DuckDB access boundary
+- `mcp+age` compatibility spike (M1)
+- First MCP analytical server (M2)
+- ADR locking the encrypted-DuckDB access boundary (output of M1)
 
 ### `v2.1 labs`
 
 Purpose: add clinical labs as the first new source class and the first substantive Stage 2 engine use.
 
-Candidate contents:
+Candidate contents (decomposed inside `kitty-specs/<m3-slug>/` when M3 specifies):
 
 - Docling spike on representative lab PDFs
-- Lab PDF parser
+- Lab PDF parser (in-tree under `src/premura/parsers/lab_pdf.py`)
 - `dim_metric` additions for labs
 - Validity-window and missing-data policy seeding for sparse lab metrics
 - First derived lab signals
-- Optional later Stage 3 exposure of those signals
+
+Not in this milestone:
+
+- Stage 3 lab-signal exposure. That is later cross-mission follow-on work and depends on M1's ADR plus M2's MCP infrastructure.
 
 ## Initial Backlog Proposal
 
-### Missions
+### M1. Spike encrypted DuckDB access for MCP
 
-#### M1. Spike encrypted DuckDB access for MCP
+- **Milestone**: `v2.0 analytical surface`
+- **Labels**: `stage:mcp`, `type:spike`
+- **Source docs**: `docs/product/RISK_OPPORTUNITY.md`, `docs/product/ROADMAP.md`
+- **Tracking issue title**:
+  - `[M1] Spike MCP access to age-protected DuckDB and lock the boundary`
+- **Definition of done (1-week timebox)**:
+  - An ADR is filed. The ADR captures *one* of:
+    - The approach works, with a reference spike branch demonstrating MCP reading the encrypted warehouse without plaintext on disk. That branch is the PoC artifact; merging is optional.
+    - The approach doesn't work, with the failure mode documented and an alternative chosen.
+- **Follow-on output**:
+  - Concrete recommendation for M2 (whether the existing MCP boundary is sufficient or requires a wrapper).
+  - Concrete recommendation for M3's later Stage-3 sub-work (whether the same boundary applies to lab-derived signals).
 
-- Milestone: `v2.0 analytical surface`
-- Source docs: `docs/product/RISK_OPPORTUNITY.md`, `docs/product/ROADMAP.md`
-- Why this is a mission:
-  - likely new Stage 2/3 boundary decision
-  - likely ADR before follow-on analytical work
-  - non-obvious acceptance criteria
-  - likely more than one PR if the result is "adopt", "adapt", or "reject and replace"
-- Suggested roadmap issue title:
-  - `Spike MCP access to age-protected DuckDB and lock the boundary`
-- Expected outputs:
-  - explicit decision on how MCP reads warehouse data
-  - ADR capturing the Stage 2/3 boundary decision, unless the spike proves the existing boundary is already sufficient with no architectural change
-  - follow-on recommendation for M2 and Stage-3 sub-work in M3
+### M2. Build the first MCP analytical server
 
-#### M2. Build the first MCP analytical server
-
-- Milestone: `v2.0 analytical surface`
-- Source docs: `docs/product/ROADMAP.md`, `docs/architecture/STAGES.md`
-- Why this is a mission:
-  - introduces new public MCP tools
-  - touches more than one stage
-  - needs design discussion and acceptance criteria
-- Suggested roadmap issue title:
-  - `Build the first MCP analytical surface over the warehouse`
-- Proposed scope for the first mission pass:
+- **Milestone**: `v2.0 analytical surface`
+- **Labels**: `stage:mcp`, `type:feature`
+- **Source docs**: `docs/product/ROADMAP.md`, `docs/architecture/STAGES.md`
+- **Tracking issue title**:
+  - `[M2] Build the first MCP analytical surface over the warehouse`
+- **Scope (first mission pass, per `ROADMAP.md:70-77`)**:
   - `query_warehouse`
   - `list_metrics`
   - `metric_summary`
-  - this first mission pass stops at the warehouse-query surface, matching the build order in `docs/product/ROADMAP.md`
-- Explicitly deferred from this first mission pass:
-  - deterministic stats tools
+- **Explicitly deferred from M2** (each becomes its own future mission):
+  - Deterministic stats tools (`correlate`, `paired_t_test`, ...)
   - PubMed integration
-- Dependency:
-  - depends on M1's boundary decision
+- **Dependency**: blocked by M1's ADR.
 
-#### M3. Add clinical lab ingestion and sparse-signal rules
+### M3. Add clinical lab ingestion and sparse-signal foundations
 
-- Milestone: `v2.1 labs`
-- Source docs: `docs/research/PROPOSAL_LABS.md`, `docs/architecture/STAGES.md`
-- Why this is a mission:
-  - new source class
-  - additive ontology growth plus Stage 2 signal rules
-  - touches more than one stage even if Stage 3 is deferred
-  - needs design discussion and non-obvious acceptance criteria
-- Suggested roadmap issue title:
-  - `Add lab PDF ingest and sparse-signal foundations`
-- Proposed mission slices:
-  - sub-issue: run the docling spike and choose extraction path
-  - sub-issue: add lab parser and ontology rows
-  - sub-issue: seed validity windows and missing-data policies
-  - sub-issue: add first derived lab ratios
-  - sub-issue: later MCP exposure, only after M1/M2 resolve the Stage-3 boundary
-- Dependency notes:
-  - Stage 1 plus Stage 2 work can proceed without M1
-  - Stage 3 exposure depends on the M1 decision and likely M2 infrastructure
-  - first mission scope should exclude Stage 3 MCP exposure entirely
-
-### Tasks
-
-#### T1. Reconcile `ROADMAP.md` with shipped state
-
-- Milestone: `v1.1 closeout`
-- Source docs: `docs/product/ROADMAP.md`, `docs/operations/STATUS.md`
-- Why this is a task:
-  - single doc-focused cleanup
-  - no new public contract
-  - can land in one PR
-- Suggested issue title:
-  - `Prune shipped items from ROADMAP and align it with STATUS`
-
-#### T2. Run the first real Sleep as Android monthly ingest and capture parser fixups
-
-- Milestone: `v1.1 closeout`
-- Source docs: `docs/product/ROADMAP.md`, `docs/operations/STATUS.md`
-- Why this is a task:
-  - a concrete validation pass, likely one issue and one PR unless a larger parser redesign emerges
-- Suggested issue title:
-  - `Validate Sleep as Android parser on the first live monthly export`
-- Note:
-  - if real-data quirks force a retroactive reinterpretation of already-mapped fields, this escalates to a mission under update kind `(f)`
-
-#### T3. Create the project wiki hub page
-
-- Milestone: `v1.1 closeout`
-- Source docs: `docs/product/ROADMAP.md`, `docs/product/USERJOURNEY.md`, `docs/product/SPEC.md`
-- Why this is a task:
-  - single output, no repo contract change
-- Suggested issue title:
-  - `Create the Premura project wiki hub page`
+- **Milestone**: `v2.1 labs`
+- **Labels**: `stage:ingest`, `stage:engine`, `type:feature`
+- **Source docs**: `docs/research/PROPOSAL_LABS.md`, `docs/architecture/STAGES.md`
+- **Tracking issue title**:
+  - `[M3] Add lab PDF ingest and sparse-signal foundations`
+- **Parser shape**: **in-tree** at `src/premura/parsers/lab_pdf.py`, not as a Claude Code skill.
+  - Skill-model validation (R2 from the risk register) is deferred to a separate future mini-mission with a smaller, simpler vendor (e.g. Withings CSV). Compounding the unproven skill model with PDF/OCR/multi-language complexity on one mission is too much risk on one bet.
+- **Proposed WP shape (materialized when `/spec-kitty.specify` runs on M3)**:
+  - WP: run the docling spike and choose extraction path
+  - WP: add lab parser and ontology rows
+  - WP: seed validity windows and missing-data policies
+  - WP: add first derived lab ratios
+- **Stage 3 MCP exposure**: out of M3's first scope. Filed as cross-mission sub-work that depends on M1's ADR + M2's MCP infrastructure. Encoded via a follow-on tracking issue, not a sub-issue of M3.
+- **Parallelization note**: M3's Stage 1 + Stage 2 WPs do not depend on M1 and can run in parallel with M2.
 
 ## Items I Would Not Pull Into The First Roadmap Pass
 
-These appear in `ROADMAP.md`, but I would not front-load them before M1 to M3 and the v1.1 residue:
+These appear in `ROADMAP.md` but are deferred:
 
 - `hpipe inspect <file>`
 - `hpipe gc` extension for `data/raw/`
@@ -185,69 +152,65 @@ These appear in `ROADMAP.md`, but I would not front-load them before M1 to M3 an
 - backfill historical Garmin dumps
 - FIT-file decoding
 - sample-level Garmin HRV/respiration expansion
+- Skill-model validation via a smaller vendor (post-M3; separate mini-mission)
+- SAA real-export validation (file an issue only if/when a real export breaks something)
+- Wiki hub page (deferred until the codebase is more mature)
 
-Reason: they are real work, but none outrank the open boundary question in `RISK_OPPORTUNITY.md` or the concrete next-source proposal in `PROPOSAL_LABS.md`.
+Reason: none outrank the open boundary question in `RISK_OPPORTUNITY.md` or the concrete next-source proposal in `PROPOSAL_LABS.md`.
 
 ## Important Consequence Of The Current Partition Rule
 
-Under the current rule, some items that feel "small" in `ROADMAP.md` still become missions.
-
-Examples:
+Under the partition rule, some items that feel "small" in `ROADMAP.md` still become missions:
 
 - `hpipe inspect <file>` introduces a new CLI verb, so it qualifies as a mission.
-- a schema-affecting warehouse change like `hp.fact_interval.unit` also leans mission-shaped.
+- A schema-affecting warehouse change like `hp.fact_interval.unit` also leans mission-shaped.
 
-That is not a problem by itself, but it is stricter than the prose tone in `ROADMAP.md`. Once the planning system is in use, the roadmap should be rewritten in terms of the stricter classification rather than the earlier informal size language.
+That is stricter than the prose tone in `ROADMAP.md`. Once the planning system is in use, the roadmap should be rewritten in terms of the stricter classification rather than the earlier informal size language.
 
 ## Proposed Roadmap Ordering
 
-This is a low-ceremony default sequence, not a hard dependency chain. If capacity allows, `M3` Stage 1 plus Stage 2 can run in parallel with `M2`; only `M3` Stage 3 depends on the `M1` boundary decision and `M2` infrastructure.
+This is a default sequence, not a hard dependency chain. If capacity allows, M3's Stage 1 + Stage 2 WPs can run in parallel with M2; only M3's Stage-3 sub-work strictly depends on M1's ADR and M2's MCP infrastructure.
 
-1. T1 `Prune shipped items from ROADMAP and align it with STATUS`
-2. T2 `Validate Sleep as Android parser on the first live monthly export`
-3. T3 `Create the Premura project wiki hub page`
-4. M1 `Spike MCP access to age-protected DuckDB and lock the boundary`
-5. M2 `Build the first MCP analytical surface over the warehouse`
-6. M3 `Add lab PDF ingest and sparse-signal foundations`
+1. M1 `[M1] Spike MCP access to age-protected DuckDB and lock the boundary`
+2. M2 `[M2] Build the first MCP analytical surface over the warehouse` as the default next mission
+3. M3 `[M3] Add lab PDF ingest and sparse-signal foundations`
 
-This order keeps v1 residue small, answers the major architectural uncertainty early, and delays the bigger source-class expansion until the Stage-3 boundary is no longer ambiguous.
+If capacity allows after M1, M2 and M3 can run in parallel. The default low-ceremony order above keeps the first execution pass simple.
 
-## What I Would Create If Execution Were Approved
+## What Would Be Created On Execution
 
-### Labels
+### Labels (minimal)
 
-- bare triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`
-- prefix families: `type:*`, `stage:*`, `pillar:*`, `priority:*`
+- Bare triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`
+- `stage:*`: `stage:ingest`, `stage:engine`, `stage:mcp`, `stage:ui`, `stage:ops`
+- `type:*`: `type:bug`, `type:feature`, `type:spike`, `type:research`, `type:docs`, `type:refactor`
+
+Deferred: `pillar:*` and `priority:*`. Added later only if a real filtering need emerges.
 
 ### Milestones
 
-- `v1.1 closeout`
 - `v2.0 analytical surface`
 - `v2.1 labs`
 
-### First Mission Issues
+### First Mission Tracking Issues
 
-- `Spike MCP access to age-protected DuckDB and lock the boundary`
-- `Build the first MCP analytical surface over the warehouse`
-- `Add lab PDF ingest and sparse-signal foundations`
+- `[M1] Spike MCP access to age-protected DuckDB and lock the boundary`
+- `[M2] Build the first MCP analytical surface over the warehouse`
+- `[M3] Add lab PDF ingest and sparse-signal foundations`
 
-### First Task Issues
-
-- `Prune shipped items from ROADMAP and align it with STATUS`
-- `Validate Sleep as Android parser on the first live monthly export`
-- `Create the Premura project wiki hub page`
+No initial task issues. SAA validation and wiki hub page are both deferred (see Working Assumptions).
 
 ## Review Questions
 
-Before executing this roadmap bootstrap, I would want review on:
-
-- whether `v1.1 closeout` should contain the roadmap/doc reconciliation item or keep it outside release milestones
+No open review questions remain. Remaining decisions are execution choices, not planning-shape ambiguities.
 
 ## Recommendation
 
-If the goal is to make the roadmap real with the least ceremony, approve this bootstrap shape and then perform exactly one application pass:
+Approve this shape and perform exactly one application pass:
 
-1. reconcile the prose roadmap against shipped state
-2. create the three milestones
-3. open the three mission issues and four task issues above
-4. start M1 first
+1. Create the minimal label vocabulary.
+2. Create the two milestones.
+3. Open the three mission tracking issues above.
+4. Start M1 first.
+
+When M1 + M2 both close, cut `v2.0.0`. When M3 closes, cut `v2.1.0`.
