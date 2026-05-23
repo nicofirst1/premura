@@ -30,6 +30,7 @@ from .ops import encrypt, notify, upload
 from .parsers.bmt import BMTParser
 from .parsers.garmin_gdpr import GarminGDPRParser
 from .parsers.health_connect import HealthConnectParser
+from .parsers.lab_pdf import LabPdfParser
 from .parsers.sleep_as_android import SleepAsAndroidParser
 from .store import duck
 from .store.loader import already_ingested, load
@@ -57,6 +58,7 @@ PARSER_REGISTRY: dict[str, tuple[PARSER_FACTORY, str]] = {
     "garmin": (GarminGDPRParser, "garmin_gdpr"),
     "saa": (SleepAsAndroidParser, "sleep_as_android"),
     "bmt": (BMTParser, "bmt"),
+    "lab": (LabPdfParser, "lab_pdf"),
 }
 
 
@@ -67,7 +69,7 @@ PARSER_REGISTRY: dict[str, tuple[PARSER_FACTORY, str]] = {
 
 @app.command()
 def ingest(
-    source: Annotated[str, typer.Option(help="hc | garmin | saa | bmt | all")] = "all",
+    source: Annotated[str, typer.Option(help="hc | garmin | saa | bmt | lab | all")] = "all",
     path: Annotated[
         Path | None,
         typer.Argument(help="Override file path; defaults to autodiscovery in data/inbox/"),
@@ -136,6 +138,8 @@ def _discover_input(source_key: str) -> Path | None:
     elif source_key in ("saa", "bmt"):
         csvs = sorted(inbox.glob("*.csv"), key=lambda p: p.stat().st_mtime, reverse=True)
         candidates = [p for p in csvs if _csv_kind(p) == source_key]
+    elif source_key == "lab":
+        candidates = sorted(inbox.glob("*.pdf"), key=lambda p: p.stat().st_mtime, reverse=True)
     else:
         return None
     return candidates[0] if candidates else None

@@ -170,12 +170,11 @@ def test_parsers_lang_detect_language_stub_raises() -> None:
         detect_language("hello world")
 
 
-def test_parsers_lookup_suggest_metric_stub_raises() -> None:
-    """FR-007: ``parsers.lookup.suggest_metric`` is a stub that raises NotImplementedError."""
+def test_parsers_lookup_suggest_metric_resolves_existing_aliases() -> None:
+    """FR-007: ``parsers.lookup.suggest_metric`` resolves existing ontology aliases."""
     from premura.parsers.lookup import suggest_metric
 
-    with pytest.raises(NotImplementedError):
-        suggest_metric("Resting Heart Rate")
+    assert suggest_metric("Resting Heart Rate") == "resting_hr"
 
 
 def test_plugin_parser_contract_symbols_import() -> None:

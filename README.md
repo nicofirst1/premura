@@ -35,7 +35,7 @@ duckdb -readonly data/duck/health.duckdb
 ## CLI surface
 
 ```
-hpipe ingest [--source all|hc|garmin|saa|bmt] [PATH]
+hpipe ingest [--source all|hc|garmin|saa|bmt|lab] [PATH]
 hpipe status
 hpipe export --month YYYY-MM        # snapshot + tarball staged raws, age-encrypt
 hpipe upload --month YYYY-MM        # OPT-IN rclone push (not run automatically)
@@ -44,6 +44,8 @@ hpipe gc --keep N
 hpipe run-monthly                   # full ingest+encrypt pipeline (no upload step)
 hpipe install-launchd / uninstall-launchd
 ```
+
+Experimental: `hpipe ingest --source lab PATH` parses extractor-normalized lab-report text from PDF files while the docling extraction path is still being evaluated.
 
 ## MCP surface
 
