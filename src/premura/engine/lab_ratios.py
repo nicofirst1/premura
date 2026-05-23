@@ -2,25 +2,15 @@
 
 from __future__ import annotations
 
-import json
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from ._registry import signal
+from ._registry import REGISTRY, SignalSpec
 
 if TYPE_CHECKING:
     import duckdb
 
 
-@signal(
-    name="ast_alt_ratio",
-    domain=["liver", "blood"],
-    inputs=["lab:ast", "lab:alt"],
-    output="derived:ast_alt_ratio",
-    priority="high",
-    auto_safe=True,
-    revision="1",
-)
 def compute_ast_alt_ratio(conn: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
     return _ratio_rows(
         conn,
@@ -31,15 +21,6 @@ def compute_ast_alt_ratio(conn: duckdb.DuckDBPyConnection) -> list[dict[str, Any
     )
 
 
-@signal(
-    name="ldl_hdl_ratio",
-    domain=["cardiometabolic", "blood"],
-    inputs=["lab:ldl", "lab:hdl"],
-    output="derived:ldl_hdl_ratio",
-    priority="high",
-    auto_safe=True,
-    revision="1",
-)
 def compute_ldl_hdl_ratio(conn: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
     return _ratio_rows(
         conn,
@@ -50,15 +31,6 @@ def compute_ldl_hdl_ratio(conn: duckdb.DuckDBPyConnection) -> list[dict[str, Any
     )
 
 
-@signal(
-    name="tg_hdl_ratio",
-    domain=["cardiometabolic", "blood"],
-    inputs=["lab:triglycerides", "lab:hdl"],
-    output="derived:tg_hdl_ratio",
-    priority="high",
-    auto_safe=True,
-    revision="1",
-)
 def compute_tg_hdl_ratio(conn: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
     return _ratio_rows(
         conn,
@@ -139,21 +111,62 @@ def _derived_row(
         "value_num": value_num,
         "value_text": None,
         "unit": unit,
-        "raw_payload": json.dumps(
-            {
-                "kind": "derived_ratio",
-                "numerator_metric": numerator_metric,
-                "denominator_metric": denominator_metric,
-                "numerator_source_uuid": numerator_source_uuid,
-                "denominator_source_uuid": denominator_source_uuid,
-                "revision": "1",
-            }
-        ),
+        "raw_payload": {
+            "kind": "derived_ratio",
+            "numerator_metric": numerator_metric,
+            "denominator_metric": denominator_metric,
+            "numerator_source_uuid": numerator_source_uuid,
+            "denominator_source_uuid": denominator_source_uuid,
+        },
     }
+
+
+def register_builtin_signals() -> None:
+    _register(
+        SignalSpec(
+            name="ast_alt_ratio",
+            domain=["liver", "blood"],
+            inputs=["lab:ast", "lab:alt"],
+            output="derived:ast_alt_ratio",
+            priority="high",
+            auto_safe=True,
+            revision="1",
+            fn=compute_ast_alt_ratio,
+        )
+    )
+    _register(
+        SignalSpec(
+            name="ldl_hdl_ratio",
+            domain=["cardiometabolic", "blood"],
+            inputs=["lab:ldl", "lab:hdl"],
+            output="derived:ldl_hdl_ratio",
+            priority="high",
+            auto_safe=True,
+            revision="1",
+            fn=compute_ldl_hdl_ratio,
+        )
+    )
+    _register(
+        SignalSpec(
+            name="tg_hdl_ratio",
+            domain=["cardiometabolic", "blood"],
+            inputs=["lab:triglycerides", "lab:hdl"],
+            output="derived:tg_hdl_ratio",
+            priority="high",
+            auto_safe=True,
+            revision="1",
+            fn=compute_tg_hdl_ratio,
+        )
+    )
+
+
+def _register(spec: SignalSpec) -> None:
+    REGISTRY[spec.name] = spec
 
 
 __all__ = [
     "compute_ast_alt_ratio",
     "compute_ldl_hdl_ratio",
     "compute_tg_hdl_ratio",
+    "register_builtin_signals",
 ]

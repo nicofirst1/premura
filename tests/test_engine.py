@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime, timedelta
+from importlib.resources import files
 from pathlib import Path
+
+import pytest
+import yaml
 
 from premura import engine
 from premura.parsers.base import IngestBatch, Measurement, SourceDescriptor
@@ -120,7 +124,7 @@ def test_compute_persists_ast_alt_ratio(empty_warehouse, tmp_path: Path) -> None
     assert json.loads(stored[4])["revision"] == "1"
 
 
-def test_loader_auto_computes_matching_ratios(empty_warehouse, tmp_path: Path) -> None:
+def test_loader_does_not_auto_compute_matching_ratios(empty_warehouse, tmp_path: Path) -> None:
     ts = datetime(2026, 4, 1, 8, 0, 0)
     source_id = "lab_pdf:testlab"
     load(
@@ -168,10 +172,41 @@ def test_loader_auto_computes_matching_ratios(empty_warehouse, tmp_path: Path) -
         ORDER BY metric_id
         """
     ).fetchall()
+    assert rows == []
+
+    engine.compute("ldl_hdl_ratio", empty_warehouse)
+    engine.compute("tg_hdl_ratio", empty_warehouse)
+    rows = empty_warehouse.execute(
+        """
+        SELECT metric_id, value_num
+        FROM hp.fact_measurement
+        WHERE metric_id IN ('derived:ldl_hdl_ratio', 'derived:tg_hdl_ratio')
+        ORDER BY metric_id
+        """
+    ).fetchall()
     assert rows == [
         ("derived:ldl_hdl_ratio", 3.0),
         ("derived:tg_hdl_ratio", 2.0),
     ]
+
+
+def test_compute_rejects_wrong_derived_row_shape(empty_warehouse) -> None:
+    from premura.engine import REGISTRY, SignalSpec
+
+    name = "_broken_signal"
+    REGISTRY[name] = SignalSpec(
+        name=name,
+        domain=["test"],
+        inputs=[],
+        output="derived:broken",
+        revision="7",
+        fn=lambda conn: ["not-a-row"],
+    )
+    try:
+        with pytest.raises(TypeError, match="row 0"):
+            engine.compute(name, empty_warehouse)
+    finally:
+        REGISTRY.pop(name, None)
 
 
 def test_list_unavailable_reports_signals_with_missing_inputs(
@@ -199,3 +234,20 @@ def test_list_unavailable_reports_signals_with_missing_inputs(
 
     missing = {spec.name for spec in engine.list_unavailable("liver", empty_warehouse)}
     assert missing == {"ast_alt_ratio"}
+
+
+def test_parse_iso8601_duration_accepts_seeded_validity_windows() -> None:
+    from premura.engine import _parse_iso8601_duration
+
+    rows = yaml.safe_load(files("premura").joinpath("dim_metric.yaml").read_text(encoding="utf-8"))
+    windows = {row["validity_window"] for row in rows if row.get("validity_window")}
+
+    for window in windows:
+        assert _parse_iso8601_duration(window) > timedelta(0)
+
+
+def test_parse_iso8601_duration_rejects_fractional_formats() -> None:
+    from premura.engine import _parse_iso8601_duration
+
+    with pytest.raises(ValueError, match="unsupported"):
+        _parse_iso8601_duration("PT0.5S")

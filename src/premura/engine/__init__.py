@@ -2,20 +2,20 @@
 
 This package defines the **open boundary** of Premura's Stage 2 signal engine.
 Importing it never imports any actual signal implementation: the registry is
-empty until signal modules opt into registration via the ``@signal(...)``
-decorator. This keeps the engine surface stable enough that a closed-source
-``premura-engine-pro`` package (or other proprietary derivations) may
-reimplement the boundary without breaking callers.
+empty until signal modules opt into registration. This keeps the engine surface
+stable enough that a closed-source ``premura-engine-pro`` package (or other
+proprietary derivations) may reimplement the boundary without breaking callers.
 
-The engine operates in two modes:
+The engine operates primarily in on-demand mode:
 
 * **On-demand** (default, called from MCP) — :func:`compute` looks up a
   :class:`SignalSpec` in :data:`REGISTRY`, invokes its ``fn`` with a DuckDB
   connection, and returns the result (optionally persisting a ``derived:*``
   row to ``hp.fact_measurement``).
-* **Auto-run** (opt-in via ``auto_safe=True``) — the ingest loader may call
-  :func:`list_auto_safe` after parsing a new batch, then for each spec check
-  :func:`check_inputs_available` and call :func:`compute`.
+
+Signals may also mark themselves ``auto_safe=True`` so future explicit
+recompute flows can identify low-risk derived outputs without re-litigating
+which registry entries are safe to materialize automatically.
 
 This module re-exports :class:`SignalSpec`, :data:`REGISTRY`, and the
 :func:`signal` decorator from :mod:`premura.engine._registry`.
@@ -26,11 +26,15 @@ or compute helpers below needs the built-in signals.
 
 See STAGES.md for the four-stage architecture this slots into.
 """
+
 from __future__ import annotations
 
+import json
+import re
+from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
-from importlib import import_module, reload
-from typing import TYPE_CHECKING
+from importlib import import_module
+from typing import TYPE_CHECKING, Any
 
 from ._registry import REGISTRY, SignalSpec, signal
 
@@ -74,10 +78,10 @@ def compute(spec_name: str, conn: duckdb.DuckDBPyConnection) -> object:
 
 
 def list_by_domain(domain: str) -> list[SignalSpec]:
-    """Return all :class:`SignalSpec`\\s in :data:`REGISTRY` whose ``domain`` contains ``domain``.
+    """Return all :class:`SignalSpec` entries whose ``domain`` contains ``domain``.
 
     Used by MCP's tool-exposure logic to discover relevant signals for a
-    user-selected health direction. Does NOT filter by input-availability —
+    user-selected health direction. Does NOT filter by input-availability -
     that is :func:`check_inputs_available` / :func:`list_unavailable`.
     """
     _ensure_builtin_signals_loaded()
@@ -85,17 +89,19 @@ def list_by_domain(domain: str) -> list[SignalSpec]:
 
 
 def list_auto_safe() -> list[SignalSpec]:
-    """Return all :class:`SignalSpec`\\s where ``auto_safe is True``.
+    """Return all :class:`SignalSpec` entries where ``auto_safe is True``.
 
-    Used by the ingest loader's optional auto-precompute step
-    (see ``docs/architecture/UPDATE_STRATEGY.md``).
+    This is metadata only. It identifies derivations that are conservative
+    enough for future explicit recompute flows.
     """
     _ensure_builtin_signals_loaded()
     return [spec for spec in REGISTRY.values() if spec.auto_safe]
 
 
 def check_inputs_available(
-    inputs: list[str], conn: duckdb.DuckDBPyConnection, within: object = None
+    inputs: list[str],
+    conn: duckdb.DuckDBPyConnection,
+    within: object = None,
 ) -> bool:
     """Return True iff every ``metric_id`` in ``inputs`` has at least one usable measurement.
 
@@ -119,7 +125,10 @@ def check_inputs_available(
     return True
 
 
-def list_unavailable(domain: str, conn: duckdb.DuckDBPyConnection) -> list[SignalSpec]:
+def list_unavailable(
+    domain: str,
+    conn: duckdb.DuckDBPyConnection,
+) -> list[SignalSpec]:
     """Return the subset of :func:`list_by_domain` whose inputs are not all available.
 
     MCP uses this to build the ``missing_inputs_report`` it returns to the UI
@@ -136,17 +145,18 @@ def _ensure_builtin_signals_loaded() -> None:
     if REGISTRY:
         return
     module = import_module("premura.engine.lab_ratios")
-    if not REGISTRY:
-        reload(module)
+    module.register_builtin_signals()
 
 
 def _persist_derived_rows(
     conn: duckdb.DuckDBPyConnection,
     spec: SignalSpec,
     result: object,
-) -> list[dict[str, object]]:
-    rows = [row for row in result if isinstance(row, dict)] if isinstance(result, list) else []
+) -> list[dict[str, Any]]:
+    rows = _coerce_derived_rows(spec.name, result)
     for row in rows:
+        payload = dict(row.get("raw_payload") or {})
+        payload["revision"] = spec.revision
         conn.execute(
             """
             INSERT INTO hp.fact_measurement (
@@ -174,9 +184,30 @@ def _persist_derived_rows(
                 row["source_id"],
                 row["source_uuid"],
                 row["dedupe_key"],
-                row["raw_payload"],
+                json.dumps(payload),
             ],
         )
+    return rows
+
+
+def _coerce_derived_rows(spec_name: str, result: object) -> list[dict[str, Any]]:
+    if not isinstance(result, list):
+        raise TypeError(f"signal {spec_name!r} must return list[dict[str, object]]")
+
+    required = {"ts_utc", "unit", "source_id", "source_uuid", "dedupe_key"}
+    rows: list[dict[str, Any]] = []
+    for index, row in enumerate(result):
+        if not isinstance(row, Mapping):
+            raise TypeError(f"signal {spec_name!r} row {index} must be a mapping")
+        missing = required - set(row)
+        if missing:
+            raise ValueError(f"signal {spec_name!r} row {index} missing fields: {sorted(missing)}")
+        raw_payload = row.get("raw_payload")
+        if raw_payload is not None and not isinstance(raw_payload, Mapping):
+            raise TypeError(
+                f"signal {spec_name!r} row {index} raw_payload must be a mapping or None"
+            )
+        rows.append(dict(row))
     return rows
 
 
@@ -188,7 +219,10 @@ def _coerce_within(within: object) -> timedelta | None:
     raise TypeError("within must be a datetime.timedelta or None")
 
 
-def _lookup_validity_window(conn: duckdb.DuckDBPyConnection, metric_id: str) -> timedelta | None:
+def _lookup_validity_window(
+    conn: duckdb.DuckDBPyConnection,
+    metric_id: str,
+) -> timedelta | None:
     row = conn.execute(
         "SELECT validity_window FROM hp.dim_metric WHERE metric_id = ?",
         [metric_id],
@@ -198,7 +232,10 @@ def _lookup_validity_window(conn: duckdb.DuckDBPyConnection, metric_id: str) -> 
     return _parse_iso8601_duration(str(row[0]))
 
 
-def _latest_metric_timestamp(conn: duckdb.DuckDBPyConnection, metric_id: str) -> datetime | None:
+def _latest_metric_timestamp(
+    conn: duckdb.DuckDBPyConnection,
+    metric_id: str,
+) -> datetime | None:
     row = conn.execute(
         """
         SELECT MAX(observed_at)
@@ -225,45 +262,15 @@ def _effective_window(
 
 
 def _parse_iso8601_duration(value: str) -> timedelta:
-    normalized = value.removeprefix("P")
-    if "T" in normalized:
-        date_part, time_part = normalized.split("T", maxsplit=1)
-    else:
-        date_part, time_part = normalized, ""
-    days = 0
-    number = ""
-    for char in date_part:
-        if char.isdigit():
-            number += char
-            continue
-        amount = int(number)
-        number = ""
-        if char == "Y":
-            days += amount * 365
-        elif char == "M":
-            days += amount * 30
-        elif char == "W":
-            days += amount * 7
-        elif char == "D":
-            days += amount
-        else:
-            raise ValueError(f"unsupported ISO-8601 duration: {value}")
+    match = re.fullmatch(
+        r"P(?:(?P<years>\d+)Y)?(?:(?P<months>\d+)M)?(?:(?P<weeks>\d+)W)?(?:(?P<days>\d+)D)?(?:T(?:(?P<hours>\d+)H)?(?:(?P<minutes>\d+)M)?(?:(?P<seconds>\d+)S)?)?",
+        value,
+    )
+    if match is None or not any(match.groupdict().values()):
+        raise ValueError(f"unsupported ISO-8601 duration: {value}")
 
-    seconds = 0
-    number = ""
-    for char in time_part:
-        if char.isdigit():
-            number += char
-            continue
-        amount = int(number)
-        number = ""
-        if char == "H":
-            seconds += amount * 3600
-        elif char == "M":
-            seconds += amount * 60
-        elif char == "S":
-            seconds += amount
-        else:
-            raise ValueError(f"unsupported ISO-8601 duration: {value}")
-
-    return timedelta(days=days, seconds=seconds)
+    parts = {name: int(raw) if raw is not None else 0 for name, raw in match.groupdict().items()}
+    return timedelta(
+        days=(parts["years"] * 365) + (parts["months"] * 30) + (parts["weeks"] * 7) + parts["days"],
+        seconds=(parts["hours"] * 3600) + (parts["minutes"] * 60) + parts["seconds"],
+    )

@@ -96,7 +96,6 @@ def load(conn: duckdb.DuckDBPyConnection, batch: IngestBatch) -> LoadStats:
         _upsert_source_descriptors(conn, batch)
         plan = DedupePlanner().plan(conn, batch, batch_id=batch_id)
         _persist_plan(conn, plan)
-        _compute_auto_safe_signals(conn, batch)
         stats.rows_inserted = plan.rows_inserted
         stats.rows_skipped_dup = plan.rows_skipped_dup
         stats.rows_skipped_priority = plan.rows_skipped_priority
@@ -173,20 +172,6 @@ def _persist_plan(conn: duckdb.DuckDBPyConnection, plan: DedupePlan) -> None:
             )
         finally:
             conn.unregister("planned_intervals")
-
-
-def _compute_auto_safe_signals(conn: duckdb.DuckDBPyConnection, batch: IngestBatch) -> None:
-    from .. import engine
-
-    emitted_metrics = batch.emitted_metrics
-    for spec in engine.list_auto_safe():
-        if not emitted_metrics.intersection(spec.inputs):
-            continue
-        if not engine.check_inputs_available(spec.inputs, conn):
-            continue
-        engine.compute(spec.name, conn)
-
-
 __all__ = [
     "LoadStats",
     "already_ingested",
