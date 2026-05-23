@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import duckdb
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -91,7 +91,8 @@ def seed_dim_metric(conn: duckdb.DuckDBPyConnection) -> int:
                 row.get("ieee1752"),
             ],
         )
-    return conn.execute("SELECT COUNT(*) FROM hp.dim_metric").fetchone()[0]
+    row = conn.execute("SELECT COUNT(*) FROM hp.dim_metric").fetchone()
+    return int(row[0]) if row else 0
 
 
 def upsert_dim_source(
@@ -114,7 +115,10 @@ def upsert_dim_source(
         ON CONFLICT (source_id) DO UPDATE SET
             app_package          = COALESCE(excluded.app_package, hp.dim_source.app_package),
             app_name             = COALESCE(excluded.app_name, hp.dim_source.app_name),
-            device_manufacturer  = COALESCE(excluded.device_manufacturer, hp.dim_source.device_manufacturer),
+            device_manufacturer  = COALESCE(
+                excluded.device_manufacturer,
+                hp.dim_source.device_manufacturer
+            ),
             device_model         = COALESCE(excluded.device_model, hp.dim_source.device_model),
             last_seen            = now()
         """,

@@ -31,7 +31,7 @@ dev = [
 
 [project.scripts]
 hpipe = "premura.cli:app"
-premura-mcp = "premura.mcp_entrypoint:main"
+premura-mcp = "premura.mcp.entrypoint:main"
 
 [build-system]
 requires = ["hatchling"]

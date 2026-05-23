@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from premura import encrypt
+from premura.ops import encrypt
 
 pytestmark = pytest.mark.skipif(
     not encrypt.is_available(),

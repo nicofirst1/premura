@@ -40,8 +40,19 @@ premura/
 ├── src/premura/
 │   ├── cli.py              # typer: ingest, status, export, upload, doctor, run-monthly
 │   ├── config.py           # pydantic-settings: paths, age recipient, rclone remote, unit overrides
+│   ├── mcp/
+│   │   ├── __init__.py
+│   │   ├── entrypoint.py   # FastMCP stdio entrypoint
+│   │   └── server.py       # read-only warehouse tool implementations
+│   ├── ops/
+│   │   ├── encrypt.py      # subprocess wrapper for age
+│   │   ├── notify.py       # osascript wrapper
+│   │   ├── upload.py       # subprocess wrapper for rclone
+│   │   └── launchd.plist.j2
 │   ├── store/
+│   │   ├── dedupe.py
 │   │   ├── duck.py         # DuckDB connection + migrations runner
+│   │   ├── loader.py
 │   │   └── migrations/001_init.sql
 │   ├── parsers/
 │   │   ├── base.py         # Measurement dataclass + Parser protocol
@@ -50,11 +61,7 @@ premura/
 │   │   ├── sleep_as_android.py
 │   │   └── bmt.py
 │   ├── dim_metric.yaml     # seed data, reviewable
-│   ├── dedupe.py
-│   ├── encrypt.py          # subprocess wrapper for age
-│   ├── upload.py           # subprocess wrapper for rclone
-│   ├── notify.py           # osascript wrapper
-│   └── ops/launchd.plist.j2
+│   └── ui/
 ├── tests/
 │   ├── fixtures/           # anonymised mini-DBs, < 100KB each
 │   ├── test_parsers/
@@ -336,9 +343,10 @@ All paths relative to `$REPO/`:
 - `src/premura/parsers/garmin_gdpr.py`
 - `src/premura/parsers/sleep_as_android.py`
 - `src/premura/parsers/bmt.py`
-- `src/premura/dedupe.py`
+- `src/premura/store/dedupe.py`
 - `src/premura/cli.py`
-- `src/premura/encrypt.py`, `upload.py`
+- `src/premura/ops/encrypt.py`, `src/premura/ops/upload.py`
+- `src/premura/mcp/server.py`
 - `src/premura/ops/launchd.plist.j2`
 - `ops/bootstrap.sh`
 - (Optional) hub page + index entry in the operator's personal knowledge wiki.

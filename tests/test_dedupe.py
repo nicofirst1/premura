@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from premura.loader import load
 from premura.parsers.base import IngestBatch, Measurement, SourceDescriptor
+from premura.store.loader import load
 
 
 def _batch_with_one(measurement: Measurement, path) -> IngestBatch:

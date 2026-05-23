@@ -70,7 +70,7 @@ Worth building, with two caveats:
 
 ### Concrete build order, if pursued
 
-1. New module `src/premura/mcp_server.py` using the `mcp` Python SDK. Tools: `query_warehouse`, `list_metrics`, `metric_summary`.
+1. New module `src/premura/mcp/server.py` using the `mcp` Python SDK. Tools: `query_warehouse`, `list_metrics`, `metric_summary`.
 2. Add `stats.py` with `correlate`, `paired_t_test`, `rolling_mean`, `change_point` — each returning a structured dict.
 3. Add `pubmed.py` wrapper around Entrez (`esearch`, `efetch`); keep responses ≤25 hits.
 4. Expose all of the above through the MCP server. Configure Claude Desktop to load it.

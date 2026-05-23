@@ -62,7 +62,7 @@ def test_every_column_the_parser_reads_exists():
 def test_ingest_smoke_then_idempotent(empty_warehouse):
     """Full HC ingest + a second-pass dedupe confirmation."""
     _require_export()
-    from premura import loader
+    from premura.store import loader
 
     p = HealthConnectParser()
     batch = p.parse(REAL_EXPORT)

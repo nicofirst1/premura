@@ -39,7 +39,7 @@ def _initialized_data_dir(tmp_path: Path) -> Path:
 
 
 def test_query_warehouse_returns_rows_from_read_only_connection(tmp_path: Path) -> None:
-    from premura.mcp_server import query_warehouse
+    from premura.mcp.server import query_warehouse
 
     result = query_warehouse(
         "SELECT metric_id, display_name FROM hp.dim_metric ORDER BY metric_id LIMIT 2",
@@ -53,7 +53,7 @@ def test_query_warehouse_returns_rows_from_read_only_connection(tmp_path: Path) 
 
 
 def test_query_warehouse_rejects_non_read_queries(tmp_path: Path) -> None:
-    from premura.mcp_server import query_warehouse
+    from premura.mcp.server import query_warehouse
 
     with pytest.raises(ValueError, match="read-only"):
         query_warehouse(
@@ -63,7 +63,7 @@ def test_query_warehouse_rejects_non_read_queries(tmp_path: Path) -> None:
 
 
 def test_list_metrics_reports_seeded_metrics(tmp_path: Path) -> None:
-    from premura.mcp_server import list_metrics
+    from premura.mcp.server import list_metrics
 
     rows = list_metrics(warehouse_path=_initialized_warehouse(tmp_path), limit=5)
 
@@ -74,7 +74,7 @@ def test_list_metrics_reports_seeded_metrics(tmp_path: Path) -> None:
 
 
 def test_metric_summary_reports_measurement_stats(tmp_path: Path) -> None:
-    from premura.mcp_server import metric_summary
+    from premura.mcp.server import metric_summary
 
     db_path = tmp_path / "summary.duckdb"
     conn = duck.initialize(db_path)
@@ -106,13 +106,13 @@ def test_metric_summary_reports_measurement_stats(tmp_path: Path) -> None:
 
 
 def test_metric_summary_returns_none_for_missing_metric(tmp_path: Path) -> None:
-    from premura.mcp_server import metric_summary
+    from premura.mcp.server import metric_summary
 
     assert metric_summary("missing_metric", warehouse_path=_initialized_warehouse(tmp_path)) is None
 
 
 def test_build_server_registers_expected_tools() -> None:
-    from premura.mcp_entrypoint import build_server
+    from premura.mcp.entrypoint import build_server
 
     async def run() -> None:
         server = build_server()

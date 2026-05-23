@@ -1,1 +1,1 @@
-"""Operational helpers: launchd plist template, bootstrap snippets."""
+"""Operational helpers: encryption, upload, notifications, launchd template."""

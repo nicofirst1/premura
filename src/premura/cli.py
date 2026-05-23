@@ -14,23 +14,25 @@ import shutil
 import sys
 import tarfile
 import time
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Protocol
 
 import typer
 from jinja2 import Template
 from rich.console import Console
 from rich.table import Table
 
-from . import encrypt, notify, skills, upload
+from . import skills
 from .config import settings
-from .loader import already_ingested, load
+from .ops import encrypt, notify, upload
 from .parsers.bmt import BMTParser
 from .parsers.garmin_gdpr import GarminGDPRParser
 from .parsers.health_connect import HealthConnectParser
 from .parsers.sleep_as_android import SleepAsAndroidParser
 from .store import duck
+from .store.loader import already_ingested, load
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -43,7 +45,14 @@ log = logging.getLogger("hpipe")
 READY_TIMEOUT_DAYS = 7
 READY_POLL_SECS = 3600  # 1 hour
 
-PARSER_REGISTRY = {
+
+class _Parser(Protocol):
+    def parse(self, path: Path): ...
+
+
+PARSER_FACTORY = Callable[[], _Parser]
+
+PARSER_REGISTRY: dict[str, tuple[PARSER_FACTORY, str]] = {
     "hc": (HealthConnectParser, "health_connect"),
     "garmin": (GarminGDPRParser, "garmin_gdpr"),
     "saa": (SleepAsAndroidParser, "sleep_as_android"),
