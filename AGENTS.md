@@ -21,7 +21,12 @@ match: existing alias via `suggest_metric(X)` → `LOINC` for labs → `IEEE
 `vendor:<source>:<field>`.
 
 If no step applies, skip the field at parse time and surface it via
-`IngestBatch.unmapped_metrics` for human review.
+`IngestBatch.unmapped_metrics` for human review. If a field *does* resolve to a
+canonical metric but still cannot become a loadable row, surface it via
+`IngestBatch.skipped_rows` instead.
+
+- Never copy real operator PDFs, extracted PHI, or generated private report
+  artifacts into this repo or a git commit while doing parser or extractor work.
 
 ## Agent skills
 
