@@ -3,6 +3,10 @@
 > Repo-root router for humans and AI agents. Use this file to find the right
 > working guide, not as the full contract itself.
 
+- Before producing prose, planning docs, or onboarding material, read
+  `CONTEXT.md` §"Maintainer mental model" and §"Planning" — they define the
+  canonical vocabulary and explain when to prefer plain English over SE/agile
+  jargon.
 - If you are changing Premura's codebase, start with `CONTRIBUTING.md`.
 - If you are adding or reviewing a federated parser, read
   `docs/architecture/PARSER_CONTRIBUTING.md`, then `src/premura/parsers/CONTRACT.md`.
