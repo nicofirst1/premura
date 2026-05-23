@@ -1,6 +1,8 @@
 # Premura Full App Development Plan
 
 > Status: review draft. Phase-level development plan for the whole app trajectory from the current shipped state forward. Complements `ROADMAP_BOOTSTRAP_PLAN.md`, which only covers how to instantiate the first concrete backlog.
+>
+> **Vocabulary note**: this doc uses the project vocabulary defined in `CONTEXT.md` §"Planning" (e.g. "ablation study" rather than "spike", "design decision note" rather than "ADR"). Live GitHub artifacts (issue titles, label values, file paths) keep their existing names — only prose follows the new vocabulary.
 
 ## Purpose
 
@@ -15,6 +17,7 @@ This file is not the GitHub backlog and not the first execution plan. It is the 
 
 ## Inputs Used
 
+- `CONTEXT.md` (vocabulary)
 - `docs/operations/STATUS.md`
 - `docs/product/VISION.md`
 - `docs/product/ROADMAP.md`
@@ -39,7 +42,7 @@ Premura has already shipped:
 - four-source ingest into the warehouse
 - encryption and opt-in backup flow
 - launchd automation
-- the federated parser seam and ontology groundwork (`PluginParser`, `IngestBatch`, `dim_metric.yaml` ontology)
+- the federated parser plug-in code (`PluginParser`, `IngestBatch`, `dim_metric.yaml` ontology)
 - stub packages for `engine`, `mcp`, and `ui`
 
 What is still missing is the actual v2 payoff:
@@ -62,13 +65,13 @@ Small v1 residue (real-data SAA validation, project wiki hub page) is not schedu
 
 ## Conventions
 
-This plan follows the discipline rules established in `ROADMAP_BOOTSTRAP_PLAN.md` §"Discipline rules":
+This plan follows the conventions established in `ROADMAP_BOOTSTRAP_PLAN.md` §"Conventions":
 
 - **Tag-cut on milestone close**: each phase ships as a milestone (`v2.0`, `v2.1`, …) and closes with a corresponding `git tag` (`v2.0.0`, `v2.1.0`, …). Tags are restore points.
-- **ADR timing**: ADRs land *before* missions that depend on a new boundary or public contract; *after* missions when the decision is an implementation detail inside an already-approved direction. See `docs/adr/0001-ingest-batch-parser-seam.md` for the post-mission template.
+- **Design decision note timing**: design decision notes land *before* missions that introduce a new stage interface or a new public type; *after* missions where the decision is an implementation detail inside an already-approved direction. See `docs/adr/0001-ingest-batch-parser-seam.md` for the post-mission template (the folder `docs/adr/` is kept for filesystem stability; in prose call them "design decision notes").
 - **Mission title format**: GitHub tracking issues use `[M1]`/`[M2]`/`[M3]` prefixes. New missions in later phases follow the same convention (`[M4]`, `[M5]`, …).
-- **Cross-stage labels**: missions that genuinely span stages carry multiple `stage:*` labels (e.g. M3 carries both `stage:ingest` and `stage:engine`).
-- **Decomposition**: one GitHub tracking issue per mission. Intra-mission decomposition lives in `kitty-specs/<slug>/` as work packages. Cross-mission dependencies are encoded as "blocked by" comments on tracking issues.
+- **Multi-stage labels**: missions that genuinely span stages carry multiple `stage:*` labels (e.g. M3 carries both `stage:ingest` and `stage:engine`).
+- **Mission breakdown**: one GitHub tracking issue per mission. Intra-mission breakdown lives in `kitty-specs/<slug>/` as work packages. Cross-mission dependencies are encoded as "blocked by" comments on tracking issues.
 
 ## Development Phases
 
@@ -76,12 +79,12 @@ This plan follows the discipline rules established in `ROADMAP_BOOTSTRAP_PLAN.md
 
 #### Goal
 
-Make the Stage 2 / Stage 3 boundary real and usable.
+Make the hand-off from Stage 2 to Stage 3 real and usable.
 
 #### Main work
 
-- Spike `mcp-server-duckdb + age` compatibility (M1)
-- Produce the ADR that locks the MCP/warehouse access decision
+- `mcp-server-duckdb + age` compatibility ablation study (M1)
+- Produce the design decision note that locks how MCP reads the warehouse
 - Build the first MCP query surface (M2):
   - `query_warehouse`
   - `list_metrics`
@@ -89,16 +92,16 @@ Make the Stage 2 / Stage 3 boundary real and usable.
 
 #### Why this phase exists
 
-This is the highest-leverage open question in the current docs. If Premura is supposed to become an analytical tool rather than only a warehouse, this boundary has to be settled early.
+This is the highest-leverage open question in the current docs. If Premura is supposed to become an analytical tool rather than only a warehouse, this question has to be settled early.
 
 #### Risks retired
 
-- the open MCP/warehouse boundary question from `RISK_OPPORTUNITY.md:151`
+- the open MCP-access question from `RISK_OPPORTUNITY.md:151`
 - a major source of uncertainty for all later analytical work
 
 #### Likely work shape
 
-- one mission for the spike + ADR
+- one mission for the ablation study + design decision note
 - one mission for the first MCP surface
 
 #### Exit criteria
@@ -116,7 +119,7 @@ Add the first new source class and the first substantive Stage 2 engine behavior
 
 #### Main work
 
-- Run the docling spike on real lab PDFs
+- Run the docling ablation study on real lab PDFs
 - Add the lab parser (in-tree at `src/premura/parsers/lab_pdf.py`)
 - Add lab ontology rows
 - Seed validity windows for sparse clinical metrics
@@ -135,7 +138,7 @@ The lab proposal is the first place where Premura becomes more than a wearable d
 #### Likely work shape
 
 - one mission (M3), decomposed into WPs inside `kitty-specs/<m3-slug>/`
-- Stage 3 lab-signal exposure stays out of this phase; filed as cross-mission sub-work that depends on M1's ADR and M2's MCP infrastructure
+- Stage 3 lab-signal exposure stays out of this phase; filed as cross-mission sub-work that depends on M1's design decision note and M2's MCP infrastructure
 
 #### Exit criteria
 
@@ -186,7 +189,7 @@ Test whether the parser-skill and parser-generator story is real or still specul
 #### Main work
 
 - Build at least one real third-party parser outside the original four sources (candidate: Withings CSV, chosen because the format is simple enough that the skill model can be the bottleneck rather than the parsing complexity)
-- Use that work to validate the parser contract and parser-generator workflow
+- Use that work to validate the parser plug-in interface and parser-generator workflow
 - Decide whether the ecosystem story should be expanded, narrowed, or deferred
 
 #### Why this phase exists
@@ -200,7 +203,7 @@ The docs already call out the parser-skill bet as risk `R2`. That risk does not 
 #### Likely work shape
 
 - one mission for the parser itself
-- possibly one follow-up task or mission for contract corrections if the experiment fails cleanly
+- possibly one follow-up task or mission for plug-in interface corrections if the experiment fails cleanly
 
 #### Exit criteria
 
@@ -260,7 +263,7 @@ These are useful, but they are not the strongest differentiators while the app s
 
 #### Likely work shape
 
-- a mix of single-mission items and parallel small efforts under the partition rule
+- a mix of single-mission items and parallel small efforts under the mission/task split rule
 
 #### Exit criteria
 
@@ -281,7 +284,7 @@ This is not a rigid dependency chain for every sub-issue. It is the default prod
 
 ## Dependency Notes
 
-- The encrypted-DuckDB boundary decision (Phase 1) gates most Stage 3 work.
+- The MCP/warehouse access decision (Phase 1) gates most Stage 3 work.
 - Lab ingest and Stage 2 lab rules (Phase 2) do not need to wait for the full analytical surface, but lab Stage 3 exposure should.
 - Parser ecosystem validation (Phase 4) does not need to wait for the teaching layer.
 - Teaching (Phase 5) should wait until there is enough real analytical substance to teach from.
@@ -317,14 +320,14 @@ R7 likely never goes to zero. The practical goal is to constrain and surface unc
 
 When a phase closes (its milestone ships and its tag cuts), its section is rewritten as a one-paragraph summary pointing at the closed milestone, the shipped ADRs, and any follow-on missions that emerged. The detailed scope text moves to git history; the live doc stays a forward-looking plan, not a changelog.
 
-When a risk retires, its entry in the Risk Retirement Map is updated to note the retiring artifact (ADR, mission, or evidence) and the phase that retired it.
+When a risk retires, its entry in the Risk Retirement Map is updated to note the retiring artifact (design decision note, mission, or evidence) and the phase that retired it.
 
 ## Recommendation
 
 Treat the near-term roadmap as:
 
-- First, instantiate the bootstrap plan (creates M1/M2/M3 tracking issues for `v2.0` + `v2.1`).
-- Second, execute `v2.0` (M1 spike + M2 first MCP surface) and `v2.1` (M3 lab parser + first Stage 2 rules).
-- Third, revisit this plan with evidence from the spike, labs, and first MCP surface before locking later phases too tightly.
+- First, instantiate the initial roadmap plan (creates M1/M2/M3 tracking issues for `v2.0` + `v2.1`).
+- Second, execute `v2.0` (M1 ablation study + M2 first MCP surface) and `v2.1` (M3 lab parser + first Stage 2 rules).
+- Third, revisit this plan with evidence from the ablation study, labs, and first MCP surface before locking later phases too tightly.
 
-The biggest mistake would be to plan the teaching layer, parser ecosystem, and ingest expansion in equal detail before the analytical boundary and first Stage 2 rules are proven in code.
+The biggest mistake would be to plan the teaching layer, parser ecosystem, and ingest expansion in equal detail before the analytical access path and first Stage 2 rules are proven in code.
