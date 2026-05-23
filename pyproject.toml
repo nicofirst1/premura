@@ -1,11 +1,12 @@
 [project]
 name = "premura"
 version = "0.1.1"
-description = "Personal health data warehouse: monthly GDPR-dump ingestion from Garmin/HC/SAA/BMT into an encrypted DuckDB"
+description = "Personal health data warehouse: monthly GDPR-dump ingestion from Garmin/HC/SAA/BMT into a local DuckDB with encrypted export artifacts"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "duckdb>=1.1,<2",
+    "mcp>=1.27,<2",
     "pydantic>=2.9,<3",
     "pydantic-settings>=2.5,<3",
     "typer>=0.12,<1",
@@ -30,6 +31,7 @@ dev = [
 
 [project.scripts]
 hpipe = "premura.cli:app"
+premura-mcp = "premura.mcp_entrypoint:main"
 
 [build-system]
 requires = ["hatchling"]

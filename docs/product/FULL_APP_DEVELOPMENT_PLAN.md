@@ -81,7 +81,7 @@ Make the Stage 2 / Stage 3 boundary real and usable.
 #### Main work
 
 - Spike `mcp-server-duckdb + age` compatibility (M1)
-- Produce the ADR that locks the encrypted-warehouse access decision
+- Produce the ADR that locks the MCP/warehouse access decision
 - Build the first MCP query surface (M2):
   - `query_warehouse`
   - `list_metrics`
@@ -93,7 +93,7 @@ This is the highest-leverage open question in the current docs. If Premura is su
 
 #### Risks retired
 
-- the open encrypted-DuckDB/MCP boundary question from `RISK_OPPORTUNITY.md:151`
+- the open MCP/warehouse boundary question from `RISK_OPPORTUNITY.md:151`
 - a major source of uncertainty for all later analytical work
 
 #### Likely work shape

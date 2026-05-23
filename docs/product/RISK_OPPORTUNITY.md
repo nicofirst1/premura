@@ -148,7 +148,7 @@ The cheapest decision is one you can revisit. Run Tier 2 for 6 weeks; reassess.
 
 (Carried forward from [PRIOR_ART_RESULTS.md](../research/PRIOR_ART_RESULTS.md) §6 + new questions raised by this analysis.)
 
-- **Can `mcp-server-duckdb` open an `age`-encrypted file** without exposing plaintext to disk? If not, Pillar 3 + Pillar 6 need an architectural decision.
+- **What is the right MCP/warehouse boundary?** Can Premura keep the current local DuckDB working file and reserve `age` for exported artifacts, or is a stricter decrypted-on-demand boundary worth the added complexity?
 - **What does the skill contract actually look like?** Claude Code's skill format is young; the parser-skill design is unproven.
 - **What's the right unit of "teaching"?** Is it a metric (HRV is one card)? A track (sleep & recovery is one journey)? A question ("why did my HRV drop last week" is one tour)? Unresolved.
 - **Are there ~10 quantified-self users who'd actually contribute parser skills?** No evidence either way; needs a small test (post to `r/QuantifiedSelf` after Tier 2 ships).
@@ -159,7 +159,7 @@ The cheapest decision is one you can revisit. Run Tier 2 for 6 weeks; reassess.
 
 If you're sold on Tier 2:
 
-1. **One-week spike** on `mcp-server-duckdb` + `age` to answer the encryption-compatibility open question. If `mcp-server-duckdb` can't talk to an encrypted DuckDB, we know the architectural pain early.
+1. **One-week spike** on `mcp-server-duckdb` + `age` to answer the MCP/warehouse boundary question. If `mcp-server-duckdb` can't talk to an encrypted DuckDB directly, decide whether the simpler local-warehouse boundary is sufficient or whether a stricter wrapper is worth the cost.
 2. **Write the skill contract proposal** as a short doc + a single example. Confirm it feels right before committing to N parsers.
 3. **Close FR-6 (`age` round-trip live test)** — it's a 30-minute Tier-1 item that should not block Tier-2 work.
 

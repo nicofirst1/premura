@@ -24,7 +24,7 @@
 | CLI (`hpipe`) | ✅ | All 9 verbs surfaced: `ingest`, `status`, `export`, `upload`, `doctor`, `gc`, `run-monthly`, `install-launchd`, `uninstall-launchd`. |
 | Idempotency | ✅ | sha256 skip in `hp.ingest_run`, plus `dedupe_key UNIQUE` + intra-batch Polars `.unique()`. |
 | CSV autodiscovery | ✅ | Header-sniffs SAA vs BMT (no naming convention required). |
-| Encryption (always-on) | ✅ | Live round-trip verified 2026-05-21 against `~/.config/premura/age.key`; decrypted snapshot byte-identical to `data/duck/health.duckdb` (`diff` empty). Per-test keypair regression in `tests/test_encrypt_roundtrip.py`. |
+| Export artifact encryption | ✅ | Live round-trip verified 2026-05-21 against `~/.config/premura/age.key`; decrypted snapshot byte-identical to `data/duck/health.duckdb` (`diff` empty). Per-test keypair regression in `tests/test_encrypt_roundtrip.py`. |
 | Drive upload (now OPT-IN, not auto) | ⚠️ Code complete, not live | `hpipe upload` only runs on explicit invocation. `run-monthly` no longer pushes to Drive — it stops after the encrypted artifact lands locally. |
 | Launchd plist | ✅ | Bootstrapped 2026-05-21 (`com.nbrandizzi.premura.monthly`). `kickstart` fired the macOS notification, `run-monthly` reached the `_wait_for_ready` loop without ingesting (no `.ready`), exited cleanly on SIGTERM. Plist render covered by `tests/test_launchd_plist.py` (incl. `plutil -lint`). |
 | Tests | ✅ | 25/25 pytest pass, incl. a real-data HC regression that round-trips ~900k rows, the FR-6 `age` round-trip suite, and FR-8 plist render + `plutil -lint`. |

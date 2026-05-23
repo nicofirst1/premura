@@ -1,6 +1,6 @@
 # Premura
 
-Personal health-data warehouse. Ingests monthly dumps from **Health Connect, Garmin GDPR, Sleep as Android, Body Measurement Tracker** into a single encrypted DuckDB. Captures the metrics Health Connect doesn't bridge (HRV rMSSD overnight, stress, body battery, training load/readiness, VO₂ max, etc.).
+Personal health-data warehouse. Ingests monthly dumps from **Health Connect, Garmin GDPR, Sleep as Android, Body Measurement Tracker** into a single local DuckDB warehouse, with `age`-encrypted export and backup artifacts. Captures the metrics Health Connect doesn't bridge (HRV rMSSD overnight, stress, body battery, training load/readiness, VO₂ max, etc.).
 
 > Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [SPEC](docs/product/SPEC.md) · [Architecture History](docs/architecture/ARCHITECTURE_HISTORY.md) · [USERJOURNEY](docs/product/USERJOURNEY.md) · [STATUS](docs/operations/STATUS.md) · [ROADMAP](docs/product/ROADMAP.md)
 > Contributor guide: [`CONTRIBUTING.md`](CONTRIBUTING.md)
@@ -44,5 +44,19 @@ hpipe gc --keep N
 hpipe run-monthly                   # full ingest+encrypt pipeline (no upload step)
 hpipe install-launchd / uninstall-launchd
 ```
+
+## MCP surface
+
+Early Stage 3 analytical server entrypoint:
+
+```bash
+premura-mcp
+```
+
+Current tools:
+
+- `query_warehouse`
+- `list_metrics`
+- `metric_summary`
 
 Tests: `uv run python -m pytest -q` (17 passing).

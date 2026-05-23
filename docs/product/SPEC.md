@@ -7,7 +7,7 @@
 
 ## 1. Purpose
 
-Build a single, locally-owned, encrypted-off-site warehouse of the user's personal health data that contains metrics Android **Health Connect** does not bridge: HRV, respiratory rate, stress, Body Battery, SpO2, body composition, training metrics. Health Connect remains one input among several rather than the destination.
+Build a single, locally-owned warehouse of the user's personal health data, with encrypted off-site artifacts, that contains metrics Android **Health Connect** does not bridge: HRV, respiratory rate, stress, Body Battery, SpO2, body composition, training metrics. Health Connect remains one input among several rather than the destination.
 
 ## 2. Scope
 
@@ -19,7 +19,7 @@ Build a single, locally-owned, encrypted-off-site warehouse of the user's person
   4. **Body Measurement Tracker** (cookapps) — CSV export
 - Parsing each source into a unified long-format star schema in **DuckDB**.
 - Deterministic cross-source deduplication.
-- Encryption of the warehouse and the staged raw artifacts with **`age`**, using a recipient public key whose private key the user holds.
+- Encryption of exported warehouse snapshots and staged raw artifacts with **`age`**, using a recipient public key whose private key the user holds.
 - Off-site backup to **Google Drive** via **`rclone`**.
 - A macOS **launchd** agent that runs on a calendar trigger, emits a notification when fresh inputs are needed, and waits for a user-controlled sentinel before processing.
 - A Python CLI (`hpipe`) covering: `ingest`, `status`, `export`, `upload`, `doctor`, `run-monthly`, `gc`, `install-launchd`.

@@ -46,7 +46,7 @@ Estimated effort: 4–5 days once a docling spike confirms extraction quality on
 
 ## Big idea — health-research MCP server
 
-> Tracked as missions **M1** (spike) and **M2** (first analytical server, warehouse-query tools only — stats and PubMed deferred to follow-on missions) in [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md). The full surface described below is the long-term shape, not the M2 scope.
+> Tracked as missions **M1** (boundary spike) and **M2** (first analytical server, warehouse-query tools only — stats and PubMed deferred to follow-on missions) in [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md). The full surface described below is the long-term shape, not the M2 scope.
 
 A single MCP server that exposes:
 
@@ -75,6 +75,8 @@ Worth building, with two caveats:
 3. Add `pubmed.py` wrapper around Entrez (`esearch`, `efetch`); keep responses ≤25 hits.
 4. Expose all of the above through the MCP server. Configure Claude Desktop to load it.
 5. Add a "research notebook" mode: each Q&A round emits a markdown trace into `data/research/YYYY-MM-DD.md` with the tool calls + responses, so findings are reproducible.
+
+Default boundary assumption for the first pass: MCP opens the local warehouse in read-only mode, while `age` remains the protection for exported and uploaded artifacts rather than the live working DuckDB file.
 
 This would turn the warehouse from a passive store into an **inferential** workbench — the original payoff of bypassing Health Connect.
 

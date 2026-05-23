@@ -92,17 +92,17 @@ Not in this milestone:
 
 ## Initial Backlog Proposal
 
-### M1. Spike encrypted DuckDB access for MCP
+### M1. Lock the MCP/warehouse boundary
 
 - **Milestone**: `v2.0 analytical surface`
 - **Labels**: `stage:mcp`, `type:spike`
 - **Source docs**: `docs/product/RISK_OPPORTUNITY.md`, `docs/product/ROADMAP.md`
 - **Tracking issue title**:
-  - `[M1] Spike MCP access to age-protected DuckDB and lock the boundary`
+  - `[M1] Lock the MCP/warehouse boundary and keep age at export/upload`
 - **Definition of done (1-week timebox)**:
   - An ADR is filed. The ADR captures *one* of:
-    - The approach works, with a reference spike branch demonstrating MCP reading the encrypted warehouse without plaintext on disk. That branch is the PoC artifact; merging is optional.
-    - The approach doesn't work, with the failure mode documented and an alternative chosen.
+    - The recommended boundary for M2, including where `age` applies and whether MCP can read the live warehouse directly.
+    - Any rejected stricter alternatives, with the failure mode or tradeoff documented.
 - **Follow-on output**:
   - Concrete recommendation for M2 (whether the existing MCP boundary is sufficient or requires a wrapper).
   - Concrete recommendation for M3's later Stage-3 sub-work (whether the same boundary applies to lab-derived signals).
@@ -171,7 +171,7 @@ That is stricter than the prose tone in `ROADMAP.md`. Once the planning system i
 
 This is a default sequence, not a hard dependency chain. If capacity allows, M3's Stage 1 + Stage 2 WPs can run in parallel with M2; only M3's Stage-3 sub-work strictly depends on M1's ADR and M2's MCP infrastructure.
 
-1. M1 `[M1] Spike MCP access to age-protected DuckDB and lock the boundary`
+1. M1 `[M1] Lock the MCP/warehouse boundary and keep age at export/upload`
 2. M2 `[M2] Build the first MCP analytical surface over the warehouse` as the default next mission
 3. M3 `[M3] Add lab PDF ingest and sparse-signal foundations`
 
@@ -194,7 +194,7 @@ Deferred: `pillar:*` and `priority:*`. Added later only if a real filtering need
 
 ### First Mission Tracking Issues
 
-- `[M1] Spike MCP access to age-protected DuckDB and lock the boundary`
+- `[M1] Lock the MCP/warehouse boundary and keep age at export/upload`
 - `[M2] Build the first MCP analytical surface over the warehouse`
 - `[M3] Add lab PDF ingest and sparse-signal foundations`
 
