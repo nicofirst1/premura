@@ -108,23 +108,14 @@ def test_signal_decorator_registers_spec() -> None:
         REGISTRY.pop(name, None)
 
 
-@pytest.mark.parametrize(
-    "func_name,call",
-    [
-        ("compute", lambda fn: fn("any_name", object())),
-        ("list_by_domain", lambda fn: fn("liver")),
-        ("list_auto_safe", lambda fn: fn()),
-        ("check_inputs_available", lambda fn: fn(["lab:ast"], object())),
-        ("list_unavailable", lambda fn: fn("liver", object())),
-    ],
-)
-def test_engine_stubs_raise_not_implemented(func_name: str, call) -> None:
-    """FR-003: the five engine stubs raise NotImplementedError referencing STAGES.md."""
-    from premura import engine
+def test_engine_registry_stays_lazy_until_runtime_helpers_load_builtins() -> None:
+    """The import boundary stays empty until runtime helpers load built-in signals."""
+    from premura.engine import REGISTRY, list_by_domain
 
-    fn = getattr(engine, func_name)
-    with pytest.raises(NotImplementedError, match="Stage 2"):
-        call(fn)
+    REGISTRY.clear()
+    assert REGISTRY == {}
+    specs = list_by_domain("liver")
+    assert any(spec.name == "ast_alt_ratio" for spec in specs)
 
 
 def test_mcp_module_docstring_and_layering_rule() -> None:

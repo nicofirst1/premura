@@ -1871,3 +1871,31 @@
   validity_window: P1Y
   missing_data_policy: none
   loinc: "10371-3"
+
+# === Derived: first sparse lab ratios ===
+- metric_id: derived:ldl_hdl_ratio
+  display_name: LDL/HDL ratio
+  canonical_unit: ratio
+  value_kind: instantaneous
+  description: Derived ratio of LDL cholesterol to HDL cholesterol from the same draw.
+  category: blood:lipids
+  validity_window: P6M
+  missing_data_policy: none
+
+- metric_id: derived:ast_alt_ratio
+  display_name: AST/ALT ratio
+  canonical_unit: ratio
+  value_kind: instantaneous
+  description: Derived ratio of AST to ALT from the same draw.
+  category: blood:liver
+  validity_window: P3M
+  missing_data_policy: none
+
+- metric_id: derived:tg_hdl_ratio
+  display_name: Triglyceride/HDL ratio
+  canonical_unit: ratio
+  value_kind: instantaneous
+  description: Derived ratio of triglycerides to HDL cholesterol from the same draw.
+  category: blood:lipids
+  validity_window: P6M
+  missing_data_policy: none
