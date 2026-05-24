@@ -19,8 +19,8 @@ subtasks:
 - T020
 - T021
 - T022
-agent: "claude:opus:research-implementer:implementer"
-shell_pid: "52169"
+agent: "claude:opus:research-reviewer:reviewer"
+shell_pid: "67798"
 history:
 - timestamp: '2026-05-24T13:02:16Z'
   agent: gpt-5.4
@@ -179,3 +179,4 @@ This WP is complete when:
 
 - 2026-05-24T13:30:17Z – claude:opus:research-implementer:implementer – shell_pid=52169 – Started implementation via action command
 - 2026-05-24T13:33:44Z – claude:opus:research-implementer:implementer – shell_pid=52169 – Ready for review: scored candidate pool, ranked 3-7 quick wins with confidence tags, next-mission sequence, doc-alignment list
+- 2026-05-24T13:34:13Z – claude:opus:research-reviewer:reviewer – shell_pid=67798 – Started review via action command
