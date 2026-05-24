@@ -43,10 +43,10 @@
 | T011 | Draft the contributor submission contract for new engine functions, including required rationale, inputs, outputs, caveats, and reviewer notes. | WP03 |  | [D] |
 | T012 | Compress the reviewer gate into 10 or fewer pass/fail checks. | WP03 |  | [D] |
 | T013 | Add worked examples that show at least one accept case, one defer case, and one reject case. | WP03 |  | [D] |
-| T014 | Audit the current Stage 2 seam elements already shipped in code and docs. | WP04 |  |
-| T015 | Mark each seam element as keep, change, or defer with a brief rationale. | WP04 |  |
-| T016 | Identify which useful engine functions depend on baseline personal profile attributes and why those inputs are not ordinary observed measurements. | WP04 |  |
-| T017 | Connect the unresolved baseline-profile storage/update problem to issue `#6` and draft the dedicated dependency analysis artifact. | WP04 |  |
+| T014 | Audit the current Stage 2 seam elements already shipped in code and docs. | WP04 |  | [D] |
+| T015 | Mark each seam element as keep, change, or defer with a brief rationale. | WP04 |  | [D] |
+| T016 | Identify which useful engine functions depend on baseline personal profile attributes and why those inputs are not ordinary observed measurements. | WP04 |  | [D] |
+| T017 | Connect the unresolved baseline-profile storage/update problem to issue `#6` and draft the dedicated dependency analysis artifact. | WP04 |  | [D] |
 | T018 | Build a candidate pool of quick-win engine functions biased toward common data already visible in shipped sources and ontology coverage. | WP05 |  |
 | T019 | Score candidates against user value, input availability, scientific clarity, caveat burden, Stage 2 fit, and profile-data dependency. | WP05 |  |
 | T020 | Rank 3 to 7 quick-win functions and tag each with confidence level. | WP05 |  |
@@ -171,10 +171,10 @@ Reviewer focus:
 - Estimated prompt size: ~280 lines
 
 Included subtasks:
-- [ ] T014 Audit the current Stage 2 seam elements already shipped in code and docs. (WP04)
-- [ ] T015 Mark each seam element as keep, change, or defer with a brief rationale. (WP04)
-- [ ] T016 Identify which useful engine functions depend on baseline personal profile attributes and why those inputs are not ordinary observed measurements. (WP04)
-- [ ] T017 Connect the unresolved baseline-profile storage/update problem to issue `#6` and draft the dedicated dependency analysis artifact. (WP04)
+- [x] T014 Audit the current Stage 2 seam elements already shipped in code and docs. (WP04)
+- [x] T015 Mark each seam element as keep, change, or defer with a brief rationale. (WP04)
+- [x] T016 Identify which useful engine functions depend on baseline personal profile attributes and why those inputs are not ordinary observed measurements. (WP04)
+- [x] T017 Connect the unresolved baseline-profile storage/update problem to issue `#6` and draft the dedicated dependency analysis artifact. (WP04)
 
 Implementation sketch:
 1. Walk the shipped Stage 2 surface in `src/premura/engine/` and the related architecture docs.
