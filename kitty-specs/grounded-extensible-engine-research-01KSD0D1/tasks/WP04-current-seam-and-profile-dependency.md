@@ -15,6 +15,8 @@ subtasks:
 - T015
 - T016
 - T017
+agent: "claude:opus:research-implementer:implementer"
+shell_pid: "18842"
 history:
 - timestamp: '2026-05-24T13:02:16Z'
   agent: gpt-5.4
@@ -151,3 +153,7 @@ This WP is complete when:
 
 - Check that the seam evaluation is specific enough to guide future work.
 - Check that profile data is treated as a first-class dependency rather than hidden in assumptions.
+
+## Activity Log
+
+- 2026-05-24T13:24:50Z – claude:opus:research-implementer:implementer – shell_pid=18842 – Started implementation via action command
