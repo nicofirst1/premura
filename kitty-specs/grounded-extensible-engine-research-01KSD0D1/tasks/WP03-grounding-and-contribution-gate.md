@@ -18,8 +18,8 @@ subtasks:
 - T011
 - T012
 - T013
-agent: "claude:opus:research-implementer:implementer"
-shell_pid: "88351"
+agent: "claude:opus:research-reviewer:reviewer"
+shell_pid: "2292"
 history:
 - timestamp: '2026-05-24T13:02:16Z'
   agent: gpt-5.4
@@ -191,3 +191,4 @@ This WP is complete when:
 
 - 2026-05-24T13:20:00Z – claude:opus:research-implementer:implementer – shell_pid=88351 – Started implementation via action command
 - 2026-05-24T13:22:45Z – claude:opus:research-implementer:implementer – shell_pid=88351 – Ready for review: parser comparison, accept/defer/reject rubric, contributor contract, <=10-check reviewer gate, 3 worked examples
+- 2026-05-24T13:23:04Z – claude:opus:research-reviewer:reviewer – shell_pid=2292 – Started review via action command
