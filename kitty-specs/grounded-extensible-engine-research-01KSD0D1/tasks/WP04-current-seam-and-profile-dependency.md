@@ -15,8 +15,8 @@ subtasks:
 - T015
 - T016
 - T017
-agent: "claude:opus:research-implementer:implementer"
-shell_pid: "18842"
+agent: "claude:opus:research-reviewer:reviewer"
+shell_pid: "35512"
 history:
 - timestamp: '2026-05-24T13:02:16Z'
   agent: gpt-5.4
@@ -158,3 +158,4 @@ This WP is complete when:
 
 - 2026-05-24T13:24:50Z – claude:opus:research-implementer:implementer – shell_pid=18842 – Started implementation via action command
 - 2026-05-24T13:28:06Z – claude:opus:research-implementer:implementer – shell_pid=18842 – Ready for review: seam inventory with keep/change/defer dispositions + baseline-profile dependency tied to issue #6
+- 2026-05-24T13:28:27Z – claude:opus:research-reviewer:reviewer – shell_pid=35512 – Started review via action command
