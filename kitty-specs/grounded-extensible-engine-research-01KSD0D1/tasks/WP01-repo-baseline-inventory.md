@@ -13,6 +13,8 @@ subtasks:
 - T002
 - T003
 - T004
+agent: "claude:opus:research-implementer:implementer"
+shell_pid: "756"
 history:
 - timestamp: '2026-05-24T13:02:16Z'
   agent: gpt-5.4
@@ -189,3 +191,7 @@ This WP is complete when:
 - Check that every top-level claim has a clear repo source.
 - Check that the artifact is concise rather than a giant doc dump.
 - Check that the known-debt section honestly reflects current shipped Stage 2 reality.
+
+## Activity Log
+
+- 2026-05-24T13:07:27Z – claude:opus:research-implementer:implementer – shell_pid=756 – Started implementation via action command
