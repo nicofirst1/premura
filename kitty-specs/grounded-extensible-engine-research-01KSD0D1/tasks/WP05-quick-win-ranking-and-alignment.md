@@ -19,6 +19,8 @@ subtasks:
 - T020
 - T021
 - T022
+agent: "claude:opus:research-implementer:implementer"
+shell_pid: "52169"
 history:
 - timestamp: '2026-05-24T13:02:16Z'
   agent: gpt-5.4
@@ -172,3 +174,7 @@ This WP is complete when:
 - Check that at least two shortlisted candidates are useful with commonly available non-lab data.
 - Check that the ranking is evidence-backed and not arbitrary.
 - Check that the doc update list is concrete and scoped.
+
+## Activity Log
+
+- 2026-05-24T13:30:17Z – claude:opus:research-implementer:implementer – shell_pid=52169 – Started implementation via action command
