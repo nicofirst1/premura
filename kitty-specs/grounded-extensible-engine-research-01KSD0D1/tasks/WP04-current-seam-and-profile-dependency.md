@@ -157,3 +157,4 @@ This WP is complete when:
 ## Activity Log
 
 - 2026-05-24T13:24:50Z – claude:opus:research-implementer:implementer – shell_pid=18842 – Started implementation via action command
+- 2026-05-24T13:28:06Z – claude:opus:research-implementer:implementer – shell_pid=18842 – Ready for review: seam inventory with keep/change/defer dispositions + baseline-profile dependency tied to issue #6
