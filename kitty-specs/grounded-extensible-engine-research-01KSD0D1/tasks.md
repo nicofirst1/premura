@@ -52,10 +52,10 @@
 | T020 | Rank 3 to 7 quick-win functions and tag each with confidence level. | WP05 |  | [D] |
 | T021 | Recommend the next mission sequence, separating follow-on implementation work, follow-on research, and deferred questions. | WP05 |  | [D] |
 | T022 | Name the docs that should be updated after acceptance and explain the role of each update. | WP05 |  | [D] |
-| T023 | Create the final `findings.md` structure with an executive summary and citation approach that can absorb the outputs of WP01 through WP05. | WP06 |  |
-| T024 | Merge the prior research artifacts into one coherent findings document that covers FR-001 through FR-010 end to end. | WP06 |  |
-| T025 | Run a coverage and consistency pass against the spec, checklist, and mission success criteria, tightening any weak sections. | WP06 |  |
-| T026 | Review the final findings package for plain-English vocabulary, traceability, and strict Stage 2 boundary fidelity. | WP06 |  |
+| T023 | Create the final `findings.md` structure with an executive summary and citation approach that can absorb the outputs of WP01 through WP05. | WP06 |  | [D] |
+| T024 | Merge the prior research artifacts into one coherent findings document that covers FR-001 through FR-010 end to end. | WP06 |  | [D] |
+| T025 | Run a coverage and consistency pass against the spec, checklist, and mission success criteria, tightening any weak sections. | WP06 |  | [D] |
+| T026 | Review the final findings package for plain-English vocabulary, traceability, and strict Stage 2 boundary fidelity. | WP06 |  | [D] |
 
 ## Work Packages
 
@@ -238,10 +238,10 @@ Reviewer focus:
 - Estimated prompt size: ~300 lines
 
 Included subtasks:
-- [ ] T023 Create the final `findings.md` structure with an executive summary and citation approach that can absorb the outputs of WP01 through WP05. (WP06)
-- [ ] T024 Merge the prior research artifacts into one coherent findings document that covers FR-001 through FR-010 end to end. (WP06)
-- [ ] T025 Run a coverage and consistency pass against the spec, checklist, and mission success criteria, tightening any weak sections. (WP06)
-- [ ] T026 Review the final findings package for plain-English vocabulary, traceability, and strict Stage 2 boundary fidelity. (WP06)
+- [x] T023 Create the final `findings.md` structure with an executive summary and citation approach that can absorb the outputs of WP01 through WP05. (WP06)
+- [x] T024 Merge the prior research artifacts into one coherent findings document that covers FR-001 through FR-010 end to end. (WP06)
+- [x] T025 Run a coverage and consistency pass against the spec, checklist, and mission success criteria, tightening any weak sections. (WP06)
+- [x] T026 Review the final findings package for plain-English vocabulary, traceability, and strict Stage 2 boundary fidelity. (WP06)
 
 Implementation sketch:
 1. Build the document skeleton first so the final synthesis has a stable frame.
