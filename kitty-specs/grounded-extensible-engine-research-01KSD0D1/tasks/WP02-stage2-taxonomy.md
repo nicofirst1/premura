@@ -14,8 +14,8 @@ subtasks:
 - T006
 - T007
 - T008
-agent: "claude:opus:research-implementer:implementer"
-shell_pid: "60085"
+agent: "claude:opus:research-reviewer:reviewer"
+shell_pid: "73721"
 history:
 - timestamp: '2026-05-24T13:02:16Z'
   agent: gpt-5.4
@@ -170,3 +170,4 @@ This WP is complete when:
 
 - 2026-05-24T13:15:20Z – claude:opus:research-implementer:implementer – shell_pid=60085 – Started implementation via action command
 - 2026-05-24T13:17:39Z – claude:opus:research-implementer:implementer – shell_pid=60085 – Ready for review: first-wave directions, question shapes, Stage-2 function families with stage-boundary separation
+- 2026-05-24T13:17:59Z – claude:opus:research-reviewer:reviewer – shell_pid=73721 – Started review via action command
