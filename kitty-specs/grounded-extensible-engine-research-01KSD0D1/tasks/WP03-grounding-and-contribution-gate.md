@@ -18,6 +18,8 @@ subtasks:
 - T011
 - T012
 - T013
+agent: "claude:opus:research-implementer:implementer"
+shell_pid: "88351"
 history:
 - timestamp: '2026-05-24T13:02:16Z'
   agent: gpt-5.4
@@ -184,3 +186,7 @@ This WP is complete when:
 - Check whether a contributor could follow the contract without extra meetings.
 - Check whether the worked examples genuinely exercise the rubric.
 - Check whether the gate is short enough for routine review.
+
+## Activity Log
+
+- 2026-05-24T13:20:00Z – claude:opus:research-implementer:implementer – shell_pid=88351 – Started implementation via action command

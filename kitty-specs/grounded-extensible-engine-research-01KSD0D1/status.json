@@ -1,7 +1,7 @@
 {
-  "event_count": 16,
-  "last_event_id": "01KSD285KSPD892ZFR76BP4E79",
-  "materialized_at": "2026-05-24T13:19:35.033839+00:00",
+  "event_count": 18,
+  "last_event_id": "01KSD28Y91EVV11WQSMFGQWFNV",
+  "materialized_at": "2026-05-24T13:20:00.289480+00:00",
   "mission_number": "",
   "mission_slug": "grounded-extensible-engine-research-01KSD0D1",
   "mission_type": "research",
@@ -12,9 +12,9 @@
     "claimed": 0,
     "done": 0,
     "for_review": 0,
-    "in_progress": 0,
+    "in_progress": 1,
     "in_review": 0,
-    "planned": 4
+    "planned": 3
   },
   "work_packages": {
     "WP01": {
@@ -32,11 +32,11 @@
       "last_transition_at": "2026-05-24T13:19:35.033839+00:00"
     },
     "WP03": {
-      "actor": "finalize-tasks",
+      "actor": "claude:opus:research-implementer:implementer",
       "force_count": 1,
-      "lane": "planned",
-      "last_event_id": "01KSD1F8SVDBJ00FCN9TFH94N1",
-      "last_transition_at": "2026-05-24T13:05:59.099889+00:00"
+      "lane": "in_progress",
+      "last_event_id": "01KSD28Y91EVV11WQSMFGQWFNV",
+      "last_transition_at": "2026-05-24T13:20:00.289480+00:00"
     },
     "WP04": {
       "actor": "finalize-tasks",
