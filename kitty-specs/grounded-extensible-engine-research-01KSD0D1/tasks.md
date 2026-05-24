@@ -30,10 +30,10 @@
 
 | ID | Description | WP | Parallel |
 |---|---|---|---|
-| T001 | Compile the authoritative repo source set for Stage 2 and record which documents and code surfaces are in scope for the research baseline. | WP01 |  |
-| T002 | Separate current Stage 2 intent into stable commitments, known debt, and open design questions. | WP01 |  |
-| T003 | Capture terminology drift and normalize the plain-English vocabulary the mission will use. | WP01 |  |
-| T004 | Draft the repo-baseline research artifact that satisfies FR-001 and can feed the later synthesis step. | WP01 |  |
+| T001 | Compile the authoritative repo source set for Stage 2 and record which documents and code surfaces are in scope for the research baseline. | WP01 |  | [D] |
+| T002 | Separate current Stage 2 intent into stable commitments, known debt, and open design questions. | WP01 |  | [D] |
+| T003 | Capture terminology drift and normalize the plain-English vocabulary the mission will use. | WP01 |  | [D] |
+| T004 | Draft the repo-baseline research artifact that satisfies FR-001 and can feed the later synthesis step. | WP01 |  | [D] |
 | T005 | Normalize the first-wave health directions Premura should reason about in Stage 2. | WP02 |  |
 | T006 | Enumerate the recurring user-question shapes Stage 2 should answer first within those directions. | WP02 |  |
 | T007 | Map question shapes to engine function families while keeping Stage 2 separate from Stage 3 and Stage 4 behavior. | WP02 |  |
@@ -70,10 +70,10 @@
 - Estimated prompt size: ~280 lines
 
 Included subtasks:
-- [ ] T001 Compile the authoritative repo source set for Stage 2 and record which documents and code surfaces are in scope for the research baseline. (WP01)
-- [ ] T002 Separate current Stage 2 intent into stable commitments, known debt, and open design questions. (WP01)
-- [ ] T003 Capture terminology drift and normalize the plain-English vocabulary the mission will use. (WP01)
-- [ ] T004 Draft the repo-baseline research artifact that satisfies FR-001 and can feed the later synthesis step. (WP01)
+- [x] T001 Compile the authoritative repo source set for Stage 2 and record which documents and code surfaces are in scope for the research baseline. (WP01)
+- [x] T002 Separate current Stage 2 intent into stable commitments, known debt, and open design questions. (WP01)
+- [x] T003 Capture terminology drift and normalize the plain-English vocabulary the mission will use. (WP01)
+- [x] T004 Draft the repo-baseline research artifact that satisfies FR-001 and can feed the later synthesis step. (WP01)
 
 Implementation sketch:
 1. Read the Stage 2 documents and shipped engine code named in `plan.md`.
