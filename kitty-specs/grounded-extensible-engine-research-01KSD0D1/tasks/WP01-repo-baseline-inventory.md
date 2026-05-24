@@ -195,3 +195,4 @@ This WP is complete when:
 ## Activity Log
 
 - 2026-05-24T13:07:27Z – claude:opus:research-implementer:implementer – shell_pid=756 – Started implementation via action command
+- 2026-05-24T13:12:16Z – claude:opus:research-implementer:implementer – shell_pid=756 – Ready for review: baseline inventory with sources, commitments/debt/open-questions, terminology notes. Deliverable committed in 87cb580; mission planning artifacts (spec/plan/meta/checklists) left uncommitted per instruction to only add the one owned file.
