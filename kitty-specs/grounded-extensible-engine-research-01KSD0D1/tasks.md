@@ -34,10 +34,10 @@
 | T002 | Separate current Stage 2 intent into stable commitments, known debt, and open design questions. | WP01 |  | [D] |
 | T003 | Capture terminology drift and normalize the plain-English vocabulary the mission will use. | WP01 |  | [D] |
 | T004 | Draft the repo-baseline research artifact that satisfies FR-001 and can feed the later synthesis step. | WP01 |  | [D] |
-| T005 | Normalize the first-wave health directions Premura should reason about in Stage 2. | WP02 |  |
-| T006 | Enumerate the recurring user-question shapes Stage 2 should answer first within those directions. | WP02 |  |
-| T007 | Map question shapes to engine function families while keeping Stage 2 separate from Stage 3 and Stage 4 behavior. | WP02 |  |
-| T008 | Draft the taxonomy research artifact with examples and traceable links back to repo sources. | WP02 |  |
+| T005 | Normalize the first-wave health directions Premura should reason about in Stage 2. | WP02 |  | [D] |
+| T006 | Enumerate the recurring user-question shapes Stage 2 should answer first within those directions. | WP02 |  | [D] |
+| T007 | Map question shapes to engine function families while keeping Stage 2 separate from Stage 3 and Stage 4 behavior. | WP02 |  | [D] |
+| T008 | Draft the taxonomy research artifact with examples and traceable links back to repo sources. | WP02 |  | [D] |
 | T009 | Compare the parser contribution contract with the current engine seam and identify what a Stage 2 contribution contract should borrow or reject. | WP03 |  |
 | T010 | Draft the scientific grounding rubric with explicit accept, defer, and reject criteria. | WP03 |  |
 | T011 | Draft the contributor submission contract for new engine functions, including required rationale, inputs, outputs, caveats, and reviewer notes. | WP03 |  |
@@ -103,10 +103,10 @@ Reviewer focus:
 - Estimated prompt size: ~270 lines
 
 Included subtasks:
-- [ ] T005 Normalize the first-wave health directions Premura should reason about in Stage 2. (WP02)
-- [ ] T006 Enumerate the recurring user-question shapes Stage 2 should answer first within those directions. (WP02)
-- [ ] T007 Map question shapes to engine function families while keeping Stage 2 separate from Stage 3 and Stage 4 behavior. (WP02)
-- [ ] T008 Draft the taxonomy research artifact with examples and traceable links back to repo sources. (WP02)
+- [x] T005 Normalize the first-wave health directions Premura should reason about in Stage 2. (WP02)
+- [x] T006 Enumerate the recurring user-question shapes Stage 2 should answer first within those directions. (WP02)
+- [x] T007 Map question shapes to engine function families while keeping Stage 2 separate from Stage 3 and Stage 4 behavior. (WP02)
+- [x] T008 Draft the taxonomy research artifact with examples and traceable links back to repo sources. (WP02)
 
 Implementation sketch:
 1. Start from the directions already named in `VISION.md` and `STAGES.md`.
