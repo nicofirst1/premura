@@ -169,3 +169,4 @@ This WP is complete when:
 ## Activity Log
 
 - 2026-05-24T13:15:20Z – claude:opus:research-implementer:implementer – shell_pid=60085 – Started implementation via action command
+- 2026-05-24T13:17:39Z – claude:opus:research-implementer:implementer – shell_pid=60085 – Ready for review: first-wave directions, question shapes, Stage-2 function families with stage-boundary separation
