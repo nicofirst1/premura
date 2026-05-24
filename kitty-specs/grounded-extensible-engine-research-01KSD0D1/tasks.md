@@ -38,11 +38,11 @@
 | T006 | Enumerate the recurring user-question shapes Stage 2 should answer first within those directions. | WP02 |  | [D] |
 | T007 | Map question shapes to engine function families while keeping Stage 2 separate from Stage 3 and Stage 4 behavior. | WP02 |  | [D] |
 | T008 | Draft the taxonomy research artifact with examples and traceable links back to repo sources. | WP02 |  | [D] |
-| T009 | Compare the parser contribution contract with the current engine seam and identify what a Stage 2 contribution contract should borrow or reject. | WP03 |  |
-| T010 | Draft the scientific grounding rubric with explicit accept, defer, and reject criteria. | WP03 |  |
-| T011 | Draft the contributor submission contract for new engine functions, including required rationale, inputs, outputs, caveats, and reviewer notes. | WP03 |  |
-| T012 | Compress the reviewer gate into 10 or fewer pass/fail checks. | WP03 |  |
-| T013 | Add worked examples that show at least one accept case, one defer case, and one reject case. | WP03 |  |
+| T009 | Compare the parser contribution contract with the current engine seam and identify what a Stage 2 contribution contract should borrow or reject. | WP03 |  | [D] |
+| T010 | Draft the scientific grounding rubric with explicit accept, defer, and reject criteria. | WP03 |  | [D] |
+| T011 | Draft the contributor submission contract for new engine functions, including required rationale, inputs, outputs, caveats, and reviewer notes. | WP03 |  | [D] |
+| T012 | Compress the reviewer gate into 10 or fewer pass/fail checks. | WP03 |  | [D] |
+| T013 | Add worked examples that show at least one accept case, one defer case, and one reject case. | WP03 |  | [D] |
 | T014 | Audit the current Stage 2 seam elements already shipped in code and docs. | WP04 |  |
 | T015 | Mark each seam element as keep, change, or defer with a brief rationale. | WP04 |  |
 | T016 | Identify which useful engine functions depend on baseline personal profile attributes and why those inputs are not ordinary observed measurements. | WP04 |  |
@@ -136,11 +136,11 @@ Reviewer focus:
 - Estimated prompt size: ~340 lines
 
 Included subtasks:
-- [ ] T009 Compare the parser contribution contract with the current engine seam and identify what a Stage 2 contribution contract should borrow or reject. (WP03)
-- [ ] T010 Draft the scientific grounding rubric with explicit accept, defer, and reject criteria. (WP03)
-- [ ] T011 Draft the contributor submission contract for new engine functions, including required rationale, inputs, outputs, caveats, and reviewer notes. (WP03)
-- [ ] T012 Compress the reviewer gate into 10 or fewer pass/fail checks. (WP03)
-- [ ] T013 Add worked examples that show at least one accept case, one defer case, and one reject case. (WP03)
+- [x] T009 Compare the parser contribution contract with the current engine seam and identify what a Stage 2 contribution contract should borrow or reject. (WP03)
+- [x] T010 Draft the scientific grounding rubric with explicit accept, defer, and reject criteria. (WP03)
+- [x] T011 Draft the contributor submission contract for new engine functions, including required rationale, inputs, outputs, caveats, and reviewer notes. (WP03)
+- [x] T012 Compress the reviewer gate into 10 or fewer pass/fail checks. (WP03)
+- [x] T013 Add worked examples that show at least one accept case, one defer case, and one reject case. (WP03)
 
 Implementation sketch:
 1. Use the baseline inventory and taxonomy to decide what the engine is actually trying to admit.
