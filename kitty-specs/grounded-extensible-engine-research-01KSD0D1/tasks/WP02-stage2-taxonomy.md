@@ -14,6 +14,8 @@ subtasks:
 - T006
 - T007
 - T008
+agent: "claude:opus:research-implementer:implementer"
+shell_pid: "60085"
 history:
 - timestamp: '2026-05-24T13:02:16Z'
   agent: gpt-5.4
@@ -163,3 +165,7 @@ This WP is complete when:
 - Check that the direction set is practical rather than encyclopedic.
 - Check that the function families clearly belong to Stage 2.
 - Check that examples stay consistent with the vocabulary chosen in WP01.
+
+## Activity Log
+
+- 2026-05-24T13:15:20Z – claude:opus:research-implementer:implementer – shell_pid=60085 – Started implementation via action command
