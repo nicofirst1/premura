@@ -140,3 +140,4 @@ checking it exercises the pre-registration path).
 - 2026-05-26T13:18:43Z – claude:opus:implementer:implementer – shell_pid=35810 – Ready for review: explicit _BUILTINS_LOADED flag + pre-registration regression test. NOTE in WP history: tests/test_skeleton.py (non-owned) relies on old REGISTRY-truthiness coupling and fails under -k engine ordering; one-line flag-reset fix needed in that non-owned test.
 - 2026-05-26T13:21:34Z – claude:opus:reviewer:reviewer – shell_pid=4188 – Started review via action command
 - 2026-05-26T13:23:22Z – claude:opus:reviewer:reviewer – shell_pid=4188 – Review passed: explicit load-state flag fixes the suppression footgun; lazy boundary intact; regression test valid; test_skeleton fix is a behavior-preserving contract update
+- 2026-05-26T13:35:26Z – claude:opus:reviewer:reviewer – shell_pid=4188 – Done override: Mission merged to master (commit 8d0f863)
