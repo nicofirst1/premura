@@ -130,7 +130,21 @@ def test_resting_hr_status_missing_input(tmp_path: Path) -> None:
     assert payload["status"] == "missing_input"
     assert payload["result"]["freshness_state"] == "unavailable"
     assert payload["result"]["value"] is None
-    assert payload["message"]
+
+    # FR-008: the user-facing message is the signal's actionable hint, not a
+    # generic "no value" string. Assert the specific authored substring.
+    assert "resting heart rate" in payload["message"]
+    assert "Connect a wearable" in payload["message"]
+
+    # The structured report names what data is needed without parsing prose.
+    report = payload["missing_input"]
+    assert report["family"] == "missing_input"
+    assert report["tool_name"] == "resting_hr_status"
+    assert report["required_inputs"] == ["resting_hr"]
+    assert report["missing_inputs"] == ["resting_hr"]
+    assert report["stale_inputs"] == []
+    # Structured message mirrors the actionable hint shown to the user.
+    assert report["message"] == payload["message"]
 
 
 def test_resting_hr_status_stale_input(tmp_path: Path) -> None:
@@ -148,6 +162,16 @@ def test_resting_hr_status_stale_input(tmp_path: Path) -> None:
     assert payload["result"]["freshness_state"] == "stale"
     # Stale keeps the value (distinct from missing_input which drops it).
     assert payload["result"]["value"] == 61.0
+
+    # FR-008: a present-but-stale input still surfaces the actionable hint and a
+    # structured report, but the input lands in stale_inputs (not missing_inputs).
+    assert "resting heart rate" in payload["message"]
+    report = payload["missing_input"]
+    assert report["family"] == "missing_input"
+    assert report["required_inputs"] == ["resting_hr"]
+    assert report["stale_inputs"] == ["resting_hr"]
+    assert report["missing_inputs"] == []
+    assert report["message"] == payload["message"]
 
 
 # --------------------------------------------------------------------------- #
@@ -216,6 +240,40 @@ def test_steps_trend_insufficient_data(tmp_path: Path) -> None:
     assert payload["result"]["imputed_point_count"] == 0
 
 
+def test_weight_trend_available(tmp_path: Path) -> None:
+    # FR-006 / NFR-002: weight_trend is exercised end-to-end through the Stage 3
+    # surface, completing the "all six approved questions covered" promise.
+    db_path, conn = _warehouse_with(tmp_path, "weight_trend_ok")
+    try:
+        now = _now()
+        offsets = [
+            (timedelta(days=28), 82.0),
+            (timedelta(days=21), 81.0),
+            (timedelta(days=14), 80.0),
+            (timedelta(days=7), 79.0),
+            (timedelta(hours=6), 78.0),  # latest weigh-in fresh
+        ]
+        rows = [
+            ((now - delta).isoformat(sep=" "), "weight", value, f"w{i}")
+            for i, (delta, value) in enumerate(offsets)
+        ]
+        _seed(conn, rows)
+    finally:
+        conn.close()
+
+    payload = server.weight_trend(warehouse_path=db_path)
+
+    assert payload["tool_name"] == "weight_trend"
+    assert payload["status"] == "available"
+    assert payload["result"]["family"] == "trend"
+    assert payload["result"]["metric_id"] == "weight"
+    # A populated, fresh series yields a named direction (a downward weigh-in run).
+    assert payload["result"]["trend_direction"] == "down"
+    assert payload["result"]["current_freshness_state"] == "current"
+    # An available answer carries no structured missing-input block.
+    assert "missing_input" not in payload
+
+
 # --------------------------------------------------------------------------- #
 # Baseline family — one successful call
 # --------------------------------------------------------------------------- #
@@ -243,6 +301,19 @@ def test_sleep_deep_pct_baseline_available(tmp_path: Path) -> None:
     assert payload["result"]["metric_id"] == "sleep_deep_pct"
     # Latest (5.0) is well below the ~20 baseline.
     assert payload["result"]["comparison_state"] == "below"
+
+
+def test_sleep_deep_pct_baseline_unavailable_has_null_numerics(tmp_path: Path) -> None:
+    # Consumes WP02: an unavailable baseline must report null numerics, not a
+    # fabricated 0.0. With no recorded sleep-stage data the answer is unavailable.
+    payload = server.sleep_deep_pct_baseline(warehouse_path=_empty_warehouse(tmp_path))
+
+    assert payload["status"] != "available"
+    result = payload["result"]
+    assert result["family"] == "baseline"
+    # Honesty rule: no fabricated numeric value when the answer is not available.
+    assert result["latest_value"] is None
+    assert result["baseline_mean"] is None
 
 
 # --------------------------------------------------------------------------- #

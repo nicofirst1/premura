@@ -177,12 +177,32 @@ class BaselineComparisonResult:
 
     signal_name: str
     metric_id: str
-    latest_value: float
-    baseline_mean: float
     baseline_window: str
     comparison_state: ComparisonState
     freshness_state: FreshnessState
+    latest_value: float | None = None
+    """Latest usable value. MUST be None when ``freshness_state`` is
+    ``unavailable`` (see :meth:`validate`)."""
+    baseline_mean: float | None = None
+    """Mean of the user's own prior values. MUST be None when
+    ``comparison_state`` is ``unknown`` — no trustworthy baseline was formed
+    (see :meth:`validate`)."""
     caveats: list[str] = field(default_factory=list)
+
+    def validate(self) -> BaselineComparisonResult:
+        if self.freshness_state is FreshnessState.UNAVAILABLE:
+            if self.latest_value is not None:
+                raise ValueError(
+                    "BaselineComparisonResult.latest_value must be None when "
+                    "unavailable"
+                )
+        if self.comparison_state is ComparisonState.UNKNOWN:
+            if self.baseline_mean is not None:
+                raise ValueError(
+                    "BaselineComparisonResult.baseline_mean must be None when "
+                    "comparison_state is unknown"
+                )
+        return self
 
     def to_dict(self) -> dict[str, Any]:
         return {

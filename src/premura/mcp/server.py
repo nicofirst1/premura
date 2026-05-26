@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING, Any
 
 from .. import engine
 from ..config import settings
-from ..engine import comparative_signals
+from ..engine import MissingInputReport, comparative_signals
 from ..store import duck
 
 if TYPE_CHECKING:
@@ -303,12 +303,71 @@ def _serialize_signal_result(
             _REQUESTED_WINDOW_CAVEAT.format(requested=requested_window),
         ]
     status = _classify_result_status(payload)
-    return {
+    hint = _signal_missing_input_hint(tool_name)
+    response: dict[str, Any] = {
         "tool_name": tool_name,
         "status": status,
-        "message": _result_message(payload, status),
+        "message": _result_message(payload, status, hint),
         "result": payload,
     }
+    if status in ("missing_input", "stale_input"):
+        report = _build_missing_input_report(tool_name, status, hint, payload)
+        response["missing_input"] = report.to_dict()
+    return response
+
+
+def _build_missing_input_report(
+    tool_name: str,
+    status: str,
+    hint: str | None,
+    payload: dict[str, Any],
+) -> MissingInputReport:
+    """Build a structured required/missing/stale-input report from boundary data.
+
+    ``required_inputs`` is the signal's full declared input list (so this stays
+    correct if a signal ever declares more than one input). For today's
+    single-input signals every declared input maps to ``missing_inputs`` when the
+    answer is ``missing_input`` and to ``stale_inputs`` when it is ``stale_input``.
+    """
+    required_inputs = _signal_required_inputs(tool_name)
+    message = hint if hint else _result_message(payload, status, hint)
+    if status == "missing_input":
+        return MissingInputReport(
+            tool_name=tool_name,
+            required_inputs=required_inputs,
+            message=message,
+            missing_inputs=list(required_inputs),
+        )
+    return MissingInputReport(
+        tool_name=tool_name,
+        required_inputs=required_inputs,
+        message=message,
+        stale_inputs=list(required_inputs),
+    )
+
+
+def _signal_spec(tool_name: str) -> object | None:
+    """Look up the engine SignalSpec for a tool, ensuring built-ins are loaded.
+
+    The signal-backed tools share their name with the engine spec name. The
+    registry is populated lazily, so trigger a load (the hrv tool bypasses
+    ``engine.compute``) before reading the spec.
+    """
+    if tool_name not in engine.REGISTRY:
+        # Idempotently load built-in signals via a public engine query.
+        engine.list_by_domain("")
+    return engine.REGISTRY.get(tool_name)
+
+
+def _signal_required_inputs(tool_name: str) -> list[str]:
+    spec = _signal_spec(tool_name)
+    inputs = getattr(spec, "inputs", None)
+    return list(inputs) if inputs else []
+
+
+def _signal_missing_input_hint(tool_name: str) -> str | None:
+    spec = _signal_spec(tool_name)
+    return getattr(spec, "missing_input_hint", None)
 
 
 def _classify_result_status(payload: dict[str, Any]) -> str:
@@ -347,10 +406,19 @@ def _classify_result_status(payload: dict[str, Any]) -> str:
     return "available"
 
 
-def _result_message(payload: dict[str, Any], status: str) -> str:
-    """Pick a single user-facing sentence to accompany the structured result."""
+def _result_message(payload: dict[str, Any], status: str, hint: str | None = None) -> str:
+    """Pick a single user-facing sentence to accompany the structured result.
+
+    For an unavailable answer (``missing_input`` / ``stale_input``) prefer the
+    signal's actionable ``missing_input_hint`` so the caller sees how to fix the
+    gap, falling back to the prior generic message when no hint is authored.
+    ``available`` and fresh-but-sparse ``insufficient_data`` messages are
+    unchanged.
+    """
     if payload.get("family") == "missing_input":
         return str(payload.get("message", ""))
+    if status in ("missing_input", "stale_input") and hint:
+        return hint
     caveats = payload.get("caveats") or []
     if caveats:
         return str(caveats[0])

@@ -205,8 +205,8 @@ def _baseline_comparison(
         return BaselineComparisonResult(
             signal_name=signal_name,
             metric_id=metric_id,
-            latest_value=0.0,
-            baseline_mean=0.0,
+            latest_value=None,
+            baseline_mean=None,
             baseline_window=_BASELINE_WINDOW_TEXT,
             comparison_state=ComparisonState.UNKNOWN,
             freshness_state=FreshnessState.UNAVAILABLE,
@@ -214,24 +214,25 @@ def _baseline_comparison(
                 f"No metric definition found for {metric_id!r}.",
                 _DEVICE_ESTIMATE_CAVEAT,
             ],
-        )
+        ).validate()
 
     computed = _compute_own_baseline(conn, policy, span=_BASELINE_SPAN)
     caveats = _baseline_caveats(policy, computed)
 
     # When there is no trustworthy baseline (or no latest value), comparison is
-    # UNKNOWN. The envelope still requires numeric latest/baseline fields, so we
-    # surface what we have (or 0.0) and let the caveats + state carry the truth.
+    # UNKNOWN / freshness is UNAVAILABLE. We pass the (possibly None) values
+    # straight through — never a fabricated 0.0 — and let validate() enforce
+    # that absence is honest while the caveats + state carry the truth.
     return BaselineComparisonResult(
         signal_name=signal_name,
         metric_id=metric_id,
-        latest_value=computed.latest_value if computed.latest_value is not None else 0.0,
-        baseline_mean=computed.baseline_mean if computed.baseline_mean is not None else 0.0,
+        latest_value=computed.latest_value,
+        baseline_mean=computed.baseline_mean,
         baseline_window=_BASELINE_WINDOW_TEXT,
         comparison_state=computed.comparison_state,
         freshness_state=computed.freshness_state,
         caveats=caveats,
-    )
+    ).validate()
 
 
 # Standing caveat: deep-sleep percentage is a vendor/device estimate, and this

@@ -65,6 +65,14 @@ _BUILTIN_SIGNAL_MODULES: tuple[str, ...] = (
     "premura.engine.comparative_signals",
 )
 
+# Tracks whether the built-in signal modules have been imported and registered.
+# This is intentionally decoupled from ``REGISTRY`` truthiness: a contributor
+# may register a custom signal before the first lazy load, and that must NOT be
+# mistaken for "built-ins already loaded" (which would silently suppress every
+# built-in signal). The flag is flipped to ``True`` only after every module in
+# ``_BUILTIN_SIGNAL_MODULES`` imports and registers successfully.
+_BUILTINS_LOADED: bool = False
+
 __all__ = [
     "REGISTRY",
     "RESULT_FAMILIES",
@@ -177,11 +185,15 @@ def list_unavailable(
 
 
 def _ensure_builtin_signals_loaded() -> None:
-    if REGISTRY:
+    global _BUILTINS_LOADED
+    if _BUILTINS_LOADED:
         return
     for module_name in _BUILTIN_SIGNAL_MODULES:
         module = import_module(module_name)
         module.register_builtin_signals()
+    # Only mark loaded after every module imported and registered without
+    # error, so a failed import does not leave the flag wrongly true.
+    _BUILTINS_LOADED = True
 
 
 def _persist_derived_rows(

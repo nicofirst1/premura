@@ -254,6 +254,46 @@ def test_importing_engine_does_not_eagerly_load_signal_modules() -> None:
     assert "premura.engine.lab_ratios" in sys.modules
 
 
+# --- WP01: custom pre-registration must not suppress built-ins ------------
+
+
+def test_custom_pre_registration_does_not_suppress_builtins() -> None:
+    # Regression for the loader footgun: before the fix the loader returned
+    # early whenever ``REGISTRY`` was non-empty, so registering ANY custom
+    # signal before the first lazy load silently suppressed every built-in
+    # signal. The explicit ``_BUILTINS_LOADED`` flag must key the early-return
+    # off load state, not registry truthiness.
+    import premura.engine as engine
+
+    # Snapshot global state so this test cannot pollute later tests.
+    saved_registry = dict(engine.REGISTRY)
+    saved_flag = engine._BUILTINS_LOADED
+    custom_name = "_wp01_custom_pre_registration"
+    try:
+        # Force the "built-ins not yet loaded" precondition (mirror the lazy
+        # test's reset of REGISTRY / the load flag).
+        engine.REGISTRY.clear()
+        engine._BUILTINS_LOADED = False
+
+        # A contributor registers a custom signal BEFORE built-ins load.
+        engine.REGISTRY[custom_name] = engine.SignalSpec(
+            name=custom_name, domain=["test"], inputs=["lab:x"]
+        )
+        assert engine.REGISTRY  # registry is non-empty pre-load
+
+        engine._ensure_builtin_signals_loaded()
+
+        # Built-ins (a lab ratio AND a grounded answer) are now present...
+        assert "ast_alt_ratio" in engine.REGISTRY
+        assert "resting_hr_status" in engine.REGISTRY
+        # ...and the custom pre-registration survived.
+        assert custom_name in engine.REGISTRY
+    finally:
+        engine.REGISTRY.clear()
+        engine.REGISTRY.update(saved_registry)
+        engine._BUILTINS_LOADED = saved_flag
+
+
 # --- T004: engine contract exists and parser contract points to it --------
 
 

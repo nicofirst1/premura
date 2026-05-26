@@ -100,6 +100,12 @@ def test_sleep_deep_pct_baseline_below_own_normal(registered) -> None:
         conn, metric_id="sleep_deep_pct", ts=now - timedelta(hours=6), value=12.0,
         unit="pct", source_id=src, key="deep-latest",
     )
+    # Happy path: the public function returns a result that validates cleanly
+    # with real numeric values present (state not unknown/unavailable).
+    result = comparative_signals.sleep_deep_pct_baseline(conn)
+    assert result.validate() is result
+    assert result.latest_value == 12.0
+    assert result.baseline_mean == pytest.approx(20.0)
     out = engine.compute("sleep_deep_pct_baseline", conn).to_dict()
     assert out["family"] == "baseline"
     assert out["latest_value"] == 12.0
@@ -151,6 +157,10 @@ def test_sleep_deep_pct_baseline_insufficient_prior_nights(registered) -> None:
     )
     out = engine.compute("sleep_deep_pct_baseline", conn).to_dict()
     assert out["comparison_state"] == ComparisonState.UNKNOWN.value
+    # No trustworthy baseline was formed: baseline_mean is honestly None, never
+    # a fabricated 0.0. The latest value still exists (freshness is current).
+    assert out["baseline_mean"] is None
+    assert out["latest_value"] == 12.0
     assert any("too few" in c.lower() for c in out["caveats"])
     # Even with no comparison, the device-estimate framing is always present.
     assert any("device" in c.lower() for c in out["caveats"])
@@ -160,6 +170,10 @@ def test_sleep_deep_pct_baseline_no_value(registered) -> None:
     out = engine.compute("sleep_deep_pct_baseline", registered).to_dict()
     assert out["comparison_state"] == ComparisonState.UNKNOWN.value
     assert out["freshness_state"] == FreshnessState.UNAVAILABLE.value
+    # No usable value exists: latest_value must be honestly None, NOT 0.0, so a
+    # downstream consumer cannot render a false "0.0% vs 0.0%".
+    assert out["latest_value"] is None
+    assert out["baseline_mean"] is None
     assert out["caveats"]
 
 

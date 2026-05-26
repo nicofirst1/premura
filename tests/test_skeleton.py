@@ -110,9 +110,11 @@ def test_signal_decorator_registers_spec() -> None:
 
 def test_engine_registry_stays_lazy_until_runtime_helpers_load_builtins() -> None:
     """The import boundary stays empty until runtime helpers load built-in signals."""
+    import premura.engine
     from premura.engine import REGISTRY, list_by_domain
 
     REGISTRY.clear()
+    premura.engine._BUILTINS_LOADED = False
     assert REGISTRY == {}
     specs = list_by_domain("liver")
     assert any(spec.name == "ast_alt_ratio" for spec in specs)
