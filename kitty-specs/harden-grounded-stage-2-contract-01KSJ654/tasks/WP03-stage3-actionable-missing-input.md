@@ -192,3 +192,4 @@ Confirm the six approved questions each have a Stage 3 call test.
 ## Activity Log
 
 - 2026-05-26T13:24:07Z – claude:opus:implementer:implementer – shell_pid=23126 – Started implementation via action command
+- 2026-05-26T13:28:43Z – claude:opus:implementer:implementer – shell_pid=23126 – Ready for review: FR-008 delivered — actionable hint as message + structured MissingInputReport for missing/stale; baseline null test; weight_trend e2e test
