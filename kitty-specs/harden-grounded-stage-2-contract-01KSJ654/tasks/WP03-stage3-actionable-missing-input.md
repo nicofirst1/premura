@@ -194,3 +194,4 @@ Confirm the six approved questions each have a Stage 3 call test.
 - 2026-05-26T13:24:07Z – claude:opus:implementer:implementer – shell_pid=23126 – Started implementation via action command
 - 2026-05-26T13:28:43Z – claude:opus:implementer:implementer – shell_pid=23126 – Ready for review: FR-008 delivered — actionable hint as message + structured MissingInputReport for missing/stale; baseline null test; weight_trend e2e test
 - 2026-05-26T13:29:17Z – claude:opus:reviewer:reviewer – shell_pid=42157 – Started review via action command
+- 2026-05-26T13:33:26Z – claude:opus:reviewer:reviewer – shell_pid=42157 – Review passed: FR-008 delivered — missing_input_hint READ into message + MissingInputReport constructed/serialized for missing/stale; statuses distinct; weight_trend e2e added; raw tools intact
