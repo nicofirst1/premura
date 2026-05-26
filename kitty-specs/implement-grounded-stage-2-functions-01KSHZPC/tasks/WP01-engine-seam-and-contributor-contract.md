@@ -17,8 +17,8 @@ subtasks:
 - T003
 - T004
 - T005
-shell_pid: "66395"
-agent: "claude:opus:implementer:implementer"
+shell_pid: "20301"
+agent: "claude:opus:reviewer:reviewer"
 history:
 - timestamp: '2026-05-26T11:32:28Z'
   agent: gpt-5.4
@@ -217,3 +217,4 @@ Review this WP against the research findings and `data-model.md`, not against im
 
 - 2026-05-26T11:44:19Z – claude:opus:implementer:implementer – shell_pid=66395 – Assigned agent via action command
 - 2026-05-26T11:51:13Z – claude:opus:implementer:implementer – shell_pid=66395 – Ready for review: additive registry metadata, result-envelope helpers, lazy built-in loading, engine+parser contracts, seam tests
+- 2026-05-26T11:52:24Z – claude:opus:reviewer:reviewer – shell_pid=20301 – Started review via action command
