@@ -18,6 +18,8 @@ subtasks:
 - T024
 - T025
 - T026
+agent: "claude:opus:implementer:implementer"
+shell_pid: "89784"
 history:
 - timestamp: '2026-05-26T11:32:28Z'
   agent: gpt-5.4
@@ -150,3 +152,7 @@ Manual validation expectations:
 ## Reviewer Guidance
 
 Review these docs against the shipped code, not against the ideal future architecture. The goal is honest synchronization: what changed, what did not, and what remains deferred.
+
+## Activity Log
+
+- 2026-05-26T12:34:10Z – claude:opus:implementer:implementer – shell_pid=89784 – Started implementation via action command
