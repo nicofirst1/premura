@@ -1,0 +1,202 @@
+version: 1
+surface: mcp
+mission: implement-grounded-stage-2-functions-01KSHZPC
+notes:
+  - Existing raw MCP tools remain unchanged: query_warehouse, list_metrics, metric_summary.
+  - The tools below are new explicit signal-backed tools for the six approved Stage 2 answers.
+  - All responses are local-first, deterministic, and must surface freshness or availability limits explicitly.
+
+common_types:
+  freshness_state:
+    type: string
+    enum: [current, stale, unavailable]
+  trend_direction:
+    type: string
+    enum: [up, down, flat, unknown]
+  comparison_state:
+    type: string
+    enum: [below, within, above, unknown]
+  error_response:
+    type: object
+    required: [error_code, message]
+    properties:
+      error_code:
+        type: string
+        enum: [missing_input, stale_input, insufficient_data, invalid_request]
+      message:
+        type: string
+
+tools:
+  - name: resting_hr_status
+    purpose: Return the latest resting heart rate with an explicit freshness verdict.
+    request:
+      type: object
+      additionalProperties: false
+      properties: {}
+    response:
+      type: object
+      required: [signal_name, metric_id, value, unit, observed_at, freshness_state, caveats]
+      properties:
+        signal_name: {type: string}
+        metric_id: {type: string, const: resting_hr}
+        value: {type: number}
+        unit: {type: string}
+        observed_at: {type: string, format: date-time}
+        freshness_state: {$ref: '#/common_types/freshness_state'}
+        caveats:
+          type: array
+          items: {type: string}
+
+  - name: resting_hr_trend
+    purpose: Return a recent resting-heart-rate trend with gap and imputation visibility.
+    request:
+      type: object
+      additionalProperties: false
+      properties:
+        lookback_days:
+          type: integer
+          minimum: 7
+          maximum: 90
+    response:
+      type: object
+      required: [signal_name, metric_id, trend_direction, points, current_freshness_state, imputed_point_count, gap_count, caveats]
+      properties:
+        signal_name: {type: string}
+        metric_id: {type: string, const: resting_hr}
+        trend_direction: {$ref: '#/common_types/trend_direction'}
+        current_freshness_state: {$ref: '#/common_types/freshness_state'}
+        imputed_point_count: {type: integer, minimum: 0}
+        gap_count: {type: integer, minimum: 0}
+        caveats:
+          type: array
+          items: {type: string}
+        points:
+          type: array
+          items:
+            type: object
+            required: [ts, value, is_imputed]
+            properties:
+              ts: {type: string, format: date-time}
+              value: {type: number}
+              is_imputed: {type: boolean}
+
+  - name: steps_trend
+    purpose: Return a recent daily-steps trend without imputing missing days.
+    request:
+      type: object
+      additionalProperties: false
+      properties:
+        lookback_days:
+          type: integer
+          minimum: 7
+          maximum: 90
+    response:
+      type: object
+      required: [signal_name, metric_id, trend_direction, points, current_freshness_state, imputed_point_count, gap_count, caveats]
+      properties:
+        signal_name: {type: string}
+        metric_id: {type: string, const: steps}
+        trend_direction: {$ref: '#/common_types/trend_direction'}
+        current_freshness_state: {$ref: '#/common_types/freshness_state'}
+        imputed_point_count: {type: integer, minimum: 0, const: 0}
+        gap_count: {type: integer, minimum: 0}
+        caveats:
+          type: array
+          items: {type: string}
+        points:
+          type: array
+          items:
+            type: object
+            required: [ts, value, is_imputed]
+            properties:
+              ts: {type: string, format: date-time}
+              value: {type: number}
+              is_imputed: {type: boolean}
+
+  - name: weight_trend
+    purpose: Return a recent body-weight trend with freshness and carried-forward caveats.
+    request:
+      type: object
+      additionalProperties: false
+      properties:
+        lookback_days:
+          type: integer
+          minimum: 7
+          maximum: 120
+    response:
+      type: object
+      required: [signal_name, metric_id, trend_direction, points, current_freshness_state, imputed_point_count, gap_count, caveats]
+      properties:
+        signal_name: {type: string}
+        metric_id: {type: string, const: weight}
+        trend_direction: {$ref: '#/common_types/trend_direction'}
+        current_freshness_state: {$ref: '#/common_types/freshness_state'}
+        imputed_point_count: {type: integer, minimum: 0}
+        gap_count: {type: integer, minimum: 0}
+        caveats:
+          type: array
+          items: {type: string}
+        points:
+          type: array
+          items:
+            type: object
+            required: [ts, value, is_imputed]
+            properties:
+              ts: {type: string, format: date-time}
+              value: {type: number}
+              is_imputed: {type: boolean}
+
+  - name: sleep_deep_pct_baseline
+    purpose: Compare the latest deep-sleep percentage with the user's own recent baseline.
+    request:
+      type: object
+      additionalProperties: false
+      properties:
+        baseline_days:
+          type: integer
+          minimum: 7
+          maximum: 60
+    response:
+      type: object
+      required: [signal_name, metric_id, latest_value, baseline_mean, comparison_state, freshness_state, caveats]
+      properties:
+        signal_name: {type: string}
+        metric_id: {type: string, const: sleep_deep_pct}
+        latest_value: {type: number}
+        baseline_mean: {type: number}
+        comparison_state: {$ref: '#/common_types/comparison_state'}
+        freshness_state: {$ref: '#/common_types/freshness_state'}
+        caveats:
+          type: array
+          items: {type: string}
+
+  - name: hrv_change_around_date
+    purpose: Compare overnight HRV before and after a user-supplied date, without significance or causation claims.
+    request:
+      type: object
+      additionalProperties: false
+      required: [anchor_date]
+      properties:
+        anchor_date:
+          type: string
+          format: date
+        window_days:
+          type: integer
+          minimum: 3
+          maximum: 30
+    response:
+      type: object
+      required: [signal_name, metric_id, anchor_date, before_count, after_count, sufficient_data, caveats]
+      properties:
+        signal_name: {type: string}
+        metric_id: {type: string, const: hrv_rmssd_overnight}
+        anchor_date: {type: string, format: date}
+        before_mean: {type: [number, 'null']}
+        after_mean: {type: [number, 'null']}
+        delta: {type: [number, 'null']}
+        before_count: {type: integer, minimum: 0}
+        after_count: {type: integer, minimum: 0}
+        sufficient_data: {type: boolean}
+        caveats:
+          type: array
+          items: {type: string}

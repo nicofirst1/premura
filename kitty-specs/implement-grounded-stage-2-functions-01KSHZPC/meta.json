@@ -1,10 +1,12 @@
 {
   "created_at": "2026-05-26T11:11:07.867977+00:00",
-  "friendly_name": "implement grounded stage 2 functions",
+  "friendly_name": "Implement Grounded Stage 2 Functions",
   "mission_id": "01KSHZPCHTFN326808SW6FRVFE",
   "mission_number": null,
   "mission_slug": "implement-grounded-stage-2-functions-01KSHZPC",
   "mission_type": "software-dev",
+  "source_description": "Implement the full set of grounded Stage 2 functions from research mission 01KSD0D18NBW0FG039P6Y78VP6, update Stage 3 to use them, and align the contribution and product docs.",
   "slug": "implement-grounded-stage-2-functions-01KSHZPC",
-  "target_branch": "master"
+  "target_branch": "master",
+  "vcs": "git"
 }
