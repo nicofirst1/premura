@@ -1,0 +1,10 @@
+{
+  "created_at": "2026-05-26T19:16:42.552295+00:00",
+  "friendly_name": "close stage 3 direct read exception",
+  "mission_id": "01KSJVFGCTAM1SNMMDFXFKB1T3",
+  "mission_number": null,
+  "mission_slug": "close-stage-3-direct-read-exception-01KSJVFG",
+  "mission_type": "software-dev",
+  "slug": "close-stage-3-direct-read-exception-01KSJVFG",
+  "target_branch": "master"
+}
