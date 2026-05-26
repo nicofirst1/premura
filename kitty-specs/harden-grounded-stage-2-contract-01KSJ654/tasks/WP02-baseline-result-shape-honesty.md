@@ -153,3 +153,4 @@ Check the actual diff: the two field types are now optional, `validate()` mirror
 - 2026-05-26T13:13:56Z – claude:opus:implementer:implementer – shell_pid=35810 – Assigned agent via action command
 - 2026-05-26T13:17:27Z – claude:opus:implementer:implementer – shell_pid=35810 – Ready for review: BaselineComparisonResult float|None + validate(); 0.0 coercion removed; no-fabrication tests
 - 2026-05-26T13:21:35Z – claude:opus:reviewer:reviewer – shell_pid=4188 – Started review via action command
+- 2026-05-26T13:23:37Z – claude:opus:reviewer:reviewer – shell_pid=4188 – Review passed: baseline numeric fields float|None with validate(); 0.0 fabrication removed (incl. policy-None path); to_dict shape stable; honest None in unavailable/unknown, real values on happy path
