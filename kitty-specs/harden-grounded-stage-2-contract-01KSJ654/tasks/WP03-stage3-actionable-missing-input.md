@@ -27,8 +27,8 @@ owned_files:
 - src/premura/mcp/server.py
 - tests/test_mcp_signal_tools.py
 tags: []
-agent: "claude:opus:implementer:implementer"
-shell_pid: "23126"
+agent: "claude:opus:reviewer:reviewer"
+shell_pid: "42157"
 ---
 
 # Work Package Prompt: WP03 — Stage 3 Actionable Missing-Input And Coverage
@@ -193,3 +193,4 @@ Confirm the six approved questions each have a Stage 3 call test.
 
 - 2026-05-26T13:24:07Z – claude:opus:implementer:implementer – shell_pid=23126 – Started implementation via action command
 - 2026-05-26T13:28:43Z – claude:opus:implementer:implementer – shell_pid=23126 – Ready for review: FR-008 delivered — actionable hint as message + structured MissingInputReport for missing/stale; baseline null test; weight_trend e2e test
+- 2026-05-26T13:29:17Z – claude:opus:reviewer:reviewer – shell_pid=42157 – Started review via action command
