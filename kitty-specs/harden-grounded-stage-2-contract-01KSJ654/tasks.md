@@ -16,11 +16,11 @@ small and surgical; no new signals, no new analysis.
 | T003 | Make `BaselineComparisonResult` numeric fields `float \| None` + add `validate()` | WP02 | | [D] |
 | T004 | Stop the `0.0` coercion in `sleep_deep_pct_baseline` and validate the envelope | WP02 | | [D] |
 | T005 | Test: baseline reports no fabricated numbers when unavailable/unknown | WP02 | | [D] |
-| T006 | Build a `MissingInputReport` from the signal's `inputs` + result freshness at the Stage 3 boundary | WP03 | |
-| T007 | Use the signal's `missing_input_hint` as the user-facing message for unavailable answers | WP03 | |
-| T008 | Attach the structured missing-input block for `missing_input`/`stale_input`; keep the four statuses distinct | WP03 | |
-| T009 | Strengthen MCP tests to assert actionable guidance + structured input fields (not "some message") | WP03 | |
-| T010 | Add the missing `weight_trend` end-to-end Stage 3 call test | WP03 | |
+| T006 | Build a `MissingInputReport` from the signal's `inputs` + result freshness at the Stage 3 boundary | WP03 | | [D] |
+| T007 | Use the signal's `missing_input_hint` as the user-facing message for unavailable answers | WP03 | | [D] |
+| T008 | Attach the structured missing-input block for `missing_input`/`stale_input`; keep the four statuses distinct | WP03 | | [D] |
+| T009 | Strengthen MCP tests to assert actionable guidance + structured input fields (not "some message") | WP03 | | [D] |
+| T010 | Add the missing `weight_trend` end-to-end Stage 3 call test | WP03 | | [D] |
 
 ## Work Packages
 
@@ -68,11 +68,11 @@ populates `stale_inputs`; all six approved questions have a Stage 3 call test.
 **Dependencies**: WP02 (consumes the honest baseline shape; the baseline
 unavailable test asserts `None` numerics).
 
-- [ ] T006 In `src/premura/mcp/server.py`, build a `MissingInputReport` at the serialization boundary from the signal's declared `inputs` (registry) + the result's freshness/availability (required → missing when absent, → stale when stale). (WP03)
-- [ ] T007 Use the signal's registered `missing_input_hint` as the user-facing `message` for unavailable answers, instead of the generic value-absent sentence. (WP03)
-- [ ] T008 Attach the structured `missing_input` block to the response for `missing_input` and `stale_input` statuses; keep `available`/`insufficient_data` shapes unchanged and the four statuses structurally distinct. (WP03)
-- [ ] T009 Strengthen `tests/test_mcp_signal_tools.py` so the missing-input and stale-input cases assert the actionable hint text AND the structured `required_inputs`/`missing_inputs`/`stale_inputs` fields (not merely a non-empty message). (WP03)
-- [ ] T010 Add a `weight_trend` end-to-end Stage 3 call test in `tests/test_mcp_signal_tools.py`. (WP03)
+- [x] T006 In `src/premura/mcp/server.py`, build a `MissingInputReport` at the serialization boundary from the signal's declared `inputs` (registry) + the result's freshness/availability (required → missing when absent, → stale when stale). (WP03)
+- [x] T007 Use the signal's registered `missing_input_hint` as the user-facing `message` for unavailable answers, instead of the generic value-absent sentence. (WP03)
+- [x] T008 Attach the structured `missing_input` block to the response for `missing_input` and `stale_input` statuses; keep `available`/`insufficient_data` shapes unchanged and the four statuses structurally distinct. (WP03)
+- [x] T009 Strengthen `tests/test_mcp_signal_tools.py` so the missing-input and stale-input cases assert the actionable hint text AND the structured `required_inputs`/`missing_inputs`/`stale_inputs` fields (not merely a non-empty message). (WP03)
+- [x] T010 Add a `weight_trend` end-to-end Stage 3 call test in `tests/test_mcp_signal_tools.py`. (WP03)
 
 Prompt: [tasks/WP03-stage3-actionable-missing-input.md](tasks/WP03-stage3-actionable-missing-input.md)
 
