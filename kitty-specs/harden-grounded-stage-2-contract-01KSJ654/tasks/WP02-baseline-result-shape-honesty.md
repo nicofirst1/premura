@@ -9,10 +9,14 @@ requirement_refs:
 planning_base_branch: master
 merge_target_branch: master
 branch_strategy: Planning artifacts for this feature were generated on master. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into master unless the human explicitly redirects the landing branch.
+base_branch: kitty/mission-harden-grounded-stage-2-contract-01KSJ654
+base_commit: dbd7aa862c6182fe0f050d524dd8835872693d5c
+created_at: '2026-05-26T13:13:55.432708+00:00'
 subtasks:
 - T003
 - T004
 - T005
+shell_pid: '35810'
 history: []
 authoritative_surface: src/premura/engine/
 execution_mode: code_change
