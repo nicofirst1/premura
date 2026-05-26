@@ -8,6 +8,7 @@ requirement_refs:
 - FR-002
 - FR-003
 - FR-006
+- FR-008
 - NFR-002
 - NFR-003
 planning_base_branch: master
