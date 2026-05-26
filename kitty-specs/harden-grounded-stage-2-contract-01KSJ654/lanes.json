@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "mission_slug": "harden-grounded-stage-2-contract-01KSJ654",
+  "mission_id": "01KSJ654VMJWKKFT6VQY4B1P5K",
+  "mission_branch": "kitty/mission-harden-grounded-stage-2-contract-01KSJ654",
+  "target_branch": "master",
+  "lanes": [
+    {
+      "lane_id": "lane-a",
+      "wp_ids": [
+        "WP01"
+      ],
+      "write_scope": [
+        "src/premura/engine/__init__.py",
+        "tests/test_engine_contract.py"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    },
+    {
+      "lane_id": "lane-b",
+      "wp_ids": [
+        "WP02",
+        "WP03"
+      ],
+      "write_scope": [
+        "src/premura/engine/_results.py",
+        "src/premura/engine/comparative_signals.py",
+        "src/premura/mcp/server.py",
+        "tests/test_engine_comparative_signals.py",
+        "tests/test_mcp_signal_tools.py"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    }
+  ],
+  "computed_at": "2026-05-26T13:13:30.454601+00:00",
+  "computed_from": "dependency_graph+ownership",
+  "planning_artifact_wps": [],
+  "collapse_report": {
+    "events": [
+      {
+        "wp_a": "WP03",
+        "wp_b": "WP02",
+        "rule": "dependency",
+        "evidence": "WP03 depends on WP02"
+      }
+    ],
+    "total_merges": 1,
+    "independent_wps_collapsed": 0,
+    "by_rule": {
+      "dependency": 1
+    }
+  }
+}
