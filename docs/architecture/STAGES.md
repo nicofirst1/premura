@@ -2,7 +2,7 @@
 
 > Status: authoritative. Source of truth for cross-stage architecture boundaries.
 >
-> Companion to [VISION.md](../product/VISION.md), [SPEC.md](../product/SPEC.md), [ROADMAP.md](../product/ROADMAP.md), [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md).
+> Companion to [DOCTRINE.md](../product/DOCTRINE.md), [VISION.md](../product/VISION.md), [SPEC.md](../product/SPEC.md), [ROADMAP.md](../product/ROADMAP.md), [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md).
 > Captured 2026-05-21. Complements VISION.md — does **not** replace the pillar framing. The pillars are the *trajectory*; the stages below are the *data-flow shape*. A feature is located in pillars by intent and in stages by where it sits in the pipeline.
 
 ## The four stages
@@ -66,7 +66,7 @@ Signal processing has no external dependencies. No network, no LLM. It must be i
 
 ### 3. MCP
 
-The MCP server exposes Stage 2 signal functions as tools an LLM can call. The long-term surface still includes `correlate`, `paired_t_test`, `rolling_mean`, `change_point`, PubMed search/fetch, and a signal selector — those remain future work. What ships today is nine tools (`src/premura/mcp/server.py`, `entrypoint.py`):
+The MCP server exposes Stage 2 signal functions as tools an LLM can call. Per [DOCTRINE.md](../product/DOCTRINE.md), this is the **primary operational interface** of the product: the human brings artifacts, goals, and approvals; the agent works mainly through this tool surface. The long-term surface still includes `correlate`, `paired_t_test`, `rolling_mean`, `change_point`, PubMed search/fetch, and a signal selector — those remain future work. What ships today is nine tools (`src/premura/mcp/server.py`, `entrypoint.py`):
 
 - **Three raw warehouse tools** — `query_warehouse`, `list_metrics`, `metric_summary`. These run read-only SQL straight against `hp.*` and are the low-level exploratory escape hatch.
 - **Six signal-backed tools** — `resting_hr_status`, `resting_hr_trend`, `steps_trend`, `weight_trend`, `sleep_deep_pct_baseline`, `hrv_change_around_date`. Each opens the warehouse read-only and **delegates to the Stage 2 engine** instead of running its own SQL against the fact tables. They return a structured payload whose `status` field (`available` / `missing_input` / `stale_input` / `insufficient_data`) keeps each refusal reason distinct.
@@ -79,11 +79,11 @@ Other principles, still the target shape:
 
 ### 4. User interface
 
-Everything the human encounters: CLI today, MCP-backed chat, eventual UI.
+Everything the human encounters: CLI today, MCP-backed chat, eventual UI. This stage is human-critical in purpose even though it is not the main execution surface.
 
 - **Interview** (VISION Pillar 4) — first contact asks the user *what direction* (sleep, cardio, metabolic, stress, mental, gut, lab/cardiometabolic, overview). Output is a routing decision that calls the signal selector. No "analyse everything at once" by default.
 - **Teaching** (VISION Pillar 5) — plain-language metric introductions, dual-coded charts, progressive disclosure. Applies to every metric the UI surfaces, blood markers especially.
-- The UI is the only stage that does presentation, unit display preferences, and prose.
+- The UI is the only stage that does presentation, unit display preferences, and prose. It is the layer where the human receives help, teaching, and guided interpretation from the agent-mediated workflow.
 
 ## Why this matters
 

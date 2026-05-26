@@ -18,7 +18,9 @@ Docs are grouped by **content domain** into four folders:
 
 ## Source of truth
 
+- `product/DOCTRINE.md` — product identity: agent-primary execution, human-primary purpose.
 - `product/SPEC.md` — product and data-contract requirements.
+- `product/FULL_APP_DEVELOPMENT_PLAN.md` — phase-level plan from the current shipped state forward.
 - `architecture/STAGES.md` — architecture boundaries between parsers, engine, MCP, and UI.
 - `architecture/UPDATE_STRATEGY.md` — supported and deferred warehouse update kinds.
 - `../src/premura/parsers/CONTRACT.md` — authoritative parser plugin contract.
@@ -27,7 +29,8 @@ Docs are grouped by **content domain** into four folders:
 
 - `operations/STATUS.md` — what is currently true and shipped.
 - `operations/OPERATIONS.md` — operator commands and day-to-day run surface.
-- `product/ROADMAP.md` — current sequencing of future work.
+- `product/ROADMAP.md` — shorter live narrative of future work.
+- `product/ROADMAP_BOOTSTRAP_PLAN.md` — record of the first mission-instantiation pass (M1-M3) and its rationale.
 - `product/USERJOURNEY.md` — intended operator experience over time.
 - `architecture/PARSER_CONTRIBUTING.md` — parser contributor guide layered on top of the
   parser contract.

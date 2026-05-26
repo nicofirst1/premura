@@ -2,8 +2,8 @@
 
 > Status: authoritative. Source of truth for the intended human experience over time.
 >
-> Companion to [SPEC.md](SPEC.md) (what the system must do), [ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md) (how it was built), [STATUS.md](../operations/STATUS.md) (what works today), and [ROADMAP.md](ROADMAP.md) (what's next).
-> This document is the source of truth for **the human experience over time**.
+> Companion to [DOCTRINE.md](DOCTRINE.md) (product stance), [SPEC.md](SPEC.md) (what the system must do), [ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md) (how it was built), [STATUS.md](../operations/STATUS.md) (what works today), and [ROADMAP.md](ROADMAP.md) (what's next).
+> This document is the source of truth for **the human experience over time**. Per [DOCTRINE.md](DOCTRINE.md), the human is the primary beneficiary even though the agent is the default operational client.
 
 ## Persona
 
@@ -15,7 +15,8 @@ Wears four hats over the system's lifetime:
 |---|---|---|
 | **Subject** | Continuously, passively | Their data exists and is accurate |
 | **Operator** | Once per month, ~10 min | Pipeline runs cleanly, low ceremony |
-| **Analyst** | Anytime, ad-hoc | Fast SQL/Polars over years of metrics |
+| **Beneficiary** | Anytime, ad-hoc | The agent helps them understand, compare, and explain their own data |
+| **Analyst** | Occasionally, expert fallback | Fast SQL/Polars over years of metrics when the direct path is needed |
 | **Recovery actor** | Rarely, on lost hardware | Encrypted Drive backups + the age key are enough to rebuild |
 
 ## Pain points this system solves
@@ -93,10 +94,18 @@ export snapshot  →  age encrypt  →  rclone upload  →  verify lsl  →  not
 - **rclone auth expired**: pipeline fails at upload step. Notification: *"Upload failed: rclone reauth needed. Run `rclone config reconnect gdrive:`"*. The warehouse is already updated locally — re-run `hpipe upload` after fixing auth.
 - **Disk full**: pipeline halts before encrypting. `hpipe gc --keep 1` frees ~2 months of local exports.
 
-## Journey 3 — Ad-hoc analysis (anytime)
+## Journey 3 — Agent-mediated analysis (default, anytime)
 
 ### Goal
-Answer a personal question against years of unified data.
+Answer a personal question against years of unified data without the human needing to write SQL or stitch data manually.
+
+### Default flow
+
+1. The human states a question, concern, or goal.
+2. The agent chooses the relevant tools and signals.
+3. The agent inspects the warehouse through MCP tools, not ad-hoc table spelunking by default.
+4. The agent explains what it found, what is missing, and what follow-up question makes sense.
+5. The human decides whether to continue, correct, or approve any sensitive next step.
 
 ### Example questions the warehouse should make trivial
 
@@ -107,15 +116,27 @@ Answer a personal question against years of unified data.
 | "On which days did Body Battery cross 50 by 09:00 vs. 12:00?" | Filter `metric_id='body_battery'` to first reading per day in each hour window. |
 | "Which weeks had the highest avg respiratory rate? Were those also high-stress weeks?" | Two CTEs, weekly avg per metric, joined on week. |
 
-### Tools the user picks
+### Default tools the agent picks
+- MCP signal-backed tools first.
+- Raw MCP warehouse tools only when the question falls outside the grounded signal surface.
+
+### Expert fallback tools the human picks
 - Quick: `duckdb data/duck/health.duckdb` in the shell.
 - Notebook: `import duckdb; con = duckdb.connect("data/duck/health.duckdb", read_only=True)` then Polars/Plotly.
 - Dashboard (deferred to v2): export to Parquet, point Grafana/Metabase at it.
 
 ### Constraint
-Read-only access during analysis — never let analytics writes touch the warehouse. The pipeline owns writes; analysis is `read_only=True` by convention.
+Read-only access during analysis — never let analytics writes touch the warehouse. The pipeline owns writes; analysis is `read_only=True` by convention whether the caller is an agent or a human expert.
 
-## Journey 4 — Catastrophic recovery (rare, critical)
+## Journey 4 — Expert fallback analysis (occasional)
+
+### Goal
+Let the human inspect the warehouse directly when they want to go beyond the current agent-facing analytical surface.
+
+### Positioning
+This is a valid path, but not the default product flow. It exists for expert users who want raw DuckDB, notebooks, or custom analysis outside the current grounded tool surface.
+
+## Journey 5 — Catastrophic recovery (rare, critical)
 
 ### Scenario
 The Mac dies. The user buys a new one.

@@ -2,19 +2,19 @@
 
 > Status: proposal/archive. Long-term trajectory, not a build contract.
 >
-> Companion to [SPEC.md](SPEC.md), [ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](USERJOURNEY.md), [STATUS.md](../operations/STATUS.md), [ROADMAP.md](ROADMAP.md), [STAGES.md](../architecture/STAGES.md), [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md).
+> Companion to [DOCTRINE.md](DOCTRINE.md), [SPEC.md](SPEC.md), [ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](USERJOURNEY.md), [STATUS.md](../operations/STATUS.md), [ROADMAP.md](ROADMAP.md), [STAGES.md](../architecture/STAGES.md), [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md).
 >
 > The **pillars below describe the trajectory**. For the orthogonal *data-flow shape* (Ingest → Signal processing → MCP → UI), see [STAGES.md](../architecture/STAGES.md). Pillars and stages compose: a feature is located in pillars by intent and in stages by where it sits in the pipeline.
 >
-> Captured 2026-05-20 as the project's scope expands from "personal pipeline for Nicolò" to **"open, extensible health-data unifier + AI tutor"**. The bare-bone v1 (the work tracked in [STATUS.md](../operations/STATUS.md)) is the foundation. Everything below is the trajectory we are deliberately *not* building yet.
+> Captured 2026-05-20 as the project's scope expands from "personal pipeline for Nicolò" toward an agent-operable health reasoning system. See [DOCTRINE.md](DOCTRINE.md) for the product stance this trajectory now serves: agent-primary execution, human-primary purpose. The bare-bone v1 (the work tracked in [STATUS.md](../operations/STATUS.md)) is the foundation. Everything below is the trajectory we are deliberately *not* building yet.
 
 ## What this is becoming
 
 Three sentences:
 
 1. **A common warehouse** for health dumps from as many vendors as possible — not a Garmin tool, not a Health-Connect tool. The DuckDB long-format star schema already in v1 is built to accept arbitrary `(metric_id, ts_utc, value, source)` tuples; what's missing is the **community of parsers** to fill it.
-2. **An AI analytical surface** that reads the warehouse, spots patterns, and proposes the next question — backed by deterministic statistical tools (so the LLM cannot confabulate effect sizes) and PubMed-backed evidence (so the LLM cannot invent citations).
-3. **A tutor, not a dashboard.** Every metric introduced is *taught*. Every chart answers a question. The user finishes a session knowing *more* about their physiology than when they started — not just "what their HRV was last Tuesday."
+2. **An agent-operable analytical surface** that reads the warehouse, spots patterns, proposes the next question, and does most of the operational work for the human — backed by deterministic statistical tools (so the LLM cannot confabulate effect sizes) and PubMed-backed evidence (so the LLM cannot invent citations).
+3. **A human-helping tutor, not a dashboard.** Every metric introduced is *taught*. Every chart answers a question. The human finishes a session knowing *more* about their physiology than when they started — not just "what their HRV was last Tuesday."
 
 ## Pillars
 
@@ -62,7 +62,7 @@ A first-time user shouldn't see "here are 43 metrics." They should be asked:
 
 Each choice routes them into a curated **learning track** — a sequence of (a) a metric explained in plain language, (b) their own data charted, (c) a guided counterfactual ("what happens to your HRV trend if we exclude alcohol nights?"), (d) a PubMed-cited finding to compare against, (e) the next question.
 
-This is the "interview" the user described. Implementation could be:
+This is the "interview" the user described. The default assumption is that an agent conducts most of this flow on the human's behalf, then presents and teaches. Implementation could be:
 
 - CLI: `hpipe learn` walks the user through a track in the terminal with Rich prompts.
 - MCP: the AI agent runs the interview conversationally.
@@ -83,7 +83,7 @@ This is the single hardest pillar. The reference framework is the audit research
 | **Dual Coding Theory** (Paivio 1971) | Every chart has a caption that names the insight. Every number has a visual analog. We use **both** verbal and visual channels at every step. |
 | **Jobs-to-be-Done** | The job is **"when I sense something about my body changed (worse sleep, lower mood, less endurance), I want to know what my data says is correlated, so I can decide whether to talk to a doctor / adjust training / wait."** Every surface either serves this job or is labeled as exploratory/advanced. |
 
-The teaching layer is **not the final UI**. It is a content + interaction style that propagates from the CLI today through the MCP server tomorrow through any web UI we eventually build.
+The teaching layer is **not the final UI**. It is a content + interaction style that propagates from an agent-mediated MCP flow first, then through CLI and any web UI that comes later.
 
 ### Pillar 6 — Privacy is non-negotiable
 

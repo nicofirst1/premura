@@ -1,8 +1,8 @@
 # Premura
 
-Personal health-data warehouse. Ingests monthly dumps from **Health Connect, Garmin GDPR, Sleep as Android, Body Measurement Tracker** into a single local DuckDB warehouse, with `age`-encrypted export and backup artifacts. Captures the metrics Health Connect doesn't bridge (HRV rMSSD overnight, stress, body battery, training load/readiness, VO₂ max, etc.).
+Local-first, agent-operable health reasoning substrate. A human supplies health-data exports, questions, and approvals; agents ingest, normalize, analyze, compare, and explain through deterministic tools over a single DuckDB warehouse. The system captures the metrics Health Connect does not bridge (HRV rMSSD overnight, stress, body battery, training load/readiness, VO₂ max, etc.) while keeping encrypted export and backup artifacts under the human user's control.
 
-> Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [SPEC](docs/product/SPEC.md) · [Architecture History](docs/architecture/ARCHITECTURE_HISTORY.md) · [USERJOURNEY](docs/product/USERJOURNEY.md) · [STATUS](docs/operations/STATUS.md) · [ROADMAP](docs/product/ROADMAP.md)
+> Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [Doctrine](docs/product/DOCTRINE.md) · [SPEC](docs/product/SPEC.md) · [STATUS](docs/operations/STATUS.md) · [Stages](docs/architecture/STAGES.md) · [Roadmap](docs/product/ROADMAP.md) · [Full Plan](docs/product/FULL_APP_DEVELOPMENT_PLAN.md)
 > Contributor guide: [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
 ## Quick start
@@ -49,7 +49,7 @@ Experimental: `hpipe ingest --source lab PATH` uses local docling extraction for
 
 ## MCP surface
 
-Early Stage 3 analytical server entrypoint:
+Primary agent-facing runtime surface:
 
 ```bash
 uv run premura-mcp
@@ -58,12 +58,20 @@ uv run premura-mcp --warehouse-path /absolute/path/to/health.duckdb
 
 By default it resolves the warehouse from `HPIPE_DATA_DIR/duck/health.duckdb`.
 
+This is the default analytical path. Direct DuckDB and notebook work remain available, but they are expert fallback interfaces rather than the main product flow.
+
 Current tools:
 
 - `query_warehouse`
 - `list_metrics`
 - `metric_summary`
+- `resting_hr_status`
+- `resting_hr_trend`
+- `steps_trend`
+- `weight_trend`
+- `sleep_deep_pct_baseline`
+- `hrv_change_around_date`
 
-`query_warehouse` returns up to 200 rows by default and accepts `max_rows` up to 1000.
+`query_warehouse` returns up to 200 rows by default and accepts `max_rows` up to 1000. The six signal-backed tools return structured `available` / `missing_input` / `stale_input` / `insufficient_data` payloads for those question shapes.
 
-Tests: `uv run python -m pytest -q` (17 passing).
+Tests: `uv run python -m pytest -q`. See [STATUS.md](docs/operations/STATUS.md) for the current shipped pass count and coverage summary.
