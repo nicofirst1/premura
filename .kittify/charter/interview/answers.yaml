@@ -3,19 +3,23 @@ mission: "software-dev"
 profile: "comprehensive"
 answers:
   project_intent: >
-    Premura is a user-friendly health app that lifts heavy work onto skilled
-    agents so that a person can feel empowered about their own health. It
-    addresses two audiences: people who are scared to go to the doctor in
-    case something is wrong, and people who have already seen many doctors
-    without receiving a proper diagnosis or feeling listened to. The app's
-    "interpretations" must be grounded in real science; the goal is to
-    give the user a clear understanding of what might be going on so they
-    can bring evidence to a doctor and ask for the right follow-up tests
-    or help. A secondary goal is to lift some of the routine work off
-    doctors. The current technical foundation is a local-first Python
-    pipeline (DuckDB warehouse, age-encrypted artifacts) that ingests
-    monthly GDPR-style health exports; an agent-facing surface will be
-    layered on top without breaking the local-first stance.
+    Premura is a local-first, agent-operable health reasoning substrate.
+    The agent is the primary operational client; the human is the primary
+    beneficiary. A human supplies source artifacts, questions, goals, and
+    approvals; the agent does most of the internal work: ingesting,
+    normalizing, selecting signals, analyzing, comparing, explaining, and
+    proposing extensions. The purpose is to help a person understand what
+    might be going on in their own health data so they can bring grounded,
+    evidence-backed questions to a doctor and ask for the right follow-up
+    tests or help. This still serves people who are afraid to go to the
+    doctor in case something is wrong and people who have already seen many
+    doctors without receiving a proper diagnosis or feeling listened to.
+    The system's interpretations must be grounded in real science and must
+    never overstate diagnostic confidence. The current technical foundation
+    is a local-first Python pipeline (DuckDB warehouse, age-encrypted
+    artifacts) that ingests monthly GDPR-style health exports; the shipped
+    MCP/tool surface is already the default analytical path, while direct
+    SQL or notebook work remains an expert fallback.
   languages_frameworks: >
     Python 3.11+ (single language; no frontend yet). Core libraries:
     typer + rich (CLI), pydantic + pydantic-settings (config), DuckDB
@@ -79,22 +83,28 @@ answers:
     via the spec-kitty merge workflow. Release artifacts are git tags
     (v1.0.0 is the current release); semver applies once external users
     exist. No CI/CD, no container, no server-side deploy today -- this
-    is a CLI tool installed via uv. As an agent-facing layer is added,
-    it inherits the same local-first stance unless explicitly amended.
+    is a local-first Python toolchain installed via uv. The MCP/tool
+    surface is the default analytical interface, while CLI, DuckDB, and
+    notebook use remain operator or expert fallback paths. Any future
+    agent-facing layer inherits the same local-first stance unless
+    explicitly amended.
   documentation_policy: >
-    docs/product/SPEC.md, docs/architecture/ARCHITECTURE_HISTORY.md,
+    docs/product/DOCTRINE.md, docs/product/SPEC.md,
+    docs/architecture/ARCHITECTURE_HISTORY.md,
     docs/operations/STATUS.md, docs/product/USERJOURNEY.md,
     docs/product/VISION.md, and docs/product/ROADMAP.md form the
     canonical documentation set and MUST stay in sync with shipping
-    behavior; STATUS.md is updated at the end of each mission. Docs are
-    grouped by content domain (product/, architecture/, operations/,
-    research/); see docs/README.md for the full index. README.md is the
-    operator/user quick-start. As external users arrive, every release
-    tag MUST be accompanied by a CHANGELOG entry and a license file at
-    the repo root; user-visible CLI or agent-surface changes MUST be
-    reflected in README.md and the relevant docs. spec-kitty mission
-    artifacts in kitty-specs/ are the source of truth for in-flight
-    work and are not duplicated into docs/.
+    behavior; STATUS.md is updated at the end of each mission.
+    DOCTRINE.md is the source of truth for product stance: agent-primary
+    execution, human-primary purpose. Docs are grouped by content domain
+    (product/, architecture/, operations/, research/); see docs/README.md
+    for the full index. README.md is the quick-start and should present
+    the agent-mediated path as default. As external users arrive, every
+    release tag MUST be accompanied by a CHANGELOG entry and a license
+    file at the repo root; user-visible CLI or agent-surface changes MUST
+    be reflected in README.md and the relevant docs. spec-kitty mission
+    artifacts in kitty-specs/ are the source of truth for in-flight work
+    and are not duplicated into docs/.
   risk_boundaries: >
     Non-negotiable governance boundaries for this project:
     (1) No live API scraping for personal health data -- ingestion uses
@@ -110,7 +120,12 @@ answers:
     the user (including via agents) MUST cite evidence and MUST NOT
     overstate diagnostic confidence. The system suggests questions and
     next steps; it does not diagnose.
-    (4) PHI hygiene -- no PHI in logs, tests, or commits;
+    (4) Human-on-the-loop approvals -- agents may do most internal
+    analytical and integration work autonomously after the human supplies
+    artifacts and goals, but any sensitive external action, policy
+    change, charter or governance change, or over-the-boundary health
+    claim requires explicit human approval first.
+    (5) PHI hygiene -- no PHI in logs, tests, or commits;
     age-encryption is mandatory before any cloud upload; age.key
     permissions are chmod 0600.
   amendment_process: >
