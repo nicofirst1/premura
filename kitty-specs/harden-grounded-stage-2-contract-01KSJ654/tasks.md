@@ -13,9 +13,9 @@ small and surgical; no new signals, no new analysis.
 |----|-------------|----|----------|
 | T001 | Replace registry-truthiness loader guard with explicit `_BUILTINS_LOADED` flag | WP01 | |
 | T002 | Regression test: pre-registered custom signal does not suppress built-ins | WP01 | |
-| T003 | Make `BaselineComparisonResult` numeric fields `float \| None` + add `validate()` | WP02 | |
-| T004 | Stop the `0.0` coercion in `sleep_deep_pct_baseline` and validate the envelope | WP02 | |
-| T005 | Test: baseline reports no fabricated numbers when unavailable/unknown | WP02 | |
+| T003 | Make `BaselineComparisonResult` numeric fields `float \| None` + add `validate()` | WP02 | | [D] |
+| T004 | Stop the `0.0` coercion in `sleep_deep_pct_baseline` and validate the envelope | WP02 | | [D] |
+| T005 | Test: baseline reports no fabricated numbers when unavailable/unknown | WP02 | | [D] |
 | T006 | Build a `MissingInputReport` from the signal's `inputs` + result freshness at the Stage 3 boundary | WP03 | |
 | T007 | Use the signal's `missing_input_hint` as the user-facing message for unavailable answers | WP03 | |
 | T008 | Attach the structured missing-input block for `missing_input`/`stale_input`; keep the four statuses distinct | WP03 | |
@@ -49,9 +49,9 @@ the result's `latest_value`/`baseline_mean` are absent (`None`), while status an
 caveats explain why.
 **Dependencies**: none.
 
-- [ ] T003 In `src/premura/engine/_results.py`, change `BaselineComparisonResult.latest_value` and `baseline_mean` to `float | None = None` and add a `validate()` that forbids a numeric value when `freshness_state is UNAVAILABLE` (latest_value) or `comparison_state is UNKNOWN` (baseline_mean), mirroring `StatusResult.validate`. (WP02)
-- [ ] T004 In `src/premura/engine/comparative_signals.py`, remove the `... else 0.0` coercion in the baseline path; pass through real `None` values and call `.validate()`. (WP02)
-- [ ] T005 In `tests/test_engine_comparative_signals.py`, assert that unavailable/unknown baseline results serialize `latest_value`/`baseline_mean` as `None`, not `0.0`, with honest status/caveats. (WP02)
+- [x] T003 In `src/premura/engine/_results.py`, change `BaselineComparisonResult.latest_value` and `baseline_mean` to `float | None = None` and add a `validate()` that forbids a numeric value when `freshness_state is UNAVAILABLE` (latest_value) or `comparison_state is UNKNOWN` (baseline_mean), mirroring `StatusResult.validate`. (WP02)
+- [x] T004 In `src/premura/engine/comparative_signals.py`, remove the `... else 0.0` coercion in the baseline path; pass through real `None` values and call `.validate()`. (WP02)
+- [x] T005 In `tests/test_engine_comparative_signals.py`, assert that unavailable/unknown baseline results serialize `latest_value`/`baseline_mean` as `None`, not `0.0`, with honest status/caveats. (WP02)
 
 Prompt: [tasks/WP02-baseline-result-shape-honesty.md](tasks/WP02-baseline-result-shape-honesty.md)
 
