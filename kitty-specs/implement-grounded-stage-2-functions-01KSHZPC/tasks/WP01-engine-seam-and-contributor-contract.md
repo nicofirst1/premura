@@ -17,7 +17,8 @@ subtasks:
 - T003
 - T004
 - T005
-shell_pid: '66395'
+shell_pid: "66395"
+agent: "claude:opus:implementer:implementer"
 history:
 - timestamp: '2026-05-26T11:32:28Z'
   agent: gpt-5.4
@@ -211,3 +212,7 @@ Expected outcomes:
 ## Reviewer Guidance
 
 Review this WP against the research findings and `data-model.md`, not against imagined future needs. The seam should be clearly better for contributors, but still simple, local-first, and compatible with the current engine model.
+
+## Activity Log
+
+- 2026-05-26T11:44:19Z – claude:opus:implementer:implementer – shell_pid=66395 – Assigned agent via action command
