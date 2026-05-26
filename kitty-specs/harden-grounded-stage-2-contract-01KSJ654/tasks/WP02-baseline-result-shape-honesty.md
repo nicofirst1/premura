@@ -151,3 +151,4 @@ Check the actual diff: the two field types are now optional, `validate()` mirror
 ## Activity Log
 
 - 2026-05-26T13:13:56Z – claude:opus:implementer:implementer – shell_pid=35810 – Assigned agent via action command
+- 2026-05-26T13:17:27Z – claude:opus:implementer:implementer – shell_pid=35810 – Ready for review: BaselineComparisonResult float|None + validate(); 0.0 coercion removed; no-fabrication tests
