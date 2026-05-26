@@ -19,6 +19,8 @@ subtasks:
 - T019
 - T020
 - T021
+agent: "claude:opus:implementer:implementer"
+shell_pid: "38372"
 history:
 - timestamp: '2026-05-26T11:32:28Z'
   agent: gpt-5.4
@@ -178,3 +180,7 @@ Expected outcomes:
 ## Reviewer Guidance
 
 Review this WP as a boundary-enforcement change. The key question is whether the new Stage 3 tools genuinely route through Stage 2 and tell the truth about why an answer is or is not available.
+
+## Activity Log
+
+- 2026-05-26T12:20:03Z – claude:opus:implementer:implementer – shell_pid=38372 – Started implementation via action command
