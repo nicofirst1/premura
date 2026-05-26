@@ -2,7 +2,7 @@
   "event_count": 18,
   "last_event_id": "01KSJ7TZAQE7AKYMRGGP077Q9S",
   "materialized_at": "2026-05-26T13:33:26.231043+00:00",
-  "mission_number": "",
+  "mission_number": "4",
   "mission_slug": "harden-grounded-stage-2-contract-01KSJ654",
   "mission_type": "software-dev",
   "summary": {
