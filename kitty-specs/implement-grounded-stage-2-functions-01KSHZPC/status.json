@@ -2,7 +2,7 @@
   "event_count": 30,
   "last_event_id": "01KSJ4YVTWZAZ1BZG37VWJ21F9",
   "materialized_at": "2026-05-26T12:43:07.996802+00:00",
-  "mission_number": "",
+  "mission_number": "3",
   "mission_slug": "implement-grounded-stage-2-functions-01KSHZPC",
   "mission_type": "software-dev",
   "summary": {
