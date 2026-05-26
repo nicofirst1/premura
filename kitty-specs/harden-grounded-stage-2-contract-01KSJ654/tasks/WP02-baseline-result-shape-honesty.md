@@ -16,7 +16,7 @@ subtasks:
 - T003
 - T004
 - T005
-shell_pid: '35810'
+shell_pid: "35810"
 history: []
 authoritative_surface: src/premura/engine/
 execution_mode: code_change
@@ -25,6 +25,7 @@ owned_files:
 - src/premura/engine/comparative_signals.py
 - tests/test_engine_comparative_signals.py
 tags: []
+agent: "claude:opus:implementer:implementer"
 ---
 
 # Work Package Prompt: WP02 — Baseline Result-Shape Honesty
@@ -146,3 +147,7 @@ uv run python -m pytest tests/ -q -k engine    # no regression
 Check the actual diff: the two field types are now optional, `validate()` mirrors
 `StatusResult`'s honesty rule, the `0.0` coercions are gone, and the tests assert
 `None` (not `0.0`). Confirm no MCP or loader files were touched.
+
+## Activity Log
+
+- 2026-05-26T13:13:56Z – claude:opus:implementer:implementer – shell_pid=35810 – Assigned agent via action command
