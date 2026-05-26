@@ -6,5 +6,7 @@
   "mission_slug": "close-stage-3-direct-read-exception-01KSJVFG",
   "mission_type": "software-dev",
   "slug": "close-stage-3-direct-read-exception-01KSJVFG",
-  "target_branch": "master"
+  "target_branch": "master",
+  "vcs": "git",
+  "source_description": "Close the Stage 3 direct-read exception (GitHub issue #5): re-back the agent-facing MCP catalog tools (list_metrics, metric_summary) through new validity-gated Stage 2 engine functions returning a validity/imputation envelope, make query_warehouse operator-only behind an explicit build flag, drop metric_summary's un-gated all-time extrema, remove the STAGES.md 'Known exception (temporary)' note, and add ADR 0004. No new signals; profile-dependent work stays deferred to #6."
 }
