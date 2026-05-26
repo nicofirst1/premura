@@ -17,8 +17,8 @@ subtasks:
 - T009
 - T010
 - T011
-agent: "claude:opus:implementer:implementer"
-shell_pid: "30909"
+agent: "claude:opus:reviewer:reviewer"
+shell_pid: "80375"
 history:
 - timestamp: '2026-05-26T11:32:28Z'
   agent: gpt-5.4
@@ -218,3 +218,4 @@ Review these functions as user-answering tools, not as analytics. The main revie
 
 - 2026-05-26T11:54:33Z – claude:opus:implementer:implementer – shell_pid=30909 – Started implementation via action command
 - 2026-05-26T12:03:28Z – claude:opus:implementer:implementer – shell_pid=30909 – Ready for review: four descriptive signals with freshness/gap/carried-forward honesty. NOTE: descriptive_signals not yet in WP01-owned _BUILTIN_SIGNAL_MODULES; one-line registration follow-up needed for production auto-discovery (tests register explicitly and prove compute() resolution).
+- 2026-05-26T12:06:43Z – claude:opus:reviewer:reviewer – shell_pid=80375 – Started review via action command
