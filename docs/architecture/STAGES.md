@@ -44,6 +44,17 @@ Parsers turn a vendor artifact into rows in `hp.fact_measurement` / `hp.fact_int
 
 Deterministic Python functions that turn raw rows into *answerable* signals. This is the stage the user named when describing "compound and creating new signals" and "two blood samples separated by 10 years probably can't be used."
 
+**Shipped today (first grounded answers).** Stage 2 now hosts six grounded, freshness-aware answers in addition to the derived lab ratios. They read only the user's own warehouse data and return shared result envelopes (`status`, `trend`, `baseline`, `change`) defined in `src/premura/engine/_results.py`; the contributor rules live in `src/premura/engine/CONTRACT.md`. The six:
+
+- `resting_hr_status` — current resting HR with an honest freshness verdict (status).
+- `resting_hr_trend` — direction of resting HR over recent weeks, gaps and carried-forward points made visible (trend).
+- `steps_trend` — direction of daily steps; missing days stay gaps and are never imputed (trend).
+- `weight_trend` — direction of body weight over the last month, carry-forward within the freshness window flagged (trend).
+- `sleep_deep_pct_baseline` — latest deep-sleep percentage versus the user's **own** recent normal (baseline).
+- `hrv_change_around_date` — plain before/after average of overnight HRV around a user-named date (change).
+
+These are **descriptive and comparative only**: no reference ranges, no diagnosis, no statistical significance, no causation. A `change` answer never reports a p-value or implies the named date caused anything; a `baseline` is the user's own history, never a population norm. They refuse to answer (stale / unavailable / insufficient data) rather than present a misleading result. Profile-dependent answers (e.g. BMI, age-adjusted interpretation) are **not** here — they stay deferred to issue `#6`.
+
 Four families of function:
 
 - **Time-validity** — per-metric freshness window declared in `dim_metric` (new column). HRV stales in hours; weight in weeks; blood lipids in months; DXA scan effectively forever. The processor refuses to treat values past their window as "current" without an explicit override.
@@ -55,10 +66,15 @@ Signal processing has no external dependencies. No network, no LLM. It must be i
 
 ### 3. MCP
 
-The MCP server exposes signal-processing functions as tools an LLM can call: `correlate`, `paired_t_test`, `rolling_mean`, `change_point`, plus PubMed search/fetch and the signal selector.
+The MCP server exposes Stage 2 signal functions as tools an LLM can call. The long-term surface still includes `correlate`, `paired_t_test`, `rolling_mean`, `change_point`, PubMed search/fetch, and a signal selector — those remain future work. What ships today is nine tools (`src/premura/mcp/server.py`, `entrypoint.py`):
 
-- The LLM never returns effect sizes from its priors — it calls a tool, receives `{effect, n, p, ci, is_imputed_pct, validity_status}`, and narrates.
-- Every PubMed citation must round-trip through `pubmed_fetch(pmid=…)`.
+- **Three raw warehouse tools** — `query_warehouse`, `list_metrics`, `metric_summary`. These run read-only SQL straight against `hp.*` and are the low-level exploratory escape hatch.
+- **Six signal-backed tools** — `resting_hr_status`, `resting_hr_trend`, `steps_trend`, `weight_trend`, `sleep_deep_pct_baseline`, `hrv_change_around_date`. Each opens the warehouse read-only and **delegates to the Stage 2 engine** instead of running its own SQL against the fact tables. They return a structured payload whose `status` field (`available` / `missing_input` / `stale_input` / `insufficient_data`) keeps each refusal reason distinct.
+
+Other principles, still the target shape:
+
+- The LLM never returns effect sizes from its priors — it calls a tool, receives a structured result, and narrates.
+- Every PubMed citation must round-trip through `pubmed_fetch(pmid=…)` (PubMed tooling is not built yet).
 - MCP is the only stage that talks to a model and the only stage that may make a network call. Network calls are user-initiated, never background.
 
 ### 4. User interface
@@ -86,7 +102,8 @@ A feature with no stage assignment tends to slide into "everything is everything
 
 ## Boundary contracts
 
-- MCP never reads `fact_measurement` directly — always through a signal-processing function that has already applied validity + imputation policy.
+- **Target contract:** MCP reaches `fact_measurement` only through a signal-processing function that has already applied validity + imputation policy.
+- **Where we are today:** the six signal-backed tools honor that contract — they delegate to the Stage 2 engine and never touch the fact tables directly. The three raw tools (`query_warehouse` / `list_metrics` / `metric_summary`) still read `hp.*` directly. So the direct-read debt is **narrowed, not gone**: for the six approved question shapes Stage 3 goes through Stage 2, but general direct-read access still exists via the raw exploratory tools. Replacing those raw reads everywhere is deliberately out of scope here.
 - UI never reads `fact_measurement` directly — always through MCP tools (even when invoked locally without a remote LLM, the MCP boundary is the API).
 - Ingest never calls signal processing. The warehouse must be reconstructible from raws alone.
 

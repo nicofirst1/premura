@@ -36,13 +36,38 @@ from datetime import UTC, datetime, timedelta
 from importlib import import_module
 from typing import TYPE_CHECKING, Any
 
-from ._registry import REGISTRY, SignalSpec, signal
+from ._registry import REGISTRY, RESULT_FAMILIES, SignalSpec, signal
+from ._results import (
+    BaselineComparisonResult,
+    ChangeAroundDateResult,
+    ComparisonState,
+    FreshnessState,
+    MissingInputReport,
+    StatusResult,
+    TrendDirection,
+    TrendPoint,
+    TrendResult,
+)
 
 if TYPE_CHECKING:
     import duckdb
 
+# Static list of built-in signal modules, in load order. Each module must
+# expose ``register_builtin_signals()`` which populates :data:`REGISTRY`.
+# Importing ``premura.engine`` does NOT import any of these — they are loaded
+# lazily by :func:`_ensure_builtin_signals_loaded` the first time a query or
+# compute helper needs the built-in signals. Later Stage 2 WPs add their
+# family modules (e.g. ``vitals_trends``) to this list; no filesystem scanning
+# and no eager import keeps the open-boundary, lazy-load posture intact.
+_BUILTIN_SIGNAL_MODULES: tuple[str, ...] = (
+    "premura.engine.lab_ratios",
+    "premura.engine.descriptive_signals",
+    "premura.engine.comparative_signals",
+)
+
 __all__ = [
     "REGISTRY",
+    "RESULT_FAMILIES",
     "SignalSpec",
     "signal",
     "compute",
@@ -50,6 +75,16 @@ __all__ = [
     "list_auto_safe",
     "check_inputs_available",
     "list_unavailable",
+    # Result envelopes (premura.engine._results)
+    "FreshnessState",
+    "TrendDirection",
+    "ComparisonState",
+    "StatusResult",
+    "TrendPoint",
+    "TrendResult",
+    "BaselineComparisonResult",
+    "ChangeAroundDateResult",
+    "MissingInputReport",
 ]
 
 
@@ -144,8 +179,9 @@ def list_unavailable(
 def _ensure_builtin_signals_loaded() -> None:
     if REGISTRY:
         return
-    module = import_module("premura.engine.lab_ratios")
-    module.register_builtin_signals()
+    for module_name in _BUILTIN_SIGNAL_MODULES:
+        module = import_module(module_name)
+        module.register_builtin_signals()
 
 
 def _persist_derived_rows(

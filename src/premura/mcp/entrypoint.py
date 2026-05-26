@@ -58,6 +58,60 @@ def build_server(*, warehouse_path: Path | None = None) -> FastMCP:
             )
         }
 
+    # --- Signal-backed tools (WP04) -------------------------------------- #
+    # These are the supported path for the six approved Stage 2 answers. Each
+    # delegates to the grounded signal engine and returns a structured payload
+    # whose ``status`` field distinguishes available / missing_input /
+    # stale_input / insufficient_data without collapsing into a generic error.
+
+    @mcp.tool()
+    def resting_hr_status() -> dict[str, Any]:
+        """Latest resting heart rate with an explicit freshness verdict."""
+        return warehouse_server.resting_hr_status(warehouse_path=warehouse_path)
+
+    @mcp.tool()
+    def resting_hr_trend(lookback_days: int | None = None) -> dict[str, Any]:
+        """Recent resting-heart-rate trend with gap and imputation visibility."""
+        return warehouse_server.resting_hr_trend(
+            lookback_days=lookback_days, warehouse_path=warehouse_path
+        )
+
+    @mcp.tool()
+    def steps_trend(lookback_days: int | None = None) -> dict[str, Any]:
+        """Recent daily-steps trend; missing days stay gaps and are never imputed."""
+        return warehouse_server.steps_trend(
+            lookback_days=lookback_days, warehouse_path=warehouse_path
+        )
+
+    @mcp.tool()
+    def weight_trend(lookback_days: int | None = None) -> dict[str, Any]:
+        """Recent body-weight trend with freshness and carried-forward caveats."""
+        return warehouse_server.weight_trend(
+            lookback_days=lookback_days, warehouse_path=warehouse_path
+        )
+
+    @mcp.tool()
+    def sleep_deep_pct_baseline(baseline_days: int | None = None) -> dict[str, Any]:
+        """Compare the latest deep-sleep percentage to the user's own recent baseline."""
+        return warehouse_server.sleep_deep_pct_baseline(
+            baseline_days=baseline_days, warehouse_path=warehouse_path
+        )
+
+    @mcp.tool()
+    def hrv_change_around_date(
+        anchor_date: str, window_days: int | None = None
+    ) -> dict[str, Any]:
+        """Compare overnight HRV before/after the given anchor date (YYYY-MM-DD).
+
+        No significance or causation is claimed; ``anchor_date`` is the
+        user-supplied change date the comparison is centered on.
+        """
+        return warehouse_server.hrv_change_around_date(
+            anchor_date,
+            window_days=window_days,
+            warehouse_path=warehouse_path,
+        )
+
     return mcp
 
 

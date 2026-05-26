@@ -47,6 +47,8 @@ Estimated effort: 4–5 days once a docling spike confirms extraction quality on
 ## Big idea — health-research MCP server
 
 > Tracked as missions **M1** (boundary spike) and **M2** (first analytical server, warehouse-query tools only — stats and PubMed deferred to follow-on missions) in [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md). The full surface described below is the long-term shape, not the M2 scope.
+>
+> **Shipped since:** the first MCP query surface (`query_warehouse`, `list_metrics`, `metric_summary`) now exists, and a later mission added six grounded Stage 2 signals plus six signal-backed Stage 3 tools that route through them (current resting HR, resting-HR trend, steps trend, weight trend, deep-sleep vs own baseline, overnight-HRV change around a date — see [STATUS.md](../operations/STATUS.md) and [STAGES.md](../architecture/STAGES.md)). Those six question shapes are no longer hypothetical and no longer depend on raw-table reads. Everything else in this section — deterministic stats tools, PubMed, the literature↔warehouse bridge, the signal selector — remains future work. Profile-dependent answers (BMI, age-adjusted interpretation) stay deferred to issue `#6`.
 
 A single MCP server that exposes:
 
@@ -68,10 +70,10 @@ Worth building, with two caveats:
 1. **Determinism via tools, not narration.** The LLM should call `correlate(metric_a="hrv_rmssd_overnight", metric_b="sleep_deep_pct", window_days=90)` and receive `{r=0.42, n=78, p=0.0001, ci=[0.21, 0.59]}`. Never let it report effect sizes from inside its own head. Code is the ground truth.
 2. **PubMed retrieval is the easy part. Citing it accurately is the hard part.** The LLM will invent DOIs if you let it. Force every claim to round-trip through `pubmed_fetch(pmid=...)`; reject any cited finding the tool can't echo back.
 
-### Concrete build order, if pursued
+### Concrete build order
 
-1. New module `src/premura/mcp/server.py` using the `mcp` Python SDK. Tools: `query_warehouse`, `list_metrics`, `metric_summary`.
-2. Add `stats.py` with `correlate`, `paired_t_test`, `rolling_mean`, `change_point` — each returning a structured dict.
+1. ✅ **Done.** `src/premura/mcp/server.py` (+ `entrypoint.py`) using the `mcp` Python SDK. Raw tools `query_warehouse`, `list_metrics`, `metric_summary` shipped, then six signal-backed tools that delegate to the Stage 2 engine for the six approved question shapes.
+2. **Next — `stats.py`** with `correlate`, `paired_t_test`, `rolling_mean`, `change_point` — each returning a structured dict. Not started; this is the statistics layer the current mission deliberately did **not** build.
 3. Add `pubmed.py` wrapper around Entrez (`esearch`, `efetch`); keep responses ≤25 hits.
 4. Expose all of the above through the MCP server. Configure Claude Desktop to load it.
 5. Add a "research notebook" mode: each Q&A round emits a markdown trace into `data/research/YYYY-MM-DD.md` with the tool calls + responses, so findings are reproducible.

@@ -49,6 +49,42 @@ class SignalSpec:
     """The actual function. Set by the @signal(...) decorator. None at definition
     time means the spec was declared without a function body (test-only)."""
 
+    # --- Additive Stage 2 contributor metadata (all OPTIONAL) ---------------
+    # These fields exist so future grounded Stage 2 functions can declare what
+    # they answer and how Stage 3 should surface caveats, WITHOUT changing the
+    # core registration contract above. Existing built-in lab-ratio
+    # registrations leave them at their defaults and do not churn.
+    # See CONTRACT.md (this package) for what each field is for.
+
+    question: str | None = None
+    """Plain-English question the signal answers, for Stage 3 surfacing and
+    review. Example: "What is my resting heart rate right now?". Optional;
+    leave None for derivation-only signals like the lab ratios."""
+
+    family: str | None = None
+    """Shared result family this signal produces, or None for signals that do
+    not use a result envelope (the lab ratios persist derived rows instead).
+    One of :data:`RESULT_FAMILIES` when set: "status" / "trend" / "baseline" /
+    "change". See premura.engine._results for the matching envelopes."""
+
+    missing_input_hint: str | None = None
+    """User-facing guidance Stage 3 can show when a required input is absent.
+    Plain language, no diagnosis or external reference data. Example:
+    "Connect a wearable that records resting heart rate to answer this." """
+
+    caveat_summary: tuple[str, ...] = ()
+    """Short, standing caveats Stage 3 may surface without inventing health
+    claims. These are signal-level disclaimers (e.g. "vendor sleep stages are
+    estimates"), distinct from the per-result ``caveats`` lists in
+    premura.engine._results. Defaults to an empty tuple so existing
+    registrations stay unchanged."""
+
+
+RESULT_FAMILIES: frozenset[str] = frozenset({"status", "trend", "baseline", "change"})
+"""The four logical result families this mission supports. A signal's
+``family`` metadata, when set, must be one of these. Mirrors the result
+envelopes in :mod:`premura.engine._results` and ``data-model.md``."""
+
 
 REGISTRY: dict[str, SignalSpec] = {}
 """Module-level registry. Empty at import time; populated by @signal(...) decorators
@@ -65,6 +101,10 @@ def signal(
     priority: str = "normal",
     auto_safe: bool = False,
     revision: str = "1",
+    question: str | None = None,
+    family: str | None = None,
+    missing_input_hint: str | None = None,
+    caveat_summary: tuple[str, ...] | list[str] = (),
 ) -> Callable:
     """Register a signal function into REGISTRY.
 
@@ -78,10 +118,20 @@ def signal(
         def compute_ast_alt_ratio(conn):
             ...
 
+    The optional ``question``, ``family``, ``missing_input_hint`` and
+    ``caveat_summary`` arguments are the additive Stage 2 contributor metadata
+    described in CONTRACT.md. They default to "unset" so existing derivation
+    signals (the lab ratios) need no churn. When ``family`` is provided it must
+    be one of :data:`RESULT_FAMILIES`.
+
     Re-registering the same `name` overwrites the previous entry. Stage 2
     implementation missions must not register two signals with the same `name`;
     reviewers catch collisions at PR time.
     """
+    if family is not None and family not in RESULT_FAMILIES:
+        raise ValueError(
+            f"signal {name!r} family {family!r} must be one of {sorted(RESULT_FAMILIES)}"
+        )
 
     def deco(fn: Callable) -> Callable:
         REGISTRY[name] = SignalSpec(
@@ -93,6 +143,10 @@ def signal(
             auto_safe=auto_safe,
             revision=revision,
             fn=fn,
+            question=question,
+            family=family,
+            missing_input_hint=missing_input_hint,
+            caveat_summary=tuple(caveat_summary),
         )
         return fn
 

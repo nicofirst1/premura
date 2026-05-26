@@ -154,16 +154,30 @@ def test_metric_summary_rejects_blank_metric_id(tmp_path: Path) -> None:
         metric_summary("   ", warehouse_path=_initialized_warehouse(tmp_path))
 
 
+# The three raw exploratory tools that must remain published unchanged. WP04
+# adds six signal-backed tools alongside them (asserted in
+# tests/test_mcp_signal_tools.py); these are the full nine-tool registry.
+_EXPECTED_TOOLS = sorted(
+    [
+        "list_metrics",
+        "metric_summary",
+        "query_warehouse",
+        "resting_hr_status",
+        "resting_hr_trend",
+        "steps_trend",
+        "weight_trend",
+        "sleep_deep_pct_baseline",
+        "hrv_change_around_date",
+    ]
+)
+
+
 def test_build_server_registers_expected_tools() -> None:
     from premura.mcp.entrypoint import build_server
 
     async def run() -> None:
         server = build_server()
-        assert sorted(tool.name for tool in await server.list_tools()) == [
-            "list_metrics",
-            "metric_summary",
-            "query_warehouse",
-        ]
+        assert sorted(tool.name for tool in await server.list_tools()) == _EXPECTED_TOOLS
 
     asyncio.run(run())
 
@@ -183,11 +197,7 @@ def test_stdio_mcp_server_exposes_tools(tmp_path: Path) -> None:
             async with ClientSession(read_stream, write_stream) as session:
                 await session.initialize()
                 tools = await session.list_tools()
-                assert sorted(tool.name for tool in tools.tools) == [
-                    "list_metrics",
-                    "metric_summary",
-                    "query_warehouse",
-                ]
+                assert sorted(tool.name for tool in tools.tools) == _EXPECTED_TOOLS
 
                 metrics = await session.call_tool("list_metrics", {"limit": 2})
                 assert metrics.isError is False

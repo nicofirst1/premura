@@ -1,19 +1,40 @@
-"""Initial Stage 3 analytical helpers over the local warehouse.
+"""Stage 3 analytical helpers over the local warehouse.
 
-This module is the first executable slice of M2. It does not replace the
-``premura.mcp`` package contract stub yet; instead it provides small,
-read-only helpers that an eventual MCP SDK wrapper can expose as tools.
+This module is the executable slice of M2. It provides small, read-only
+helpers that the MCP entrypoint (:mod:`premura.mcp.entrypoint`) publishes as
+FastMCP tools.
+
+Two families of helpers live here:
+
+* **Raw warehouse tools** (``query_warehouse`` / ``list_metrics`` /
+  ``metric_summary``) — exploratory utilities that run read-only SQL against the
+  warehouse. They are unchanged by WP04 and remain the low-level escape hatch.
+* **Signal-backed tools** (``resting_hr_status`` and friends) — the supported
+  path for the six approved Stage 2 answers. Each one opens the warehouse
+  through the same safe read-only connection, delegates to the Stage 2 signal
+  engine (``premura.engine``) rather than re-implementing any SQL, and returns
+  the engine's structured result serialized into a plain, JSON-safe payload.
+  None of these wrappers touch ``hp.fact_measurement`` / ``hp.fact_interval``
+  directly — the engine owns that.
 """
 
 from __future__ import annotations
 
 from collections.abc import Sequence
+from contextlib import contextmanager
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+from .. import engine
 from ..config import settings
+from ..engine import comparative_signals
 from ..store import duck
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    import duckdb
 
 _READ_ONLY_PREFIXES = ("select", "with", "describe", "show")
 _DEFAULT_QUERY_MAX_ROWS = 200
@@ -30,8 +51,7 @@ def query_warehouse(
     """Execute one read-only query against the warehouse and return JSON-safe rows."""
     _ensure_read_only_sql(sql)
     _ensure_bounded_positive_int("max_rows", max_rows, maximum=_MAX_QUERY_MAX_ROWS)
-    conn = duck.connect(warehouse_path or settings.warehouse_path, read_only=True)
-    try:
+    with _open_warehouse(warehouse_path) as conn:
         result = conn.execute(sql, params or [])
         columns = [col[0] for col in (result.description or [])]
         fetched_rows = result.fetchmany(max_rows + 1)
@@ -44,6 +64,19 @@ def query_warehouse(
             "max_rows": max_rows,
             "truncated": truncated,
         }
+
+
+@contextmanager
+def _open_warehouse(warehouse_path: Path | None) -> Iterator[duckdb.DuckDBPyConnection]:
+    """Open the warehouse through the single safe read-only path and always close it.
+
+    This is the one place that resolves the warehouse location and opens a
+    read-only DuckDB connection. Both the raw SQL tools and the signal-backed
+    wrappers route through here so they share identical, read-only access.
+    """
+    conn = duck.connect(warehouse_path or settings.warehouse_path, read_only=True)
+    try:
+        yield conn
     finally:
         conn.close()
 
@@ -144,6 +177,210 @@ def metric_summary(metric_id: str, *, warehouse_path: Path | None = None) -> dic
     return summary
 
 
+# --------------------------------------------------------------------------- #
+# Signal-backed Stage 3 tools (WP04)
+#
+# Each wrapper opens the warehouse through the same safe read-only path the raw
+# tools use, then delegates entirely to the Stage 2 signal engine. There is NO
+# raw SQL against the fact tables in any of these — the engine owns the math and
+# the freshness/sufficiency verdicts; the wrapper only serializes the result.
+# --------------------------------------------------------------------------- #
+
+# The five spans below are advisory: the Stage 2 signals compute over their own
+# fixed windows. We accept these arguments for a stable, self-describing tool
+# surface and add a transparent caveat when a caller asks for a window the
+# engine does not currently honor, rather than silently pretend it was applied.
+_REQUESTED_WINDOW_CAVEAT = (
+    "A custom window of {requested} day(s) was requested, but this signal "
+    "computes over its own fixed window; the requested value was not applied."
+)
+
+
+def resting_hr_status(*, warehouse_path: Path | None = None) -> dict[str, Any]:
+    """Latest resting heart rate with an explicit freshness verdict (status family)."""
+    return _run_signal("resting_hr_status", warehouse_path=warehouse_path)
+
+
+def resting_hr_trend(
+    *, lookback_days: int | None = None, warehouse_path: Path | None = None
+) -> dict[str, Any]:
+    """Recent resting-heart-rate trend with gap and imputation visibility (trend family)."""
+    _ensure_optional_window("lookback_days", lookback_days, minimum=7, maximum=90)
+    return _run_signal(
+        "resting_hr_trend", warehouse_path=warehouse_path, requested_window=lookback_days
+    )
+
+
+def steps_trend(
+    *, lookback_days: int | None = None, warehouse_path: Path | None = None
+) -> dict[str, Any]:
+    """Recent daily-steps trend without imputing missing days (trend family)."""
+    _ensure_optional_window("lookback_days", lookback_days, minimum=7, maximum=90)
+    return _run_signal(
+        "steps_trend", warehouse_path=warehouse_path, requested_window=lookback_days
+    )
+
+
+def weight_trend(
+    *, lookback_days: int | None = None, warehouse_path: Path | None = None
+) -> dict[str, Any]:
+    """Recent body-weight trend with freshness and carried-forward caveats (trend family)."""
+    _ensure_optional_window("lookback_days", lookback_days, minimum=7, maximum=120)
+    return _run_signal(
+        "weight_trend", warehouse_path=warehouse_path, requested_window=lookback_days
+    )
+
+
+def sleep_deep_pct_baseline(
+    *, baseline_days: int | None = None, warehouse_path: Path | None = None
+) -> dict[str, Any]:
+    """Compare the latest deep-sleep percentage to the user's own baseline (baseline family)."""
+    _ensure_optional_window("baseline_days", baseline_days, minimum=7, maximum=60)
+    return _run_signal(
+        "sleep_deep_pct_baseline",
+        warehouse_path=warehouse_path,
+        requested_window=baseline_days,
+    )
+
+
+def hrv_change_around_date(
+    anchor_date: str,
+    *,
+    window_days: int | None = None,
+    warehouse_path: Path | None = None,
+) -> dict[str, Any]:
+    """Compare overnight HRV before/after a user-supplied anchor date (change family).
+
+    The user-supplied ``anchor_date`` flows straight through to the engine's
+    explicit-anchor path (:func:`premura.engine.comparative_signals.hrv_change_around_date`),
+    NOT the midpoint default that ``engine.compute`` would use. No significance
+    or causation is ever claimed.
+    """
+    parsed_anchor = _parse_anchor_date(anchor_date)
+    _ensure_optional_window("window_days", window_days, minimum=3, maximum=30)
+    with _open_warehouse(warehouse_path) as conn:
+        result = comparative_signals.hrv_change_around_date(conn, parsed_anchor)
+    return _serialize_signal_result(
+        "hrv_change_around_date", result, requested_window=window_days
+    )
+
+
+def _run_signal(
+    spec_name: str,
+    *,
+    warehouse_path: Path | None,
+    requested_window: int | None = None,
+) -> dict[str, Any]:
+    """Open the warehouse, run one registered engine signal, serialize the result."""
+    with _open_warehouse(warehouse_path) as conn:
+        result = engine.compute(spec_name, conn)
+    return _serialize_signal_result(spec_name, result, requested_window=requested_window)
+
+
+def _serialize_signal_result(
+    tool_name: str,
+    result: object,
+    *,
+    requested_window: int | None = None,
+) -> dict[str, Any]:
+    """Turn a Stage 2 result envelope into a plain, tool-friendly MCP payload.
+
+    Every payload carries:
+
+    * ``status`` — one of ``available`` / ``missing_input`` / ``stale_input`` /
+      ``insufficient_data``. Non-success reasons stay structurally distinct so a
+      caller can branch on them instead of parsing a generic error string.
+    * ``message`` — a user-facing sentence (the lead caveat or the missing-input
+      message) so the caller always has something to show.
+    * ``result`` — the full structured envelope via the engine's ``to_dict()``.
+
+    A requested-but-unhonored window is appended as a transparent caveat.
+    """
+    payload = result.to_dict()  # type: ignore[attr-defined]
+    if requested_window is not None:
+        payload["caveats"] = [
+            *payload.get("caveats", []),
+            _REQUESTED_WINDOW_CAVEAT.format(requested=requested_window),
+        ]
+    status = _classify_result_status(payload)
+    return {
+        "tool_name": tool_name,
+        "status": status,
+        "message": _result_message(payload, status),
+        "result": payload,
+    }
+
+
+def _classify_result_status(payload: dict[str, Any]) -> str:
+    """Map a serialized envelope to a structurally-distinct availability status.
+
+    Each unavailable reason gets its own label rather than collapsing into a
+    single error: missing input, stale-but-present input, and insufficient data
+    are different facts the caller may want to act on differently.
+    """
+    family = payload.get("family")
+    if family == "missing_input":
+        return "missing_input"
+    if family == "change":
+        return "available" if payload.get("sufficient_data") else "insufficient_data"
+
+    freshness = payload.get("freshness_state") or payload.get("current_freshness_state")
+    if freshness == "unavailable":
+        # No usable value at all behind a "latest value" answer.
+        return "missing_input"
+
+    if family == "trend":
+        # A trend describes a window; a stale final point is a caveat, not an
+        # unavailable answer. Only genuine sparsity (unknown direction) makes the
+        # trend itself unanswerable.
+        if payload.get("trend_direction") == "unknown":
+            return "insufficient_data"
+        return "available"
+
+    # Status / baseline are single "latest value" answers: a present-but-old
+    # value is a distinct, weaker state than a fresh one.
+    if freshness == "stale":
+        return "stale_input"
+    if family == "baseline" and payload.get("comparison_state") == "unknown":
+        # Present and fresh, but too few prior nights to name a baseline.
+        return "insufficient_data"
+    return "available"
+
+
+def _result_message(payload: dict[str, Any], status: str) -> str:
+    """Pick a single user-facing sentence to accompany the structured result."""
+    if payload.get("family") == "missing_input":
+        return str(payload.get("message", ""))
+    caveats = payload.get("caveats") or []
+    if caveats:
+        return str(caveats[0])
+    if status == "available":
+        return "Answer available."
+    return "This answer is not available right now."
+
+
+def _parse_anchor_date(anchor_date: str) -> date:
+    if not isinstance(anchor_date, str) or not anchor_date.strip():
+        raise ValueError("anchor_date must be a non-empty ISO-8601 date (YYYY-MM-DD)")
+    try:
+        return date.fromisoformat(anchor_date.strip())
+    except ValueError as exc:
+        raise ValueError(
+            f"anchor_date must be an ISO-8601 date (YYYY-MM-DD); got {anchor_date!r}"
+        ) from exc
+
+
+def _ensure_optional_window(
+    name: str, value: int | None, *, minimum: int, maximum: int
+) -> None:
+    if value is None:
+        return
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ValueError(f"{name} must be an integer")
+    if value < minimum or value > maximum:
+        raise ValueError(f"{name} must be between {minimum} and {maximum}")
+
+
 def _ensure_read_only_sql(sql: str) -> None:
     normalized = sql.strip()
     if not normalized:
@@ -179,4 +416,14 @@ def _json_safe(value: object) -> Any:
     return value
 
 
-__all__ = ["list_metrics", "metric_summary", "query_warehouse"]
+__all__ = [
+    "hrv_change_around_date",
+    "list_metrics",
+    "metric_summary",
+    "query_warehouse",
+    "resting_hr_status",
+    "resting_hr_trend",
+    "sleep_deep_pct_baseline",
+    "steps_trend",
+    "weight_trend",
+]

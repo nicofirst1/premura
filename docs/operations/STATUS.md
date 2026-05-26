@@ -11,6 +11,25 @@
 
 **Policy change (2026-05-20)**: as the project starts looking like a real application for others, Drive upload is now **opt-in**, not part of the automated monthly run. `hpipe run-monthly` ends with the encrypted `.age` artifact sitting in `data/exports/YYYY-MM/`; the user decides whether to `hpipe upload` (or hand the file off to another sync mechanism). The `age` private key is stored locally by default, with a password-manager recipe (Bitwarden as a reference) in [`ops/bootstrap.sh`](../../ops/bootstrap.sh).
 
+## Stage 2 / Stage 3 baseline (shipped after v1)
+
+The first grounded analytical behavior now exists on top of the v1 ingest pipeline.
+
+**Stage 2 — six grounded signals.** `src/premura/engine/` ships six freshness-aware answers over the user's own warehouse data (`descriptive_signals.py`, `comparative_signals.py`), registered through the static built-in module list and documented by `src/premura/engine/CONTRACT.md`:
+
+| Signal | Family | Answers |
+|---|---|---|
+| `resting_hr_status` | status | "What is my resting HR right now, and can I trust it?" |
+| `resting_hr_trend` | trend | "Is my resting HR going up / down / flat recently?" |
+| `steps_trend` | trend | "Are my daily steps trending?" (never imputes missing days) |
+| `weight_trend` | trend | "Is my weight rising / falling / flat?" (carry-forward flagged) |
+| `sleep_deep_pct_baseline` | baseline | "Is my latest deep-sleep % below my **own** recent normal?" |
+| `hrv_change_around_date` | change | "Did my overnight HRV shift after a date I name?" |
+
+These are descriptive/comparative only — no reference ranges, no diagnosis, no statistical significance, no causation. They return explicit stale / unavailable / insufficient-data states instead of presenting a misleading answer. Profile-dependent answers (BMI, age-adjusted interpretation) remain deferred to issue `#6`.
+
+**Stage 3 — nine MCP tools.** `src/premura/mcp/` publishes the three preserved raw warehouse tools (`query_warehouse`, `list_metrics`, `metric_summary`) plus six new signal-backed tools — one per Stage 2 answer above. The signal-backed tools delegate to the engine (no direct fact-table SQL) and return a structured payload whose `status` is `available` / `missing_input` / `stale_input` / `insufficient_data`. Direct-read debt is therefore **narrowed for those six question shapes but not eliminated**: the raw tools still read `hp.*` directly for open-ended exploration.
+
 ## What's working end-to-end
 
 | Component | State | Evidence |

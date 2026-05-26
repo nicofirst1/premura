@@ -54,6 +54,11 @@ Aliases recorded in `dim_metric.yaml` must be clinically standard names or abbre
 
 The `derived:` namespace is reserved for outputs of the Stage 2 engine. Parsers must not emit any `metric_id` that starts with `derived:`.
 
+The Stage 2 engine has its own contributor contract at
+`src/premura/engine/CONTRACT.md`. Read it before adding a Stage 2 signal that
+answers a user-facing question (status / trend / baseline / change); it covers
+the result envelopes, required caveats, and what Stage 2 must not claim.
+
 ## Same-PR rule for ontology additions
 
 Every new `metric_id` a parser emits must be added to `src/premura/dim_metric.yaml` in the same PR as the parser code. This is enforced by both review and runtime: reviewers reject parser changes whose declared metrics do not appear in the ontology diff, and the loader rejects any `IngestBatch` whose declared metrics are missing from `dim_metric.yaml`.

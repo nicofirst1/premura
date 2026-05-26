@@ -43,12 +43,13 @@ Premura has already shipped:
 - encryption and opt-in backup flow
 - launchd automation
 - the federated parser plug-in code (`PluginParser`, `IngestBatch`, `dim_metric.yaml` ontology)
-- stub packages for `engine`, `mcp`, and `ui`
+- a real Stage 3 MCP surface — the three raw warehouse tools (`query_warehouse`, `list_metrics`, `metric_summary`) plus six signal-backed tools
+- the first real Stage 2 behavior — six grounded, freshness-aware signals (current resting HR, resting-HR trend, steps trend, weight trend, deep-sleep vs own baseline, overnight-HRV change around a date) with a contributor contract (`src/premura/engine/CONTRACT.md`); `ui` remains a stub
 
-What is still missing is the actual v2 payoff:
+So `engine` and `mcp` are no longer empty stubs: Stage 2 and part of Stage 3 are real for six approved question shapes. What is still missing is the rest of the v2 payoff:
 
-- real Stage 2 signal-processing behavior
-- real Stage 3 analytical tools
+- the deterministic Stage 3 statistics tools (`correlate`, `paired_t_test`, …), PubMed integration, and the signal selector — none of which this first grounded slice built
+- broader Stage 2 coverage beyond the six approved descriptive/comparative answers; the six are non-diagnostic and carry no significance or causation claims, and profile-dependent answers stay deferred to issue `#6`
 - a first new source class beyond the original wearable/app quartet
 - proof that the parser-skill model is viable
 - proof that the teaching/interview layer can be useful rather than aspirational
@@ -76,6 +77,8 @@ This plan follows the conventions established in `ROADMAP_BOOTSTRAP_PLAN.md` §"
 ## Development Phases
 
 ### Phase 1: `v2.0 analytical surface foundation`
+
+> **Status: largely shipped.** The MCP access decision is settled, the first MCP query surface (M2) landed, and a follow-on grounded-signals mission added six Stage 2 answers with six signal-backed Stage 3 tools routed through them. The stage hand-off is real for those six question shapes. Deterministic stats tooling still belongs to Phase 3.
 
 #### Goal
 
@@ -162,7 +165,7 @@ Turn the first MCP surface into an actually useful analytical surface.
 
 #### Why this phase exists
 
-Phase 1 only proves that MCP can safely access the warehouse. This phase proves that Premura can actually support evidence-backed n-of-1 analysis.
+Phase 1 proved that MCP can safely access the warehouse and answer six grounded descriptive/comparative questions through Stage 2. This phase is a different layer: it adds the deterministic *statistics* (correlation, significance tests, change-point detection) and literature grounding that the grounded-signals slice deliberately stayed out of. It proves that Premura can support evidence-backed n-of-1 analysis, not just non-diagnostic descriptive answers.
 
 #### Risks retired
 
