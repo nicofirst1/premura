@@ -50,11 +50,11 @@
 | T019 | Standardize Stage 3 serialization of freshness, missing-input, and insufficient-data outcomes for the new tools. | WP04 |  | [D] |
 | T020 | Update the FastMCP entrypoint so all nine tools are published with stable names and argument shapes. | WP04 |  | [D] |
 | T021 | Add MCP tool tests covering registration plus representative success and failure responses for the six new tools. | WP04 |  | [D] |
-| T022 | Update `docs/architecture/STAGES.md` to reflect the narrowed direct-read debt and the new grounded signal-backed path. | WP05 |  |
-| T023 | Update `docs/operations/STATUS.md` with the new Stage 2 and Stage 3 capabilities after implementation. | WP05 | [P] |
-| T024 | Update `docs/product/ROADMAP.md` so future analytical work starts from the new shipped baseline rather than the old stubbed state. | WP05 | [P] |
-| T025 | Update `docs/product/FULL_APP_DEVELOPMENT_PLAN.md` so phase-level planning no longer describes Stage 2 and Stage 3 as entirely missing. | WP05 | [P] |
-| T026 | Update `docs/product/VISION.md` with a light reference to the first grounded question flows while preserving the privacy and non-diagnostic stance. | WP05 | [P] |
+| T022 | Update `docs/architecture/STAGES.md` to reflect the narrowed direct-read debt and the new grounded signal-backed path. | WP05 |  | [D] |
+| T023 | Update `docs/operations/STATUS.md` with the new Stage 2 and Stage 3 capabilities after implementation. | WP05 | [D] |
+| T024 | Update `docs/product/ROADMAP.md` so future analytical work starts from the new shipped baseline rather than the old stubbed state. | WP05 | [D] |
+| T025 | Update `docs/product/FULL_APP_DEVELOPMENT_PLAN.md` so phase-level planning no longer describes Stage 2 and Stage 3 as entirely missing. | WP05 | [D] |
+| T026 | Update `docs/product/VISION.md` with a light reference to the first grounded question flows while preserving the privacy and non-diagnostic stance. | WP05 | [D] |
 
 ## Work Packages
 
@@ -213,11 +213,11 @@ Reviewer focus:
 - Estimated prompt size: ~280 lines
 
 Included subtasks:
-- [ ] T022 Update `docs/architecture/STAGES.md` to reflect the narrowed direct-read debt and the new grounded signal-backed path. (WP05)
-- [ ] T023 Update `docs/operations/STATUS.md` with the new Stage 2 and Stage 3 capabilities after implementation. (WP05)
-- [ ] T024 Update `docs/product/ROADMAP.md` so future analytical work starts from the new shipped baseline rather than the old stubbed state. (WP05)
-- [ ] T025 Update `docs/product/FULL_APP_DEVELOPMENT_PLAN.md` so phase-level planning no longer describes Stage 2 and Stage 3 as entirely missing. (WP05)
-- [ ] T026 Update `docs/product/VISION.md` with a light reference to the first grounded question flows while preserving the privacy and non-diagnostic stance. (WP05)
+- [x] T022 Update `docs/architecture/STAGES.md` to reflect the narrowed direct-read debt and the new grounded signal-backed path. (WP05)
+- [x] T023 Update `docs/operations/STATUS.md` with the new Stage 2 and Stage 3 capabilities after implementation. (WP05)
+- [x] T024 Update `docs/product/ROADMAP.md` so future analytical work starts from the new shipped baseline rather than the old stubbed state. (WP05)
+- [x] T025 Update `docs/product/FULL_APP_DEVELOPMENT_PLAN.md` so phase-level planning no longer describes Stage 2 and Stage 3 as entirely missing. (WP05)
+- [x] T026 Update `docs/product/VISION.md` with a light reference to the first grounded question flows while preserving the privacy and non-diagnostic stance. (WP05)
 
 Implementation sketch:
 1. Update architecture truth first so the cross-stage boundary story is current.
