@@ -217,3 +217,4 @@ Review these functions as user-answering tools, not as analytics. The main revie
 ## Activity Log
 
 - 2026-05-26T11:54:33Z – claude:opus:implementer:implementer – shell_pid=30909 – Started implementation via action command
+- 2026-05-26T12:03:28Z – claude:opus:implementer:implementer – shell_pid=30909 – Ready for review: four descriptive signals with freshness/gap/carried-forward honesty. NOTE: descriptive_signals not yet in WP01-owned _BUILTIN_SIGNAL_MODULES; one-line registration follow-up needed for production auto-discovery (tests register explicitly and prove compute() resolution).
