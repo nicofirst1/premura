@@ -16,7 +16,7 @@ subtasks:
 - T003
 - T004
 - T005
-shell_pid: "35810"
+shell_pid: "4188"
 history: []
 authoritative_surface: src/premura/engine/
 execution_mode: code_change
@@ -25,7 +25,7 @@ owned_files:
 - src/premura/engine/comparative_signals.py
 - tests/test_engine_comparative_signals.py
 tags: []
-agent: "claude:opus:implementer:implementer"
+agent: "claude:opus:reviewer:reviewer"
 ---
 
 # Work Package Prompt: WP02 — Baseline Result-Shape Honesty
@@ -152,3 +152,4 @@ Check the actual diff: the two field types are now optional, `validate()` mirror
 
 - 2026-05-26T13:13:56Z – claude:opus:implementer:implementer – shell_pid=35810 – Assigned agent via action command
 - 2026-05-26T13:17:27Z – claude:opus:implementer:implementer – shell_pid=35810 – Ready for review: BaselineComparisonResult float|None + validate(); 0.0 coercion removed; no-fabrication tests
+- 2026-05-26T13:21:35Z – claude:opus:reviewer:reviewer – shell_pid=4188 – Started review via action command
