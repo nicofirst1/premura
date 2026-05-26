@@ -14,7 +14,7 @@ created_at: '2026-05-26T13:13:52.859373+00:00'
 subtasks:
 - T001
 - T002
-shell_pid: '35810'
+shell_pid: "35810"
 history: []
 authoritative_surface: src/premura/engine/
 execution_mode: code_change
@@ -22,6 +22,7 @@ owned_files:
 - src/premura/engine/__init__.py
 - tests/test_engine_contract.py
 tags: []
+agent: "claude:opus:implementer:implementer"
 ---
 
 # Work Package Prompt: WP01 — Built-in Loader Honesty
@@ -131,3 +132,7 @@ Confirm the early-return now keys off the explicit flag, the flag is set only
 after successful import, the lazy guarantee still holds, and the regression test
 actually fails against the old `if REGISTRY: return` logic (mentally or by
 checking it exercises the pre-registration path).
+
+## Activity Log
+
+- 2026-05-26T13:13:53Z – claude:opus:implementer:implementer – shell_pid=35810 – Assigned agent via action command
