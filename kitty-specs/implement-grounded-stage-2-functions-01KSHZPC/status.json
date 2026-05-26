@@ -1,0 +1,56 @@
+{
+  "event_count": 5,
+  "last_event_id": "01KSJ16PH76A49PPW306RK1BR6",
+  "materialized_at": "2026-05-26T11:37:30.407256+00:00",
+  "mission_number": "",
+  "mission_slug": "implement-grounded-stage-2-functions-01KSHZPC",
+  "mission_type": "software-dev",
+  "summary": {
+    "approved": 0,
+    "blocked": 0,
+    "canceled": 0,
+    "claimed": 0,
+    "done": 0,
+    "for_review": 0,
+    "in_progress": 0,
+    "in_review": 0,
+    "planned": 5
+  },
+  "work_packages": {
+    "WP01": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KSJ16PDCT06SHKQVWCQD9KQ1",
+      "last_transition_at": "2026-05-26T11:37:30.284892+00:00"
+    },
+    "WP02": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KSJ16PH0F2CTS67G4N5TMCE2",
+      "last_transition_at": "2026-05-26T11:37:30.400422+00:00"
+    },
+    "WP03": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KSJ16PH225HW5YANXX4BRW5J",
+      "last_transition_at": "2026-05-26T11:37:30.402849+00:00"
+    },
+    "WP04": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KSJ16PH4KQKPT35AEQNB4SF7",
+      "last_transition_at": "2026-05-26T11:37:30.404839+00:00"
+    },
+    "WP05": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KSJ16PH76A49PPW306RK1BR6",
+      "last_transition_at": "2026-05-26T11:37:30.407256+00:00"
+    }
+  }
+}
