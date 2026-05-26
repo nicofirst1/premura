@@ -17,6 +17,8 @@ subtasks:
 - T009
 - T010
 - T011
+agent: "claude:opus:implementer:implementer"
+shell_pid: "30909"
 history:
 - timestamp: '2026-05-26T11:32:28Z'
   agent: gpt-5.4
@@ -211,3 +213,7 @@ Expected outcomes:
 ## Reviewer Guidance
 
 Review these functions as user-answering tools, not as analytics. The main review question is whether they tell the truth about freshness and sparsity, not whether they are mathematically fancy.
+
+## Activity Log
+
+- 2026-05-26T11:54:33Z – claude:opus:implementer:implementer – shell_pid=30909 – Started implementation via action command
