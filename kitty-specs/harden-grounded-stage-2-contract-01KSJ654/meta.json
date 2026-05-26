@@ -1,0 +1,10 @@
+{
+  "created_at": "2026-05-26T13:04:02.959840+00:00",
+  "friendly_name": "harden grounded stage 2 contract",
+  "mission_id": "01KSJ654VMJWKKFT6VQY4B1P5K",
+  "mission_number": null,
+  "mission_slug": "harden-grounded-stage-2-contract-01KSJ654",
+  "mission_type": "software-dev",
+  "slug": "harden-grounded-stage-2-contract-01KSJ654",
+  "target_branch": "master"
+}
