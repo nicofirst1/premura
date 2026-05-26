@@ -18,8 +18,8 @@ subtasks:
 - T024
 - T025
 - T026
-agent: "claude:opus:implementer:implementer"
-shell_pid: "89784"
+agent: "claude:opus:reviewer:reviewer"
+shell_pid: "15250"
 history:
 - timestamp: '2026-05-26T11:32:28Z'
   agent: gpt-5.4
@@ -157,3 +157,4 @@ Review these docs against the shipped code, not against the ideal future archite
 
 - 2026-05-26T12:34:10Z – claude:opus:implementer:implementer – shell_pid=89784 – Started implementation via action command
 - 2026-05-26T12:40:16Z – claude:opus:implementer:implementer – shell_pid=89784 – Ready for review: five docs synced to shipped Stage 2/3 baseline; direct-read debt narrowed not eliminated; #6 still deferred
+- 2026-05-26T12:40:43Z – claude:opus:reviewer:reviewer – shell_pid=15250 – Started review via action command

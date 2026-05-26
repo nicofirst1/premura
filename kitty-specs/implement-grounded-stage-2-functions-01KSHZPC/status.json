@@ -1,7 +1,7 @@
 {
-  "event_count": 28,
-  "last_event_id": "01KSJ4SKVSZVAHN42X9VWH2BVV",
-  "materialized_at": "2026-05-26T12:40:15.993739+00:00",
+  "event_count": 29,
+  "last_event_id": "01KSJ4TEKB4AH1FB0E4FZ0D76R",
+  "materialized_at": "2026-05-26T12:40:43.371128+00:00",
   "mission_number": "",
   "mission_slug": "implement-grounded-stage-2-functions-01KSHZPC",
   "mission_type": "software-dev",
@@ -11,9 +11,9 @@
     "canceled": 0,
     "claimed": 0,
     "done": 0,
-    "for_review": 1,
+    "for_review": 0,
     "in_progress": 0,
-    "in_review": 0,
+    "in_review": 1,
     "planned": 0
   },
   "work_packages": {
@@ -46,11 +46,11 @@
       "last_transition_at": "2026-05-26T12:33:37.807157+00:00"
     },
     "WP05": {
-      "actor": "user",
+      "actor": "claude:opus:reviewer:reviewer",
       "force_count": 1,
-      "lane": "for_review",
-      "last_event_id": "01KSJ4SKVSZVAHN42X9VWH2BVV",
-      "last_transition_at": "2026-05-26T12:40:15.993739+00:00"
+      "lane": "in_review",
+      "last_event_id": "01KSJ4TEKB4AH1FB0E4FZ0D76R",
+      "last_transition_at": "2026-05-26T12:40:43.371128+00:00"
     }
   }
 }
