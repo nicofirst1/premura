@@ -3,7 +3,7 @@
 > Status: live reference. Snapshot of what is true and shipped today.
 >
 > Companion to [SPEC.md](../product/SPEC.md), [ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](../product/USERJOURNEY.md), [ROADMAP.md](../product/ROADMAP.md).
-> Snapshot date: **2026-05-21**.
+> Snapshot date: **2026-05-26**.
 
 ## TL;DR
 
@@ -28,7 +28,7 @@ The first grounded analytical behavior now exists on top of the v1 ingest pipeli
 
 These are descriptive/comparative only — no reference ranges, no diagnosis, no statistical significance, no causation. They return explicit stale / unavailable / insufficient-data states instead of presenting a misleading answer. Profile-dependent answers (BMI, age-adjusted interpretation) remain deferred to issue `#6`.
 
-**Stage 3 — nine MCP tools.** `src/premura/mcp/` publishes the three preserved raw warehouse tools (`query_warehouse`, `list_metrics`, `metric_summary`) plus six new signal-backed tools — one per Stage 2 answer above. The signal-backed tools delegate to the engine (no direct fact-table SQL) and return a structured payload whose `status` is `available` / `missing_input` / `stale_input` / `insufficient_data`. Direct-read debt is therefore **narrowed for those six question shapes but not eliminated**: the raw tools still read `hp.*` directly for open-ended exploration.
+**Stage 3 — nine MCP tools.** `src/premura/mcp/` publishes the three preserved raw warehouse tools (`query_warehouse`, `list_metrics`, `metric_summary`) plus six new signal-backed tools — one per Stage 2 answer above. The signal-backed tools delegate to the engine (no direct fact-table SQL) and return a structured payload whose `status` is `available` / `missing_input` / `stale_input` / `insufficient_data`. When an answer is unavailable, the payload's `message` carries the signal's authored missing-input guidance (which data to connect or record), and `missing_input` / `stale_input` responses also attach a structured `missing_input` report (`required_inputs` / `missing_inputs` / `stale_inputs`) a caller can branch on. Direct-read debt is therefore **narrowed for those six question shapes but not eliminated**: the raw tools still read `hp.*` directly for open-ended exploration.
 
 ## What's working end-to-end
 
@@ -46,7 +46,7 @@ These are descriptive/comparative only — no reference ranges, no diagnosis, no
 | Export artifact encryption | ✅ | Live round-trip verified 2026-05-21 against `~/.config/premura/age.key`; decrypted snapshot byte-identical to `data/duck/health.duckdb` (`diff` empty). Per-test keypair regression in `tests/test_encrypt_roundtrip.py`. |
 | Drive upload (now OPT-IN, not auto) | ⚠️ Code complete, not live | `hpipe upload` only runs on explicit invocation. `run-monthly` no longer pushes to Drive — it stops after the encrypted artifact lands locally. |
 | Launchd plist | ✅ | Bootstrapped 2026-05-21 (`com.nbrandizzi.premura.monthly`). `kickstart` fired the macOS notification, `run-monthly` reached the `_wait_for_ready` loop without ingesting (no `.ready`), exited cleanly on SIGTERM. Plist render covered by `tests/test_launchd_plist.py` (incl. `plutil -lint`). |
-| Tests | ✅ | 25/25 pytest pass, incl. a real-data HC regression that round-trips ~900k rows, the FR-6 `age` round-trip suite, and FR-8 plist render + `plutil -lint`. |
+| Tests | ✅ | 134/134 pytest pass, incl. a real-data HC regression that round-trips ~900k rows, the FR-6 `age` round-trip suite, FR-8 plist render + `plutil -lint`, and full Stage 2 engine + Stage 3 signal-tool coverage (all six signal-backed tools exercised end-to-end through the public entrypoint). |
 
 ## Warehouse contents (current snapshot)
 
