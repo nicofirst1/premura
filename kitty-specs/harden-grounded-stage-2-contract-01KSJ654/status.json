@@ -1,7 +1,7 @@
 {
-  "event_count": 9,
-  "last_event_id": "01KSJ701FQ77JZZG20NACFR3SH",
-  "materialized_at": "2026-05-26T13:18:43.703106+00:00",
+  "event_count": 10,
+  "last_event_id": "01KSJ7580BFAJ2QF8WNC03KYR1",
+  "materialized_at": "2026-05-26T13:21:34.219476+00:00",
   "mission_number": "",
   "mission_slug": "harden-grounded-stage-2-contract-01KSJ654",
   "mission_type": "software-dev",
@@ -11,18 +11,18 @@
     "canceled": 0,
     "claimed": 0,
     "done": 0,
-    "for_review": 2,
+    "for_review": 1,
     "in_progress": 0,
-    "in_review": 0,
+    "in_review": 1,
     "planned": 1
   },
   "work_packages": {
     "WP01": {
-      "actor": "user",
+      "actor": "claude:opus:reviewer:reviewer",
       "force_count": 1,
-      "lane": "for_review",
-      "last_event_id": "01KSJ701FQ77JZZG20NACFR3SH",
-      "last_transition_at": "2026-05-26T13:18:43.703106+00:00"
+      "lane": "in_review",
+      "last_event_id": "01KSJ7580BFAJ2QF8WNC03KYR1",
+      "last_transition_at": "2026-05-26T13:21:34.219476+00:00"
     },
     "WP02": {
       "actor": "user",
