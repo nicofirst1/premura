@@ -29,11 +29,11 @@
 
 | ID | Description | WP | Parallel |
 |---|---|---|---|
-| T001 | Add contributor-ready Stage 2 registry metadata without breaking the existing `SignalSpec` core or current lab-ratio behavior. | WP01 |  |
-| T002 | Add shared Stage 2 result-envelope helpers for status, trend, own-baseline, and change-around-date answers. | WP01 |  |
-| T003 | Update Stage 2 lazy built-in loading so current ratios and upcoming signal modules can register without breaking import safety. | WP01 |  |
-| T004 | Add an engine-side contributor contract and route the parser-side contract toward it for future engine PRs. | WP01 | [P] |
-| T005 | Add focused seam and contract tests that lock the Stage 2 extension surface before signal work starts. | WP01 |  |
+| T001 | Add contributor-ready Stage 2 registry metadata without breaking the existing `SignalSpec` core or current lab-ratio behavior. | WP01 |  | [D] |
+| T002 | Add shared Stage 2 result-envelope helpers for status, trend, own-baseline, and change-around-date answers. | WP01 |  | [D] |
+| T003 | Update Stage 2 lazy built-in loading so current ratios and upcoming signal modules can register without breaking import safety. | WP01 |  | [D] |
+| T004 | Add an engine-side contributor contract and route the parser-side contract toward it for future engine PRs. | WP01 | [D] |
+| T005 | Add focused seam and contract tests that lock the Stage 2 extension surface before signal work starts. | WP01 |  | [D] |
 | T006 | Add shared Stage 2 query helpers for freshness-aware latest-value lookup and trend-window extraction from the warehouse. | WP02 |  |
 | T007 | Implement `resting_hr_status` with explicit current/stale/unavailable behavior. | WP02 |  |
 | T008 | Implement `resting_hr_trend` with plain direction output and visible carried-forward points. | WP02 |  |
@@ -69,11 +69,11 @@
 - Estimated prompt size: ~320 lines
 
 Included subtasks:
-- [ ] T001 Add contributor-ready Stage 2 registry metadata without breaking the existing `SignalSpec` core or current lab-ratio behavior. (WP01)
-- [ ] T002 Add shared Stage 2 result-envelope helpers for status, trend, own-baseline, and change-around-date answers. (WP01)
-- [ ] T003 Update Stage 2 lazy built-in loading so current ratios and upcoming signal modules can register without breaking import safety. (WP01)
-- [ ] T004 Add an engine-side contributor contract and route the parser-side contract toward it for future engine PRs. (WP01)
-- [ ] T005 Add focused seam and contract tests that lock the Stage 2 extension surface before signal work starts. (WP01)
+- [x] T001 Add contributor-ready Stage 2 registry metadata without breaking the existing `SignalSpec` core or current lab-ratio behavior. (WP01)
+- [x] T002 Add shared Stage 2 result-envelope helpers for status, trend, own-baseline, and change-around-date answers. (WP01)
+- [x] T003 Update Stage 2 lazy built-in loading so current ratios and upcoming signal modules can register without breaking import safety. (WP01)
+- [x] T004 Add an engine-side contributor contract and route the parser-side contract toward it for future engine PRs. (WP01)
+- [x] T005 Add focused seam and contract tests that lock the Stage 2 extension surface before signal work starts. (WP01)
 
 Implementation sketch:
 1. Extend the registry surface additively so future signal functions can declare the question they answer, the result family they belong to, and user-facing caveat hints without changing the existing execution contract.
