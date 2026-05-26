@@ -2,9 +2,9 @@
   "event_count": 36,
   "last_event_id": "01KSD3N4C04DXQ2RNDNHT48SH0",
   "materialized_at": "2026-05-24T13:44:08.320223+00:00",
-  "mission_number": "",
+  "mission_number": "2",
   "mission_slug": "grounded-extensible-engine-research-01KSD0D1",
-  "mission_type": "research",
+  "mission_type": "software-dev",
   "summary": {
     "approved": 6,
     "blocked": 0,
