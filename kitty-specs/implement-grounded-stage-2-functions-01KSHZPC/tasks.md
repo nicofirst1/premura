@@ -34,12 +34,12 @@
 | T003 | Update Stage 2 lazy built-in loading so current ratios and upcoming signal modules can register without breaking import safety. | WP01 |  | [D] |
 | T004 | Add an engine-side contributor contract and route the parser-side contract toward it for future engine PRs. | WP01 | [D] |
 | T005 | Add focused seam and contract tests that lock the Stage 2 extension surface before signal work starts. | WP01 |  | [D] |
-| T006 | Add shared Stage 2 query helpers for freshness-aware latest-value lookup and trend-window extraction from the warehouse. | WP02 |  |
-| T007 | Implement `resting_hr_status` with explicit current/stale/unavailable behavior. | WP02 |  |
-| T008 | Implement `resting_hr_trend` with plain direction output and visible carried-forward points. | WP02 |  |
-| T009 | Implement `steps_trend` without imputing missing days. | WP02 | [P] |
-| T010 | Implement `weight_trend` with freshness and carried-forward caveats. | WP02 | [P] |
-| T011 | Add descriptive-signal tests covering success, stale inputs, missing inputs, and gap handling. | WP02 |  |
+| T006 | Add shared Stage 2 query helpers for freshness-aware latest-value lookup and trend-window extraction from the warehouse. | WP02 |  | [D] |
+| T007 | Implement `resting_hr_status` with explicit current/stale/unavailable behavior. | WP02 |  | [D] |
+| T008 | Implement `resting_hr_trend` with plain direction output and visible carried-forward points. | WP02 |  | [D] |
+| T009 | Implement `steps_trend` without imputing missing days. | WP02 | [D] |
+| T010 | Implement `weight_trend` with freshness and carried-forward caveats. | WP02 | [D] |
+| T011 | Add descriptive-signal tests covering success, stale inputs, missing inputs, and gap handling. | WP02 |  | [D] |
 | T012 | Implement the own-baseline comparison primitives needed for user-versus-own-normal answers. | WP03 |  |
 | T013 | Implement `sleep_deep_pct_baseline` with own-baseline-only semantics and vendor-estimate caveats. | WP03 |  |
 | T014 | Implement before/after comparison primitives around a user-supplied anchor date. | WP03 |  |
@@ -105,12 +105,12 @@ Reviewer focus:
 - Estimated prompt size: ~360 lines
 
 Included subtasks:
-- [ ] T006 Add shared Stage 2 query helpers for freshness-aware latest-value lookup and trend-window extraction from the warehouse. (WP02)
-- [ ] T007 Implement `resting_hr_status` with explicit current/stale/unavailable behavior. (WP02)
-- [ ] T008 Implement `resting_hr_trend` with plain direction output and visible carried-forward points. (WP02)
-- [ ] T009 Implement `steps_trend` without imputing missing days. (WP02)
-- [ ] T010 Implement `weight_trend` with freshness and carried-forward caveats. (WP02)
-- [ ] T011 Add descriptive-signal tests covering success, stale inputs, missing inputs, and gap handling. (WP02)
+- [x] T006 Add shared Stage 2 query helpers for freshness-aware latest-value lookup and trend-window extraction from the warehouse. (WP02)
+- [x] T007 Implement `resting_hr_status` with explicit current/stale/unavailable behavior. (WP02)
+- [x] T008 Implement `resting_hr_trend` with plain direction output and visible carried-forward points. (WP02)
+- [x] T009 Implement `steps_trend` without imputing missing days. (WP02)
+- [x] T010 Implement `weight_trend` with freshness and carried-forward caveats. (WP02)
+- [x] T011 Add descriptive-signal tests covering success, stale inputs, missing inputs, and gap handling. (WP02)
 
 Implementation sketch:
 1. Add shared warehouse-query helpers for latest usable observations and trend windows, keeping all logic deterministic and local.
