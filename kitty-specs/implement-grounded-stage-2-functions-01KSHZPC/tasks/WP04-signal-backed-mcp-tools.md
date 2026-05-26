@@ -19,8 +19,8 @@ subtasks:
 - T019
 - T020
 - T021
-agent: "claude:opus:implementer:implementer"
-shell_pid: "38372"
+agent: "claude:opus:reviewer:reviewer"
+shell_pid: "71734"
 history:
 - timestamp: '2026-05-26T11:32:28Z'
   agent: gpt-5.4
@@ -186,3 +186,4 @@ Review this WP as a boundary-enforcement change. The key question is whether the
 - 2026-05-26T12:20:03Z – claude:opus:implementer:implementer – shell_pid=38372 – Started implementation via action command
 - 2026-05-26T12:26:26Z – claude:opus:implementer:implementer – shell_pid=38372 – Boundary note: WP04 publishes 9 tools. Two registry-membership assertions in tests/test_mcp_server.py (test_build_server_registers_expected_tools, test_stdio_mcp_server_exposes_tools) hardcode exactly the 3 raw tools as the complete registry, which WP04's stated goal invalidates. WP04 validation block mandates test_mcp_server.py and full suite stay green. Making the minimal behavior-preserving update: expand those two expected-tool lists from 3 to 9 names. Raw-tool per-tool behavior tests are untouched. File is outside the explicit owned-files set but the conflict is forced by the WP's own validation contract.
 - 2026-05-26T12:29:27Z – claude:opus:implementer:implementer – shell_pid=38372 – Ready for review: six signal-backed MCP tools routing through engine, three raw tools preserved, structured unavailable-state serialization, nine tools published
+- 2026-05-26T12:30:10Z – claude:opus:reviewer:reviewer – shell_pid=71734 – Started review via action command
