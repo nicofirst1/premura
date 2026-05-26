@@ -45,11 +45,11 @@
 | T014 | Implement before/after comparison primitives around a user-supplied anchor date. | WP03 |  | [D] |
 | T015 | Implement `hrv_change_around_date` with sufficiency checks and explicit non-causation/non-significance caveats. | WP03 |  | [D] |
 | T016 | Add comparative-signal tests covering sparse windows, unavailable answers, and successful comparison output. | WP03 |  | [D] |
-| T017 | Add six new signal-backed MCP server wrappers that delegate to Stage 2 instead of directly querying raw tables for those answers. | WP04 |  |
-| T018 | Preserve the existing raw MCP tools unchanged alongside the new signal-backed tools. | WP04 |  |
-| T019 | Standardize Stage 3 serialization of freshness, missing-input, and insufficient-data outcomes for the new tools. | WP04 |  |
-| T020 | Update the FastMCP entrypoint so all nine tools are published with stable names and argument shapes. | WP04 |  |
-| T021 | Add MCP tool tests covering registration plus representative success and failure responses for the six new tools. | WP04 |  |
+| T017 | Add six new signal-backed MCP server wrappers that delegate to Stage 2 instead of directly querying raw tables for those answers. | WP04 |  | [D] |
+| T018 | Preserve the existing raw MCP tools unchanged alongside the new signal-backed tools. | WP04 |  | [D] |
+| T019 | Standardize Stage 3 serialization of freshness, missing-input, and insufficient-data outcomes for the new tools. | WP04 |  | [D] |
+| T020 | Update the FastMCP entrypoint so all nine tools are published with stable names and argument shapes. | WP04 |  | [D] |
+| T021 | Add MCP tool tests covering registration plus representative success and failure responses for the six new tools. | WP04 |  | [D] |
 | T022 | Update `docs/architecture/STAGES.md` to reflect the narrowed direct-read debt and the new grounded signal-backed path. | WP05 |  |
 | T023 | Update `docs/operations/STATUS.md` with the new Stage 2 and Stage 3 capabilities after implementation. | WP05 | [P] |
 | T024 | Update `docs/product/ROADMAP.md` so future analytical work starts from the new shipped baseline rather than the old stubbed state. | WP05 | [P] |
@@ -177,11 +177,11 @@ Reviewer focus:
 - Estimated prompt size: ~340 lines
 
 Included subtasks:
-- [ ] T017 Add six new signal-backed MCP server wrappers that delegate to Stage 2 instead of directly querying raw tables for those answers. (WP04)
-- [ ] T018 Preserve the existing raw MCP tools unchanged alongside the new signal-backed tools. (WP04)
-- [ ] T019 Standardize Stage 3 serialization of freshness, missing-input, and insufficient-data outcomes for the new tools. (WP04)
-- [ ] T020 Update the FastMCP entrypoint so all nine tools are published with stable names and argument shapes. (WP04)
-- [ ] T021 Add MCP tool tests covering registration plus representative success and failure responses for the six new tools. (WP04)
+- [x] T017 Add six new signal-backed MCP server wrappers that delegate to Stage 2 instead of directly querying raw tables for those answers. (WP04)
+- [x] T018 Preserve the existing raw MCP tools unchanged alongside the new signal-backed tools. (WP04)
+- [x] T019 Standardize Stage 3 serialization of freshness, missing-input, and insufficient-data outcomes for the new tools. (WP04)
+- [x] T020 Update the FastMCP entrypoint so all nine tools are published with stable names and argument shapes. (WP04)
+- [x] T021 Add MCP tool tests covering registration plus representative success and failure responses for the six new tools. (WP04)
 
 Implementation sketch:
 1. Add Stage 3 wrapper functions that call the new engine helpers rather than issuing raw SQL for these question flows.
