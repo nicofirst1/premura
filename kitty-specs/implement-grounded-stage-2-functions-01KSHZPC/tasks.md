@@ -40,11 +40,11 @@
 | T009 | Implement `steps_trend` without imputing missing days. | WP02 | [D] |
 | T010 | Implement `weight_trend` with freshness and carried-forward caveats. | WP02 | [D] |
 | T011 | Add descriptive-signal tests covering success, stale inputs, missing inputs, and gap handling. | WP02 |  | [D] |
-| T012 | Implement the own-baseline comparison primitives needed for user-versus-own-normal answers. | WP03 |  |
-| T013 | Implement `sleep_deep_pct_baseline` with own-baseline-only semantics and vendor-estimate caveats. | WP03 |  |
-| T014 | Implement before/after comparison primitives around a user-supplied anchor date. | WP03 |  |
-| T015 | Implement `hrv_change_around_date` with sufficiency checks and explicit non-causation/non-significance caveats. | WP03 |  |
-| T016 | Add comparative-signal tests covering sparse windows, unavailable answers, and successful comparison output. | WP03 |  |
+| T012 | Implement the own-baseline comparison primitives needed for user-versus-own-normal answers. | WP03 |  | [D] |
+| T013 | Implement `sleep_deep_pct_baseline` with own-baseline-only semantics and vendor-estimate caveats. | WP03 |  | [D] |
+| T014 | Implement before/after comparison primitives around a user-supplied anchor date. | WP03 |  | [D] |
+| T015 | Implement `hrv_change_around_date` with sufficiency checks and explicit non-causation/non-significance caveats. | WP03 |  | [D] |
+| T016 | Add comparative-signal tests covering sparse windows, unavailable answers, and successful comparison output. | WP03 |  | [D] |
 | T017 | Add six new signal-backed MCP server wrappers that delegate to Stage 2 instead of directly querying raw tables for those answers. | WP04 |  |
 | T018 | Preserve the existing raw MCP tools unchanged alongside the new signal-backed tools. | WP04 |  |
 | T019 | Standardize Stage 3 serialization of freshness, missing-input, and insufficient-data outcomes for the new tools. | WP04 |  |
@@ -142,11 +142,11 @@ Reviewer focus:
 - Estimated prompt size: ~320 lines
 
 Included subtasks:
-- [ ] T012 Implement the own-baseline comparison primitives needed for user-versus-own-normal answers. (WP03)
-- [ ] T013 Implement `sleep_deep_pct_baseline` with own-baseline-only semantics and vendor-estimate caveats. (WP03)
-- [ ] T014 Implement before/after comparison primitives around a user-supplied anchor date. (WP03)
-- [ ] T015 Implement `hrv_change_around_date` with sufficiency checks and explicit non-causation/non-significance caveats. (WP03)
-- [ ] T016 Add comparative-signal tests covering sparse windows, unavailable answers, and successful comparison output. (WP03)
+- [x] T012 Implement the own-baseline comparison primitives needed for user-versus-own-normal answers. (WP03)
+- [x] T013 Implement `sleep_deep_pct_baseline` with own-baseline-only semantics and vendor-estimate caveats. (WP03)
+- [x] T014 Implement before/after comparison primitives around a user-supplied anchor date. (WP03)
+- [x] T015 Implement `hrv_change_around_date` with sufficiency checks and explicit non-causation/non-significance caveats. (WP03)
+- [x] T016 Add comparative-signal tests covering sparse windows, unavailable answers, and successful comparison output. (WP03)
 
 Implementation sketch:
 1. Build the shared comparison helpers first so both functions use explicit window logic rather than ad-hoc slices.
