@@ -11,8 +11,8 @@ small and surgical; no new signals, no new analysis.
 
 | ID | Description | WP | Parallel |
 |----|-------------|----|----------|
-| T001 | Replace registry-truthiness loader guard with explicit `_BUILTINS_LOADED` flag | WP01 | |
-| T002 | Regression test: pre-registered custom signal does not suppress built-ins | WP01 | |
+| T001 | Replace registry-truthiness loader guard with explicit `_BUILTINS_LOADED` flag | WP01 | | [D] |
+| T002 | Regression test: pre-registered custom signal does not suppress built-ins | WP01 | | [D] |
 | T003 | Make `BaselineComparisonResult` numeric fields `float \| None` + add `validate()` | WP02 | | [D] |
 | T004 | Stop the `0.0` coercion in `sleep_deep_pct_baseline` and validate the envelope | WP02 | | [D] |
 | T005 | Test: baseline reports no fabricated numbers when unavailable/unknown | WP02 | | [D] |
@@ -34,8 +34,8 @@ signal names (`ast_alt_ratio`, `resting_hr_status`, …) are present and callabl
 import-time laziness still holds.
 **Dependencies**: none.
 
-- [ ] T001 Replace `if REGISTRY: return` with an explicit module-level `_BUILTINS_LOADED` sentinel in `src/premura/engine/__init__.py`; set it only after the static built-in modules import; keep `import premura.engine` from eagerly loading. (WP01)
-- [ ] T002 Add a regression test in `tests/test_engine_contract.py` that registers a custom signal first, calls the loader, and asserts built-ins still load. (WP01)
+- [x] T001 Replace `if REGISTRY: return` with an explicit module-level `_BUILTINS_LOADED` sentinel in `src/premura/engine/__init__.py`; set it only after the static built-in modules import; keep `import premura.engine` from eagerly loading. (WP01)
+- [x] T002 Add a regression test in `tests/test_engine_contract.py` that registers a custom signal first, calls the loader, and asserts built-ins still load. (WP01)
 
 Prompt: [tasks/WP01-builtin-loader-honesty.md](tasks/WP01-builtin-loader-honesty.md)
 
