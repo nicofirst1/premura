@@ -432,23 +432,186 @@ def test_raw_metric_summary_still_summarizes(tmp_path: Path) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Public MCP entrypoint reachability for a representative signal tool
+# Public MCP entrypoint reachability for all six approved signal tools
 # --------------------------------------------------------------------------- #
-def test_signal_tool_reachable_through_public_entrypoint(tmp_path: Path) -> None:
-    db_path, conn = _warehouse_with(tmp_path, "entrypoint")
+def test_all_signal_tools_reachable_through_public_entrypoint(tmp_path: Path) -> None:
+    db_path, conn = _warehouse_with(tmp_path, "entrypoint_all")
     try:
-        fresh = (_now() - timedelta(hours=2)).isoformat(sep=" ")
-        _seed(conn, [(fresh, "resting_hr", 59.0, "e1")])
+        now = _now()
+
+        # resting_hr_status + resting_hr_trend
+        _seed(
+            conn,
+            [
+                ((now - timedelta(days=20)).isoformat(sep=" "), "resting_hr", 55.0, "r1"),
+                ((now - timedelta(days=15)).isoformat(sep=" "), "resting_hr", 57.0, "r2"),
+                ((now - timedelta(days=10)).isoformat(sep=" "), "resting_hr", 60.0, "r3"),
+                ((now - timedelta(days=5)).isoformat(sep=" "), "resting_hr", 63.0, "r4"),
+                ((now - timedelta(hours=2)).isoformat(sep=" "), "resting_hr", 66.0, "r5"),
+            ],
+        )
+
+        # weight_trend
+        _seed(
+            conn,
+            [
+                ((now - timedelta(days=28)).isoformat(sep=" "), "weight", 82.0, "w1"),
+                ((now - timedelta(days=21)).isoformat(sep=" "), "weight", 81.0, "w2"),
+                ((now - timedelta(days=14)).isoformat(sep=" "), "weight", 80.0, "w3"),
+                ((now - timedelta(days=7)).isoformat(sep=" "), "weight", 79.0, "w4"),
+                ((now - timedelta(hours=6)).isoformat(sep=" "), "weight", 78.0, "w5"),
+            ],
+        )
+
+        # sleep_deep_pct_baseline
+        _seed(
+            conn,
+            [
+                ((now - timedelta(days=10)).isoformat(sep=" "), "sleep_deep_pct", 20.0, "s1"),
+                ((now - timedelta(days=8)).isoformat(sep=" "), "sleep_deep_pct", 21.0, "s2"),
+                ((now - timedelta(days=6)).isoformat(sep=" "), "sleep_deep_pct", 19.0, "s3"),
+                ((now - timedelta(days=4)).isoformat(sep=" "), "sleep_deep_pct", 20.5, "s4"),
+                ((now - timedelta(hours=5)).isoformat(sep=" "), "sleep_deep_pct", 5.0, "s5"),
+            ],
+        )
+
+        # steps_trend
+        _seed_intervals(
+            conn,
+            [
+                (
+                    (now - timedelta(days=5)).isoformat(sep=" "),
+                    (now - timedelta(days=5)).isoformat(sep=" "),
+                    "steps",
+                    4000.0,
+                    "st1",
+                ),
+                (
+                    (now - timedelta(days=4)).isoformat(sep=" "),
+                    (now - timedelta(days=4)).isoformat(sep=" "),
+                    "steps",
+                    5000.0,
+                    "st2",
+                ),
+                (
+                    (now - timedelta(days=3)).isoformat(sep=" "),
+                    (now - timedelta(days=3)).isoformat(sep=" "),
+                    "steps",
+                    6000.0,
+                    "st3",
+                ),
+                (
+                    (now - timedelta(days=2)).isoformat(sep=" "),
+                    (now - timedelta(days=2)).isoformat(sep=" "),
+                    "steps",
+                    7000.0,
+                    "st4",
+                ),
+                (
+                    (now - timedelta(days=1)).isoformat(sep=" "),
+                    (now - timedelta(days=1)).isoformat(sep=" "),
+                    "steps",
+                    8000.0,
+                    "st5",
+                ),
+            ],
+        )
+
+        # hrv_change_around_date
+        anchor = (now - timedelta(days=20)).date()
+        _seed(
+            conn,
+            [
+                (
+                    datetime.combine(anchor - timedelta(days=10), datetime.min.time()).isoformat(sep=" "),
+                    "hrv_rmssd_overnight",
+                    40.0,
+                    "h1",
+                ),
+                (
+                    datetime.combine(anchor - timedelta(days=8), datetime.min.time()).isoformat(sep=" "),
+                    "hrv_rmssd_overnight",
+                    41.0,
+                    "h2",
+                ),
+                (
+                    datetime.combine(anchor - timedelta(days=6), datetime.min.time()).isoformat(sep=" "),
+                    "hrv_rmssd_overnight",
+                    42.0,
+                    "h3",
+                ),
+                (
+                    datetime.combine(anchor - timedelta(days=4), datetime.min.time()).isoformat(sep=" "),
+                    "hrv_rmssd_overnight",
+                    43.0,
+                    "h4",
+                ),
+                (
+                    datetime.combine(anchor + timedelta(days=2), datetime.min.time()).isoformat(sep=" "),
+                    "hrv_rmssd_overnight",
+                    55.0,
+                    "h5",
+                ),
+                (
+                    datetime.combine(anchor + timedelta(days=4), datetime.min.time()).isoformat(sep=" "),
+                    "hrv_rmssd_overnight",
+                    56.0,
+                    "h6",
+                ),
+                (
+                    datetime.combine(anchor + timedelta(days=6), datetime.min.time()).isoformat(sep=" "),
+                    "hrv_rmssd_overnight",
+                    57.0,
+                    "h7",
+                ),
+                (
+                    datetime.combine(anchor + timedelta(days=8), datetime.min.time()).isoformat(sep=" "),
+                    "hrv_rmssd_overnight",
+                    58.0,
+                    "h8",
+                ),
+            ],
+        )
     finally:
         conn.close()
 
     async def run() -> None:
         srv = build_server(warehouse_path=db_path)
-        result = await srv.call_tool("resting_hr_status", {})
-        # FastMCP returns (content, structured) for tools; assert on the structured payload.
-        structured = result[1] if isinstance(result, tuple) else result
-        assert structured["status"] == "available"
-        assert structured["result"]["metric_id"] == "resting_hr"
-        assert structured["result"]["value"] == 59.0
+
+        async def call(name: str, args: dict[str, object]) -> dict[str, object]:
+            result = await srv.call_tool(name, args)
+            # FastMCP returns (content, structured) for tools; assert on the structured payload.
+            return result[1] if isinstance(result, tuple) else result
+
+        status_payload = await call("resting_hr_status", {})
+        assert status_payload["status"] == "available"
+        assert status_payload["result"]["metric_id"] == "resting_hr"
+        assert status_payload["result"]["value"] == 66.0
+
+        rhr_trend_payload = await call("resting_hr_trend", {})
+        assert rhr_trend_payload["status"] == "available"
+        assert rhr_trend_payload["result"]["metric_id"] == "resting_hr"
+        assert rhr_trend_payload["result"]["trend_direction"] == "up"
+
+        steps_payload = await call("steps_trend", {})
+        assert steps_payload["status"] == "available"
+        assert steps_payload["result"]["metric_id"] == "steps"
+        assert steps_payload["result"]["trend_direction"] == "up"
+
+        weight_payload = await call("weight_trend", {})
+        assert weight_payload["status"] == "available"
+        assert weight_payload["result"]["metric_id"] == "weight"
+        assert weight_payload["result"]["trend_direction"] == "down"
+
+        baseline_payload = await call("sleep_deep_pct_baseline", {})
+        assert baseline_payload["status"] == "available"
+        assert baseline_payload["result"]["metric_id"] == "sleep_deep_pct"
+        assert baseline_payload["result"]["comparison_state"] == "below"
+
+        change_payload = await call("hrv_change_around_date", {"anchor_date": anchor.isoformat()})
+        assert change_payload["status"] == "available"
+        assert change_payload["result"]["metric_id"] == "hrv_rmssd_overnight"
+        assert change_payload["result"]["anchor_date"] == anchor.isoformat()
+        assert change_payload["result"]["sufficient_data"] is True
 
     asyncio.run(run())
