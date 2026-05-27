@@ -1,16 +1,16 @@
 {
-  "event_count": 27,
-  "last_event_id": "01KSN4N84600QNB9S4FM9GTP7A",
-  "materialized_at": "2026-05-27T16:35:36.198172+00:00",
+  "event_count": 28,
+  "last_event_id": "01KSN4N96BGADCERWDEXGPCS3J",
+  "materialized_at": "2026-05-27T16:35:37.291797+00:00",
   "mission_number": "7",
   "mission_slug": "implement-profile-and-intake-storage-01KSMWV1",
   "mission_type": "software-dev",
   "summary": {
-    "approved": 1,
+    "approved": 0,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
-    "done": 3,
+    "done": 4,
     "for_review": 0,
     "in_progress": 0,
     "in_review": 0,
@@ -40,10 +40,10 @@
     },
     "WP04": {
       "actor": "user",
-      "force_count": 1,
-      "lane": "approved",
-      "last_event_id": "01KSN1DKAC2C2PBCT96VW1JWV5",
-      "last_transition_at": "2026-05-27T15:38:59.788387+00:00"
+      "force_count": 2,
+      "lane": "done",
+      "last_event_id": "01KSN4N96BGADCERWDEXGPCS3J",
+      "last_transition_at": "2026-05-27T16:35:37.291797+00:00"
     }
   }
 }
