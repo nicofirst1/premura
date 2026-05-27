@@ -153,3 +153,4 @@ pytest -q tests/test_mcp_server.py
 - 2026-05-27T07:48:02Z – claude:sonnet:implementer:implementer – shell_pid=53502 – Started implementation via action command
 - 2026-05-27T07:53:43Z – claude:sonnet:implementer:implementer – shell_pid=53502 – Ready for review
 - 2026-05-27T07:54:19Z – claude:sonnet:reviewer:reviewer – shell_pid=75707 – Started review via action command
+- 2026-05-27T07:57:12Z – claude:sonnet:reviewer:reviewer – shell_pid=75707 – Review passed: query_warehouse gated exclusively in build_operator_server() with no leakage to build_server(); shared _register_default_tools() core avoids duplication; both premura-mcp and premura-mcp-operator entrypoints wired and importable; all 4 surface-split tests present and correct (default=8, operator=9, diff=exactly query_warehouse); lower-guarantee language in docstrings, instructions, and arg parser; 159 tests pass, mypy clean, no new ruff issues.
