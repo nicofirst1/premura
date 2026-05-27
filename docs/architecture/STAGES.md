@@ -53,7 +53,7 @@ Deterministic Python functions that turn raw rows into *answerable* signals. Thi
 - `sleep_deep_pct_baseline` — latest deep-sleep percentage versus the user's **own** recent normal (baseline).
 - `hrv_change_around_date` — plain before/after average of overnight HRV around a user-named date (change).
 
-These are **descriptive and comparative only**: no reference ranges, no diagnosis, no statistical significance, no causation. A `change` answer never reports a p-value or implies the named date caused anything; a `baseline` is the user's own history, never a population norm. They refuse to answer (stale / unavailable / insufficient data) rather than present a misleading result. Profile-dependent answers (e.g. BMI, age-adjusted interpretation) are **not** here — they stay deferred to issue `#6`.
+These are **descriptive and comparative only**: no reference ranges, no diagnosis, no statistical significance, no causation. A `change` answer never reports a p-value or implies the named date caused anything; a `baseline` is the user's own history, never a population norm. They refuse to answer (stale / unavailable / insufficient data) rather than present a misleading result. Profile-dependent answers (e.g. BMI, age-adjusted interpretation) are **not** here — they remain deferred as future implementation over the profile/intake contract, whose semantic boundary is now settled (see [PROFILE_AND_INTAKE_CONTRACT.md](PROFILE_AND_INTAKE_CONTRACT.md)).
 
 Four families of function:
 
