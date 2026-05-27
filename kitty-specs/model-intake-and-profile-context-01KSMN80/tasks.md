@@ -33,9 +33,9 @@
 | T003 | Add a machine-readable classification and overlap example file that makes one-home mapping and overlap cases explicit. | WP01 | [D] |
 | T004 | Add a machine-readable invariant file that encodes the positive invariants and concrete violation examples the reviewers should enforce. | WP01 | [D] |
 | T005 | Add a machine-readable dependency declaration contract file for future Stage 2 and Stage 3 consumers. | WP01 | [D] |
-| T006 | Add black-box tests that load the shipped contract artifacts and verify they are internally complete, parseable, and mutually consistent. | WP02 |  |
-| T007 | Add invariant-oriented tests for one-home classification, overlap distinctions, visible supersession paths, and the no-fabrication rule for partial knowledge. | WP02 |  |
-| T008 | Add dependency-contract tests that reject implicit prerequisites and confirm the shipped contract stays domain-focused rather than drifting into transport/API placeholders. | WP02 |  |
+| T006 | Add black-box tests that load the shipped contract artifacts and verify they are internally complete, parseable, and mutually consistent. | WP02 |  | [D] |
+| T007 | Add invariant-oriented tests for one-home classification, overlap distinctions, visible supersession paths, and the no-fabrication rule for partial knowledge. | WP02 |  | [D] |
+| T008 | Add dependency-contract tests that reject implicit prerequisites and confirm the shipped contract stays domain-focused rather than drifting into transport/API placeholders. | WP02 |  | [D] |
 | T009 | Update `docs/architecture/STAGES.md` so the four-stage model names baseline profile context and intake data as distinct semantic domains rather than forcing them into observations or notes. | WP03 |  |
 | T010 | Update `docs/architecture/STAGES.md` boundary language and examples so profile assertions, intake records, and observations remain distinct and back-door modeling is explicitly rejected. | WP03 |  |
 | T011 | Update `docs/architecture/UPDATE_STRATEGY.md` to explain how profile/intake corrections and supersessions differ from rebuild-oriented changes to observation history. | WP03 |  |
@@ -96,9 +96,9 @@ Reviewer focus:
 - Estimated prompt size: ~260 lines
 
 Included subtasks:
-- [ ] T006 Add black-box tests that load the shipped contract artifacts and verify they are internally complete, parseable, and mutually consistent. (WP02)
-- [ ] T007 Add invariant-oriented tests for one-home classification, overlap distinctions, visible supersession paths, and the no-fabrication rule for partial knowledge. (WP02)
-- [ ] T008 Add dependency-contract tests that reject implicit prerequisites and confirm the shipped contract stays domain-focused rather than drifting into transport/API placeholders. (WP02)
+- [x] T006 Add black-box tests that load the shipped contract artifacts and verify they are internally complete, parseable, and mutually consistent. (WP02)
+- [x] T007 Add invariant-oriented tests for one-home classification, overlap distinctions, visible supersession paths, and the no-fabrication rule for partial knowledge. (WP02)
+- [x] T008 Add dependency-contract tests that reject implicit prerequisites and confirm the shipped contract stays domain-focused rather than drifting into transport/API placeholders. (WP02)
 
 Implementation sketch:
 1. Load the authoritative prose/YAML contract artifacts through file reads rather than internal helper mocks.
