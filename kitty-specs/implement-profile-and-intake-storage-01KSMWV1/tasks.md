@@ -36,10 +36,10 @@
 | T006 | Extend `src/premura/parsers/base.py` with normalized nutrition/supplement persistence types that future parsers can emit outside the current `IngestBatch` observation path. | WP02 | [D] |
 | T007 | Update `src/premura/parsers/CONTRACT.md` so parser contributors know when to emit normalized intake records instead of `IngestBatch` measurements or notes. | WP02 | [D] |
 | T008 | Add persistence and parser-contract tests for profile supersession, bounded field rejection, partial intake records, and one-home separation. | WP02 |  | [D] |
-| T009 | Add MCP helpers in `src/premura/mcp/server.py` for listing supported profile fields and recording bounded profile assertions through the new persistence service. | WP03 |  |
-| T010 | Register the new profile-capture tools on the default agent-safe MCP surface in `src/premura/mcp/entrypoint.py`. | WP03 |  |
-| T011 | Add thin CLI fallback commands in `src/premura/cli.py` that mirror the MCP schema and record operations for testing and expert fallback use. | WP03 |  |
-| T012 | Add black-box tests that drive the supported profile schema and record flows through MCP/CLI surfaces and verify unsupported fields such as `age` are rejected explicitly. | WP03 |  |
+| T009 | Add MCP helpers in `src/premura/mcp/server.py` for listing supported profile fields and recording bounded profile assertions through the new persistence service. | WP03 |  | [D] |
+| T010 | Register the new profile-capture tools on the default agent-safe MCP surface in `src/premura/mcp/entrypoint.py`. | WP03 |  | [D] |
+| T011 | Add thin CLI fallback commands in `src/premura/cli.py` that mirror the MCP schema and record operations for testing and expert fallback use. | WP03 |  | [D] |
+| T012 | Add black-box tests that drive the supported profile schema and record flows through MCP/CLI surfaces and verify unsupported fields such as `age` are rejected explicitly. | WP03 |  | [D] |
 | T013 | Update doctrine-facing docs so the agent-mediated profile path and parser/plugin intake path are explicit enough that future planning does not regress back to a human-form or one-off-importer assumption. | WP04 | [P] |
 | T014 | Update architecture and status docs so they describe the newly shipped concrete storage and profile capture path without claiming built-in nutrition/supplement importers exist. | WP04 | [P] |
 | T015 | Update product planning docs so they treat future nutrition/supplement work as parser/plugin source adaptation over a shipped storage seam rather than as another boundary-definition exercise. | WP04 | [P] |
@@ -129,10 +129,10 @@ Reviewer focus:
 - Estimated prompt size: ~300 lines
 
 Included subtasks:
-- [ ] T009 Add MCP helpers in `src/premura/mcp/server.py` for listing supported profile fields and recording bounded profile assertions through the new persistence service. (WP03)
-- [ ] T010 Register the new profile-capture tools on the default agent-safe MCP surface in `src/premura/mcp/entrypoint.py`. (WP03)
-- [ ] T011 Add thin CLI fallback commands in `src/premura/cli.py` that mirror the MCP schema and record operations for testing and expert fallback use. (WP03)
-- [ ] T012 Add black-box tests that drive the supported profile schema and record flows through MCP/CLI surfaces and verify unsupported fields such as `age` are rejected explicitly. (WP03)
+- [x] T009 Add MCP helpers in `src/premura/mcp/server.py` for listing supported profile fields and recording bounded profile assertions through the new persistence service. (WP03)
+- [x] T010 Register the new profile-capture tools on the default agent-safe MCP surface in `src/premura/mcp/entrypoint.py`. (WP03)
+- [x] T011 Add thin CLI fallback commands in `src/premura/cli.py` that mirror the MCP schema and record operations for testing and expert fallback use. (WP03)
+- [x] T012 Add black-box tests that drive the supported profile schema and record flows through MCP/CLI surfaces and verify unsupported fields such as `age` are rejected explicitly. (WP03)
 
 Implementation sketch:
 1. Add runtime-facing server helpers that delegate to the persistence layer rather than reimplementing validation in the MCP layer.
