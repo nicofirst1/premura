@@ -17,8 +17,8 @@ subtasks:
 - T008
 - T009
 - T010
-agent: "claude:sonnet:implementer:implementer"
-shell_pid: "29837"
+agent: "claude:sonnet:reviewer:reviewer"
+shell_pid: "43436"
 history:
 - at: '2026-05-27T07:06:15Z'
   action: planned
@@ -168,3 +168,4 @@ Then combine with WP01 engine coverage when both are present.
 - 2026-05-27T07:41:08Z – claude:sonnet:reviewer:reviewer – shell_pid=88564 – Review cycle 1: missing unknown/unregistered catalog test at list_metrics MCP surface
 - 2026-05-27T07:41:56Z – claude:sonnet:implementer:implementer – shell_pid=29837 – Started implementation via action command
 - 2026-05-27T07:45:15Z – claude:sonnet:implementer:implementer – shell_pid=29837 – Fix cycle 1: added list_metrics unknown-boundary test
+- 2026-05-27T07:45:39Z – claude:sonnet:reviewer:reviewer – shell_pid=43436 – Started review via action command
