@@ -31,6 +31,26 @@ _Avoid_: field, column meaning, vendor metric
 The complete unit handed from ingest to the warehouse seam for one source artifact. It contains the rows to persist plus the provenance and declarations needed to validate and load them.
 _Avoid_: parse result, loader payload, import blob
 
+### Personal context and intake
+
+These three domains have a fixed meaning contract ([PROFILE_AND_INTAKE_CONTRACT.md](docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md)) and now have concrete warehouse homes (migration `004_profile_intake.sql`). They are kept strictly distinct from observation history (what a device/lab measured) and note history (un-normalizable free text).
+
+**Baseline profile context**:
+Stable or slowly-changing personal facts the operator *states about themselves* — birth date, biological sex, a declared standing height. These are the operator's own account, not an instrument reading, and they live in `hp.profile_context_assertion`, never in the measurement tables.
+_Avoid_: profile fields, user settings, demographics blob.
+
+**Profile assertion**:
+One recorded statement of a baseline profile fact, with its value, when it became effective, and where it came from. A correction is a *new* assertion that supersedes the prior one (history is kept, never overwritten).
+_Avoid_: profile row, current value (a profile fact is a lineage of assertions, not a single mutable cell).
+
+**Agent-mediated profile capture**:
+The supported way baseline profile facts get recorded: the agent records one allowlisted attribute at a time through the profile-capture tools, stamped with provenance `agent_profile_capture`. The allowlist is closed (`premura.profile_fields`); a derived key such as `age` is rejected, not stored. This is the default — there is no human-filled profile form.
+_Avoid_: onboarding form, profile wizard, manual entry (as the default).
+
+**Nutrition intake / supplement intake**:
+What the operator ate, drank, or supplemented — consumption, not a body measurement. A meal's energy is a nutrition quantity on an intake event; a wearable's expended kcal stays an observation. These land in their own `hp.nutrition_intake_*` / `hp.supplement_intake_*` tables. *Storing* them exists today; *adapting a specific source* into them is follow-on parser/plugin work, not a built-in importer.
+_Avoid_: food log table, calorie tracker, built-in MyFitnessPal import.
+
 ### Signal processing
 
 **Signal**:

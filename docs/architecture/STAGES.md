@@ -68,14 +68,15 @@ Signal processing has no external dependencies. No network, no LLM. It must be i
 
 The MCP server exposes Stage 2 signal functions as tools an LLM can call. Per [DOCTRINE.md](../product/DOCTRINE.md), this is the **primary operational interface** of the product: the human brings artifacts, goals, and approvals; the agent works mainly through this tool surface. The long-term surface still includes `correlate`, `paired_t_test`, `rolling_mean`, `change_point`, PubMed search/fetch, and a signal selector — those remain future work. Today two entrypoints exist (`src/premura/mcp/server.py`, `entrypoint.py`):
 
-**Default agent surface (`premura-mcp`) — eight tools:**
+**Default agent surface (`premura-mcp`) — ten tools:**
 
 - **Two catalog/summary tools** — `list_metrics`, `metric_summary`. These delegate entirely to the Stage 2 engine (no direct `hp.*` SQL) and return structured validity/imputation envelopes with machine-branchable fields.
 - **Six signal-backed tools** — `resting_hr_status`, `resting_hr_trend`, `steps_trend`, `weight_trend`, `sleep_deep_pct_baseline`, `hrv_change_around_date`. Each opens the warehouse read-only and **delegates to the Stage 2 engine** instead of running its own SQL against the fact tables. They return a structured payload whose `status` field (`available` / `missing_input` / `stale_input` / `insufficient_data`) keeps each refusal reason distinct.
+- **Two agent-mediated profile-capture tools** — `profile_context_supported_fields` (list the bounded allowlist) and `profile_context_record` (record one baseline profile fact). These are a bounded *write* path: `profile_context_record` validates against the closed allowlist (`premura.profile_fields`) at the store boundary, stamps provenance `agent_profile_capture`, and supersedes the prior open assertion while keeping history. An unsupported or derived key (such as `age`) comes back as a structured `rejected` response rather than being written. They live on the **default** surface because bounded capture is the supported agent workflow.
 
-**Operator surface (`premura-mcp-operator`) — nine tools:**
+**Operator surface (`premura-mcp-operator`) — eleven tools:**
 
-All eight default tools plus `query_warehouse`, the raw SQL escape hatch. This surface is lower-guarantee: `query_warehouse` returns raw rows without any Stage 2 validity guarantees. Requires explicit user approval before agent use. See [ADR 0004](../adr/0004-stage3-operator-entrypoint.md).
+All ten default tools plus `query_warehouse`, the raw SQL escape hatch. This surface is lower-guarantee: `query_warehouse` returns raw rows without any Stage 2 validity guarantees. Requires explicit user approval before agent use. See [ADR 0004](../adr/0004-stage3-operator-entrypoint.md).
 
 Other principles, still the target shape:
 
@@ -87,7 +88,7 @@ Other principles, still the target shape:
 
 Everything the human encounters: CLI today, MCP-backed chat, eventual UI. This stage is human-critical in purpose even though it is not the main execution surface.
 
-- **Interview** (VISION Pillar 4) — first contact asks the user *what direction* (sleep, cardio, metabolic, stress, mental, gut, lab/cardiometabolic, overview). Output is a routing decision that calls the signal selector. No "analyse everything at once" by default.
+- **Interview** (VISION Pillar 4) — first contact asks the user *what direction* (sleep, cardio, metabolic, stress, mental, gut, lab/cardiometabolic, overview). Output is a routing decision that calls the signal selector. No "analyse everything at once" by default. The same agent-mediated interview shape is how baseline profile facts are captured: the agent records one allowlisted attribute at a time through the profile-capture tools (mirrored as the expert CLI verbs `hpipe profile-fields` / `hpipe profile-record`), never via a human-filled form.
 - **Teaching** (VISION Pillar 5) — plain-language metric introductions, dual-coded charts, progressive disclosure. Applies to every metric the UI surfaces, blood markers especially.
 - The UI is the only stage that does presentation, unit display preferences, and prose. It is the layer where the human receives help, teaching, and guided interpretation from the agent-mediated workflow.
 
@@ -131,30 +132,42 @@ semantic domains, fixed in
 > **These are semantic categories, not new runtime layers.** There is still no
 > fifth stage. Profile context and intake are *data domains that later stages may
 > read*; they do not add a step to the ingest → signal → MCP → UI pipeline. The
-> contract that fixes their meaning ships **no** storage, importer, capture
-> screen, or Stage 2 answer today — it only fixes where these meanings live so
-> follow-on work has one home to build against. Do not infer runtime support for
-> profile/intake from the existence of this section.
+> contract fixes their meaning; the
+> `implement-profile-and-intake-storage-01KSMWV1` mission then added concrete
+> storage (migration `004_profile_intake.sql`, dedicated `hp.*` tables) and an
+> **agent-mediated profile-capture** path, without adding a stage. What ships:
+> bounded profile capture through MCP/CLI tools, and storage + a normalized load
+> path for nutrition/supplement intake. What does **not** ship: any built-in
+> importer for a specific nutrition/supplement source (that stays parser/plugin
+> follow-on work), and any profile-dependent Stage 2 answer (BMI, age-adjusted
+> interpretation). Do not infer a built-in nutrition importer from the existence
+> of the intake tables.
 
 ### Where the new domains sit relative to observations and notes
 
 Future stages relate to the new domains the same way they relate to observations
 today, but the data is *meant* differently:
 
-- **Stage 1 (Ingest)** stores observations (what a device/lab measured). When
-  import paths for profile/intake eventually exist, they will land profile
-  assertions and intake records in their own domain home — **not** as extra
-  `fact_measurement` rows — because those are declarations and consumption, not
-  measurement events.
+- **Stage 1 (Ingest)** stores observations (what a device/lab measured). Profile
+  assertions and intake records now have their own domain homes under `hp.`
+  (migration `004_profile_intake.sql`) — they are **never** written as extra
+  `fact_measurement` rows, because those are declarations and consumption, not
+  measurement events. Nutrition/supplement intake has a normalized load path
+  (`persist_intake_batch`), but a parser that adapts a *specific* source into it
+  is still follow-on work; no built-in importer ships.
 - **Stage 2 (Signal processing)** may *read* profile/intake context to answer a
   question, but only by **declaring** that dependency explicitly (see
   [PROFILE_AND_INTAKE_CONTRACT.md](PROFILE_AND_INTAKE_CONTRACT.md), "How future
   functions declare what they need", and `src/premura/engine/CONTRACT.md`).
   Nothing in Stage 2 consumes these domains today; BMI and age-adjusted
-  interpretation remain deferred.
-- **Stages 3–4 (MCP, UI)** surface whatever Stage 2 produces; they do not reach
-  into the new domains directly any more than they reach `fact_measurement`
-  directly.
+  interpretation remain deferred (and `age` stays derived, never stored).
+- **Stages 3–4 (MCP, UI)** surface whatever Stage 2 produces and **also host the
+  agent-mediated profile-capture write path**: the default MCP surface exposes
+  `profile_context_supported_fields` / `profile_context_record`, mirrored by the
+  expert CLI `hpipe profile-fields` / `hpipe profile-record`. This is the bounded
+  *capture* path (writing declared baseline facts against the closed allowlist),
+  not a reach into observation data — it does not let an agent read
+  `fact_measurement` directly any more than the signal tools do.
 
 ### Boundary examples and anti-patterns
 
@@ -182,7 +195,7 @@ meanings are being conflated — keep them apart.
 
 ## Boundary contracts
 
-- **Default agent surface (`premura-mcp`):** MCP reaches `fact_measurement` only through a signal-processing function that has already applied validity + imputation policy.  The default surface exposes `list_metrics`, `metric_summary`, and the six signal-backed tools.  All catalog/summary helpers delegate entirely to the Stage 2 engine — no raw `hp.*` SQL from the agent surface.  The `query_warehouse` escape hatch is **not present** on this surface.
+- **Default agent surface (`premura-mcp`):** MCP reaches `fact_measurement` only through a signal-processing function that has already applied validity + imputation policy.  The default surface exposes `list_metrics`, `metric_summary`, the six signal-backed tools, and the two agent-mediated profile-capture tools (`profile_context_supported_fields`, `profile_context_record`).  All catalog/summary/signal helpers delegate entirely to the Stage 2 engine — no raw `hp.*` SQL from the agent surface — and the profile-capture tools write only through the bounded `record_profile_context` store boundary, never via raw SQL.  The `query_warehouse` escape hatch is **not present** on this surface.
 - **Operator surface (`premura-mcp-operator`):** A separate, explicitly opt-in entrypoint adds `query_warehouse` on top of the full default tool set.  This surface is lower-guarantee: `query_warehouse` returns raw rows without any Stage 2 validity, freshness, or imputation guarantees, and callers must interpret results themselves.  The explicit-approval rule is enforced two ways: `query_warehouse` is simply absent from the default surface (an agent connected there cannot reach it), and the operator entrypoint refuses to start unless the launcher acknowledges lower-guarantee mode via `--ack` or `PREMURA_OPERATOR_ACK`.  The lower-guarantee disclosure to the end user remains a client/agent-layer responsibility.  See [ADR 0004](../adr/0004-stage3-operator-entrypoint.md).
 - UI never reads `fact_measurement` directly — always through MCP tools (even when invoked locally without a remote LLM, the MCP boundary is the API).
 - Ingest never calls signal processing. The warehouse must be reconstructible from raws alone.

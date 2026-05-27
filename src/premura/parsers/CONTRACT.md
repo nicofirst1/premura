@@ -4,6 +4,36 @@
 > Authority: this file ships with the package and is the source of truth for the
 > federated parser contract.
 
+## Two seams: observations vs. normalized intake
+
+A parser produces data for one of **two** persistence seams. Pick by meaning, not by which path already exists:
+
+| What the source row means | Emit | Lands in |
+| --- | --- | --- |
+| A body/physiological observation, reading, or aggregate (weight, heart rate, sleep stage, daily step total, expended kcal) | `Measurement` / `Interval` in an `IngestBatch` | `hp.fact_measurement` / `hp.fact_interval` |
+| Narrative commentary or diagnosis text | `ClinicalNote` in an `IngestBatch` | `hp.fact_clinical_note` |
+| An eating or drinking occurrence and its nutrient/energy amounts | `NutritionIntakeInput` in an `IntakeBatch` | `hp.nutrition_intake_event` / `_item` / `hp.nutrition_quantity` |
+| A supplement-taking occurrence and its doses | `SupplementIntakeInput` in an `IntakeBatch` | `hp.supplement_intake_event` / `hp.supplement_item` / `hp.supplement_dose` |
+
+**Nutrition and supplement intake are not observations.** Do not push a meal's
+calories or a supplement dose into `Measurement`, `Interval`, or `ClinicalNote`
+just because those paths are already wired. Intake has its own home and its own
+seam; the `IntakeBatch` you emit is persisted by
+`premura.store.profile_intake.persist_intake_batch`, never by the observation
+loader. A wearable's *expended* kcal is an observation (`Interval`); a meal's
+*consumed* kcal is `nutrition_intake`. Same unit, different meaning, different
+home.
+
+A single parser may emit **both** an `IngestBatch` (observations) and an
+`IntakeBatch` (intake) from one source artifact when the artifact genuinely
+carries both kinds of data. It must not fold one into the other.
+
+Baseline profile facts (birth date, biological sex, declared height) are **not**
+a parser concern at all: they are captured through the bounded agent-mediated
+path `premura.store.profile_intake.record_profile_context`, which validates
+against the closed allowlist in `premura.profile_fields`. Parsers never emit
+profile assertions.
+
 ## Symbols you implement against
 
 Both symbols live in `src/premura/parsers/base.py`.
@@ -33,6 +63,22 @@ The parser-to-loader seam for one source artifact. `IngestBatch` contains only l
 - `confidence` — parser self-rating for the batch.
 
 The parser validates the batch before returning it. The loader validates it again before persistence. If any emitted row violates the contract, the whole batch fails.
+
+### `IntakeBatch`
+
+The parser-to-store seam for normalized **nutrition and supplement intake**. Distinct from `IngestBatch`: it carries intake occurrences, not observations, and is persisted by `premura.store.profile_intake.persist_intake_batch` rather than the observation loader. Fields:
+
+- `nutrition_events` — `NutritionIntakeInput` rows. Each anchors one eating/drinking occurrence and may hold `items` (`NutritionItemInput`) and event-level or item-level `quantities` (`NutritionQuantityInput`, e.g. `energy`/`protein` in their source unit).
+- `supplement_events` — `SupplementIntakeInput` rows. Each anchors one supplement-taking occurrence and may hold `items` (`SupplementItemInput`, naming a product and/or ingredient) with `doses` (`SupplementDoseInput`).
+- `source_descriptors` — provenance used to upsert `hp.dim_source`, exactly as for `IngestBatch`. Every intake row's `source_id` must have a descriptor.
+- `ingest_batch` — optional batch id recorded on each event for source-artifact loads.
+
+Validation that the store boundary enforces (also runnable on the batch via `validate()`):
+
+- Each event carries a non-empty `dedupe_key`; the `dedupe_key` UNIQUE constraint makes re-loading the same source artifact idempotent (a duplicate event is skipped wholesale).
+- A `NutritionQuantityInput` is attributed to either its item or the whole event (`subject`), never floating free.
+- A `SupplementItemInput` names at least one of `product_label` / `ingredient_label`; an unknown brand-vs-ingredient situation stays representable rather than invented.
+- A `SupplementDoseInput` carries at least one of `amount_num` / `amount_text`; partial knowledge is preserved, never fabricated as zero.
 
 ## The decision tree (mandatory for every vendor field)
 

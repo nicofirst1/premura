@@ -26,6 +26,7 @@ from rich.table import Table
 
 from . import skills
 from .config import settings
+from .mcp import server as mcp_server
 from .ops import encrypt, notify, upload
 from .parsers.bmt import BMTParser
 from .parsers.garmin_gdpr import GarminGDPRParser
@@ -530,6 +531,86 @@ def install_skills() -> None:
         return
     for path in written:
         console.print(str(path))
+
+
+# ============================================================================
+# profile capture (thin CLI mirror of the agent-safe MCP surface)
+# ============================================================================
+#
+# These commands are a narrow expert/testing entry path. They call the SAME
+# runtime helpers the default MCP surface uses (premura.mcp.server), so the CLI
+# never forks the capture/validation logic — it only formats the JSON-safe
+# result for the terminal. The bounded allowlist is still enforced at the store
+# boundary; the CLI surfaces a rejection visibly rather than swallowing it.
+
+
+@app.command(name="profile-fields")
+def profile_fields() -> None:
+    """List the bounded baseline-profile attributes that can be captured."""
+    schema = mcp_server.supported_profile_fields()
+    tbl = Table(title="Supported profile fields")
+    for col in ("attribute_key", "value_kind", "unit", "allowed_values", "description"):
+        tbl.add_column(col)
+    for field in schema["fields"]:
+        allowed = field["allowed_values"]
+        tbl.add_row(
+            field["attribute_key"],
+            field["value_kind"],
+            field["unit"] or "—",
+            ", ".join(allowed) if allowed else "—",
+            field["description"],
+        )
+    console.print(tbl)
+
+
+@app.command(name="profile-record")
+def profile_record(
+    attribute_key: Annotated[
+        str,
+        typer.Argument(help="Supported profile key: birth_date | sex | standing_height_cm"),
+    ],
+    value: Annotated[
+        str, typer.Argument(help="Value for the attribute (ISO date, enum, or number)")
+    ],
+    effective_start: Annotated[
+        str | None,
+        typer.Option("--effective-start", help="ISO-8601 instant the fact becomes effective"),
+    ] = None,
+    source_ref: Annotated[
+        str | None, typer.Option("--source-ref", help="Optional provenance reference")
+    ] = None,
+    notes: Annotated[
+        str | None, typer.Option("--notes", help="Optional capture-session bookkeeping note")
+    ] = None,
+) -> None:
+    """Record one bounded baseline profile fact (agent-mediated capture path).
+
+    Unsupported or derived keys (e.g. ``age``) are rejected visibly with a
+    non-zero exit code rather than reported as a vague success.
+    """
+    result = mcp_server.record_profile_context(
+        attribute_key,
+        _coerce_profile_value(value),
+        effective_start_utc=effective_start,
+        source_ref=source_ref,
+        notes=notes,
+    )
+    console.print_json(json.dumps(result))
+    if result["status"] == "rejected":
+        raise typer.Exit(code=1)
+
+
+def _coerce_profile_value(raw: str) -> str | float:
+    """Best-effort coerce a CLI string to a number when it parses as one.
+
+    Date and enum fields stay strings; numeric fields (e.g. height) accept a
+    plain number. The store boundary still owns type validation, so a mismatch
+    is rejected there rather than guessed here.
+    """
+    try:
+        return float(raw)
+    except ValueError:
+        return raw
 
 
 # ============================================================================

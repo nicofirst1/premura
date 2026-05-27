@@ -18,6 +18,14 @@ def test_schema_creates_expected_tables(empty_warehouse):
         "fact_interval",
         "fact_measurement",
         "ingest_run",
+        "nutrition_intake_event",
+        "nutrition_intake_item",
+        "nutrition_quantity",
+        "profile_capture_session",
+        "profile_context_assertion",
+        "supplement_dose",
+        "supplement_intake_event",
+        "supplement_item",
     ]
 
 

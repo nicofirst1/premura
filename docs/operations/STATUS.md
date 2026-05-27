@@ -3,7 +3,7 @@
 > Status: live reference. Snapshot of what is true and shipped today.
 >
 > Companion to [SPEC.md](../product/SPEC.md), [ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](../product/USERJOURNEY.md), [ROADMAP.md](../product/ROADMAP.md).
-> Snapshot date: **2026-05-26**.
+> Snapshot date: **2026-05-27**.
 
 ## TL;DR
 
@@ -30,28 +30,41 @@ These are descriptive/comparative only — no reference ranges, no diagnosis, no
 
 **Stage 3 — two entrypoints, clean boundary.** `src/premura/mcp/` ships two entrypoints:
 
-- **Default agent surface (`premura-mcp`)** — eight tools: two validity-gated catalog/summary helpers (`list_metrics`, `metric_summary`) that delegate entirely to the Stage 2 engine, plus the six signal-backed tools listed above. No tool on this surface reads `hp.*` directly; all catalog and signal access goes through the engine. This is the fully validity-gated default path.
-- **Operator surface (`premura-mcp-operator`)** — all eight default tools plus `query_warehouse` (raw SQL escape hatch). Lower-guarantee: `query_warehouse` returns raw rows without Stage 2 validity, freshness, or imputation guarantees. Agent use requires explicit user approval, enforced by surface separation plus an explicit launch acknowledgment (`--ack` / `PREMURA_OPERATOR_ACK`) the operator entrypoint demands before exposing the raw-SQL tool.
+- **Default agent surface (`premura-mcp`)** — ten tools: two validity-gated catalog/summary helpers (`list_metrics`, `metric_summary`) that delegate entirely to the Stage 2 engine, the six signal-backed tools listed above, and two agent-mediated profile-capture tools (`profile_context_supported_fields`, `profile_context_record`). No tool on this surface reads `hp.*` directly; catalog/signal access goes through the engine and profile capture goes through the bounded `record_profile_context` store boundary. This is the fully validity-gated / bounded default path.
+- **Operator surface (`premura-mcp-operator`)** — all ten default tools plus `query_warehouse` (raw SQL escape hatch). Lower-guarantee: `query_warehouse` returns raw rows without Stage 2 validity, freshness, or imputation guarantees. Agent use requires explicit user approval, enforced by surface separation plus an explicit launch acknowledgment (`--ack` / `PREMURA_OPERATOR_ACK`) the operator entrypoint demands before exposing the raw-SQL tool.
 
 The signal-backed tools return a structured payload whose `status` is `available` / `missing_input` / `stale_input` / `insufficient_data`. When an answer is unavailable the payload's `message` carries the signal's authored missing-input guidance, and `missing_input` / `stale_input` responses attach a structured `missing_input` report (`required_inputs` / `missing_inputs` / `stale_inputs`) a caller can branch on.
+
+## Profile and intake storage + agent-mediated capture (shipped 2026-05-27)
+
+The `implement-profile-and-intake-storage-01KSMWV1` mission gave the profile/intake **meaning contract** ([PROFILE_AND_INTAKE_CONTRACT.md](../architecture/PROFILE_AND_INTAKE_CONTRACT.md)) a concrete storage adapter and the first write path. What now works end-to-end:
+
+- **Concrete domain tables.** Migration `src/premura/store/migrations/004_profile_intake.sql` adds dedicated `hp.*` homes: `hp.profile_capture_session` + `hp.profile_context_assertion` (profile); `hp.nutrition_intake_event` → `hp.nutrition_intake_item` → `hp.nutrition_quantity` (nutrition); `hp.supplement_intake_event` → `hp.supplement_item` → `hp.supplement_dose` (supplements). One-home separation is structural — no JSON catch-all bucket, and nothing back-fills these meanings into `fact_measurement` / `fact_interval` / note storage.
+- **Agent-mediated profile capture works.** A bounded, closed allowlist (`src/premura/profile_fields.py`: `birth_date`, `sex`, `standing_height_cm`) is written one fact at a time through `record_profile_context` (`src/premura/store/profile_intake.py`), which appends/supersedes (history kept, never overwritten) and stamps `source_kind="agent_profile_capture"`. Surfaced as the default MCP tools `profile_context_supported_fields` / `profile_context_record` and the expert CLI verbs `hpipe profile-fields` / `hpipe profile-record`. Unsupported or derived keys (e.g. `age`) are rejected at the store boundary, not stored.
+- **Normalized intake load path works.** `persist_intake_batch` loads a normalized `IntakeBatch` (the intake counterpart of `IngestBatch`) idempotently — re-running the same source artifact is a no-op via the per-event `dedupe_key UNIQUE` constraint.
+
+**Explicitly not shipped (still follow-on work):**
+
+- **No built-in nutrition/supplement importer.** The intake tables and load path exist, but adapting a *specific* source (a meal-logging app export, a supplement log) into them is parser/plugin work, exactly like the wearable sources. There is no built-in MyFitnessPal-style importer.
+- **No profile-dependent signals.** BMI and age-adjusted interpretation remain deferred; `age` stays derived from `birth_date` at evaluation time, never stored.
 
 ## What's working end-to-end
 
 | Component | State | Evidence |
 |---|---|---|
-| Warehouse schema (`hp.*`) | ✅ | 5 tables, 43 seeded metrics, FK-safe auto-seed for unknown metric IDs (e.g. `bmt_custom:hips`). |
+| Warehouse schema (`hp.*`) | ✅ | Observation/note tables (migrations 001–003) plus the profile/intake domain tables from migration `004_profile_intake.sql`, 43 seeded metrics, FK-safe auto-seed for unknown metric IDs (e.g. `bmt_custom:hips`). |
 | Health Connect parser | ✅ | ~900k rows from a real ~200 MB v20 export in ~13 s parse+load. |
 | Garmin GDPR parser | ✅ | Handles UDS, sleepData, healthStatusData, BloodPressureFile, HydrationLogFile, MetricsAcuteTrainingLoad, MetricsMaxMetData, TrainingReadinessDTO, summarizedActivities. Surfaces unknown filenames in `ingest_run.notes`. |
 | Sleep as Android parser | ✅ | Synthetic-fixture tests; per-minute actigraphy walk with DST-safe wall-clock advancement. |
 | BMT parser | ✅ | Detects long vs wide format from header. Long-format (current app) respects per-row `Unit`; custom metrics (`hips`, `waist`, `neck`, …) routed to `bmt_custom:*`. |
 | Loader (batch insert) | ✅ | Polars→DuckDB temp-table registration, single `INSERT … SELECT … WHERE NOT EXISTS`. Native-key dedupe + cross-source priority dedupe done as set-based SQL. |
-| CLI (`hpipe`) | ✅ | All 9 verbs surfaced: `ingest`, `status`, `export`, `upload`, `doctor`, `gc`, `run-monthly`, `install-launchd`, `uninstall-launchd`. |
+| CLI (`hpipe`) | ✅ | Ingest/ops verbs (`ingest`, `status`, `export`, `upload`, `doctor`, `gc`, `run-monthly`, `install-launchd`, `uninstall-launchd`, `install-skills`) plus the bounded profile-capture verbs `profile-fields` / `profile-record` (expert mirror of the agent capture tools). |
 | Idempotency | ✅ | sha256 skip in `hp.ingest_run`, plus `dedupe_key UNIQUE` + intra-batch Polars `.unique()`. |
 | CSV autodiscovery | ✅ | Header-sniffs SAA vs BMT (no naming convention required). |
 | Export artifact encryption | ✅ | Live round-trip verified 2026-05-21 against `~/.config/premura/age.key`; decrypted snapshot byte-identical to `data/duck/health.duckdb` (`diff` empty). Per-test keypair regression in `tests/test_encrypt_roundtrip.py`. |
 | Drive upload (now OPT-IN, not auto) | ⚠️ Code complete, not live | `hpipe upload` only runs on explicit invocation. `run-monthly` no longer pushes to Drive — it stops after the encrypted artifact lands locally. |
 | Launchd plist | ✅ | Bootstrapped 2026-05-21 (`com.nbrandizzi.premura.monthly`). `kickstart` fired the macOS notification, `run-monthly` reached the `_wait_for_ready` loop without ingesting (no `.ready`), exited cleanly on SIGTERM. Plist render covered by `tests/test_launchd_plist.py` (incl. `plutil -lint`). |
-| Tests | ✅ | 134/134 pytest pass, incl. a real-data HC regression that round-trips ~900k rows, the FR-6 `age` round-trip suite, FR-8 plist render + `plutil -lint`, and full Stage 2 engine + Stage 3 signal-tool coverage (all six signal-backed tools exercised end-to-end through the public entrypoint). |
+| Tests | ✅ | 260/260 pytest pass, incl. a real-data HC regression that round-trips ~900k rows, the FR-6 `age` round-trip suite, FR-8 plist render + `plutil -lint`, full Stage 2 engine + Stage 3 signal-tool coverage (all six signal-backed tools end-to-end), the profile/intake contract harness, profile capture append/supersede + allowlist enforcement, and idempotent intake-batch loading. |
 
 ## Warehouse contents (current snapshot)
 

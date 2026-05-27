@@ -21,13 +21,18 @@ these domains apart from the data Premura already stores. It is the agreed shape
 of what these domains contain — the thing later ingest, signal-processing, and
 user-facing work can build on without re-deciding the boundary each time.
 
-It is **not** a storage design. On purpose, this document does not choose a
-DuckDB table layout, a migration, an object-relational model, or an API. The
-rule for this whole surface is short:
+This document is the **meaning contract**, not the storage design. It does not
+choose the DuckDB layout — but, as of the
+`implement-profile-and-intake-storage-01KSMWV1` mission, a concrete storage
+adapter that satisfies this contract now exists (see "Concrete storage now
+exists" below). The rule for this surface is unchanged:
 
-- **Keep storage open.** Any future adapter may persist this however it likes.
-- **Make meaning strict.** Whatever the adapter chooses, the meaning below must
-  survive unchanged.
+- **Meaning is strict and authoritative here.** Whatever the storage adapter
+  does, the meaning below must survive unchanged.
+- **Storage is the adapter's choice.** This document is still the fixed point; a
+  future adapter could re-shape the tables as long as it preserves these
+  meanings. The current adapter is the *first* such choice, not a constraint
+  baked into the contract.
 
 Two things follow from that, and they matter for review:
 
@@ -35,10 +40,13 @@ Two things follow from that, and they matter for review:
   stages — ingest, signal processing, MCP, and user interface (see
   [STAGES.md](STAGES.md)). Profile context and intake are data domains that
   later stages read; they are not a new step in the pipeline.
-- Nothing here describes a feature the operator already has. There is no capture
-  screen, no importer, and no Stage 2 answer shipped by this contract. This
-  document fixes meaning so that those follow-on pieces have one home to build
-  against. The deferred work is named at the end.
+- The shipped capability is bounded. Baseline profile context now has a real
+  **agent-mediated capture** path; nutrition and supplement intake have real
+  **storage and a normalized load path**, but **no built-in importer for any
+  specific nutrition/supplement source ships** — adapting a particular source
+  into these tables is follow-on parser/plugin work. No profile-dependent Stage 2
+  answer (BMI, age-adjusted interpretation) ships either. What is and is not built
+  is itemized under "Concrete storage now exists" and "What stays deferred".
 
 ## The three new domains
 
@@ -195,30 +203,73 @@ requirement must not depend on that. The required shape and worked examples (BMI
 a protein-intake summary, a supplement-adherence summary) are in
 [profile_and_intake_dependencies.yaml](contracts/profile_and_intake_dependencies.yaml).
 
-## Why storage is intentionally not prescribed here
+## Why meaning was fixed before storage
 
-Premura prefers to fix meaning early and defer mechanism. If this document
-committed to tables and columns now, every later storage choice would have to
-re-open the boundary question to change them. By contracting on meaning instead,
-a future mission can pick whatever persistence shape fits — extra columns on an
-existing dimension, new tables, an entirely separate store — as long as it can
-represent the entities, honour the invariants, and answer the declared
-dependencies. The contract is the fixed point; the storage adapter is free to
-move underneath it.
+Premura fixed meaning early and deferred mechanism. If this document had
+committed to tables and columns up front, every later storage choice would have
+had to re-open the boundary question to change them. By contracting on meaning
+first, the storage mission below could pick a persistence shape that represents
+the entities, honours the invariants, and answers the declared dependencies —
+without re-litigating which domain anything belongs to. The contract stays the
+fixed point; the storage adapter sits underneath it.
+
+## Concrete storage now exists
+
+The `implement-profile-and-intake-storage-01KSMWV1` mission added a storage
+adapter that satisfies this contract. It lives in migration
+`src/premura/store/migrations/004_profile_intake.sql` and is exercised through
+`src/premura/store/profile_intake.py`. The semantic vocabulary above maps onto it
+as follows (the contract names are the *meaning*; the table/column names are the
+*current adapter*):
+
+- **Baseline profile context** → `hp.profile_capture_session` (one bounded
+  capture session, bookkeeping only) and `hp.profile_context_assertion` (one
+  recorded assertion per row). A profile *attribute* is a key in the closed
+  allowlist (`src/premura/profile_fields.py`: `birth_date`, `sex`,
+  `standing_height_cm`); a profile *assertion* is a row. Correction lineage is
+  the `supersedes_assertion_id` self-reference plus the closed `effective_end_utc`
+  of the superseded row — the append/supersede semantics the contract requires,
+  enforced in `record_profile_context`. The declared-height attribute ships as
+  `standing_height_cm` (the contract's `standing_height_declared` meaning).
+- **Nutrition intake** → `hp.nutrition_intake_event` → `hp.nutrition_intake_item`
+  → `hp.nutrition_quantity`. An intake event, an intake item, and a nutrition
+  fact respectively. Quantity keys (e.g. `energy`, `protein`) stay distinct from
+  body-observation `metric_id`s; partial records are allowed (unknown nutrients
+  are absent, never zero).
+- **Supplement intake** → `hp.supplement_intake_event` → `hp.supplement_item`
+  → `hp.supplement_dose`. The dose preserves the amount actually taken even when
+  the ingredient breakdown is unknown.
+
+Two contract rules are now **structural**, not just prose:
+
+- **One-home separation.** Each domain has its own tables under `hp.`; there is
+  deliberately no JSON catch-all bucket and nothing writes these meanings into
+  `hp.fact_measurement` / `hp.fact_interval` / note storage. The back-door the
+  contract forbids is unavailable because no such column exists.
+- **Bounded capture.** `record_profile_context` validates every write against the
+  allowlist at the store boundary; an unsupported or derived key (such as `age`)
+  raises before any row is written. Provenance for the agent path is
+  `source_kind="agent_profile_capture"`.
+
+What the adapter does **not** add: any built-in importer for a specific
+nutrition/supplement source. `persist_intake_batch` loads a normalized
+`IntakeBatch` idempotently (dedupe on the `dedupe_key` UNIQUE constraint), but
+producing that batch from a real meal-logging or supplement export is the
+parser/plugin follow-on work named below.
 
 ## What stays deferred
 
-This contract decides *where data lives and what it means*. It does not ship the
-machinery to put data there. Explicitly deferred to later implementation
-missions:
+Storage and the agent-mediated profile-capture path now ship. Explicitly still
+deferred to later missions:
 
-- import paths and parsers for profile or intake data,
-- manual-entry workflows,
-- any new Stage 2 signal or Stage 3 MCP tool that consumes these domains
-  (BMI and age-adjusted interpretation included),
-- the concrete storage adapter and any migration it needs,
-- user-facing teaching copy.
+- parsers/plugins that adapt a specific nutrition or supplement source into the
+  intake tables (there is a load path and a normalized seam, but no built-in
+  importer for any particular source),
+- any new Stage 2 signal or Stage 3 MCP tool that *consumes* these domains —
+  BMI and age-adjusted interpretation included (`age` remains derived, never
+  stored),
+- user-facing teaching copy for the captured domains.
 
 When those missions run, the open questions should be implementation and workflow
 choices only — not a re-litigation of which domain profile and intake data belong
-to.
+to, nor of how the data is stored.

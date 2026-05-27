@@ -34,7 +34,12 @@ from typing import TYPE_CHECKING, Any
 from .. import engine
 from ..config import settings
 from ..engine import MissingInputReport, comparative_signals
-from ..store import duck
+from ..profile_fields import (
+    SUPPORTED_PROFILE_FIELDS,
+    UnsupportedProfileFieldError,
+    get_profile_field,
+)
+from ..store import duck, profile_intake
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -84,6 +89,181 @@ def _open_warehouse(warehouse_path: Path | None) -> Iterator[duckdb.DuckDBPyConn
         yield conn
     finally:
         conn.close()
+
+
+# --------------------------------------------------------------------------- #
+# Agent-mediated bounded profile capture (WP03).
+#
+# These two helpers are the runtime write surface for stable baseline profile
+# facts. They are the only profile-capture path the MCP/CLI layers touch, and
+# they delegate ALL validation and persistence to the store boundary
+# (``premura.store.profile_intake`` + ``premura.profile_fields``). There is no
+# generic attribute writer here: the bounded allowlist is enforced once, at the
+# store, and every unsupported/derived key (e.g. ``age``) is rejected there.
+# --------------------------------------------------------------------------- #
+
+#: Provenance recorded for facts written through this agent-mediated surface.
+PROFILE_CAPTURE_SOURCE_KIND = profile_intake.DEFAULT_PROFILE_SOURCE_KIND
+
+
+@contextmanager
+def _open_warehouse_writable(
+    warehouse_path: Path | None,
+) -> Iterator[duckdb.DuckDBPyConnection]:
+    """Open the warehouse read-write for profile capture and always close it.
+
+    Profile capture mutates ``hp.profile_context_assertion``, so unlike the
+    read-only analytical tools this opens a writable connection. Migrations are
+    re-run (idempotent ``CREATE ... IF NOT EXISTS``) so the profile tables exist
+    even if this is the first write against a freshly created warehouse.
+    """
+    conn = duck.connect(warehouse_path or settings.warehouse_path, read_only=False)
+    try:
+        duck.run_migrations(conn)
+        yield conn
+    finally:
+        conn.close()
+
+
+def supported_profile_fields() -> dict[str, Any]:
+    """Return the bounded baseline-profile allowlist as a self-describing schema.
+
+    This is the discovery half of the capture surface: it tells a caller exactly
+    which attribute keys are storable, what value shape each expects, and (for
+    enums) the closed set of allowed values — so the caller never has to guess or
+    probe with a failing write. It delegates to ``premura.profile_fields`` rather
+    than re-listing keys, keeping the allowlist single-sourced.
+    """
+    fields = [
+        {
+            "attribute_key": field.attribute_key,
+            "value_kind": str(field.value_kind),
+            "description": field.description,
+            "unit": field.unit,
+            "allowed_values": (
+                list(field.allowed_values) if field.allowed_values is not None else None
+            ),
+        }
+        for field in SUPPORTED_PROFILE_FIELDS.values()
+    ]
+    return {
+        "fields": fields,
+        "supported_keys": [f["attribute_key"] for f in fields],
+        "source_kind": PROFILE_CAPTURE_SOURCE_KIND,
+    }
+
+
+def record_profile_context(
+    attribute_key: str,
+    value: Any,
+    *,
+    effective_start_utc: str | datetime | None = None,
+    source_ref: str | None = None,
+    actor_ref: str | None = None,
+    notes: str | None = None,
+    warehouse_path: Path | None = None,
+) -> dict[str, Any]:
+    """Record one bounded baseline profile fact through the agent-mediated path.
+
+    Validation and persistence are delegated to the store boundary
+    (:func:`premura.store.profile_intake.record_profile_context`), which enforces
+    the bounded allowlist. An unsupported or derived key (e.g. ``age``) is NOT
+    silently dropped: it is surfaced as a structured ``rejected`` response with an
+    explicit reason, distinct from the ``recorded`` happy path.
+
+    Each call opens a bounded capture session so provenance is attributable, and
+    records the new assertion as ``agent_profile_capture``. When the write
+    supersedes a prior open assertion for the same attribute, the superseded id is
+    surfaced so the caller can see the append/supersede effect rather than a vague
+    success.
+    """
+    try:
+        field = get_profile_field(attribute_key)
+    except UnsupportedProfileFieldError as exc:
+        return {
+            "status": "rejected",
+            "attribute_key": attribute_key,
+            "reason": str(exc),
+            "supported_keys": list(SUPPORTED_PROFILE_FIELDS),
+        }
+
+    start = _parse_effective_start(effective_start_utc)
+
+    with _open_warehouse_writable(warehouse_path) as conn:
+        capture_session_id = profile_intake.start_profile_capture_session(
+            conn, actor_kind="agent", actor_ref=actor_ref, notes=notes
+        )
+        superseded_id = profile_intake.current_assertion_id(conn, attribute_key)
+        try:
+            assertion_id = profile_intake.record_profile_context(
+                conn,
+                attribute_key=attribute_key,
+                value=value,
+                effective_start_utc=start,
+                capture_session_id=capture_session_id,
+                source_kind=PROFILE_CAPTURE_SOURCE_KIND,
+                source_ref=source_ref,
+                supersede=True,
+            )
+        except (UnsupportedProfileFieldError, ValueError) as exc:
+            # A value that does not fit the field's typed slot (or a late-detected
+            # unsupported key) is a visible rejection, not a silent success.
+            return {
+                "status": "rejected",
+                "attribute_key": attribute_key,
+                "reason": str(exc),
+                "supported_keys": list(SUPPORTED_PROFILE_FIELDS),
+            }
+        stored = profile_intake.get_current_profile(conn, attribute_key)
+
+    return {
+        "status": "recorded",
+        "attribute_key": attribute_key,
+        "value_kind": str(field.value_kind),
+        "assertion_id": assertion_id,
+        "capture_session_id": capture_session_id,
+        "source_kind": PROFILE_CAPTURE_SOURCE_KIND,
+        "superseded_assertion_id": superseded_id,
+        "current": _serialize_assertion(stored),
+    }
+
+
+def _parse_effective_start(value: str | datetime | None) -> datetime:
+    """Resolve the assertion's effective-start instant.
+
+    Defaults to "now" (naive UTC, matching the warehouse's timezone-naive
+    storage) when the caller does not pin a start, so the common "this is true as
+    of now" capture needs no argument.
+    """
+    if value is None:
+        return datetime.utcnow()
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        if not value.strip():
+            raise ValueError("effective_start_utc must be a non-empty ISO-8601 timestamp")
+        return datetime.fromisoformat(value.strip())
+    raise ValueError("effective_start_utc must be an ISO-8601 string or datetime")
+
+
+def _serialize_assertion(
+    record: profile_intake.ProfileAssertionRecord | None,
+) -> dict[str, Any] | None:
+    """Serialize a stored profile assertion into a JSON-safe read-back view."""
+    if record is None:
+        return None
+    return {
+        "assertion_id": record.assertion_id,
+        "attribute_key": record.attribute_key,
+        "value_text": record.value_text,
+        "value_num": record.value_num,
+        "value_date": _json_safe(record.value_date),
+        "unit": record.unit,
+        "effective_start_utc": _json_safe(record.effective_start_utc),
+        "effective_end_utc": _json_safe(record.effective_end_utc),
+        "source_kind": record.source_kind,
+        "supersedes_assertion_id": record.supersedes_assertion_id,
+    }
 
 
 def list_metrics(
@@ -451,13 +631,16 @@ def _json_safe(value: object) -> Any:
 
 
 __all__ = [
+    "PROFILE_CAPTURE_SOURCE_KIND",
     "hrv_change_around_date",
     "list_metrics",
     "metric_summary",
     "query_warehouse",
+    "record_profile_context",
     "resting_hr_status",
     "resting_hr_trend",
     "sleep_deep_pct_baseline",
     "steps_trend",
+    "supported_profile_fields",
     "weight_trend",
 ]

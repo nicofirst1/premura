@@ -143,6 +143,50 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
             warehouse_path=warehouse_path,
         )
 
+    # --- Agent-mediated profile capture (WP03) --------------------------- #
+    # The bounded write path for stable baseline profile facts. These live on
+    # the DEFAULT agent-safe surface (not the operator-only surface) because
+    # bounded capture is the supported agent workflow. Both delegate straight to
+    # the store boundary, which enforces the allowlist; unsupported/derived keys
+    # (e.g. ``age``) come back as a structured ``rejected`` response.
+
+    @mcp.tool()
+    def profile_context_supported_fields() -> dict[str, Any]:
+        """List the bounded baseline-profile attributes that can be captured.
+
+        Returns each supported ``attribute_key`` with its value shape (and, for
+        enums, the allowed values) so the agent can discover the surface before
+        writing. Keys outside this set — including derived ones like ``age`` —
+        are not storable.
+        """
+        return warehouse_server.supported_profile_fields()
+
+    @mcp.tool()
+    def profile_context_record(
+        attribute_key: str,
+        value: str | int | float,
+        effective_start_utc: str | None = None,
+        source_ref: str | None = None,
+        notes: str | None = None,
+    ) -> dict[str, Any]:
+        """Record one bounded baseline profile fact (agent-mediated capture).
+
+        ``attribute_key`` must be in the supported allowlist (see
+        ``profile_context_supported_fields``). A supported fact is stored as a new
+        ``agent_profile_capture`` assertion (superseding any prior open one) and
+        returned with ``status='recorded'``; an unsupported or derived key, or a
+        value that does not fit the field, is returned with ``status='rejected'``
+        and an explicit reason rather than silently accepted.
+        """
+        return warehouse_server.record_profile_context(
+            attribute_key,
+            value,
+            effective_start_utc=effective_start_utc,
+            source_ref=source_ref,
+            notes=notes,
+            warehouse_path=warehouse_path,
+        )
+
 
 def build_server(*, warehouse_path: Path | None = None) -> FastMCP:
     """Build the default agent-safe MCP server surface.

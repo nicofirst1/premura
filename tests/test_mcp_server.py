@@ -167,7 +167,8 @@ def test_metric_summary_rejects_blank_metric_id(tmp_path: Path) -> None:
         metric_summary("   ", warehouse_path=_initialized_warehouse(tmp_path))
 
 
-# WP03: default surface omits query_warehouse; the eight agent-safe tools.
+# WP03: default surface omits query_warehouse; the agent-safe tools = the six
+# Stage 2 signals + two catalog tools + the two bounded profile-capture tools.
 _DEFAULT_TOOLS = sorted(
     [
         "list_metrics",
@@ -178,6 +179,8 @@ _DEFAULT_TOOLS = sorted(
         "weight_trend",
         "sleep_deep_pct_baseline",
         "hrv_change_around_date",
+        "profile_context_supported_fields",
+        "profile_context_record",
     ]
 )
 
