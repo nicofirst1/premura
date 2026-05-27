@@ -198,3 +198,4 @@ Review for consistency and honesty:
 - 2026-05-27T12:59:16Z – claude:opus:implementer:implementer – shell_pid=19322 – Started implementation via action command
 - 2026-05-27T13:05:08Z – claude:opus:implementer:implementer – shell_pid=19322 – Ready for review
 - 2026-05-27T13:05:42Z – claude:opus:reviewer:reviewer – shell_pid=40494 – Started review via action command
+- 2026-05-27T13:08:24Z – claude:opus:reviewer:reviewer – shell_pid=40494 – Review passed: ADR 0005 records the strict-contract/flexible-storage decision as a concise decision note (problem, decision, why it won, invariant-first agent-review rationale, deferred scope); four product docs realigned to the resolved boundary with historical context preserved; no overclaim of shipped capability; non-diagnostic/local-first posture intact; coherent with WP01/WP03 contract; 193 tests pass.
