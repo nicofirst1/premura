@@ -1,0 +1,105 @@
+version: 1
+title: Profile and Intake Semantic Invariants
+scope: semantic_contract_only
+storage_prescribed: false
+review_mode: agent_first
+description: >
+  The closed, load-bearing set of rules that any implementation of these domains
+  must hold true, and that agent review may treat as gates. Each invariant leads
+  with a positive "must always be true" statement; forbidden shortcuts appear
+  only as examples of what a violation looks like. See
+  ../PROFILE_AND_INTAKE_CONTRACT.md for prose and profile_and_intake_examples.yaml
+  for the worked classification cases these invariants police.
+
+invariants:
+  - invariant_id: INV-001
+    name: one_home_classification
+    must_always_be_true: >
+      Every normalized example maps to exactly one canonical home:
+      profile_context, nutrition_intake, supplement_intake, observation_history,
+      or note_history. No example carries two homes, and there is no
+      context/misc/metadata home to absorb the undecided.
+    applies_to:
+      - profile_context
+      - nutrition_intake
+      - supplement_intake
+      - observation_history
+      - note_history
+    how_to_check: >
+      Each classification example names exactly one canonical_home drawn from the
+      allowed set; reject any dual or vague classification.
+    violation_examples:
+      - Treating a supplement dose as both supplement_intake and a body observation.
+      - Treating declared standing height as the same value as a measured smart-scale height row.
+      - Filing an undecided value under a context, misc, or metadata bucket.
+
+  - invariant_id: INV-002
+    name: domains_stay_distinct
+    must_always_be_true: >
+      Profile assertions, intake records, and observations remain distinct
+      entities with distinct meanings even when they describe similar real-world
+      subjects.
+    applies_to:
+      - profile_context
+      - nutrition_intake
+      - supplement_intake
+      - observation_history
+    how_to_check: >
+      Overlap subjects (height, calories) keep separate entity names and homes;
+      no domain's data is stored as another domain's shape.
+    violation_examples:
+      - Back-dooring biological sex into hp.fact_measurement as if it were observed.
+      - Storing meal nutrients as generic body measurements.
+      - Merging a meal's energy and a wearable's total_kcal into one "calories" value.
+
+  - invariant_id: INV-003
+    name: corrections_stay_visible
+    must_always_be_true: >
+      Corrections and supersessions stay visible. A newer or corrected record
+      references the one it replaces, so prior provenance is never silently
+      erased.
+    applies_to:
+      - profile_context
+      - nutrition_intake
+      - supplement_intake
+    how_to_check: >
+      ProfileAssertion and IntakeEvent expose a supersedes_* reference and a
+      provenance_kind that can be 'corrected'; lineage is reconstructable.
+    violation_examples:
+      - Overwriting a birth date or a meal estimate in place without audit-visible lineage.
+      - Deleting an old assertion when recording a corrected one.
+
+  - invariant_id: INV-004
+    name: dependencies_declared_explicitly
+    must_always_be_true: >
+      A future function that needs profile or intake context declares that
+      dependency explicitly, naming the exact keys it requires and its honest
+      failure mode.
+    applies_to:
+      - profile_context
+      - nutrition_intake
+      - supplement_intake
+    how_to_check: >
+      Each consumer of these domains has a DependencyDeclaration naming
+      depends_on_domain, required_keys, and failure_mode; see
+      profile_and_intake_dependencies.yaml.
+    violation_examples:
+      - A BMI implementation reading opportunistic height data without a declared dependency.
+      - Supplement-effect logic assuming dose history exists, mined from notes, with no declaration.
+
+  - invariant_id: INV-005
+    name: partial_allowed_fabrication_forbidden
+    must_always_be_true: >
+      Partial knowledge is allowed: a record may omit subfields it does not know.
+      Fabricated values are forbidden; an unknown amount is absent, not invented.
+    applies_to:
+      - profile_context
+      - nutrition_intake
+      - supplement_intake
+    how_to_check: >
+      Records with missing nutrients, ingredients, or profile values are valid;
+      reject any implementation that fills unknowns with placeholder numbers.
+    violation_examples:
+      - Filling unknown micronutrients with zeros.
+      - Inventing a supplement's ingredient breakdown from its brand name alone.
+      - Asserting age independently instead of deriving it from birth_date.

@@ -1,0 +1,70 @@
+version: 1
+title: Profile and Intake Dependency Declaration Contract
+scope: semantic_contract_only
+storage_prescribed: false
+description: >
+  The explicit shape future Stage 2 (signal processing) and Stage 3 (MCP) work
+  must use to declare its profile- and intake-domain prerequisites. This is a
+  domain contract, not an API request schema: it says what a consumer needs and
+  how it behaves when that need is unmet, not how a request travels over a wire.
+  See ../PROFILE_AND_INTAKE_CONTRACT.md for prose and
+  profile_and_intake_entities.yaml for the DependencyDeclaration entity.
+
+declaration_shape:
+  required_fields:
+    - consumer_name
+    - depends_on_domain
+    - required_keys
+    - failure_mode
+  field_meanings:
+    consumer_name: Stable name of the function, workflow, or tool that has the dependency.
+    depends_on_domain: >
+      One or more of profile_context, nutrition_intake, supplement_intake,
+      observation_history.
+    required_keys: >
+      The exact attribute keys, nutrition-fact keys, dose keys, or observation
+      metric names the consumer requires. Naming the keys is mandatory; a bare
+      domain reference is not a declaration.
+    failure_mode: >
+      Honest behavior when prerequisites are absent, stale, partial, or unknown.
+
+rules:
+  - must_always_be_true: A consumer that needs profile context names the exact profile attribute keys it depends on.
+  - must_always_be_true: A consumer that needs nutrition or supplement context names the exact nutrition-fact or dose keys it depends on.
+  - must_always_be_true: The meaning of a declared requirement stays unchanged across storage adapters; a declaration is satisfied by meaning, not by table shape.
+  - forbidden: Treating opportunistic presence of a value in observation history as a substitute for an explicit declaration.
+
+examples:
+  - consumer_name: bmi_status
+    depends_on_domain:
+      - profile_context
+      - observation_history
+    required_keys:
+      - standing_height_declared
+      - weight
+    failure_mode: refuse_with_missing_profile_context
+    note: >
+      BMI needs the operator's declared standing height (profile context) plus a
+      measured body weight (observation history). It declares both rather than
+      reusing whatever height row happens to be present.
+
+  - consumer_name: protein_intake_summary
+    depends_on_domain:
+      - nutrition_intake
+    required_keys:
+      - protein_g
+    failure_mode: return_partial_if_some_events_missing
+    note: >
+      Summarizes protein consumed over a window from NutritionFact rows; honest
+      about partial coverage rather than fabricating missing meals.
+
+  - consumer_name: supplement_adherence_summary
+    depends_on_domain:
+      - supplement_intake
+    required_keys:
+      - dose_amount
+      - dose_unit
+    failure_mode: refuse_if_dose_history_not_normalized
+    note: >
+      Reports adherence from normalized SupplementDose records; refuses rather
+      than guessing when dose history is not normalized.

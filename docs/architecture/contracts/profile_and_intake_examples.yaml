@@ -1,0 +1,104 @@
+version: 1
+title: Profile and Intake Classification Examples
+scope: semantic_contract_only
+storage_prescribed: false
+description: >
+  Worked one-home classification examples. Each named example maps to exactly
+  one canonical home, and every overlap pair shows how similar real-world
+  subjects land in different homes. Reviewers may use these mechanically to
+  reject ambiguous or dual-classified implementations. See
+  ../PROFILE_AND_INTAKE_CONTRACT.md and profile_and_intake_entities.yaml.
+
+# The only canonical homes. There is deliberately no context/misc/metadata home.
+canonical_homes:
+  - profile_context
+  - nutrition_intake
+  - supplement_intake
+  - observation_history
+  - note_history
+
+examples:
+  - example: birth_date
+    canonical_home: profile_context
+    entity: ProfileAssertion
+    rationale: A permanent personal attribute the operator states about themselves; not a measured event.
+
+  - example: biological_sex
+    canonical_home: profile_context
+    entity: ProfileAssertion
+    rationale: A stable personal attribute, declared rather than measured by an instrument.
+
+  - example: declared_standing_height
+    canonical_home: profile_context
+    entity: ProfileAssertion
+    rationale: A height the operator states about themselves; the operator's own account, slowly-changing over a lifetime.
+
+  - example: measured_smart_scale_height
+    canonical_home: observation_history
+    entity: fact_measurement_row
+    rationale: A height a device emitted; an instrument reading with measurement provenance, not the operator's declaration.
+
+  - example: meal_energy
+    canonical_home: nutrition_intake
+    entity: NutritionFact
+    rationale: An energy amount attributed to a consumed meal; a quantity of intake, not a body-state measurement.
+
+  - example: protein_intake
+    canonical_home: nutrition_intake
+    entity: NutritionFact
+    rationale: A nutrient amount (protein_g) attributed to an intake item or event; consumed, not observed about the body.
+
+  - example: supplement_dose
+    canonical_home: supplement_intake
+    entity: SupplementDose
+    rationale: The quantity taken of a supplement item; an act of intake, not a reading about the body.
+
+  - example: narrative_note
+    canonical_home: note_history
+    entity: note
+    rationale: Free text that cannot be normalized into a structured value; stays a note rather than being forced into a structured domain.
+
+  - example: wearable_total_kcal
+    canonical_home: observation_history
+    entity: fact_interval_aggregate
+    rationale: A daily energy-expenditure total a wearable reported; an observation/interval aggregate the device measured, not intake.
+
+# Each pair shows two similar real-world subjects landing in different homes.
+# These are the cases reviewers most often see conflated.
+overlap_pairs:
+  - subject: height
+    members:
+      - example: declared_standing_height
+        canonical_home: profile_context
+        why_here: The operator's own stated account of their height.
+      - example: measured_smart_scale_height
+        canonical_home: observation_history
+        why_here: An instrument reading captured at a moment with measurement provenance.
+    resolution: >
+      Same physical quantity, two homes. A function that needs "height" must
+      name which one it depends on; the model never collapses them into one
+      "height" value.
+
+  - subject: calories
+    members:
+      - example: meal_energy
+        canonical_home: nutrition_intake
+        why_here: Energy attributed to something consumed.
+      - example: wearable_total_kcal
+        canonical_home: observation_history
+        why_here: Energy expenditure a device measured and reported.
+    resolution: >
+      Both are "calories" but they describe opposite sides (intake vs
+      expenditure) measured in different ways; they never merge into one number.
+
+  - subject: age_vs_birth_date
+    members:
+      - example: birth_date
+        canonical_home: profile_context
+        why_here: A permanent asserted attribute.
+      - example: age
+        canonical_home: profile_context
+        why_here: Derived from birth_date at evaluation time; never asserted independently (ProfileAttribute.stability_class=derived).
+    resolution: >
+      Age is not stored or asserted on its own. It is derived from birth_date
+      and the evaluation date so the two cannot drift apart.

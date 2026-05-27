@@ -10,7 +10,13 @@
 A "warehouse update" is anything that changes the rows in `hp.fact_measurement`
 / `hp.fact_interval` / `hp.dim_metric`, or the meaning of those rows, after
 the warehouse already exists. The six shapes below are intentionally
-exhaustive — every plausible change collapses into one of them.
+exhaustive — every plausible change to **observation history** collapses into
+one of them.
+
+> Profile assertions and intake corrections are a **different update shape** and
+> do not fit any of the six below. They are covered separately under
+> [Correction and supersession](#correction-and-supersession-profile-and-intake)
+> at the end of this document — they are *not* a seventh rebuild flow.
 
 ## The six update kinds
 
@@ -127,3 +133,56 @@ The skeleton's job is to make sure the *metadata required by* (d), (e), and
 authoritative ontology, the per-row `source_sha256` and `dedupe_key`, and
 the encrypted raws preserved in `data/raw/` by the export pipeline. Future
 missions can add the verbs without re-litigating the data model.
+
+## Correction and supersession (profile and intake)
+
+The six update kinds above govern **observation history** — the device/lab
+measurements in `hp.fact_measurement` / `hp.fact_interval`. They all share one
+assumption: the warehouse is rebuildable from raws, so the chosen escape hatch
+for hard changes is to re-derive from the original artifacts (kind (e)).
+
+The new semantic domains fixed in
+[PROFILE_AND_INTAKE_CONTRACT.md](PROFILE_AND_INTAKE_CONTRACT.md) — baseline
+profile context, nutrition intake, and supplement intake — change differently,
+and the difference matters enough to call out explicitly so future work does not
+reach for the wrong tool.
+
+### Correction/supersession is not raw-history rebuild
+
+When a profile value is wrong, or a newer value supersedes an older one (the
+operator updates a declared standing height, corrects a recorded meal, or fixes a
+supplement dose), the intended shape is **a new assertion that points back at
+what it supersedes or corrects** — not a rebuild and not a silent in-place
+overwrite.
+
+- The correction is itself a recorded statement, with its own provenance
+  (`corrected`) and its own effective time. The superseded value is not deleted;
+  the lineage from old to new stays visible.
+- This is **part of the data's meaning**, not a maintenance operation. There is
+  no raw artifact to re-parse: a declared height or a logged meal has no upstream
+  vendor export to rebuild from. The correction *is* the new authoritative
+  statement, and history is the chain of statements.
+
+Contrast this with observation history:
+
+| Aspect | Observation history (kinds (a)–(f)) | Profile / intake correction |
+|---|---|---|
+| Source of truth | Raw artifacts in `data/raw/` | The chain of recorded assertions/records |
+| Fixing a wrong value | Re-ingest or rebuild from raw (kind (e)/(f)) | Add a superseding assertion that references the prior one |
+| History model | Reconstructible from raws | Correction lineage is intrinsic data |
+| Deletion | Append-only rows; rebuild replaces them wholesale | Prior assertion is retained and marked superseded, never silently overwritten |
+
+So "correct a profile value" and "rebuild the warehouse" are **not** the same
+operation. A rebuild re-executes parsers over preserved raws; a profile/intake
+correction records a new statement and keeps the prior one visible. Conflating
+the two would either lose correction lineage (if treated as a rebuild) or
+pretend declarations have a raw artifact to rebuild from (they do not).
+
+### Still deferred
+
+As with the rest of the profile/intake contract, **no mechanism for this ships
+today**. There is no table, no `hpipe` verb, and no API for recording or
+superseding profile assertions or intake corrections. This section fixes the
+*intended update shape* so a future storage adapter and workflow mission can
+implement it without re-deciding whether corrections are rebuilds. The contract
+is the fixed point; the adapter is free to move underneath it.

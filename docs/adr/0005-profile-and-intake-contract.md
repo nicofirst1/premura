@@ -1,0 +1,54 @@
+# Fix profile and intake meaning in a strict contract; leave storage flexible
+
+Premura needed a home for three kinds of data that earlier planning (issue `#6`,
+later widened to nutrition and supplement intake) kept treating as an unresolved
+boundary question: baseline profile context the operator *states* about
+themselves, nutrition intake, and supplement intake. The recurring failure mode
+was that each new piece of follow-on work re-opened the same argument — "is a
+declared height a measurement?", "is a meal's energy the same as a wearable's
+total kcal?", "where do supplement doses go?" — and the easy answer (reuse
+`fact_measurement` or generic note storage because those paths already exist) was
+exactly the answer that quietly collapses two different meanings into one.
+
+The decision is to fix **meaning** strictly while leaving **storage** open. The
+authoritative contract lives in
+[`docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md`](../architecture/PROFILE_AND_INTAKE_CONTRACT.md)
+and the machine-readable surfaces beside it
+(`docs/architecture/contracts/profile_and_intake_*.yaml`). It defines the three
+domains, gives each normalized value exactly one canonical home
+(`profile_context`, `nutrition_intake`, `supplement_intake`,
+`observation_history`, `note_history` — with no `misc` bucket), and requires that
+any future signal or interpretation function *declare* the profile/intake keys it
+depends on rather than assume a value happens to be present. The contract
+deliberately does **not** choose a DuckDB table layout, a migration, or an API.
+These domains are not a fifth stage; they are data domains that later stages read.
+
+"Strict contract, flexible storage" won because the two competing pulls have
+different reversal costs. Meaning is expensive to change later: once code, tests,
+and operator data assume a declared height and a measured height are the same
+thing, untangling them is a migration plus a re-litigation. Storage is cheap to
+change later: a future mission can pick extra columns, new tables, or a separate
+store as long as it can represent the entities, honour the invariants, and answer
+the declared dependencies. So we pin the expensive-to-reverse thing now and defer
+the cheap-to-reverse thing — the opposite ordering (commit to tables, leave
+meaning fuzzy) is what forces every later storage change to re-open the boundary.
+
+Invariant-first review matters specifically because this repo is reviewed largely
+by agents, and an agent reviewer cannot reliably catch a *tasteful* boundary
+violation. "This declared height was written as a `fact_measurement` row" reads as
+a working change unless the reviewer already holds the rule that declarations are
+not measurements. Encoding the boundary as enumerated invariants and worked
+examples (the `profile_and_intake_*.yaml` files exercised by the WP02 test
+harness) turns that judgement call into a machine-checkable check: the back-door
+the contract forbids is the kind of thing a reviewer should be able to *fail*, not
+merely dislike. The contract is the fixed point against which later missions —
+and their reviewers — measure compliance.
+
+Intentionally deferred to later implementation missions: the concrete storage
+adapter and any migration; import paths and parsers for profile/intake data;
+manual-entry workflows; any new Stage 2 signal or Stage 3 MCP tool that consumes
+these domains (BMI and age-adjusted interpretation included); and user-facing
+capture or teaching copy. This mission ships **no** user-facing intake capture, no
+new signals, and no storage — only the meaning those follow-on pieces build
+against. Builds on ADR 0003 (ingest stays rebuild-from-raw, never derives) and the
+Stage boundaries in [`STAGES.md`](../architecture/STAGES.md).

@@ -218,6 +218,6 @@ Treat this document as the record of the first application pass, not as the curr
 
 Current next mission candidates should start from the open follow-on issues instead:
 
-1. `#6` model baseline personal profile attributes for engine functions.
+1. Profile and intake. Issue `#6` originally scoped this narrowly as "model baseline personal profile attributes for engine functions." That framing has since widened — the mission that ran covered baseline profile context **plus** nutrition intake and supplement intake — and it is no longer an open boundary question: the profile/intake meaning contract is now authoritative (`docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md`, design decision note `docs/adr/0005-profile-and-intake-contract.md`). The remaining work is implementation over that fixed seam — a storage adapter, manual-entry and import paths, and the first profile/intake-consuming signals (BMI, age-adjusted interpretation) — not a re-litigation of where the data belongs.
 2. File the first `v2.2 analytical depth` mission once those prerequisites are clear enough.
 3. Treat the closed Stage 3 direct-read-exception mission as part of the shipped analytical-surface foundation, not as pending follow-on work.

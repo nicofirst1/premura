@@ -1,0 +1,193 @@
+version: 1
+title: Profile and Intake Domain Entities
+scope: semantic_contract_only
+storage_prescribed: false
+description: >
+  Stable, machine-readable source of truth for the entity names and required
+  fields of Premura's baseline profile context, nutrition intake, and supplement
+  intake domains. Field names here are the contract: a storage adapter may
+  persist them however it likes, but it must be able to represent each one with
+  the meaning given. See ../PROFILE_AND_INTAKE_CONTRACT.md for the prose
+  authority and profile_and_intake_invariants.yaml for the rules these entities
+  must satisfy.
+
+# The five canonical homes used across this contract. Every normalized example
+# maps to exactly one of these. There is deliberately no context/misc/metadata
+# home.
+canonical_homes:
+  - profile_context
+  - nutrition_intake
+  - supplement_intake
+  - observation_history
+  - note_history
+
+entities:
+  - name: ProfileAttribute
+    domain: profile_context
+    purpose: >
+      Define one baseline-profile concept (its meaning, value shape, and
+      stability) without storing the operator's current value.
+    required_fields:
+      - name: attribute_key
+        meaning: Stable identifier of the concept, e.g. birth_date, biological_sex, standing_height_declared.
+      - name: value_kind
+        meaning: Shape of the asserted value.
+        allowed: [date, enum, quantity, text, boolean]
+      - name: stability_class
+        meaning: How the attribute changes over time and whether it is edited at all.
+        allowed: [stable, slowly_changing, derived]
+      - name: description
+        meaning: Plain-language meaning of the attribute.
+    semantic_notes:
+      - A ProfileAttribute names a meaning; it never holds the operator's current value. That belongs to ProfileAssertion.
+      - stability_class=derived means the value is computed from another attribute at evaluation time and is never asserted independently (e.g. age from birth_date).
+
+  - name: ProfileAssertion
+    domain: profile_context
+    purpose: >
+      Record one asserted value for one baseline-profile attribute, with
+      provenance, effective time, and a visible supersession/correction chain.
+    required_fields:
+      - name: assertion_id
+        meaning: Stable identifier for this single recorded statement.
+      - name: attribute_key
+        meaning: The ProfileAttribute this asserts a value for.
+      - name: value
+        meaning: The asserted value, shaped per the attribute's value_kind.
+      - name: effective_start
+        meaning: When the value became effective in the operator's life (not when it was written down).
+      - name: asserted_at
+        meaning: When this statement was recorded.
+      - name: provenance_kind
+        meaning: Origin of this assertion.
+        allowed: [manual, imported, derived, corrected]
+      - name: source_reference
+        meaning: Human/audit-visible descriptor of where the value came from.
+    optional_fields:
+      - name: supersedes_assertion_id
+        meaning: The earlier assertion this one supersedes or corrects, if any. Null for an original assertion.
+    semantic_notes:
+      - A newer or corrected assertion must not overwrite the prior one; it references it via supersedes_assertion_id so the lineage stays visible.
+      - effective_start and asserted_at are distinct on purpose; a value can become effective on one date but be recorded later.
+
+  - name: IntakeEvent
+    domain: nutrition_intake
+    also_used_by: supplement_intake
+    purpose: >
+      Anchor one eating, drinking, or supplement-taking occurrence in time. It
+      is the backbone shared by nutrition and supplement intake.
+    required_fields:
+      - name: intake_event_id
+        meaning: Stable identifier for this occurrence.
+      - name: event_kind
+        meaning: What kind of occurrence this is.
+        allowed: [meal, drink, supplement, mixed]
+      - name: occurred_at
+        meaning: When the consumption happened.
+      - name: provenance_kind
+        meaning: Origin of this record.
+        allowed: [manual, imported, derived, corrected]
+      - name: source_reference
+        meaning: Human/audit-visible descriptor of where the record came from.
+    optional_fields:
+      - name: local_context
+        meaning: Optional situational context for the occurrence (free, nullable).
+      - name: supersedes_event_id
+        meaning: The earlier event this one corrects or supersedes, if any.
+    semantic_notes:
+      - An IntakeEvent says consumption happened; on its own it implies no nutrient amounts or doses.
+      - Corrections create a visible supersession relationship rather than mutating history in place.
+
+  - name: IntakeItem
+    domain: nutrition_intake
+    also_used_by: supplement_intake
+    purpose: >
+      Represent one consumed thing (food, drink, or supplement) inside one
+      intake event.
+    required_fields:
+      - name: intake_item_id
+        meaning: Stable identifier for this consumed thing.
+      - name: intake_event_id
+        meaning: The IntakeEvent this item belongs to.
+      - name: item_kind
+        meaning: What sort of thing was consumed.
+        allowed: [food, drink, supplement]
+      - name: label
+        meaning: Plain-language name of the consumed thing.
+    optional_fields:
+      - name: quantity_description
+        meaning: Free description of how much (e.g. "one cup"), when no structured fact exists.
+      - name: product_reference
+        meaning: Reference to a branded product, if known. Never required.
+    semantic_notes:
+      - One IntakeEvent may hold several IntakeItems.
+      - item_kind=supplement allows but never requires a product_reference; an unknown product stays representable.
+
+  - name: NutritionFact
+    domain: nutrition_intake
+    purpose: >
+      Attach one energy or nutrient amount to an intake item or to an intake
+      event as a whole.
+    required_fields:
+      - name: nutrition_fact_id
+        meaning: Stable identifier for this quantity.
+      - name: subject_kind
+        meaning: Whether this amount is attributed to a whole event or a single item.
+        allowed: [event, item]
+      - name: subject_id
+        meaning: The intake_event_id or intake_item_id this amount is attributed to, per subject_kind.
+      - name: fact_key
+        meaning: Which energy or nutrient amount this is, e.g. energy_kcal, protein_g, carbohydrate_g, sodium_mg.
+      - name: amount
+        meaning: The numeric quantity.
+      - name: unit
+        meaning: The unit the amount is expressed in.
+      - name: estimate_quality
+        meaning: How well known the amount is.
+        allowed: [exact, estimated, partial]
+    semantic_notes:
+      - A NutritionFact cannot exist without an IntakeEvent anchor, directly or via its IntakeItem.
+      - Partial records are valid; an unknown nutrient is absent, never fabricated or recorded as zero.
+
+  - name: SupplementDose
+    domain: supplement_intake
+    purpose: >
+      Attach the taken dose to a supplement intake item, preserving what was
+      known about the product or ingredients at record time.
+    required_fields:
+      - name: supplement_dose_id
+        meaning: Stable identifier for this dose.
+      - name: intake_item_id
+        meaning: The supplement IntakeItem this dose belongs to.
+      - name: dose_amount
+        meaning: The numeric quantity taken.
+      - name: dose_unit
+        meaning: The unit the dose is expressed in.
+      - name: ingredient_scope
+        meaning: How much is known about the product's composition.
+        allowed: [single_ingredient, multi_ingredient, unknown]
+    optional_fields:
+      - name: ingredient_reference
+        meaning: Reference to a known ingredient or composition, if any. Never required.
+    semantic_notes:
+      - A SupplementDose must attach to an IntakeItem whose item_kind is supplement.
+      - The taken dose is preserved even when the underlying ingredients are not all known; an ingredient list is never invented from a brand name.
+
+  - name: DependencyDeclaration
+    domain: cross_domain
+    purpose: >
+      Declare explicit prerequisites that a future function or workflow requires
+      from these domains, so the dependency is named rather than assumed. See
+      profile_and_intake_dependencies.yaml for the full declaration contract.
+    required_fields:
+      - name: consumer_name
+        meaning: Stable name of the function, workflow, or tool that has the dependency.
+      - name: depends_on_domain
+        meaning: One or more domains the consumer draws on.
+        allowed: [profile_context, nutrition_intake, supplement_intake, observation_history]
+      - name: required_keys
+        meaning: The exact attribute, nutrition-fact, dose, or observation-metric keys the consumer needs.
+      - name: failure_mode
+        meaning: Honest behavior when a prerequisite is absent, stale, partial, or unknown.
+    semantic_notes:
+      - A consumer must name the exact keys it needs; opportunistic presence in observation history is not a substitute for declaring the dependency.

@@ -46,11 +46,12 @@ Premura has already shipped:
 - the federated parser plug-in code (`PluginParser`, `IngestBatch`, `dim_metric.yaml` ontology)
 - a real Stage 3 MCP surface — the three raw warehouse tools (`query_warehouse`, `list_metrics`, `metric_summary`) plus six signal-backed tools
 - the first real Stage 2 behavior — six grounded, freshness-aware signals (current resting HR, resting-HR trend, steps trend, weight trend, deep-sleep vs own baseline, overnight-HRV change around a date) with a contributor contract (`src/premura/engine/CONTRACT.md`); `ui` remains a stub
+- the authoritative profile/intake **meaning contract** (`docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md` plus the `docs/architecture/contracts/profile_and_intake_*.yaml` surfaces, design decision note `docs/adr/0005-profile-and-intake-contract.md`). This fixes where baseline profile context, nutrition intake, and supplement intake live and what they mean — it ships **no** storage, importer, capture screen, or Stage 2 answer; it only settles the boundary so follow-on missions build against one home.
 
-So `engine` and `mcp` are no longer empty stubs: Stage 2 and part of Stage 3 are real for six approved question shapes. What is still missing is the rest of the v2 payoff:
+So `engine` and `mcp` are no longer empty stubs: Stage 2 and part of Stage 3 are real for six approved question shapes, and the long-open profile/intake boundary question is now answered at the contract level rather than per-mission. What is still missing is the rest of the v2 payoff:
 
 - the deterministic Stage 3 statistics tools (`correlate`, `paired_t_test`, …), PubMed integration, and the signal selector — none of which this first grounded slice built
-- broader Stage 2 coverage beyond the six approved descriptive/comparative answers; the six are non-diagnostic and carry no significance or causation claims, and profile-dependent answers stay deferred to issue `#6`
+- broader Stage 2 coverage beyond the six approved descriptive/comparative answers; the six are non-diagnostic and carry no significance or causation claims, and profile-dependent answers (BMI, age-adjusted interpretation) remain deferred — but now as an implementation mission *over* the profile/intake contract, not as an unresolved boundary question
 - a first new source class beyond the original wearable/app quartet
 - proof that the parser-skill model is viable
 - proof that the teaching/interview layer can be useful rather than aspirational
@@ -333,7 +334,7 @@ When a risk retires, its entry in the Risk Retirement Map is updated to note the
 Treat the near-term roadmap as:
 
 - First, treat Phases 1 and 2 as shipped in their initial form: M1-M3 are closed, the first grounded Stage 2/3 slice is live, and labs exist in-tree.
-- Second, use the open follow-on issues to decide what starts `v2.2 analytical depth`: model baseline personal profile attributes, then open one or more deterministic-stats missions.
-- Third, revisit this plan with evidence from that analytical-depth work before locking parser-ecosystem or teaching missions too tightly.
+- Second, treat the profile/intake **boundary** as settled at the contract level (see `docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md` and `docs/adr/0005-profile-and-intake-contract.md`). The follow-on work that issue `#6` originally framed as "model baseline profile attributes" is now a set of implementation missions *over* that contract — storage adapter, manual entry, import paths, and the first signals that consume profile/intake (BMI, age-adjusted interpretation) — alongside the deterministic-stats missions. None of those are shipped yet; the boundary they build on is.
+- Third, revisit this plan with evidence from that analytical-depth and profile/intake-implementation work before locking parser-ecosystem or teaching missions too tightly.
 
 The biggest mistake would be to plan the teaching layer, parser ecosystem, and ingest expansion in equal detail before the analytical access path and first Stage 2 rules are proven in code.

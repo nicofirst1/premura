@@ -70,6 +70,41 @@ so Stage 3 and reviewers can reason about it. All are optional and default to
   too-sparse data.
 - Distinguish observed from imputed points; never silently fabricate data.
 
+## Declaring profile and intake prerequisites
+
+Some future signals will need **baseline profile context** (e.g. a declared
+standing height), **nutrition intake** (e.g. `protein_g`), or **supplement
+intake** (e.g. a dose amount). The meaning of these domains and how they stay
+distinct from observations is fixed in
+[`docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md`](../../../docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md).
+None of these domains is consumed by a shipped Stage 2 signal today, and none is
+a new execution stage — they are semantic data domains later stages may read.
+
+When such a signal is eventually written, it **must declare that profile/intake
+prerequisite explicitly**, using the dependency-declaration shape in
+[`docs/architecture/contracts/profile_and_intake_dependencies.yaml`](../../../docs/architecture/contracts/profile_and_intake_dependencies.yaml).
+A declaration names:
+
+- `consumer_name` — the signal/tool that has the dependency,
+- `depends_on_domain` — which of `profile_context`, `nutrition_intake`,
+  `supplement_intake`, `observation_history` it draws on,
+- `required_keys` — the **exact** attribute, nutrition-fact, dose, or observation
+  metric keys it needs (a bare domain reference is not a declaration),
+- `failure_mode` — how it behaves honestly when a prerequisite is absent, stale,
+  partial, or unknown.
+
+**Reject hidden fallbacks.** A signal must not quietly assume a value happens to
+be present. "Use a measurement if it happens to be there" is **not** a substitute
+for declaring a profile/intake prerequisite: finding a height row in observation
+history does not satisfy a need for a *declared* profile height, because the same
+storage adapter could lay things out differently tomorrow and the meaning of the
+requirement must not depend on that. A signal that needs declared profile context
+declares it and refuses honestly when it is missing — it does not opportunistically
+read whatever observation row is nearby. The meaning of a declared requirement is
+satisfied by meaning, not by table shape. The worked examples (BMI, a
+protein-intake summary, a supplement-adherence summary) live in that dependency
+contract.
+
 ## Caveats that must be named
 
 - Vendor-estimated metrics (e.g. sleep stages, HRV) must carry an
@@ -87,9 +122,13 @@ so Stage 3 and reviewers can reason about it. All are optional and default to
 - No statistical-significance claims: no p-values, confidence intervals, or
   causal language (especially in the `change` family).
 - A `trend` direction is plain direction only — never "significant" change.
-- Do not depend on stable per-user profile context: profile-precondition
-  support is intentionally out of scope for this mission. Do not add profile
-  fields, and do not treat profile-dependent functions as supported here.
+- Do not depend on profile or intake context opportunistically. No shipped
+  Stage 2 signal consumes profile/intake data today; profile-dependent answers
+  (e.g. BMI, age-adjusted interpretation) remain deferred. A future signal that
+  needs such context must **declare** the prerequisite explicitly (see "Declaring
+  profile and intake prerequisites" above) and must never silently substitute a
+  measurement that happens to be present for a declared profile/intake
+  dependency.
 
 ## Built-in loading
 
@@ -119,7 +158,9 @@ When reviewing a Stage 2 signal PR, confirm:
 - Answers read only the user's own data; baselines are own-baseline only.
 - Freshness and refusal states are set honestly; no answer on bad data.
 - Required caveats are present; no diagnosis, norms, or significance claims.
-- No profile-precondition support was smuggled in.
+- Any profile/intake dependency is **declared explicitly** (per the
+  dependency-declaration contract), never satisfied by opportunistically reading
+  a value that happens to be present in observation history.
 - Built-in registration uses the static module list, not a new loader.
 - Tests assert through public imports against DuckDB fixtures and cover refusal
   paths.

@@ -106,6 +106,80 @@ A feature with no stage assignment tends to slide into "everything is everything
 | "Explain rMSSD" | UI (teaching) |
 | "Cite a PubMed paper" | MCP |
 
+## Semantic domains the stages work with (not a fifth stage)
+
+The four stages above are an *execution* model — they describe how data flows
+through the pipeline. Premura also has *semantic* domains that describe what a
+piece of data **means**. The two axes are orthogonal: a stage is *where* work
+happens; a domain is *what kind of thing* the data is.
+
+Alongside the long-standing **observation history** (device/lab measurements in
+`hp.fact_measurement` / `hp.fact_interval`) and **note history** (narrative free
+text that cannot be normalized), the model now recognises three additional
+semantic domains, fixed in
+[PROFILE_AND_INTAKE_CONTRACT.md](PROFILE_AND_INTAKE_CONTRACT.md):
+
+- **Baseline profile context** — stable or slowly-changing personal attributes
+  the operator *states about themselves* (birth date, biological sex, a declared
+  standing height). These are the operator's account of themselves, not an
+  instrument reading.
+- **Nutrition intake** — food/drink/energy/nutrient consumption: what was eaten
+  or drunk, when, and what it contained (e.g. a meal's `energy_kcal`,
+  `protein_g`).
+- **Supplement intake** — supplement products, ingredients, and the doses taken.
+
+> **These are semantic categories, not new runtime layers.** There is still no
+> fifth stage. Profile context and intake are *data domains that later stages may
+> read*; they do not add a step to the ingest → signal → MCP → UI pipeline. The
+> contract that fixes their meaning ships **no** storage, importer, capture
+> screen, or Stage 2 answer today — it only fixes where these meanings live so
+> follow-on work has one home to build against. Do not infer runtime support for
+> profile/intake from the existence of this section.
+
+### Where the new domains sit relative to observations and notes
+
+Future stages relate to the new domains the same way they relate to observations
+today, but the data is *meant* differently:
+
+- **Stage 1 (Ingest)** stores observations (what a device/lab measured). When
+  import paths for profile/intake eventually exist, they will land profile
+  assertions and intake records in their own domain home — **not** as extra
+  `fact_measurement` rows — because those are declarations and consumption, not
+  measurement events.
+- **Stage 2 (Signal processing)** may *read* profile/intake context to answer a
+  question, but only by **declaring** that dependency explicitly (see
+  [PROFILE_AND_INTAKE_CONTRACT.md](PROFILE_AND_INTAKE_CONTRACT.md), "How future
+  functions declare what they need", and `src/premura/engine/CONTRACT.md`).
+  Nothing in Stage 2 consumes these domains today; BMI and age-adjusted
+  interpretation remain deferred.
+- **Stages 3–4 (MCP, UI)** surface whatever Stage 2 produces; they do not reach
+  into the new domains directly any more than they reach `fact_measurement`
+  directly.
+
+### Boundary examples and anti-patterns
+
+The hard cases are where the *same real-world subject* appears in more than one
+domain. The model resolves them by meaning, with exactly one canonical home per
+normalized value (`profile_context`, `nutrition_intake`, `supplement_intake`,
+`observation_history`, or `note_history` — there is no `misc` bucket):
+
+| Subject | Profile / intake domain | Observation domain | Why they stay apart |
+|---|---|---|---|
+| **Height** | A height the operator *declares* is baseline profile context (`standing_height_declared`). | A height a *smart scale emits* is an observation in `fact_measurement`. | One is the operator's account of themselves; the other is an instrument reading. Both may exist; a function that needs "height" must say **which**. |
+| **Calories** | A meal's energy is a nutrition fact (`energy_kcal`) on an intake event. | A wearable's daily `total_kcal` is an observation (energy expenditure the device reported). | One is a quantity attributed to something consumed; the other is a body-state reading. They never merge into one number. |
+| **Supplements** | A supplement dose (amount + unit taken) is supplement intake. | A blood/urine marker that reflects the body's state is an observation. | A dose is what the operator took; a marker is a reading about the body. The dose is preserved even when ingredients are unknown. |
+| **Age vs birth date** | Birth date is a permanent profile attribute. | — | Age is **derived** at evaluation time from birth date; it is never stored or asserted on its own, so the two cannot drift apart. |
+
+**Anti-pattern — do not smuggle profile/intake into existing paths.** Profile
+and intake semantics must **not** be written into `fact_measurement`,
+`fact_interval`, or generic note storage merely because those paths already
+exist and would technically accept a row. A declared height is not a measurement;
+a meal's calories are not a body observation; a structured supplement dose is not
+a free-text note. Reusing an observation path for a declaration (or a note for
+structured intake) collapses two distinct meanings and is exactly the back-door
+the contract forbids. If something seems to need two homes, that is a sign two
+meanings are being conflated — keep them apart.
+
 ## Boundary contracts
 
 - **Default agent surface (`premura-mcp`):** MCP reaches `fact_measurement` only through a signal-processing function that has already applied validity + imputation policy.  The default surface exposes `list_metrics`, `metric_summary`, and the six signal-backed tools.  All catalog/summary helpers delegate entirely to the Stage 2 engine — no raw `hp.*` SQL from the agent surface.  The `query_warehouse` escape hatch is **not present** on this surface.

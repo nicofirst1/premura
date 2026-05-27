@@ -33,6 +33,18 @@ The user is actively writing more requirements; this section will grow.
 3. **Per-activity FIT-file decoding** (PLAN §"Out of scope (v1)" — explicitly deferred). Brings power, cadence, GPS, lap structure into `fact_interval`.
 4. **Backfill historical Garmin dumps** — Garmin's 2-year health / 5-year activity horizon means each monthly dump still contains older rows. The `dedupe_key UNIQUE` + cross-source priority already make this safe to do today; just need a script that walks a `data/archive/garmin/*.zip` directory.
 
+## Profile and intake — meaning is settled, implementation is the open work
+
+> The semantic boundary is decided: [PROFILE_AND_INTAKE_CONTRACT.md](../architecture/PROFILE_AND_INTAKE_CONTRACT.md) (with the machine-readable `docs/architecture/contracts/profile_and_intake_*.yaml` surfaces and design decision note [0005](../adr/0005-profile-and-intake-contract.md)) fixes three data domains — baseline profile context the operator *declares* about themselves, nutrition intake, and supplement intake — each with exactly one canonical home and a strict separation from observation history and note history. This is **meaning only**: no storage, importer, capture screen, or Stage 2 answer ships from it.
+
+What this changes about the roadmap:
+
+- **The seam is now stable.** Earlier framing treated "model baseline profile attributes for engine functions" (issue `#6`) as an open boundary question. It is no longer open — storage stays flexible, semantics are strict at the contract boundary, and a future signal must *declare* the profile/intake keys it depends on rather than fish a value out of `fact_measurement`.
+- **The follow-on order is implementation over that contract**, in the likely sequence: (1) a storage adapter and migration for the three domains; (2) manual-entry and import paths that land profile assertions and intake records in their own home — never as extra `fact_measurement` rows; (3) the first profile/intake-consuming signals (BMI, age-adjusted interpretation) under the declared-dependency rule.
+- **Review gates should be machine-checkable, not tasteful.** In an agent-reviewed repo a boundary violation (a declared height written as an observation, a meal's energy merged with a wearable's total kcal) reads as a working change unless the rule is encoded. The contract's enumerated invariants and worked examples (the `profile_and_intake_*.yaml` files, already exercised by the contract test harness) are the gate each implementation mission must pass.
+
+These signals stay **descriptive, non-diagnostic, and local-first** like the existing six: profile context is the operator's own account, BMI and age-adjusted reads are interpretive aids over the user's own data, never population diagnosis, and nothing here sends data off the machine.
+
 ## New source class — clinical labs (blood / urine / stool)
 
 > Tracked as mission **M3** in [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md). See [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md) for the full design proposal. Summary:
@@ -48,7 +60,7 @@ Estimated effort: 4–5 days once a docling spike confirms extraction quality on
 
 > Tracked as missions **M1** (boundary spike) and **M2** (first analytical server, warehouse-query tools only — stats and PubMed deferred to follow-on missions) in [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md). The full surface described below is the long-term shape, not the M2 scope.
 >
-> **Shipped since:** the first MCP query surface (`query_warehouse`, `list_metrics`, `metric_summary`) now exists, and a later mission added six grounded Stage 2 signals plus six signal-backed Stage 3 tools that route through them (current resting HR, resting-HR trend, steps trend, weight trend, deep-sleep vs own baseline, overnight-HRV change around a date — see [STATUS.md](../operations/STATUS.md) and [STAGES.md](../architecture/STAGES.md)). Those six question shapes are no longer hypothetical and no longer depend on raw-table reads. Everything else in this section — deterministic stats tools, PubMed, the literature↔warehouse bridge, the signal selector — remains future work. Profile-dependent answers (BMI, age-adjusted interpretation) stay deferred to issue `#6`.
+> **Shipped since:** the first MCP query surface (`query_warehouse`, `list_metrics`, `metric_summary`) now exists, and a later mission added six grounded Stage 2 signals plus six signal-backed Stage 3 tools that route through them (current resting HR, resting-HR trend, steps trend, weight trend, deep-sleep vs own baseline, overnight-HRV change around a date — see [STATUS.md](../operations/STATUS.md) and [STAGES.md](../architecture/STAGES.md)). Those six question shapes are no longer hypothetical and no longer depend on raw-table reads. Everything else in this section — deterministic stats tools, PubMed, the literature↔warehouse bridge, the signal selector — remains future work. Profile-dependent answers (BMI, age-adjusted interpretation) stay deferred, but the *boundary* they need is no longer open: the profile/intake meaning contract (below) decides where declared profile context and intake data live, so the deferred work is now implementation over a fixed seam rather than an unresolved modelling question.
 
 A single MCP server that exposes:
 
