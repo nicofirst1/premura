@@ -18,7 +18,8 @@ subtasks:
 - T003
 - T004
 - T005
-shell_pid: '68140'
+shell_pid: "68140"
+agent: "claude:sonnet:implementer:implementer"
 history:
 - at: '2026-05-27T07:06:15Z'
   action: planned
@@ -198,3 +199,7 @@ pytest -q tests/test_engine.py tests/test_engine_contract.py
 - Check that this WP does not touch MCP files.
 - Verify there is no second freshness vocabulary.
 - Verify summary output is recent-window-focused and contains no all-history aggregates.
+
+## Activity Log
+
+- 2026-05-27T07:13:43Z – claude:sonnet:implementer:implementer – shell_pid=68140 – Assigned agent via action command
