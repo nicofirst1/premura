@@ -1,7 +1,7 @@
 {
-  "event_count": 17,
-  "last_event_id": "01KSMR17B1Z1D6GY2Y0881F9X9",
-  "materialized_at": "2026-05-27T12:54:57.121695+00:00",
+  "event_count": 18,
+  "last_event_id": "01KSMR29EXCQ9C5YVPQCZK1VNK",
+  "materialized_at": "2026-05-27T12:55:32.061505+00:00",
   "mission_number": "",
   "mission_slug": "model-intake-and-profile-context-01KSMN80",
   "mission_type": "software-dev",
@@ -11,9 +11,9 @@
     "canceled": 0,
     "claimed": 0,
     "done": 0,
-    "for_review": 1,
+    "for_review": 0,
     "in_progress": 0,
-    "in_review": 0,
+    "in_review": 1,
     "planned": 1
   },
   "work_packages": {
@@ -32,11 +32,11 @@
       "last_transition_at": "2026-05-27T12:49:33.917504+00:00"
     },
     "WP03": {
-      "actor": "user",
+      "actor": "claude:opus:reviewer:reviewer",
       "force_count": 1,
-      "lane": "for_review",
-      "last_event_id": "01KSMR17B1Z1D6GY2Y0881F9X9",
-      "last_transition_at": "2026-05-27T12:54:57.121695+00:00"
+      "lane": "in_review",
+      "last_event_id": "01KSMR29EXCQ9C5YVPQCZK1VNK",
+      "last_transition_at": "2026-05-27T12:55:32.061505+00:00"
     },
     "WP04": {
       "actor": "finalize-tasks",
