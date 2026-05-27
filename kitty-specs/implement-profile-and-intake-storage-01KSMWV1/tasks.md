@@ -40,10 +40,10 @@
 | T010 | Register the new profile-capture tools on the default agent-safe MCP surface in `src/premura/mcp/entrypoint.py`. | WP03 |  | [D] |
 | T011 | Add thin CLI fallback commands in `src/premura/cli.py` that mirror the MCP schema and record operations for testing and expert fallback use. | WP03 |  | [D] |
 | T012 | Add black-box tests that drive the supported profile schema and record flows through MCP/CLI surfaces and verify unsupported fields such as `age` are rejected explicitly. | WP03 |  | [D] |
-| T013 | Update doctrine-facing docs so the agent-mediated profile path and parser/plugin intake path are explicit enough that future planning does not regress back to a human-form or one-off-importer assumption. | WP04 | [P] |
-| T014 | Update architecture and status docs so they describe the newly shipped concrete storage and profile capture path without claiming built-in nutrition/supplement importers exist. | WP04 | [P] |
-| T015 | Update product planning docs so they treat future nutrition/supplement work as parser/plugin source adaptation over a shipped storage seam rather than as another boundary-definition exercise. | WP04 | [P] |
-| T016 | Add a concrete storage design decision note that records why this mission chose separate domain tables plus agent-mediated profile capture instead of a generic context blob or measurement-table reuse. | WP04 | [P] |
+| T013 | Update doctrine-facing docs so the agent-mediated profile path and parser/plugin intake path are explicit enough that future planning does not regress back to a human-form or one-off-importer assumption. | WP04 | [D] |
+| T014 | Update architecture and status docs so they describe the newly shipped concrete storage and profile capture path without claiming built-in nutrition/supplement importers exist. | WP04 | [D] |
+| T015 | Update product planning docs so they treat future nutrition/supplement work as parser/plugin source adaptation over a shipped storage seam rather than as another boundary-definition exercise. | WP04 | [D] |
+| T016 | Add a concrete storage design decision note that records why this mission chose separate domain tables plus agent-mediated profile capture instead of a generic context blob or measurement-table reuse. | WP04 | [D] |
 
 ## Work Packages
 
@@ -164,10 +164,10 @@ Reviewer focus:
 - Estimated prompt size: ~260 lines
 
 Included subtasks:
-- [ ] T013 Update doctrine-facing docs so the agent-mediated profile path and parser/plugin intake path are explicit enough that future planning does not regress back to a human-form or one-off-importer assumption. (WP04)
-- [ ] T014 Update architecture and status docs so they describe the newly shipped concrete storage and profile capture path without claiming built-in nutrition/supplement importers exist. (WP04)
-- [ ] T015 Update product planning docs so they treat future nutrition/supplement work as parser/plugin source adaptation over a shipped storage seam rather than as another boundary-definition exercise. (WP04)
-- [ ] T016 Add a concrete storage design decision note that records why this mission chose separate domain tables plus agent-mediated profile capture instead of a generic context blob or measurement-table reuse. (WP04)
+- [x] T013 Update doctrine-facing docs so the agent-mediated profile path and parser/plugin intake path are explicit enough that future planning does not regress back to a human-form or one-off-importer assumption. (WP04)
+- [x] T014 Update architecture and status docs so they describe the newly shipped concrete storage and profile capture path without claiming built-in nutrition/supplement importers exist. (WP04)
+- [x] T015 Update product planning docs so they treat future nutrition/supplement work as parser/plugin source adaptation over a shipped storage seam rather than as another boundary-definition exercise. (WP04)
+- [x] T016 Add a concrete storage design decision note that records why this mission chose separate domain tables plus agent-mediated profile capture instead of a generic context blob or measurement-table reuse. (WP04)
 
 Implementation sketch:
 1. Start by updating doctrine and context wording so the agent-first capture assumption is unmistakable.
