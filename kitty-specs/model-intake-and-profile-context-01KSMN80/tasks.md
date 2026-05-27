@@ -28,11 +28,11 @@
 
 | ID | Description | WP | Parallel |
 |---|---|---|---|
-| T001 | Add a new authoritative architecture document that defines the three first-class domains, their meanings, and their boundaries against observation history and note history. | WP01 |  |
-| T002 | Add a machine-readable entity contract file for profile, nutrition, supplement, and dependency entities with required fields and meanings. | WP01 | [P] |
-| T003 | Add a machine-readable classification and overlap example file that makes one-home mapping and overlap cases explicit. | WP01 | [P] |
-| T004 | Add a machine-readable invariant file that encodes the positive invariants and concrete violation examples the reviewers should enforce. | WP01 | [P] |
-| T005 | Add a machine-readable dependency declaration contract file for future Stage 2 and Stage 3 consumers. | WP01 | [P] |
+| T001 | Add a new authoritative architecture document that defines the three first-class domains, their meanings, and their boundaries against observation history and note history. | WP01 |  | [D] |
+| T002 | Add a machine-readable entity contract file for profile, nutrition, supplement, and dependency entities with required fields and meanings. | WP01 | [D] |
+| T003 | Add a machine-readable classification and overlap example file that makes one-home mapping and overlap cases explicit. | WP01 | [D] |
+| T004 | Add a machine-readable invariant file that encodes the positive invariants and concrete violation examples the reviewers should enforce. | WP01 | [D] |
+| T005 | Add a machine-readable dependency declaration contract file for future Stage 2 and Stage 3 consumers. | WP01 | [D] |
 | T006 | Add black-box tests that load the shipped contract artifacts and verify they are internally complete, parseable, and mutually consistent. | WP02 |  |
 | T007 | Add invariant-oriented tests for one-home classification, overlap distinctions, visible supersession paths, and the no-fabrication rule for partial knowledge. | WP02 |  |
 | T008 | Add dependency-contract tests that reject implicit prerequisites and confirm the shipped contract stays domain-focused rather than drifting into transport/API placeholders. | WP02 |  |
@@ -60,11 +60,11 @@
 - Estimated prompt size: ~300 lines
 
 Included subtasks:
-- [ ] T001 Add a new authoritative architecture document that defines the three first-class domains, their meanings, and their boundaries against observation history and note history. (WP01)
-- [ ] T002 Add a machine-readable entity contract file for profile, nutrition, supplement, and dependency entities with required fields and meanings. (WP01)
-- [ ] T003 Add a machine-readable classification and overlap example file that makes one-home mapping and overlap cases explicit. (WP01)
-- [ ] T004 Add a machine-readable invariant file that encodes the positive invariants and concrete violation examples the reviewers should enforce. (WP01)
-- [ ] T005 Add a machine-readable dependency declaration contract file for future Stage 2 and Stage 3 consumers. (WP01)
+- [x] T001 Add a new authoritative architecture document that defines the three first-class domains, their meanings, and their boundaries against observation history and note history. (WP01)
+- [x] T002 Add a machine-readable entity contract file for profile, nutrition, supplement, and dependency entities with required fields and meanings. (WP01)
+- [x] T003 Add a machine-readable classification and overlap example file that makes one-home mapping and overlap cases explicit. (WP01)
+- [x] T004 Add a machine-readable invariant file that encodes the positive invariants and concrete violation examples the reviewers should enforce. (WP01)
+- [x] T005 Add a machine-readable dependency declaration contract file for future Stage 2 and Stage 3 consumers. (WP01)
 
 Implementation sketch:
 1. Translate the planning artifacts in `data-model.md` and `contracts/` into a repo-level authoritative surface under `docs/architecture/`.
