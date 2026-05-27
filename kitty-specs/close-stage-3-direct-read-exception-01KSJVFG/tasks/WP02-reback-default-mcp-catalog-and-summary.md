@@ -163,3 +163,4 @@ Then combine with WP01 engine coverage when both are present.
 ## Activity Log
 
 - 2026-05-27T07:25:17Z – claude:sonnet:implementer:implementer – shell_pid=50998 – Started implementation via action command
+- 2026-05-27T07:32:52Z – claude:sonnet:implementer:implementer – shell_pid=50998 – Ready for review: rewired list_metrics and metric_summary to call engine.list_metric_catalog and engine.metric_summary; added T009 catalog/summary payload tests; all 154 tests pass
