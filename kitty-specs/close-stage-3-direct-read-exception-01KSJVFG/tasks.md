@@ -9,11 +9,11 @@
 
 | ID | Description | WP | Parallel |
 |---|---|---|---|
-| T001 | Add typed Stage 2 result envelopes for metric catalog and metric summary | WP01 | No |
-| T002 | Implement engine helper for validity-gated metric catalog entries | WP01 | No |
-| T003 | Implement engine helper for per-metric validity summaries over a fixed 30-day window | WP01 | No |
-| T004 | Add engine tests for current/stale/unavailable catalog and summary semantics | WP01 | No |
-| T005 | Extend lazy-load contract coverage for the new engine helpers | WP01 | No |
+| T001 | Add typed Stage 2 result envelopes for metric catalog and metric summary | WP01 | No | [D] |
+| T002 | Implement engine helper for validity-gated metric catalog entries | WP01 | No | [D] |
+| T003 | Implement engine helper for per-metric validity summaries over a fixed 30-day window | WP01 | No | [D] |
+| T004 | Add engine tests for current/stale/unavailable catalog and summary semantics | WP01 | No | [D] |
+| T005 | Extend lazy-load contract coverage for the new engine helpers | WP01 | No | [D] |
 | T006 | Rewire `list_metrics` in `src/premura/mcp/server.py` to consume Stage 2 catalog helpers | WP02 | No |
 | T007 | Rewire `metric_summary` in `src/premura/mcp/server.py` to consume Stage 2 summary helpers | WP02 | No |
 | T008 | Serialize machine-branchable validity/imputation fields with honest absence semantics | WP02 | No |
@@ -40,11 +40,11 @@
 
 ### Included subtasks
 
-- [ ] T001 Add typed Stage 2 result envelopes for metric catalog and metric summary (WP01)
-- [ ] T002 Implement engine helper for validity-gated metric catalog entries (WP01)
-- [ ] T003 Implement engine helper for per-metric validity summaries over a fixed 30-day window (WP01)
-- [ ] T004 Add engine tests for current/stale/unavailable catalog and summary semantics (WP01)
-- [ ] T005 Extend lazy-load contract coverage for the new engine helpers (WP01)
+- [x] T001 Add typed Stage 2 result envelopes for metric catalog and metric summary (WP01)
+- [x] T002 Implement engine helper for validity-gated metric catalog entries (WP01)
+- [x] T003 Implement engine helper for per-metric validity summaries over a fixed 30-day window (WP01)
+- [x] T004 Add engine tests for current/stale/unavailable catalog and summary semantics (WP01)
+- [x] T005 Extend lazy-load contract coverage for the new engine helpers (WP01)
 
 ### Implementation sketch
 
