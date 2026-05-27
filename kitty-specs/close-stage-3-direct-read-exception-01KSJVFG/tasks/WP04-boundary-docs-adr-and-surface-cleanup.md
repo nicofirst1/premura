@@ -146,3 +146,4 @@ Then run the full suite after all implementation WPs are in place.
 ## Activity Log
 
 - 2026-05-27T07:57:38Z – claude:sonnet:implementer:implementer – shell_pid=93299 – Started implementation via action command
+- 2026-05-27T08:03:36Z – claude:sonnet:implementer:implementer – shell_pid=93299 – Ready for review: removed Stage 3 direct-read exception language from STAGES.md; added ADR 0004 for operator entrypoint decision; updated README.md and STATUS.md with default vs operator surface split; aligned mcp/__init__.py package docstring; all 159 tests pass
