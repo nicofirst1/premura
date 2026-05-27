@@ -170,3 +170,4 @@ Then combine with WP01 engine coverage when both are present.
 - 2026-05-27T07:45:15Z – claude:sonnet:implementer:implementer – shell_pid=29837 – Fix cycle 1: added list_metrics unknown-boundary test
 - 2026-05-27T07:45:39Z – claude:sonnet:reviewer:reviewer – shell_pid=43436 – Started review via action command
 - 2026-05-27T07:47:35Z – claude:sonnet:reviewer:reviewer – shell_pid=43436 – Review passed: unknown-boundary test added; full state matrix now covered
+- 2026-05-27T08:10:16Z – claude:sonnet:reviewer:reviewer – shell_pid=43436 – Done override: Mission merged to master (commit 8c3d766)
