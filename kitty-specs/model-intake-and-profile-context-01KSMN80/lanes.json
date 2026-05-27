@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "mission_slug": "model-intake-and-profile-context-01KSMN80",
+  "mission_id": "01KSMN80WBKTQTX18MH7D72SFM",
+  "mission_branch": "kitty/mission-model-intake-and-profile-context-01KSMN80",
+  "target_branch": "master",
+  "lanes": [
+    {
+      "lane_id": "lane-a",
+      "wp_ids": [
+        "WP01",
+        "WP02",
+        "WP03",
+        "WP04"
+      ],
+      "write_scope": [
+        "docs/adr/0005-profile-and-intake-contract.md",
+        "docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md",
+        "docs/architecture/STAGES.md",
+        "docs/architecture/UPDATE_STRATEGY.md",
+        "docs/architecture/contracts/profile_and_intake_dependencies.yaml",
+        "docs/architecture/contracts/profile_and_intake_entities.yaml",
+        "docs/architecture/contracts/profile_and_intake_examples.yaml",
+        "docs/architecture/contracts/profile_and_intake_invariants.yaml",
+        "docs/product/FULL_APP_DEVELOPMENT_PLAN.md",
+        "docs/product/ROADMAP.md",
+        "docs/product/ROADMAP_BOOTSTRAP_PLAN.md",
+        "docs/product/VISION.md",
+        "src/premura/engine/CONTRACT.md",
+        "tests/test_engine_contract.py",
+        "tests/test_profile_intake_contracts.py"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell",
+        "artifact-rendering",
+        "tests"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    }
+  ],
+  "computed_at": "2026-05-27T12:31:37.397308+00:00",
+  "computed_from": "dependency_graph+ownership",
+  "planning_artifact_wps": [],
+  "collapse_report": {
+    "events": [
+      {
+        "wp_a": "WP02",
+        "wp_b": "WP01",
+        "rule": "dependency",
+        "evidence": "WP02 depends on WP01"
+      },
+      {
+        "wp_a": "WP03",
+        "wp_b": "WP01",
+        "rule": "dependency",
+        "evidence": "WP03 depends on WP01"
+      },
+      {
+        "wp_a": "WP04",
+        "wp_b": "WP01",
+        "rule": "dependency",
+        "evidence": "WP04 depends on WP01"
+      }
+    ],
+    "total_merges": 3,
+    "independent_wps_collapsed": 0,
+    "by_rule": {
+      "dependency": 3
+    }
+  }
+}
