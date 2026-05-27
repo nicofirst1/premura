@@ -36,11 +36,11 @@
 | T006 | Add black-box tests that load the shipped contract artifacts and verify they are internally complete, parseable, and mutually consistent. | WP02 |  | [D] |
 | T007 | Add invariant-oriented tests for one-home classification, overlap distinctions, visible supersession paths, and the no-fabrication rule for partial knowledge. | WP02 |  | [D] |
 | T008 | Add dependency-contract tests that reject implicit prerequisites and confirm the shipped contract stays domain-focused rather than drifting into transport/API placeholders. | WP02 |  | [D] |
-| T009 | Update `docs/architecture/STAGES.md` so the four-stage model names baseline profile context and intake data as distinct semantic domains rather than forcing them into observations or notes. | WP03 |  |
-| T010 | Update `docs/architecture/STAGES.md` boundary language and examples so profile assertions, intake records, and observations remain distinct and back-door modeling is explicitly rejected. | WP03 |  |
-| T011 | Update `docs/architecture/UPDATE_STRATEGY.md` to explain how profile/intake corrections and supersessions differ from rebuild-oriented changes to observation history. | WP03 |  |
-| T012 | Update `src/premura/engine/CONTRACT.md` so future signals must declare profile and intake prerequisites explicitly and may not rely on opportunistic measurement fallbacks. | WP03 |  |
-| T013 | Extend `tests/test_engine_contract.py` to lock the new dependency-declaration guidance and its discoverability from the engine-side contract. | WP03 |  |
+| T009 | Update `docs/architecture/STAGES.md` so the four-stage model names baseline profile context and intake data as distinct semantic domains rather than forcing them into observations or notes. | WP03 |  | [D] |
+| T010 | Update `docs/architecture/STAGES.md` boundary language and examples so profile assertions, intake records, and observations remain distinct and back-door modeling is explicitly rejected. | WP03 |  | [D] |
+| T011 | Update `docs/architecture/UPDATE_STRATEGY.md` to explain how profile/intake corrections and supersessions differ from rebuild-oriented changes to observation history. | WP03 |  | [D] |
+| T012 | Update `src/premura/engine/CONTRACT.md` so future signals must declare profile and intake prerequisites explicitly and may not rely on opportunistic measurement fallbacks. | WP03 |  | [D] |
+| T013 | Extend `tests/test_engine_contract.py` to lock the new dependency-declaration guidance and its discoverability from the engine-side contract. | WP03 |  | [D] |
 | T014 | Add a design decision note capturing the ports/adapters decision: storage stays flexible, semantics stay strict at the contract boundary. | WP04 |  |
 | T015 | Update `docs/product/FULL_APP_DEVELOPMENT_PLAN.md` so future implementation work starts from the new contract baseline and not from the unresolved issue-`#6` framing alone. | WP04 | [P] |
 | T016 | Update `docs/product/ROADMAP.md` to sequence follow-on work from the new domain contract, including the need for machine-checkable review gates. | WP04 | [P] |
@@ -130,11 +130,11 @@ Reviewer focus:
 - Estimated prompt size: ~300 lines
 
 Included subtasks:
-- [ ] T009 Update `docs/architecture/STAGES.md` so the four-stage model names baseline profile context and intake data as distinct semantic domains rather than forcing them into observations or notes. (WP03)
-- [ ] T010 Update `docs/architecture/STAGES.md` boundary language and examples so profile assertions, intake records, and observations remain distinct and back-door modeling is explicitly rejected. (WP03)
-- [ ] T011 Update `docs/architecture/UPDATE_STRATEGY.md` to explain how profile/intake corrections and supersessions differ from rebuild-oriented changes to observation history. (WP03)
-- [ ] T012 Update `src/premura/engine/CONTRACT.md` so future signals must declare profile and intake prerequisites explicitly and may not rely on opportunistic measurement fallbacks. (WP03)
-- [ ] T013 Extend `tests/test_engine_contract.py` to lock the new dependency-declaration guidance and its discoverability from the engine-side contract. (WP03)
+- [x] T009 Update `docs/architecture/STAGES.md` so the four-stage model names baseline profile context and intake data as distinct semantic domains rather than forcing them into observations or notes. (WP03)
+- [x] T010 Update `docs/architecture/STAGES.md` boundary language and examples so profile assertions, intake records, and observations remain distinct and back-door modeling is explicitly rejected. (WP03)
+- [x] T011 Update `docs/architecture/UPDATE_STRATEGY.md` to explain how profile/intake corrections and supersessions differ from rebuild-oriented changes to observation history. (WP03)
+- [x] T012 Update `src/premura/engine/CONTRACT.md` so future signals must declare profile and intake prerequisites explicitly and may not rely on opportunistic measurement fallbacks. (WP03)
+- [x] T013 Extend `tests/test_engine_contract.py` to lock the new dependency-declaration guidance and its discoverability from the engine-side contract. (WP03)
 
 Implementation sketch:
 1. Update `STAGES.md` first so the repo’s primary architecture story explicitly names the new contract seam.
