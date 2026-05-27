@@ -19,11 +19,11 @@
 | T008 | Serialize machine-branchable validity/imputation fields with honest absence semantics | WP02 | No | [D] |
 | T009 | Add MCP payload tests for fresh/stale/empty/unknown catalog and summary responses | WP02 | No | [D] |
 | T010 | Re-run and tighten signal-tool regression coverage so six existing signal-backed tools do not regress | WP02 | No | [D] |
-| T011 | Refactor MCP registration into shared core plus explicit default/operator entrypoint builders | WP03 | No |
-| T012 | Add a separate operator entrypoint that registers `query_warehouse` on top of the default tool set | WP03 | No |
-| T013 | Wire packaging / command entrypoints so the operator surface is invokable explicitly | WP03 | No |
-| T014 | Add tool-list tests confirming default vs operator surfaces differ only by `query_warehouse` | WP03 | No |
-| T015 | Encode lower-guarantee operator mode language in entrypoint or tool descriptions without implying validity guarantees | WP03 | No |
+| T011 | Refactor MCP registration into shared core plus explicit default/operator entrypoint builders | WP03 | No | [D] |
+| T012 | Add a separate operator entrypoint that registers `query_warehouse` on top of the default tool set | WP03 | No | [D] |
+| T013 | Wire packaging / command entrypoints so the operator surface is invokable explicitly | WP03 | No | [D] |
+| T014 | Add tool-list tests confirming default vs operator surfaces differ only by `query_warehouse` | WP03 | No | [D] |
+| T015 | Encode lower-guarantee operator mode language in entrypoint or tool descriptions without implying validity guarantees | WP03 | No | [D] |
 | T016 | Remove the Stage 2 -> Stage 3 exception language from boundary documentation and restate the clean contract | WP04 | No |
 | T017 | Add a new ADR documenting the separate operator entrypoint decision and lower-guarantee mode | WP04 | No |
 | T018 | Update top-level product/ops docs to show the default agent-facing path and the operator fallback path | WP04 | No |
@@ -108,11 +108,11 @@
 
 ### Included subtasks
 
-- [ ] T011 Refactor MCP registration into shared core plus explicit default/operator entrypoint builders (WP03)
-- [ ] T012 Add a separate operator entrypoint that registers `query_warehouse` on top of the default tool set (WP03)
-- [ ] T013 Wire packaging / command entrypoints so the operator surface is invokable explicitly (WP03)
-- [ ] T014 Add tool-list tests confirming default vs operator surfaces differ only by `query_warehouse` (WP03)
-- [ ] T015 Encode lower-guarantee operator mode language in entrypoint or tool descriptions without implying validity guarantees (WP03)
+- [x] T011 Refactor MCP registration into shared core plus explicit default/operator entrypoint builders (WP03)
+- [x] T012 Add a separate operator entrypoint that registers `query_warehouse` on top of the default tool set (WP03)
+- [x] T013 Wire packaging / command entrypoints so the operator surface is invokable explicitly (WP03)
+- [x] T014 Add tool-list tests confirming default vs operator surfaces differ only by `query_warehouse` (WP03)
+- [x] T015 Encode lower-guarantee operator mode language in entrypoint or tool descriptions without implying validity guarantees (WP03)
 
 ### Implementation sketch
 
