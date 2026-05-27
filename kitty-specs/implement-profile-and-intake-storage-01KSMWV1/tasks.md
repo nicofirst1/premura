@@ -31,11 +31,11 @@
 | T001 | Add a new DuckDB migration that creates separate profile-capture, profile-assertion, nutrition-intake, and supplement-intake tables with the provenance and supersession columns planned for this mission. | WP01 |  | [D] |
 | T002 | Encode one-home separation directly in the migration shape by giving nutrition and supplement records their own event/item/quantity or dose tables rather than reusing observation or note tables. | WP01 |  | [D] |
 | T003 | Add migration-level verification that warehouse initialization applies the new schema cleanly and leaves the existing observation tables intact. | WP01 |  | [D] |
-| T004 | Add runtime profile-field support loading so the bounded allowlist from planning becomes an enforceable application surface rather than documentation only. | WP02 |  |
-| T005 | Add `src/premura/store/profile_intake.py` with the concrete persistence service for bounded profile capture and parser-ready intake persistence. | WP02 |  |
-| T006 | Extend `src/premura/parsers/base.py` with normalized nutrition/supplement persistence types that future parsers can emit outside the current `IngestBatch` observation path. | WP02 | [P] |
-| T007 | Update `src/premura/parsers/CONTRACT.md` so parser contributors know when to emit normalized intake records instead of `IngestBatch` measurements or notes. | WP02 | [P] |
-| T008 | Add persistence and parser-contract tests for profile supersession, bounded field rejection, partial intake records, and one-home separation. | WP02 |  |
+| T004 | Add runtime profile-field support loading so the bounded allowlist from planning becomes an enforceable application surface rather than documentation only. | WP02 |  | [D] |
+| T005 | Add `src/premura/store/profile_intake.py` with the concrete persistence service for bounded profile capture and parser-ready intake persistence. | WP02 |  | [D] |
+| T006 | Extend `src/premura/parsers/base.py` with normalized nutrition/supplement persistence types that future parsers can emit outside the current `IngestBatch` observation path. | WP02 | [D] |
+| T007 | Update `src/premura/parsers/CONTRACT.md` so parser contributors know when to emit normalized intake records instead of `IngestBatch` measurements or notes. | WP02 | [D] |
+| T008 | Add persistence and parser-contract tests for profile supersession, bounded field rejection, partial intake records, and one-home separation. | WP02 |  | [D] |
 | T009 | Add MCP helpers in `src/premura/mcp/server.py` for listing supported profile fields and recording bounded profile assertions through the new persistence service. | WP03 |  |
 | T010 | Register the new profile-capture tools on the default agent-safe MCP surface in `src/premura/mcp/entrypoint.py`. | WP03 |  |
 | T011 | Add thin CLI fallback commands in `src/premura/cli.py` that mirror the MCP schema and record operations for testing and expert fallback use. | WP03 |  |
@@ -92,11 +92,11 @@ Reviewer focus:
 - Estimated prompt size: ~330 lines
 
 Included subtasks:
-- [ ] T004 Add runtime profile-field support loading so the bounded allowlist from planning becomes an enforceable application surface rather than documentation only. (WP02)
-- [ ] T005 Add `src/premura/store/profile_intake.py` with the concrete persistence service for bounded profile capture and parser-ready intake persistence. (WP02)
-- [ ] T006 Extend `src/premura/parsers/base.py` with normalized nutrition/supplement persistence types that future parsers can emit outside the current `IngestBatch` observation path. (WP02)
-- [ ] T007 Update `src/premura/parsers/CONTRACT.md` so parser contributors know when to emit normalized intake records instead of `IngestBatch` measurements or notes. (WP02)
-- [ ] T008 Add persistence and parser-contract tests for profile supersession, bounded field rejection, partial intake records, and one-home separation. (WP02)
+- [x] T004 Add runtime profile-field support loading so the bounded allowlist from planning becomes an enforceable application surface rather than documentation only. (WP02)
+- [x] T005 Add `src/premura/store/profile_intake.py` with the concrete persistence service for bounded profile capture and parser-ready intake persistence. (WP02)
+- [x] T006 Extend `src/premura/parsers/base.py` with normalized nutrition/supplement persistence types that future parsers can emit outside the current `IngestBatch` observation path. (WP02)
+- [x] T007 Update `src/premura/parsers/CONTRACT.md` so parser contributors know when to emit normalized intake records instead of `IngestBatch` measurements or notes. (WP02)
+- [x] T008 Add persistence and parser-contract tests for profile supersession, bounded field rejection, partial intake records, and one-home separation. (WP02)
 
 Implementation sketch:
 1. Add a small runtime module that turns the planned profile field allowlist into application-readable metadata.
