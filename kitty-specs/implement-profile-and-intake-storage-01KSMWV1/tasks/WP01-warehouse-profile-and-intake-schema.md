@@ -15,7 +15,8 @@ subtasks:
 - T001
 - T002
 - T003
-shell_pid: '91499'
+shell_pid: "91499"
+agent: "claude:opus:python-implementer:implementer"
 history:
 - timestamp: '2026-05-27T14:35:44Z'
   agent: gpt-5.4
@@ -179,3 +180,4 @@ Ask:
 ## Activity Log
 
 - 2026-05-27T14:35:44Z – gpt-5.4 – Prompt generated via /spec-kitty.tasks
+- 2026-05-27T14:45:01Z – claude:opus:python-implementer:implementer – shell_pid=91499 – Assigned agent via action command
