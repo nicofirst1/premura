@@ -181,3 +181,4 @@ Ask:
 
 - 2026-05-27T14:35:44Z – gpt-5.4 – Prompt generated via /spec-kitty.tasks
 - 2026-05-27T14:45:01Z – claude:opus:python-implementer:implementer – shell_pid=91499 – Assigned agent via action command
+- 2026-05-27T14:51:44Z – claude:opus:python-implementer:implementer – shell_pid=91499 – Ready for review: migration 004 adds explicit profile/nutrition/supplement tables with supersession + dedupe + FK semantics; migration test green via public init path; full suite (205) passes
