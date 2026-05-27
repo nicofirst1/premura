@@ -1,0 +1,74 @@
+version: 1
+surface: parser_ready_intake_persistence
+summary: >-
+  Normalized persistence input for future nutrition and supplement parsers.
+
+nutrition:
+  event:
+    required:
+      - source_id
+      - start_utc
+      - dedupe_key
+    optional:
+      - source_uuid
+      - end_utc
+      - local_tz
+      - meal_label
+      - ingest_batch
+      - raw_payload
+
+  item:
+    required:
+      - nutrition_event_id
+      - item_label
+    optional:
+      - brand_label
+      - serving_text
+      - raw_payload
+
+  quantity:
+    required:
+      - quantity_key
+      - value_num
+      - unit
+    parent_rule: one of nutrition_event_id or nutrition_item_id must be present
+
+supplement:
+  event:
+    required:
+      - source_id
+      - ts_utc
+      - dedupe_key
+    optional:
+      - source_uuid
+      - local_tz
+      - ingest_batch
+      - raw_payload
+
+  item:
+    required:
+      - supplement_event_id
+    optional:
+      - product_label
+      - ingredient_label
+      - form_label
+      - raw_payload
+    validation:
+      - at least one of product_label or ingredient_label must be present
+
+  dose:
+    required:
+      - supplement_item_id
+    optional:
+      - ingredient_label
+      - amount_num
+      - amount_text
+      - unit
+      - raw_payload
+    validation:
+      - at least one of amount_num or amount_text must be present
+
+one_home_rules:
+  - nutrition quantities do not land in hp.fact_measurement
+  - supplement doses do not land in nutrition tables
+  - nutrition and supplement records do not use clinical note storage as a shortcut

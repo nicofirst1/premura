@@ -1,0 +1,52 @@
+version: 1
+surface: agent_profile_capture
+summary: >-
+  Bounded agent-facing tools for capturing stable profile facts without using
+  direct SQL or open-ended key/value writes.
+
+tools:
+  - name: profile_context_supported_fields
+    purpose: Return the bounded profile fields supported by this mission.
+    input: {}
+    output:
+      fields:
+        type: array
+        items:
+          key: string
+          value_type: string
+          required: boolean
+          prompt_hint: string
+          unit: [string, "null"]
+
+  - name: profile_context_record
+    purpose: Persist one bounded profile capture session and its assertions.
+    input:
+      capture_session:
+        actor_kind: agent
+        actor_ref: [string, "null"]
+      assertions:
+        type: array
+        items:
+          attribute_key: string
+          value_text: [string, "null"]
+          value_num: [number, "null"]
+          value_date: [string, "null"]
+          unit: [string, "null"]
+          effective_start_utc: [string, "null"]
+          supersedes_assertion_id: [string, "null"]
+    output:
+      capture_session_id: string
+      stored_assertion_ids:
+        type: array
+        items: string
+      rejected_assertions:
+        type: array
+        items:
+          attribute_key: string
+          reason: string
+
+cli_wrappers:
+  - command: hpipe profile schema
+    mirrors_tool: profile_context_supported_fields
+  - command: hpipe profile record
+    mirrors_tool: profile_context_record

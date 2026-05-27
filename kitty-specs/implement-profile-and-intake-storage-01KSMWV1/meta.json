@@ -1,10 +1,12 @@
 {
   "created_at": "2026-05-27T14:18:58.015735+00:00",
-  "friendly_name": "implement profile and intake storage",
+  "friendly_name": "Implement Profile And Intake Storage",
   "mission_id": "01KSMWV1HHYTTKJF053AVXSK9K",
   "mission_number": null,
   "mission_slug": "implement-profile-and-intake-storage-01KSMWV1",
   "mission_type": "software-dev",
   "slug": "implement-profile-and-intake-storage-01KSMWV1",
-  "target_branch": "master"
+  "target_branch": "master",
+  "source_description": "Implement real storage for profile context, nutrition intake, and supplement intake over the new profile/intake contract, plus the first agent-mediated write path for stable profile facts. Nutrition and supplement capture remain parser/plugin-oriented follow-on work rather than hand-entry or built-in one-off importers. BMI and other profile-dependent signals stay out of scope.",
+  "vcs": "git"
 }

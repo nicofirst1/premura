@@ -1,0 +1,30 @@
+version: 1
+summary: Supported bounded profile fields for this mission
+
+fields:
+  - key: birth_date
+    value_type: date
+    required: false
+    derived_aliases_rejected:
+      - age
+    notes: Age remains derived, not directly stored.
+
+  - key: sex
+    value_type: text
+    required: false
+    allowed_examples:
+      - female
+      - male
+      - intersex
+      - unknown
+      - undisclosed
+
+  - key: standing_height_cm
+    value_type: number
+    unit: cm
+    required: false
+
+validation_rules:
+  - Unsupported profile keys must be rejected explicitly.
+  - Exactly one typed value slot is permitted per assertion.
+  - Profile fields in this mission are bounded to stable baseline facts only.
