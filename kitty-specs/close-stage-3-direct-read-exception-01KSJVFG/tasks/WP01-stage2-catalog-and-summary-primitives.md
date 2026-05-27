@@ -18,8 +18,8 @@ subtasks:
 - T003
 - T004
 - T005
-shell_pid: "68140"
-agent: "claude:sonnet:implementer:implementer"
+shell_pid: "16701"
+agent: "claude:sonnet:reviewer:reviewer"
 history:
 - at: '2026-05-27T07:06:15Z'
   action: planned
@@ -204,3 +204,4 @@ pytest -q tests/test_engine.py tests/test_engine_contract.py
 
 - 2026-05-27T07:13:43Z – claude:sonnet:implementer:implementer – shell_pid=68140 – Assigned agent via action command
 - 2026-05-27T07:20:35Z – claude:sonnet:implementer:implementer – shell_pid=68140 – Ready for review: added MetricCatalogEntry and MetricSummaryEntry envelopes, list_metric_catalog and metric_summary engine helpers, T004 semantic tests and T005 lazy-load contract tests. All 148 tests green, ruff clean on changed files.
+- 2026-05-27T07:21:05Z – claude:sonnet:reviewer:reviewer – shell_pid=16701 – Started review via action command
