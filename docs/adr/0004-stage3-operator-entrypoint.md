@@ -11,8 +11,12 @@ The decision is to ship two separate console-script entrypoints: `premura-mcp` (
 eight fully validity-gated tools) and `premura-mcp-operator` (lower-guarantee, adds
 `query_warehouse`).  This keeps the agent default clean — the eight-tool surface honors the
 Stage 2 boundary contract end-to-end — while preserving the raw SQL path behind an explicit
-operator gate.  Agent use of the operator surface requires explicit user approval; that policy
-is enforced at the calling layer (the system prompt of `premura-mcp-operator` names the
-constraint), not inside the server itself.  The split builds on ADR 0002, which established
+operator gate.  The explicit-approval rule is enforced two ways rather than by prose alone:
+(1) surface separation — `query_warehouse` is absent from the default `premura-mcp` surface, so
+an agent connected there cannot reach it; and (2) an explicit launch acknowledgment — the
+`premura-mcp-operator` console entry refuses to start, and therefore never exposes
+`query_warehouse`, unless the launcher opts in via `--ack` or the `PREMURA_OPERATOR_ACK`
+environment variable.  The lower-guarantee disclosure to the end user remains a client/agent-layer
+responsibility the server cannot enforce.  The split builds on ADR 0002, which established
 that MCP uses the local warehouse directly; this ADR closes the final Stage 3 direct-read
 exception that ADR 0002 left open.

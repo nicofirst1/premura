@@ -86,6 +86,7 @@ __all__ = [
     "check_inputs_available",
     "list_unavailable",
     # Stage 2 catalog and summary helpers (WP01)
+    "list_metric_ids",
     "list_metric_catalog",
     "metric_summary",
     # Result envelopes (premura.engine._results)
@@ -193,6 +194,27 @@ def list_unavailable(
 
 _CATALOG_WINDOW_DAYS: int = 30
 """Fixed look-back window (in days) for :func:`metric_summary`."""
+
+
+def list_metric_ids(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    limit: int = 50,
+    offset: int = 0,
+) -> list[str]:
+    """Return registered metric IDs from ``hp.dim_metric``, ordered and paginated.
+
+    Catalog enumeration is metadata only: it reads the metric registry
+    (``hp.dim_metric``) — never the fact tables — and does not trigger the
+    built-in signal loader.  This is the Stage 2 owner of metric-id
+    enumeration, so the Stage 3 surface never has to issue raw warehouse SQL
+    of its own to discover which metrics exist.
+    """
+    rows = conn.execute(
+        "SELECT metric_id FROM hp.dim_metric ORDER BY metric_id LIMIT ? OFFSET ?",
+        [limit, offset],
+    ).fetchall()
+    return [str(row[0]) for row in rows]
 
 
 def list_metric_catalog(

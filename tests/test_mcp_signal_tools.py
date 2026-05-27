@@ -507,25 +507,86 @@ def test_list_metrics_empty_catalog_entry(tmp_path: Path) -> None:
         assert entry["latest_observation_at"] is None
 
 
-def test_list_metrics_omits_unregistered_metric_ids(tmp_path: Path) -> None:
-    """T009: list_metrics only surfaces registered metrics; unregistered IDs are
-    never passed to the engine because metric IDs are sourced exclusively from
-    hp.dim_metric (a pre-filter SELECT before any engine call).
-
-    Architectural boundary: unlike metric_summary — which accepts an arbitrary
-    caller-supplied ID and delegates to the engine's unknown-metric path —
-    list_metrics cannot receive an unknown ID by construction. The engine's
-    unknown-metric guarantee is tested at the WP01 level (test_metric_summary_unknown_metric).
-    This test locks the MCP-surface behavior: no unregistered ID ever appears in
-    the returned catalog, and all returned entries carry only known validity states.
+def test_list_metrics_unknown_metric_id_returns_unavailable_entry(tmp_path: Path) -> None:
+    """FR-004 (acceptance scenario 4): when the catalog tool is asked about an
+    unknown metric id, it must return an explicit ``unavailable`` entry with no
+    fabricated numeric values — not silently omit it.
     """
+    rows = server.list_metrics(
+        metric_ids=["nonexistent_metric_xyz"],
+        warehouse_path=_empty_warehouse(tmp_path),
+    )
+    assert len(rows) == 1
+    entry = rows[0]
+    assert entry["metric_id"] == "nonexistent_metric_xyz"
+    assert entry["validity_status"] == "unavailable"
+    # No fabricated numerics.
+    assert entry["latest_value"] is None
+    assert entry["latest_observation_at"] is None
+    # An explanation is present (distinguishes unknown from known-but-empty).
+    assert entry["message"]
+
+
+def test_list_metrics_mixes_known_and_unknown_ids(tmp_path: Path) -> None:
+    """FR-004: a mixed request returns one entry per requested id, in order, with
+    the unknown id surfaced as an explicit unavailable entry (never dropped)."""
+    db_path = _empty_warehouse(tmp_path)
+    rows = server.list_metrics(
+        metric_ids=["weight", "nonexistent_metric_xyz"],
+        warehouse_path=db_path,
+    )
+    returned_ids = [r["metric_id"] for r in rows]
+    assert returned_ids == ["weight", "nonexistent_metric_xyz"]
+    unknown = rows[1]
+    assert unknown["validity_status"] == "unavailable"
+    assert unknown["latest_value"] is None
+
+
+def test_list_metrics_enumeration_returns_only_known_states(tmp_path: Path) -> None:
+    """Enumeration mode (no metric_ids) surfaces registered metrics only, each
+    carrying a known validity status — never a fabricated/crash state."""
     rows = server.list_metrics(warehouse_path=_empty_warehouse(tmp_path), limit=5)
-    # All returned entries have a known validity_status (not a fabricated/crash state).
     for entry in rows:
         assert entry["validity_status"] in ("current", "stale", "unavailable")
-    # An unregistered ID is never surfaced — it cannot pass through the dim_metric pre-filter.
-    returned_ids = {r["metric_id"] for r in rows}
-    assert "nonexistent_metric_xyz" not in returned_ids
+    assert "nonexistent_metric_xyz" not in {r["metric_id"] for r in rows}
+
+
+def test_catalog_and_summary_tools_route_through_engine(tmp_path: Path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """FR-001 guard: the catalog/summary tools must delegate to the validity-gated
+    Stage 2 engine rather than reading the fact tables directly. Spy on the engine
+    helpers and assert the tools call them. A future refactor that reintroduced
+    direct fact-table SQL while keeping the same payload shape would trip this.
+    """
+    db_path = _empty_warehouse(tmp_path)
+    seen: dict[str, object] = {}
+
+    real_catalog = server.engine.list_metric_catalog
+    real_ids = server.engine.list_metric_ids
+    real_summary = server.engine.metric_summary
+
+    def spy_catalog(ids, conn):  # type: ignore[no-untyped-def]
+        seen["catalog_ids"] = list(ids)
+        return real_catalog(ids, conn)
+
+    def spy_ids(conn, **kwargs):  # type: ignore[no-untyped-def]
+        seen["enumerated"] = True
+        return real_ids(conn, **kwargs)
+
+    def spy_summary(metric_id, conn):  # type: ignore[no-untyped-def]
+        seen["summary_id"] = metric_id
+        return real_summary(metric_id, conn)
+
+    monkeypatch.setattr(server.engine, "list_metric_catalog", spy_catalog)
+    monkeypatch.setattr(server.engine, "list_metric_ids", spy_ids)
+    monkeypatch.setattr(server.engine, "metric_summary", spy_summary)
+
+    server.list_metrics(warehouse_path=db_path, limit=3)
+    server.list_metrics(metric_ids=["weight"], warehouse_path=db_path)
+    server.metric_summary("weight", warehouse_path=db_path)
+
+    assert seen.get("enumerated") is True
+    assert seen.get("catalog_ids") == ["weight"]
+    assert seen.get("summary_id") == "weight"
 
 
 def test_metric_summary_unknown_metric(tmp_path: Path) -> None:

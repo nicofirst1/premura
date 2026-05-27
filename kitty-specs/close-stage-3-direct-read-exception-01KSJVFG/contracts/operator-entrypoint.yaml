@@ -16,6 +16,19 @@ policy:
   disclosure_message_requirement: >
     The caller must state that it is leaving the fully validity-gated surface and that
     acuity/trustworthiness is not guaranteed in the same way as the default path.
+  enforcement:
+    surface_separation: >
+      query_warehouse is absent from the default premura-mcp surface; it is registered
+      only by the separate premura-mcp-operator entrypoint, so an agent connected to the
+      default surface cannot reach the raw-SQL tool at all.
+    explicit_launch_acknowledgment: >
+      The premura-mcp-operator console entry refuses to start (and therefore does not
+      expose query_warehouse) unless the launcher explicitly acknowledges lower-guarantee
+      mode via the --ack flag or the PREMURA_OPERATOR_ACK environment variable.
+    disclosure_is_client_side: >
+      The lower-guarantee disclosure to the end user is the responsibility of the MCP
+      client/agent layer; a server cannot enforce client-side messaging. This contract
+      records it as a required caller behavior, not a server-enforced check.
 query_warehouse_contract:
   capability:
     - arbitrary read-only SQL against the local warehouse

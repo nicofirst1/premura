@@ -278,3 +278,86 @@ def test_stdio_mcp_server_exposes_tools(tmp_path: Path) -> None:
                 )
 
     asyncio.run(run())
+
+
+def test_operator_entry_refuses_without_ack(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The operator console entry refuses to start (exposing query_warehouse)
+    unless the launcher explicitly acknowledges lower-guarantee mode."""
+    from premura.mcp.entrypoint import main_operator
+
+    monkeypatch.delenv("PREMURA_OPERATOR_ACK", raising=False)
+    warehouse_path = _initialized_data_dir(tmp_path) / "duck" / "health.duckdb"
+    with pytest.raises(SystemExit):
+        main_operator(["--warehouse-path", str(warehouse_path)])
+
+
+def test_operator_entry_starts_with_flag_ack(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """--ack satisfies the operator acknowledgment gate and starts the server."""
+    from premura.mcp import entrypoint
+
+    monkeypatch.delenv("PREMURA_OPERATOR_ACK", raising=False)
+    started: dict[str, object] = {}
+
+    class _StubServer:
+        def run(self, *, transport: str) -> None:
+            started["transport"] = transport
+
+    monkeypatch.setattr(entrypoint, "build_operator_server", lambda **kwargs: _StubServer())
+    warehouse_path = _initialized_data_dir(tmp_path) / "duck" / "health.duckdb"
+    entrypoint.main_operator(["--warehouse-path", str(warehouse_path), "--ack"])
+    assert started["transport"] == "stdio"
+
+
+def test_operator_entry_starts_with_env_ack(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """PREMURA_OPERATOR_ACK=1 satisfies the gate without the CLI flag."""
+    from premura.mcp import entrypoint
+
+    monkeypatch.setenv("PREMURA_OPERATOR_ACK", "1")
+    started: dict[str, object] = {}
+
+    class _StubServer:
+        def run(self, *, transport: str) -> None:
+            started["transport"] = transport
+
+    monkeypatch.setattr(entrypoint, "build_operator_server", lambda **kwargs: _StubServer())
+    warehouse_path = _initialized_data_dir(tmp_path) / "duck" / "health.duckdb"
+    entrypoint.main_operator(["--warehouse-path", str(warehouse_path)])
+    assert started["transport"] == "stdio"
+
+
+def test_stdio_operator_server_exposes_query_warehouse(tmp_path: Path) -> None:
+    """End-to-end: the premura-mcp-operator console script (launched with --ack)
+    starts over stdio, exposes exactly the operator tool set, and query_warehouse
+    is usable. Guards the operator packaging/entrypoint wiring against regression."""
+    data_dir = _initialized_data_dir(tmp_path)
+    warehouse_path = data_dir / "duck" / "health.duckdb"
+
+    async def run() -> None:
+        params = StdioServerParameters(
+            command="uv",
+            args=[
+                "run",
+                "premura-mcp-operator",
+                "--warehouse-path",
+                str(warehouse_path),
+                "--ack",
+            ],
+            env=dict(os.environ),
+            cwd=Path(__file__).resolve().parent.parent,
+        )
+        async with stdio_client(params) as (read_stream, write_stream):
+            async with ClientSession(read_stream, write_stream) as session:
+                await session.initialize()
+                tools = await session.list_tools()
+                assert sorted(tool.name for tool in tools.tools) == _OPERATOR_TOOLS
+
+                result = await session.call_tool("query_warehouse", {"sql": "SELECT 1 AS one"})
+                assert result.isError is False
+
+    asyncio.run(run())

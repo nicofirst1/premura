@@ -87,30 +87,39 @@ def _open_warehouse(warehouse_path: Path | None) -> Iterator[duckdb.DuckDBPyConn
 
 
 def list_metrics(
-    *, warehouse_path: Path | None = None, limit: int = 50, offset: int = 0
+    *,
+    metric_ids: list[str] | None = None,
+    warehouse_path: Path | None = None,
+    limit: int = 50,
+    offset: int = 0,
 ) -> list[dict[str, Any]]:
     """List canonical metrics as validity-gated catalog entries.
 
-    Delegates entirely to the Stage 2 engine helper
-    (:func:`premura.engine.list_metric_catalog`).  Returns explicit
-    ``validity_status`` / ``validity_window`` / ``missing_data_policy`` fields
-    per metric so downstream callers can branch on availability without parsing
-    prose.  No raw row counts or all-time extrema are exposed.
+    Delegates **entirely** to the Stage 2 engine: metric-id enumeration goes
+    through :func:`premura.engine.list_metric_ids` and per-metric freshness
+    through :func:`premura.engine.list_metric_catalog`.  This tool issues no raw
+    warehouse SQL of its own — the engine owns all ``hp.*`` access.
+
+    When ``metric_ids`` is provided the catalog is built for exactly those IDs
+    (``limit`` / ``offset`` are ignored) and an unknown ID yields an explicit
+    ``unavailable`` entry rather than being silently dropped (FR-004).  When
+    ``metric_ids`` is ``None`` the registered metrics are enumerated and paged.
+
+    Returns explicit ``validity_status`` / ``validity_window`` /
+    ``missing_data_policy`` fields per metric so downstream callers can branch
+    on availability without parsing prose.  No raw row counts or all-time
+    extrema are exposed.
     """
-    _ensure_non_negative_int("limit", limit)
-    _ensure_non_negative_int("offset", offset)
-    # Resolve the paged metric IDs from dim_metric via the read-only connection,
-    # then delegate all freshness/coverage logic to the Stage 2 catalog helper.
-    id_result = query_warehouse(
-        "SELECT metric_id FROM hp.dim_metric ORDER BY metric_id LIMIT ? OFFSET ?",
-        [limit, offset],
-        warehouse_path=warehouse_path,
-    )
-    metric_ids = [row["metric_id"] for row in id_result["rows"]]
-    if not metric_ids:
-        return []
+    if metric_ids is None:
+        _ensure_non_negative_int("limit", limit)
+        _ensure_non_negative_int("offset", offset)
     with _open_warehouse(warehouse_path) as conn:
-        entries = engine.list_metric_catalog(metric_ids, conn)
+        ids = (
+            engine.list_metric_ids(conn, limit=limit, offset=offset)
+            if metric_ids is None
+            else metric_ids
+        )
+        entries = engine.list_metric_catalog(ids, conn)
     return [entry.to_dict() for entry in entries]
 
 

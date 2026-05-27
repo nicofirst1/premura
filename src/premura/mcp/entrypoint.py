@@ -10,15 +10,22 @@ Two entrypoints are provided:
 * **Operator surface** (``premura-mcp-operator``, :func:`build_operator_server``)
   — lower-guarantee expert mode intended for operator/developer use only,
   **not** for autonomous agent consumption.  Adds :func:`query_warehouse` on top
-  of the full default tool set.  This surface must only be invoked after
-  explicit user approval; that policy is enforced at the calling layer, not
-  inside this server.  No Stage 2 validity guarantees apply to results returned
-  by ``query_warehouse``.
+  of the full default tool set.  No Stage 2 validity guarantees apply to results
+  returned by ``query_warehouse``.
+
+The explicit-approval rule is enforced two ways, not by prose alone: (1) surface
+separation — ``query_warehouse`` is simply absent from the default
+``premura-mcp`` surface, so an agent connected there cannot reach it; and (2) an
+explicit launch acknowledgment — the ``premura-mcp-operator`` console entry
+(:func:`main_operator`) refuses to start unless the launcher passes ``--ack`` or
+sets ``PREMURA_OPERATOR_ACK``.  The lower-guarantee disclosure to the end user
+remains a client/agent-layer responsibility the server cannot enforce.
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -29,6 +36,11 @@ from . import server as warehouse_server
 
 JsonScalar = str | int | float | bool | None
 
+#: Environment variable an operator may set (to a truthy value) to acknowledge
+#: lower-guarantee operator mode instead of passing ``--ack`` on the CLI.
+_OPERATOR_ACK_ENV = "PREMURA_OPERATOR_ACK"
+_TRUTHY = frozenset({"1", "true", "yes", "on"})
+
 
 def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> None:
     """Register the full agent-safe default tool set on *mcp*.
@@ -38,9 +50,19 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
     """
 
     @mcp.tool()
-    def list_metrics(limit: int = 50, offset: int = 0) -> dict[str, Any]:
-        """List canonical metrics with warehouse coverage counts."""
+    def list_metrics(
+        metric_ids: list[str] | None = None, limit: int = 50, offset: int = 0
+    ) -> dict[str, Any]:
+        """List canonical metrics as validity-gated catalog entries.
+
+        With no arguments, enumerates registered metrics (paged by
+        ``limit`` / ``offset``).  Pass ``metric_ids`` to fetch catalog entries
+        for specific metrics; an unknown id returns an explicit ``unavailable``
+        entry rather than being omitted.  Each entry reports a validity status
+        and declared policy — never raw fact-table row counts.
+        """
         metrics = warehouse_server.list_metrics(
+            metric_ids=metric_ids,
             warehouse_path=warehouse_path,
             limit=limit,
             offset=offset,
@@ -54,7 +76,12 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
 
     @mcp.tool()
     def metric_summary(metric_id: str) -> dict[str, Any]:
-        """Return metadata and coverage stats for one canonical metric."""
+        """Return a validity/imputation envelope for one canonical metric.
+
+        Reports validity status, latest value, declared policy, and recent-window
+        coverage (sample size / imputed proportion / gap count).  An unknown
+        metric returns an explicit ``unavailable`` summary, never raw extrema.
+        """
         return {
             "summary": warehouse_server.metric_summary(
                 metric_id,
@@ -184,7 +211,31 @@ def main(argv: Sequence[str] | None = None) -> None:
 
 def main_operator(argv: Sequence[str] | None = None) -> None:
     args = _parse_args(argv, prog="premura-mcp-operator", operator_mode=True)
+    if not _operator_ack_granted(args):
+        raise SystemExit(
+            "Refusing to start premura-mcp-operator without explicit operator "
+            "acknowledgment.\n"
+            "This surface registers query_warehouse — arbitrary read-only SQL with "
+            "NO Stage 2 validity, freshness, or imputation guarantees. It is not "
+            "safe for autonomous agent use without explicit user approval.\n"
+            f"To proceed, re-run with --ack, or set {_OPERATOR_ACK_ENV}=1."
+        )
     build_operator_server(warehouse_path=args.warehouse_path).run(transport="stdio")
+
+
+def _operator_ack_granted(args: argparse.Namespace) -> bool:
+    """True iff the operator explicitly acknowledged lower-guarantee mode.
+
+    The acknowledgment is the system-enforced realization of the operator
+    contract's ``explicit_user_approval_required_for_agent_use`` rule: the
+    ``premura-mcp-operator`` console entry will not expose ``query_warehouse``
+    unless the launcher opts in via ``--ack`` or the ``PREMURA_OPERATOR_ACK``
+    environment variable.  The in-process :func:`build_operator_server` builder
+    stays ungated so tests and embedders can construct the surface directly.
+    """
+    if getattr(args, "ack", False):
+        return True
+    return (os.environ.get(_OPERATOR_ACK_ENV) or "").strip().lower() in _TRUTHY
 
 
 def _parse_args(
@@ -209,6 +260,17 @@ def _parse_args(
             "HPIPE_DATA_DIR/duck/health.duckdb."
         ),
     )
+    if operator_mode:
+        parser.add_argument(
+            "--ack",
+            action="store_true",
+            help=(
+                "Acknowledge lower-guarantee operator mode. Required to launch "
+                "(exposing query_warehouse, the raw read-only SQL escape hatch with "
+                "no Stage 2 validity guarantees) unless PREMURA_OPERATOR_ACK is set "
+                "to a truthy value."
+            ),
+        )
     args = parser.parse_args(list(argv) if argv is not None else None)
     if args.warehouse_path is not None and not args.warehouse_path.exists():
         parser.error(f"warehouse does not exist: {args.warehouse_path}")

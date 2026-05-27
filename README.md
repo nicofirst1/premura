@@ -75,11 +75,11 @@ The six signal-backed tools return structured `available` / `missing_input` / `s
 
 ### Operator fallback surface (`premura-mcp-operator`)
 
-Lower-guarantee expert mode. Adds `query_warehouse` (raw SQL escape hatch) on top of all eight default tools. No Stage 2 validity guarantees apply to `query_warehouse` results — callers own all result interpretation. **Agent use requires explicit user approval.**
+Lower-guarantee expert mode. Adds `query_warehouse` (raw SQL escape hatch) on top of all eight default tools. No Stage 2 validity guarantees apply to `query_warehouse` results — callers own all result interpretation. **Agent use requires explicit user approval**, enforced two ways: `query_warehouse` is absent from the default surface, and this entrypoint refuses to start unless you acknowledge lower-guarantee mode with `--ack` (or `PREMURA_OPERATOR_ACK=1`).
 
 ```bash
-uv run premura-mcp-operator
-uv run premura-mcp-operator --warehouse-path /absolute/path/to/health.duckdb
+uv run premura-mcp-operator --ack
+uv run premura-mcp-operator --ack --warehouse-path /absolute/path/to/health.duckdb
 ```
 
 `query_warehouse` returns up to 200 rows by default and accepts `max_rows` up to 1000. Direct DuckDB and notebook work remain available as additional expert interfaces.
