@@ -41,11 +41,11 @@
 | T011 | Update `docs/architecture/UPDATE_STRATEGY.md` to explain how profile/intake corrections and supersessions differ from rebuild-oriented changes to observation history. | WP03 |  | [D] |
 | T012 | Update `src/premura/engine/CONTRACT.md` so future signals must declare profile and intake prerequisites explicitly and may not rely on opportunistic measurement fallbacks. | WP03 |  | [D] |
 | T013 | Extend `tests/test_engine_contract.py` to lock the new dependency-declaration guidance and its discoverability from the engine-side contract. | WP03 |  | [D] |
-| T014 | Add a design decision note capturing the ports/adapters decision: storage stays flexible, semantics stay strict at the contract boundary. | WP04 |  |
-| T015 | Update `docs/product/FULL_APP_DEVELOPMENT_PLAN.md` so future implementation work starts from the new contract baseline and not from the unresolved issue-`#6` framing alone. | WP04 | [P] |
-| T016 | Update `docs/product/ROADMAP.md` to sequence follow-on work from the new domain contract, including the need for machine-checkable review gates. | WP04 | [P] |
-| T017 | Update `docs/product/ROADMAP_BOOTSTRAP_PLAN.md` so the backlog language around issue `#6` reflects the broader profile-plus-intake contract now being defined. | WP04 | [P] |
-| T018 | Update `docs/product/VISION.md` lightly so it acknowledges the new contract seam without overstating shipped user-facing capability. | WP04 | [P] |
+| T014 | Add a design decision note capturing the ports/adapters decision: storage stays flexible, semantics stay strict at the contract boundary. | WP04 |  | [D] |
+| T015 | Update `docs/product/FULL_APP_DEVELOPMENT_PLAN.md` so future implementation work starts from the new contract baseline and not from the unresolved issue-`#6` framing alone. | WP04 | [D] |
+| T016 | Update `docs/product/ROADMAP.md` to sequence follow-on work from the new domain contract, including the need for machine-checkable review gates. | WP04 | [D] |
+| T017 | Update `docs/product/ROADMAP_BOOTSTRAP_PLAN.md` so the backlog language around issue `#6` reflects the broader profile-plus-intake contract now being defined. | WP04 | [D] |
+| T018 | Update `docs/product/VISION.md` lightly so it acknowledges the new contract seam without overstating shipped user-facing capability. | WP04 | [D] |
 
 ## Work Packages
 
@@ -167,11 +167,11 @@ Reviewer focus:
 - Estimated prompt size: ~280 lines
 
 Included subtasks:
-- [ ] T014 Add a design decision note capturing the ports/adapters decision: storage stays flexible, semantics stay strict at the contract boundary. (WP04)
-- [ ] T015 Update `docs/product/FULL_APP_DEVELOPMENT_PLAN.md` so future implementation work starts from the new contract baseline and not from the unresolved issue-`#6` framing alone. (WP04)
-- [ ] T016 Update `docs/product/ROADMAP.md` to sequence follow-on work from the new domain contract, including the need for machine-checkable review gates. (WP04)
-- [ ] T017 Update `docs/product/ROADMAP_BOOTSTRAP_PLAN.md` so the backlog language around issue `#6` reflects the broader profile-plus-intake contract now being defined. (WP04)
-- [ ] T018 Update `docs/product/VISION.md` lightly so it acknowledges the new contract seam without overstating shipped user-facing capability. (WP04)
+- [x] T014 Add a design decision note capturing the ports/adapters decision: storage stays flexible, semantics stay strict at the contract boundary. (WP04)
+- [x] T015 Update `docs/product/FULL_APP_DEVELOPMENT_PLAN.md` so future implementation work starts from the new contract baseline and not from the unresolved issue-`#6` framing alone. (WP04)
+- [x] T016 Update `docs/product/ROADMAP.md` to sequence follow-on work from the new domain contract, including the need for machine-checkable review gates. (WP04)
+- [x] T017 Update `docs/product/ROADMAP_BOOTSTRAP_PLAN.md` so the backlog language around issue `#6` reflects the broader profile-plus-intake contract now being defined. (WP04)
+- [x] T018 Update `docs/product/VISION.md` lightly so it acknowledges the new contract seam without overstating shipped user-facing capability. (WP04)
 
 Implementation sketch:
 1. Record the architectural decision first in a design decision note so the follow-on docs can point to one clear decision.
