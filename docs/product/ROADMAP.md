@@ -2,9 +2,9 @@
 
 > Status: live reference. Intended sequencing of future work, not a contract.
 >
-> Companion to [SPEC.md](SPEC.md), [ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](USERJOURNEY.md), [STATUS.md](../operations/STATUS.md), [STAGES.md](../architecture/STAGES.md), [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md), [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md).
+> Companion to [DOCTRINE.md](DOCTRINE.md), [SPEC.md](SPEC.md), [ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](USERJOURNEY.md), [STATUS.md](../operations/STATUS.md), [STAGES.md](../architecture/STAGES.md), [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md), [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md).
 >
-> For the **current planning surface** — milestones, missions, tasks, and their sequencing — see [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md). This doc retains the prose narrative and the deferred-items backlog; missions and tasks are tracked there (and, once created, in GitHub issues).
+> For the **current planning surface** — milestones, missions, tasks, and their sequencing — see [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md). This doc retains the prose narrative and the deferred-items backlog; missions and tasks are tracked there (and, once created, in GitHub issues). All future roadmap work should be read through the product stance in [DOCTRINE.md](DOCTRINE.md): agent-primary execution, human-primary purpose.
 
 Items below are sorted by reasonable build order, not priority. Anything in v1 scope (SPEC §2) that is still ⏳ in [STATUS.md](../operations/STATUS.md) is the prerequisite for the rest.
 

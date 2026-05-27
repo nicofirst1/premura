@@ -285,6 +285,141 @@ class MissingInputReport:
         }
 
 
+@dataclass(frozen=True)
+class MetricCatalogEntry:
+    """One entry in the Stage 2 metric catalog.
+
+    Reports declared metadata plus a computed validity status and latest usable
+    observation. No raw row-counts or all-time extrema. Numeric fields are
+    optional so an ``unavailable`` entry can serialize without fabricated data.
+
+    ``validity_status`` is the honest freshness verdict for the latest
+    available observation:
+
+    * ``current``     — latest observation is within the validity window.
+    * ``stale``       — present but older than the validity window allows.
+    * ``unavailable`` — no usable observation exists.
+
+    ``validity_window`` is the metric's declared window from ``hp.dim_metric``
+    (ISO-8601 duration text), or None when no window is seeded.
+    """
+
+    metric_id: str
+    validity_status: FreshnessState
+    validity_window: str | None
+    missing_data_policy: str | None
+    unit: str
+    latest_observation_at: datetime | None = None
+    """Timestamp of the latest usable observation. MUST be None when
+    ``validity_status`` is ``unavailable``."""
+    latest_value: float | None = None
+    """Latest numeric value. MUST be None when ``validity_status`` is
+    ``unavailable``."""
+    message: str | None = None
+    """Optional human-readable context (e.g. why the metric is unavailable).
+    Must not contain diagnosis or external reference data."""
+
+    def validate(self) -> MetricCatalogEntry:
+        if self.validity_status is FreshnessState.UNAVAILABLE:
+            if self.latest_value is not None:
+                raise ValueError(
+                    "MetricCatalogEntry.latest_value must be None when unavailable"
+                )
+            if self.latest_observation_at is not None:
+                raise ValueError(
+                    "MetricCatalogEntry.latest_observation_at must be None when unavailable"
+                )
+        return self
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "family": "metric_catalog",
+            "metric_id": self.metric_id,
+            "validity_status": self.validity_status.value,
+            "validity_window": self.validity_window,
+            "missing_data_policy": self.missing_data_policy,
+            "unit": self.unit,
+            "latest_observation_at": _iso(self.latest_observation_at),
+            "latest_value": self.latest_value,
+            "message": self.message,
+        }
+
+
+@dataclass(frozen=True)
+class MetricSummaryEntry:
+    """Per-metric validity summary over a fixed 30-day window.
+
+    Extends :class:`MetricCatalogEntry` with explicit coverage and imputation
+    metadata for the recent window. No all-time extrema or raw row counts.
+
+    ``sample_size``        — number of genuinely observed data points in the
+                             30-day window.
+    ``imputed_proportion`` — fraction of the window that relied on
+                             carried-forward (LOCF) imputation. Always 0.0
+                             for metrics with ``missing_data_policy: none``.
+    ``gap_count``          — calendar days inside the window with no
+                             observation and no carry-forward fill.
+    ``window_days``        — fixed window length (always 30).
+
+    Numeric coverage fields are None (not fabricated) when the metric is
+    ``unavailable``.
+    """
+
+    metric_id: str
+    validity_status: FreshnessState
+    validity_window: str | None
+    missing_data_policy: str | None
+    unit: str
+    window_days: int
+    latest_observation_at: datetime | None = None
+    """Timestamp of the latest usable observation in the window. None when unavailable."""
+    latest_value: float | None = None
+    """Latest numeric value in the window. None when unavailable."""
+    sample_size: int | None = None
+    """Number of genuinely observed data points in the window. None when unavailable."""
+    imputed_proportion: float | None = None
+    """Fraction of bucketed window slots that were carried-forward. 0.0 for no-imputation
+    policies. None when unavailable."""
+    gap_count: int | None = None
+    """Calendar days in the window with no observation and no carry-forward. None when
+    unavailable."""
+    message: str | None = None
+    """Optional human-readable context. Must not contain diagnosis or external reference."""
+
+    def validate(self) -> MetricSummaryEntry:
+        if self.validity_status is FreshnessState.UNAVAILABLE:
+            if self.latest_value is not None:
+                raise ValueError(
+                    "MetricSummaryEntry.latest_value must be None when unavailable"
+                )
+            if self.latest_observation_at is not None:
+                raise ValueError(
+                    "MetricSummaryEntry.latest_observation_at must be None when unavailable"
+                )
+        if self.imputed_proportion is not None and not (0.0 <= self.imputed_proportion <= 1.0):
+            raise ValueError(
+                "MetricSummaryEntry.imputed_proportion must be in [0.0, 1.0]"
+            )
+        return self
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "family": "metric_summary",
+            "metric_id": self.metric_id,
+            "validity_status": self.validity_status.value,
+            "validity_window": self.validity_window,
+            "missing_data_policy": self.missing_data_policy,
+            "unit": self.unit,
+            "window_days": self.window_days,
+            "latest_observation_at": _iso(self.latest_observation_at),
+            "latest_value": self.latest_value,
+            "sample_size": self.sample_size,
+            "imputed_proportion": self.imputed_proportion,
+            "gap_count": self.gap_count,
+            "message": self.message,
+        }
+
+
 __all__ = [
     "FreshnessState",
     "TrendDirection",
@@ -295,4 +430,6 @@ __all__ = [
     "BaselineComparisonResult",
     "ChangeAroundDateResult",
     "MissingInputReport",
+    "MetricCatalogEntry",
+    "MetricSummaryEntry",
 ]

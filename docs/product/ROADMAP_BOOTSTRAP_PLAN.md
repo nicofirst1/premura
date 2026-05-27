@@ -1,6 +1,6 @@
 # Premura Initial Roadmap Plan
 
-> Status: review draft. Proposed application of the planning system to Premura's current docs. No GitHub issues, labels, milestones, boards, or specs have been created by this draft. Doc edits driven by this plan are committed separately (see git log — e.g. `ROADMAP.md` reconciliation landed at `c11fc8c`).
+> Status: applied reference. This doc captured the first concrete roadmap pass. The minimal label set and GitHub tracking issues for M1-M3 now exist, and issues `#1`, `#2`, and `#3` are closed. GitHub milestones were **not** created from this plan, so the `v2.0` / `v2.1` milestone-and-tag workflow remains an intended convention rather than a completed historical fact.
 >
 > **Vocabulary note**: this doc uses the project vocabulary defined in `CONTEXT.md` §"Planning" (e.g. "ablation study" rather than "spike", "design decision note" rather than "ADR"). Live GitHub artifacts (issue titles, label values, file paths) keep their existing names — only prose follows the new vocabulary.
 >
@@ -8,14 +8,14 @@
 
 ## Purpose
 
-Turn the approved planning system into the first concrete roadmap for Premura.
+Capture how the approved planning system was first turned into a concrete roadmap for Premura.
 
 This file answers:
 
 - what roadmap items already exist in the docs
 - which ones become missions under the mission/task split rule
 - what milestone shape makes sense for the first pass
-- what would be created first once execution is approved
+- what this first pass proposed creating, and what actually happened
 
 ## Inputs Used
 
@@ -33,19 +33,19 @@ This file answers:
 
 ## Working Assumptions
 
-- The planning-system handoff is accepted in substance and is the process to apply.
-- This pass instantiates the roadmap; it does not execute it.
+- The planning-system handoff was accepted in substance and used for the first application pass.
+- This file now records that first pass after execution rather than serving as a pre-execution proposal.
 - This plan is the near-term execution layer for Phases 1 and 2 in `docs/product/FULL_APP_DEVELOPMENT_PLAN.md`, not a competing phase plan.
 - `ROADMAP.md` has been reconciled against shipped state (commit `c11fc8c`), so this plan starts from remaining open work.
 - The active backlog is **missions-only** — no tasks. SAA real-export validation and the wiki hub page are both deferred (wiki: "once we have a proper codebase"; SAA: file an issue if and when the next real export breaks something).
 
-## What Would Be Done First
+## What Was Done First
 
-1. Create the minimal canonical label vocabulary: 5 bare `needs-triage`/etc. labels + `stage:*` (5) + `type:*` (6). No `pillar:*` or `priority:*` yet.
-2. Create two milestones from the docs' natural sequencing: `v2.0 analytical surface`, `v2.1 labs`.
-3. Create one GitHub tracking issue per mission (3 total), titled with `[M1]`/`[M2]`/`[M3]` prefixes.
-4. Do not design the full Projects v2 board taxonomy yet — board fields and views are designed after M1 completes.
-5. Start with the `mcp+age` ablation study (M1), the highest-leverage open uncertainty per `RISK_OPPORTUNITY.md:151`.
+1. Create the minimal canonical label vocabulary: 5 bare `needs-triage`/etc. labels + `stage:*` (5) + `type:*` (6). This happened.
+2. Create two milestones from the docs' natural sequencing: `v2.0 analytical surface`, `v2.1 labs`. This did **not** happen.
+3. Create one GitHub tracking issue per mission (3 total), titled with `[M1]`/`[M2]`/`[M3]` prefixes. This happened; issues `#1`, `#2`, and `#3` were later closed.
+4. Do not design the full Projects v2 board taxonomy yet — board fields and views are designed after M1 completes. This remains deferred.
+5. Start with the `mcp+age` ablation study (M1), the highest-leverage open uncertainty per `RISK_OPPORTUNITY.md:151`. This happened.
 
 ## Conventions
 
@@ -100,6 +100,7 @@ Not in this milestone:
 - **Milestone**: `v2.0 analytical surface`
 - **Labels**: `stage:mcp`, `type:spike` (existing label name; the work itself is an ablation study)
 - **Source docs**: `docs/product/RISK_OPPORTUNITY.md`, `docs/product/ROADMAP.md`
+- **Outcome**: shipped and closed as issue `#1`; the result is design decision note `docs/adr/0002-mcp-local-warehouse-boundary.md`.
 - **Tracking issue title**:
   - `[M1] Lock the MCP/warehouse boundary and keep age at export/upload` (existing GitHub title; preserved for traceability)
 - **Definition of done (1-week time budget)**:
@@ -115,6 +116,7 @@ Not in this milestone:
 - **Milestone**: `v2.0 analytical surface`
 - **Labels**: `stage:mcp`, `type:feature`
 - **Source docs**: `docs/product/ROADMAP.md`, `docs/architecture/STAGES.md`
+- **Outcome**: issue `#2` is closed, and the scope was later extended by a follow-on grounded-signals mission beyond the original raw-tool-only slice.
 - **Tracking issue title**:
   - `[M2] Build the first MCP analytical surface over the warehouse`
 - **Scope (first mission pass, per `ROADMAP.md:70-77`)**:
@@ -131,6 +133,7 @@ Not in this milestone:
 - **Milestone**: `v2.1 labs`
 - **Labels**: `stage:ingest`, `stage:engine`, `type:feature`
 - **Source docs**: `docs/research/PROPOSAL_LABS.md`, `docs/architecture/STAGES.md`
+- **Outcome**: shipped and closed as issue `#3`; lab ingest and the first sparse-signal foundations are in the codebase, with later follow-on work now tracked separately.
 - **Tracking issue title**:
   - `[M3] Add lab PDF ingest and sparse-signal foundations`
 - **Parser shape**: **in-tree** at `src/premura/parsers/lab_pdf.py`, not as a Claude Code skill.
@@ -172,15 +175,15 @@ That is stricter than the prose tone in `ROADMAP.md`. Once the planning system i
 
 ## Proposed Roadmap Ordering
 
-This is a default sequence, not a hard dependency chain. If capacity allows, M3's Stage 1 + Stage 2 WPs can run in parallel with M2; only M3's Stage-3 sub-work strictly depends on M1's design decision note and M2's MCP infrastructure.
+This was the default first-pass sequence, not a hard dependency chain. It has now been executed for M1-M3. Current next work should start from the open follow-on issues rather than from this historical ordering.
 
-1. M1 `[M1] Lock the MCP/warehouse boundary and keep age at export/upload`
-2. M2 `[M2] Build the first MCP analytical surface over the warehouse` as the default next mission
-3. M3 `[M3] Add lab PDF ingest and sparse-signal foundations`
+1. M1 `[M1] Lock the MCP/warehouse boundary and keep age at export/upload` (closed)
+2. M2 `[M2] Build the first MCP analytical surface over the warehouse` (closed)
+3. M3 `[M3] Add lab PDF ingest and sparse-signal foundations` (closed)
 
-If capacity allows after M1, M2 and M3 can run in parallel. The default low-ceremony order above keeps the first execution pass simple.
+If capacity allows after M1, M2 and M3 can run in parallel. That low-ceremony order is what this document was designed to justify.
 
-## What Would Be Created On Execution
+## What Was Actually Created
 
 ### Labels (minimal)
 
@@ -192,8 +195,8 @@ Deferred: `pillar:*` and `priority:*`. Added later only if a real filtering need
 
 ### Milestones
 
-- `v2.0 analytical surface`
-- `v2.1 labs`
+- Not created from this plan.
+- Consequence: the intended `v2.0.0` / `v2.1.0` tag cuts did not happen.
 
 ### First Mission Tracking Issues
 
@@ -201,7 +204,9 @@ Deferred: `pillar:*` and `priority:*`. Added later only if a real filtering need
 - `[M2] Build the first MCP analytical surface over the warehouse`
 - `[M3] Add lab PDF ingest and sparse-signal foundations`
 
-No initial task issues. SAA validation and wiki hub page are both deferred (see Working Assumptions).
+All three now exist as issues `#1`, `#2`, and `#3`, and all three are closed.
+
+No initial task issues were created. SAA validation and wiki hub page remain deferred (see Working Assumptions).
 
 ## Review Questions
 
@@ -209,11 +214,10 @@ No open review questions remain. Remaining decisions are execution choices, not 
 
 ## Recommendation
 
-Approve this shape and perform exactly one application pass:
+Treat this document as the record of the first application pass, not as the current next-action list.
 
-1. Create the minimal label vocabulary.
-2. Create the two milestones.
-3. Open the three mission tracking issues above.
-4. Start M1 first.
+Current next mission candidates should start from the open follow-on issues instead:
 
-When M1 + M2 both close, cut `v2.0.0`. When M3 closes, cut `v2.1.0`.
+1. `#5` close the Stage 3 direct-read exception for agent-facing MCP work.
+2. `#6` model baseline personal profile attributes for engine functions.
+3. File the first `v2.2 analytical depth` mission once those prerequisites are clear enough.

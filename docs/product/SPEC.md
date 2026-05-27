@@ -2,12 +2,12 @@
 
 > Status: authoritative. Source of truth for what the system must do.
 >
-> Companion to [ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md) (implementation history), [USERJOURNEY.md](USERJOURNEY.md) (experience), [STATUS.md](../operations/STATUS.md) (what works today), and [ROADMAP.md](ROADMAP.md) (what's next).
+> Companion to [DOCTRINE.md](DOCTRINE.md) (product stance), [ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md) (implementation history), [USERJOURNEY.md](USERJOURNEY.md) (experience), [STATUS.md](../operations/STATUS.md) (what works today), and [ROADMAP.md](ROADMAP.md) (what's next).
 > This document is the source of truth for **what the system must do**, not how.
 
 ## 1. Purpose
 
-Build a single, locally-owned warehouse of the user's personal health data, with encrypted off-site artifacts, that contains metrics Android **Health Connect** does not bridge: HRV, respiratory rate, stress, Body Battery, SpO2, body composition, training metrics. Health Connect remains one input among several rather than the destination.
+Build a single, locally-owned warehouse and tool substrate for the user's personal health data, with encrypted off-site artifacts, that contains metrics Android **Health Connect** does not bridge: HRV, respiratory rate, stress, Body Battery, SpO2, body composition, training metrics. Per [DOCTRINE.md](DOCTRINE.md), the primary runtime client is an AI agent acting for the human user; Health Connect remains one input among several rather than the destination.
 
 ## 2. Scope
 
@@ -23,6 +23,7 @@ Build a single, locally-owned warehouse of the user's personal health data, with
 - Off-site backup to **Google Drive** via **`rclone`**.
 - A macOS **launchd** agent that runs on a calendar trigger, emits a notification when fresh inputs are needed, and waits for a user-controlled sentinel before processing.
 - A Python CLI (`hpipe`) covering: `ingest`, `status`, `export`, `upload`, `doctor`, `run-monthly`, `gc`, `install-launchd`.
+- An agent-facing MCP/tool surface over the warehouse and engine. This is the default analytical interface; direct CLI and SQL use remain valid expert fallback paths.
 
 ### Out of scope (v1)
 - Live API pulls from any vendor (no scraping of Garmin Connect, no Google Fit REST, no Apple HealthKit).
@@ -117,7 +118,13 @@ Build a single, locally-owned warehouse of the user's personal health data, with
 4. `sleep_as_android`
 5. `bmt`
 
-## 6. Interface — CLI surface (`hpipe`)
+## 6. Interfaces
+
+### Primary analytical interface — agent-facing tool surface
+
+The system SHALL expose a programmatic analytical surface suitable for an AI agent acting on the human user's behalf. In the current shipped shape this is the MCP surface described in `docs/architecture/STAGES.md` and `docs/operations/STATUS.md`.
+
+### Operator interface — CLI surface (`hpipe`)
 
 ```
 hpipe ingest [--source all|hc|garmin|saa|bmt] [PATH]   # parse and store

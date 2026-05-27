@@ -2,7 +2,8 @@
 
 These lock the new MCP surface that exposes the six grounded Stage 2 answers:
 
-* registration publishes all nine tools (3 raw + 6 signal-backed);
+* registration publishes all eight default tools (2 catalog + 6 signal-backed;
+  query_warehouse is operator-only per WP03);
 * one successful call per result family (status / trend / baseline / change);
 * a missing-or-stale-input path and an insufficient-data path are
   structurally distinguishable (not a generic error);
@@ -24,9 +25,9 @@ from premura.mcp import server
 from premura.mcp.entrypoint import build_server
 from premura.store import duck
 
-_NINE_TOOLS = sorted(
+# WP03: query_warehouse moved to operator surface; default surface has eight tools.
+_EIGHT_DEFAULT_TOOLS = sorted(
     [
-        "query_warehouse",
         "list_metrics",
         "metric_summary",
         "resting_hr_status",
@@ -89,13 +90,14 @@ def _warehouse_with(tmp_path: Path, name: str) -> tuple[Path, object]:
 
 
 # --------------------------------------------------------------------------- #
-# T021 — registration includes all nine tools
+# T021 — registration includes all eight default tools (WP03: query_warehouse
+# moved to operator surface only)
 # --------------------------------------------------------------------------- #
-def test_build_server_publishes_all_nine_tools() -> None:
+def test_build_server_publishes_all_eight_default_tools() -> None:
     async def run() -> None:
         srv = build_server()
         names = sorted(tool.name for tool in await srv.list_tools())
-        assert names == _NINE_TOOLS
+        assert names == _EIGHT_DEFAULT_TOOLS
 
     asyncio.run(run())
 
@@ -406,13 +408,24 @@ def test_raw_query_warehouse_still_returns_rows(tmp_path: Path) -> None:
     assert result["truncated"] is False
 
 
-def test_raw_list_metrics_still_lists(tmp_path: Path) -> None:
+def test_list_metrics_returns_validity_catalog_entries(tmp_path: Path) -> None:
+    """T010 regression: list_metrics returns Stage 2 catalog entries (not raw counts)."""
     rows = server.list_metrics(warehouse_path=_empty_warehouse(tmp_path), limit=5)
     assert len(rows) == 5
-    assert {"metric_id", "display_name", "canonical_unit"} <= set(rows[0])
+    # WP02: catalog entries carry validity fields.
+    expected_fields = {
+        "metric_id", "validity_status", "validity_window", "missing_data_policy", "unit"
+    }
+    assert expected_fields <= set(rows[0])
+    # Raw count fields must not be present.
+    assert "measurement_count" not in rows[0]
+    assert "interval_count" not in rows[0]
+    # All-time extrema must not be present.
+    assert "numeric_summary" not in rows[0]
 
 
-def test_raw_metric_summary_still_summarizes(tmp_path: Path) -> None:
+def test_metric_summary_returns_validity_summary_entry(tmp_path: Path) -> None:
+    """T010 regression: metric_summary returns Stage 2 summary entry (not all-time extrema)."""
     db_path, conn = _warehouse_with(tmp_path, "raw_summary")
     try:
         _seed(
@@ -427,8 +440,215 @@ def test_raw_metric_summary_still_summarizes(tmp_path: Path) -> None:
 
     summary = server.metric_summary("weight", warehouse_path=db_path)
     assert summary["metric_id"] == "weight"
-    assert summary["measurement_count"] == 2
-    assert summary["numeric_summary"] == {"min": 70.0, "max": 71.5, "avg": 70.75}
+    # WP02: explicit validity/imputation fields.
+    assert "validity_status" in summary
+    assert "sample_size" in summary
+    assert "imputed_proportion" in summary
+    assert "gap_count" in summary
+    assert "window_days" in summary
+    # All-time extrema must NOT be present.
+    assert "measurement_count" not in summary
+    assert "numeric_summary" not in summary
+
+
+# --------------------------------------------------------------------------- #
+# T009 — MCP payload tests: fresh/stale/empty/unknown for catalog and summary
+# --------------------------------------------------------------------------- #
+
+def test_list_metrics_fresh_catalog_entry(tmp_path: Path) -> None:
+    """T009: a recently-observed metric returns a current catalog entry."""
+    db_path, conn = _warehouse_with(tmp_path, "catalog_fresh")
+    try:
+        fresh_ts = (_now() - timedelta(hours=2)).isoformat(sep=" ")
+        _seed(conn, [(fresh_ts, "weight", 72.0, "cf1")])
+    finally:
+        conn.close()
+
+    # weight is at the end of the catalog (index ~190), so use a large limit.
+    rows = server.list_metrics(warehouse_path=db_path, limit=200)
+    weight_entries = [r for r in rows if r["metric_id"] == "weight"]
+    assert len(weight_entries) == 1
+    entry = weight_entries[0]
+    assert entry["validity_status"] == "current"
+    assert entry["latest_value"] == 72.0
+    assert entry["latest_observation_at"] is not None
+    # No raw counts or all-time extrema.
+    assert "measurement_count" not in entry
+    assert "numeric_summary" not in entry
+
+
+def test_list_metrics_stale_catalog_entry(tmp_path: Path) -> None:
+    """T009: an old-but-present metric observation returns a stale catalog entry."""
+    db_path, conn = _warehouse_with(tmp_path, "catalog_stale")
+    try:
+        # weight validity_window is P7D; a reading 30 days old is stale.
+        stale_ts = (_now() - timedelta(days=30)).isoformat(sep=" ")
+        _seed(conn, [(stale_ts, "weight", 80.0, "cs1")])
+    finally:
+        conn.close()
+
+    # weight is at the end of the catalog (index ~190), so use a large limit.
+    rows = server.list_metrics(warehouse_path=db_path, limit=200)
+    weight_entries = [r for r in rows if r["metric_id"] == "weight"]
+    assert len(weight_entries) == 1
+    entry = weight_entries[0]
+    assert entry["validity_status"] == "stale"
+    # Stale entries still carry the value (distinct from unavailable which drops it).
+    assert entry["latest_value"] == 80.0
+
+
+def test_list_metrics_empty_catalog_entry(tmp_path: Path) -> None:
+    """T009: a registered metric with no data returns an unavailable catalog entry."""
+    rows = server.list_metrics(warehouse_path=_empty_warehouse(tmp_path), limit=50)
+    # Every known metric has no data in an empty warehouse.
+    for entry in rows:
+        assert entry["validity_status"] == "unavailable"
+        assert entry["latest_value"] is None
+        assert entry["latest_observation_at"] is None
+
+
+def test_list_metrics_unknown_metric_id_returns_unavailable_entry(tmp_path: Path) -> None:
+    """FR-004 (acceptance scenario 4): when the catalog tool is asked about an
+    unknown metric id, it must return an explicit ``unavailable`` entry with no
+    fabricated numeric values — not silently omit it.
+    """
+    rows = server.list_metrics(
+        metric_ids=["nonexistent_metric_xyz"],
+        warehouse_path=_empty_warehouse(tmp_path),
+    )
+    assert len(rows) == 1
+    entry = rows[0]
+    assert entry["metric_id"] == "nonexistent_metric_xyz"
+    assert entry["validity_status"] == "unavailable"
+    # No fabricated numerics.
+    assert entry["latest_value"] is None
+    assert entry["latest_observation_at"] is None
+    # An explanation is present (distinguishes unknown from known-but-empty).
+    assert entry["message"]
+
+
+def test_list_metrics_mixes_known_and_unknown_ids(tmp_path: Path) -> None:
+    """FR-004: a mixed request returns one entry per requested id, in order, with
+    the unknown id surfaced as an explicit unavailable entry (never dropped)."""
+    db_path = _empty_warehouse(tmp_path)
+    rows = server.list_metrics(
+        metric_ids=["weight", "nonexistent_metric_xyz"],
+        warehouse_path=db_path,
+    )
+    returned_ids = [r["metric_id"] for r in rows]
+    assert returned_ids == ["weight", "nonexistent_metric_xyz"]
+    unknown = rows[1]
+    assert unknown["validity_status"] == "unavailable"
+    assert unknown["latest_value"] is None
+
+
+def test_list_metrics_enumeration_returns_only_known_states(tmp_path: Path) -> None:
+    """Enumeration mode (no metric_ids) surfaces registered metrics only, each
+    carrying a known validity status — never a fabricated/crash state."""
+    rows = server.list_metrics(warehouse_path=_empty_warehouse(tmp_path), limit=5)
+    for entry in rows:
+        assert entry["validity_status"] in ("current", "stale", "unavailable")
+    assert "nonexistent_metric_xyz" not in {r["metric_id"] for r in rows}
+
+
+def test_catalog_and_summary_tools_route_through_engine(tmp_path: Path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """FR-001 guard: the catalog/summary tools must delegate to the validity-gated
+    Stage 2 engine rather than reading the fact tables directly. Spy on the engine
+    helpers and assert the tools call them. A future refactor that reintroduced
+    direct fact-table SQL while keeping the same payload shape would trip this.
+    """
+    db_path = _empty_warehouse(tmp_path)
+    seen: dict[str, object] = {}
+
+    real_catalog = server.engine.list_metric_catalog
+    real_ids = server.engine.list_metric_ids
+    real_summary = server.engine.metric_summary
+
+    def spy_catalog(ids, conn):  # type: ignore[no-untyped-def]
+        seen["catalog_ids"] = list(ids)
+        return real_catalog(ids, conn)
+
+    def spy_ids(conn, **kwargs):  # type: ignore[no-untyped-def]
+        seen["enumerated"] = True
+        return real_ids(conn, **kwargs)
+
+    def spy_summary(metric_id, conn):  # type: ignore[no-untyped-def]
+        seen["summary_id"] = metric_id
+        return real_summary(metric_id, conn)
+
+    monkeypatch.setattr(server.engine, "list_metric_catalog", spy_catalog)
+    monkeypatch.setattr(server.engine, "list_metric_ids", spy_ids)
+    monkeypatch.setattr(server.engine, "metric_summary", spy_summary)
+
+    server.list_metrics(warehouse_path=db_path, limit=3)
+    server.list_metrics(metric_ids=["weight"], warehouse_path=db_path)
+    server.metric_summary("weight", warehouse_path=db_path)
+
+    assert seen.get("enumerated") is True
+    assert seen.get("catalog_ids") == ["weight"]
+    assert seen.get("summary_id") == "weight"
+
+
+def test_metric_summary_unknown_metric(tmp_path: Path) -> None:
+    """T009: requesting summary for an unknown metric_id returns unavailable, not None."""
+    summary = server.metric_summary(
+        "nonexistent_metric_xyz", warehouse_path=_empty_warehouse(tmp_path)
+    )
+    assert summary is not None
+    assert summary["validity_status"] == "unavailable"
+    assert summary["metric_id"] == "nonexistent_metric_xyz"
+    assert summary["latest_value"] is None
+    assert summary["sample_size"] is None
+    assert summary["imputed_proportion"] is None
+    assert summary["gap_count"] is None
+    # Machine-branchable: structured field identifies the issue.
+    assert "not registered" in (summary.get("message") or "")
+
+
+def test_metric_summary_explicit_coverage_fields(tmp_path: Path) -> None:
+    """T009: summary carries explicit sample_size, imputed_proportion, gap_count."""
+    db_path, conn = _warehouse_with(tmp_path, "summary_coverage")
+    try:
+        now = _now()
+        # Three recent observations within the 30-day window.
+        _seed(
+            conn,
+            [
+                ((now - timedelta(days=10)).isoformat(sep=" "), "weight", 80.0, "sc1"),
+                ((now - timedelta(days=5)).isoformat(sep=" "), "weight", 79.0, "sc2"),
+                ((now - timedelta(hours=6)).isoformat(sep=" "), "weight", 78.0, "sc3"),
+            ],
+        )
+    finally:
+        conn.close()
+
+    summary = server.metric_summary("weight", warehouse_path=db_path)
+    assert summary["validity_status"] in ("current", "stale")
+    # Explicit top-level coverage fields — not embedded in a nested dict.
+    assert isinstance(summary["sample_size"], int)
+    assert summary["sample_size"] >= 1
+    assert isinstance(summary["imputed_proportion"], float)
+    assert 0.0 <= summary["imputed_proportion"] <= 1.0
+    assert isinstance(summary["gap_count"], int)
+    assert summary["window_days"] == 30
+
+
+def test_metric_summary_no_all_time_extrema(tmp_path: Path) -> None:
+    """T009: metric_summary must never expose all-time min/max/avg fields."""
+    db_path, conn = _warehouse_with(tmp_path, "no_extrema")
+    try:
+        _seed(conn, [("2026-01-01 10:00:00", "weight", 70.0, "ne1")])
+    finally:
+        conn.close()
+
+    summary = server.metric_summary("weight", warehouse_path=db_path)
+    # All-time extrema fields must be absent.
+    assert "numeric_summary" not in summary
+    assert "min_value" not in summary
+    assert "max_value" not in summary
+    assert "avg_value" not in summary
+    assert "measurement_count" not in summary
+    assert "interval_count" not in summary
 
 
 # --------------------------------------------------------------------------- #

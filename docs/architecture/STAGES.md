@@ -2,7 +2,7 @@
 
 > Status: authoritative. Source of truth for cross-stage architecture boundaries.
 >
-> Companion to [VISION.md](../product/VISION.md), [SPEC.md](../product/SPEC.md), [ROADMAP.md](../product/ROADMAP.md), [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md).
+> Companion to [DOCTRINE.md](../product/DOCTRINE.md), [VISION.md](../product/VISION.md), [SPEC.md](../product/SPEC.md), [ROADMAP.md](../product/ROADMAP.md), [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md).
 > Captured 2026-05-21. Complements VISION.md — does **not** replace the pillar framing. The pillars are the *trajectory*; the stages below are the *data-flow shape*. A feature is located in pillars by intent and in stages by where it sits in the pipeline.
 
 ## The four stages
@@ -66,10 +66,16 @@ Signal processing has no external dependencies. No network, no LLM. It must be i
 
 ### 3. MCP
 
-The MCP server exposes Stage 2 signal functions as tools an LLM can call. The long-term surface still includes `correlate`, `paired_t_test`, `rolling_mean`, `change_point`, PubMed search/fetch, and a signal selector — those remain future work. What ships today is nine tools (`src/premura/mcp/server.py`, `entrypoint.py`):
+The MCP server exposes Stage 2 signal functions as tools an LLM can call. Per [DOCTRINE.md](../product/DOCTRINE.md), this is the **primary operational interface** of the product: the human brings artifacts, goals, and approvals; the agent works mainly through this tool surface. The long-term surface still includes `correlate`, `paired_t_test`, `rolling_mean`, `change_point`, PubMed search/fetch, and a signal selector — those remain future work. Today two entrypoints exist (`src/premura/mcp/server.py`, `entrypoint.py`):
 
-- **Three raw warehouse tools** — `query_warehouse`, `list_metrics`, `metric_summary`. These run read-only SQL straight against `hp.*` and are the low-level exploratory escape hatch.
+**Default agent surface (`premura-mcp`) — eight tools:**
+
+- **Two catalog/summary tools** — `list_metrics`, `metric_summary`. These delegate entirely to the Stage 2 engine (no direct `hp.*` SQL) and return structured validity/imputation envelopes with machine-branchable fields.
 - **Six signal-backed tools** — `resting_hr_status`, `resting_hr_trend`, `steps_trend`, `weight_trend`, `sleep_deep_pct_baseline`, `hrv_change_around_date`. Each opens the warehouse read-only and **delegates to the Stage 2 engine** instead of running its own SQL against the fact tables. They return a structured payload whose `status` field (`available` / `missing_input` / `stale_input` / `insufficient_data`) keeps each refusal reason distinct.
+
+**Operator surface (`premura-mcp-operator`) — nine tools:**
+
+All eight default tools plus `query_warehouse`, the raw SQL escape hatch. This surface is lower-guarantee: `query_warehouse` returns raw rows without any Stage 2 validity guarantees. Requires explicit user approval before agent use. See [ADR 0004](../adr/0004-stage3-operator-entrypoint.md).
 
 Other principles, still the target shape:
 
@@ -79,11 +85,11 @@ Other principles, still the target shape:
 
 ### 4. User interface
 
-Everything the human encounters: CLI today, MCP-backed chat, eventual UI.
+Everything the human encounters: CLI today, MCP-backed chat, eventual UI. This stage is human-critical in purpose even though it is not the main execution surface.
 
 - **Interview** (VISION Pillar 4) — first contact asks the user *what direction* (sleep, cardio, metabolic, stress, mental, gut, lab/cardiometabolic, overview). Output is a routing decision that calls the signal selector. No "analyse everything at once" by default.
 - **Teaching** (VISION Pillar 5) — plain-language metric introductions, dual-coded charts, progressive disclosure. Applies to every metric the UI surfaces, blood markers especially.
-- The UI is the only stage that does presentation, unit display preferences, and prose.
+- The UI is the only stage that does presentation, unit display preferences, and prose. It is the layer where the human receives help, teaching, and guided interpretation from the agent-mediated workflow.
 
 ## Why this matters
 
@@ -102,8 +108,8 @@ A feature with no stage assignment tends to slide into "everything is everything
 
 ## Boundary contracts
 
-- **Target contract:** MCP reaches `fact_measurement` only through a signal-processing function that has already applied validity + imputation policy.
-- **Where we are today:** the six signal-backed tools honor that contract — they delegate to the Stage 2 engine and never touch the fact tables directly. The three raw tools (`query_warehouse` / `list_metrics` / `metric_summary`) still read `hp.*` directly. So the direct-read debt is **narrowed, not gone**: for the six approved question shapes Stage 3 goes through Stage 2, but general direct-read access still exists via the raw exploratory tools. Replacing those raw reads everywhere is deliberately out of scope here.
+- **Default agent surface (`premura-mcp`):** MCP reaches `fact_measurement` only through a signal-processing function that has already applied validity + imputation policy.  The default surface exposes `list_metrics`, `metric_summary`, and the six signal-backed tools.  All catalog/summary helpers delegate entirely to the Stage 2 engine — no raw `hp.*` SQL from the agent surface.  The `query_warehouse` escape hatch is **not present** on this surface.
+- **Operator surface (`premura-mcp-operator`):** A separate, explicitly opt-in entrypoint adds `query_warehouse` on top of the full default tool set.  This surface is lower-guarantee: `query_warehouse` returns raw rows without any Stage 2 validity, freshness, or imputation guarantees, and callers must interpret results themselves.  The explicit-approval rule is enforced two ways: `query_warehouse` is simply absent from the default surface (an agent connected there cannot reach it), and the operator entrypoint refuses to start unless the launcher acknowledges lower-guarantee mode via `--ack` or `PREMURA_OPERATOR_ACK`.  The lower-guarantee disclosure to the end user remains a client/agent-layer responsibility.  See [ADR 0004](../adr/0004-stage3-operator-entrypoint.md).
 - UI never reads `fact_measurement` directly — always through MCP tools (even when invoked locally without a remote LLM, the MCP boundary is the API).
 - Ingest never calls signal processing. The warehouse must be reconstructible from raws alone.
 

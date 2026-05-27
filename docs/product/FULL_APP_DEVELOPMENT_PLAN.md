@@ -1,6 +1,6 @@
 # Premura Full App Development Plan
 
-> Status: review draft. Phase-level development plan for the whole app trajectory from the current shipped state forward. Complements `ROADMAP_BOOTSTRAP_PLAN.md`, which only covers how to instantiate the first concrete backlog.
+> Status: review draft. Phase-level development plan for the whole app trajectory from the current shipped state forward. Complements `ROADMAP_BOOTSTRAP_PLAN.md`, which now serves mainly as the record of how the first concrete backlog (M1-M3) was instantiated. Product-identity questions are settled in `DOCTRINE.md`.
 >
 > **Vocabulary note**: this doc uses the project vocabulary defined in `CONTEXT.md` §"Planning" (e.g. "ablation study" rather than "spike", "design decision note" rather than "ADR"). Live GitHub artifacts (issue titles, label values, file paths) keep their existing names — only prose follows the new vocabulary.
 
@@ -18,6 +18,7 @@ This file is not the GitHub backlog and not the first execution plan. It is the 
 ## Inputs Used
 
 - `CONTEXT.md` (vocabulary)
+- `docs/product/DOCTRINE.md`
 - `docs/operations/STATUS.md`
 - `docs/product/VISION.md`
 - `docs/product/ROADMAP.md`
@@ -32,7 +33,7 @@ This file is not the GitHub backlog and not the first execution plan. It is the 
 
 - `docs/product/VISION.md` covers the long-term pillars (extensibility, warehouse, AI tools, interview, teaching, privacy). This file is the phase-level expression of how those pillars get built in code.
 - **This file is the source of truth for phase-level planning.** `docs/product/ROADMAP.md` is the older prose narrative of upcoming work; several of its phase-shaped sections ("Big idea — MCP server," "New source class — clinical labs," "Smaller follow-ups," "Mid-term — analytical layer") now overlap with the phases below. ROADMAP.md should be compressed in a follow-up doc pass to pointers into this file. **That compression is pending — track as a small follow-up doc task.**
-- `docs/product/ROADMAP_BOOTSTRAP_PLAN.md` is the concrete first pass for turning the planning system into real milestones and issues. It implements Phases 1 and 2 below.
+- `docs/product/ROADMAP_BOOTSTRAP_PLAN.md` is the concrete first pass that justified the original M1-M3 issue set. It still records the rationale for Phases 1 and 2, but it is no longer the current next-action list.
 - This file sits between VISION (long-term) and BOOTSTRAP/ROADMAP (near-term execution).
 
 ## Current Starting Point
@@ -115,6 +116,8 @@ This is the highest-leverage open question in the current docs. If Premura is su
 - tag `v2.0.0` cut on milestone close
 
 ### Phase 2: `v2.1 labs`
+
+> **Status: shipped in first form.** M3 is closed: lab ingest, sparse-signal rules, and first derived lab ratios landed. The remaining lab follow-ons are narrower: Stage 3 lab exposure, extraction-quality validation tooling, and any parser corrections surfaced by real operator use.
 
 #### Goal
 
@@ -287,7 +290,7 @@ This is not a rigid dependency chain for every sub-issue. It is the default prod
 
 ## Dependency Notes
 
-- The MCP/warehouse access decision (Phase 1) gates most Stage 3 work.
+- The MCP/warehouse access decision (Phase 1) is settled; the remaining Stage 3 gating debt is narrower: the raw exploratory tools still bypass Stage 2, so agent-facing analytical expansion should either route through Stage 2 or explicitly stay operator-only.
 - Lab ingest and Stage 2 lab rules (Phase 2) do not need to wait for the full analytical surface, but lab Stage 3 exposure should.
 - Parser ecosystem validation (Phase 4) does not need to wait for the teaching layer.
 - Teaching (Phase 5) should wait until there is enough real analytical substance to teach from.
@@ -315,7 +318,7 @@ R7 likely never goes to zero. The practical goal is to constrain and surface unc
 
 ## How To Use This Plan
 
-- Use `ROADMAP_BOOTSTRAP_PLAN.md` to create the first real milestones and issues.
+- Use `ROADMAP_BOOTSTRAP_PLAN.md` as the record of why M1-M3 were the first missions, not as the current execution queue.
 - Use this file to decide whether a new proposal belongs in the current phase, the next phase, or the parking lot.
 - Use `ROADMAP.md` as the shorter live reference until the deferred compression pass folds its phase-shaped sections into pointers here.
 
@@ -329,8 +332,8 @@ When a risk retires, its entry in the Risk Retirement Map is updated to note the
 
 Treat the near-term roadmap as:
 
-- First, instantiate the initial roadmap plan (creates M1/M2/M3 tracking issues for `v2.0` + `v2.1`).
-- Second, execute `v2.0` (M1 ablation study + M2 first MCP surface) and `v2.1` (M3 lab parser + first Stage 2 rules).
-- Third, revisit this plan with evidence from the ablation study, labs, and first MCP surface before locking later phases too tightly.
+- First, treat Phases 1 and 2 as shipped in their initial form: M1-M3 are closed, the first grounded Stage 2/3 slice is live, and labs exist in-tree.
+- Second, use the open follow-on issues to decide what starts `v2.2 analytical depth`: close the Stage 3 direct-read exception for agent-facing analysis, model baseline personal profile attributes, then open one or more deterministic-stats missions.
+- Third, revisit this plan with evidence from that analytical-depth work before locking parser-ecosystem or teaching missions too tightly.
 
 The biggest mistake would be to plan the teaching layer, parser ecosystem, and ingest expansion in equal detail before the analytical access path and first Stage 2 rules are proven in code.

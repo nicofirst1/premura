@@ -42,6 +42,8 @@ from ._results import (
     ChangeAroundDateResult,
     ComparisonState,
     FreshnessState,
+    MetricCatalogEntry,
+    MetricSummaryEntry,
     MissingInputReport,
     StatusResult,
     TrendDirection,
@@ -83,6 +85,10 @@ __all__ = [
     "list_auto_safe",
     "check_inputs_available",
     "list_unavailable",
+    # Stage 2 catalog and summary helpers (WP01)
+    "list_metric_ids",
+    "list_metric_catalog",
+    "metric_summary",
     # Result envelopes (premura.engine._results)
     "FreshnessState",
     "TrendDirection",
@@ -93,6 +99,8 @@ __all__ = [
     "BaselineComparisonResult",
     "ChangeAroundDateResult",
     "MissingInputReport",
+    "MetricCatalogEntry",
+    "MetricSummaryEntry",
 ]
 
 
@@ -182,6 +190,164 @@ def list_unavailable(
         for spec in list_by_domain(domain)
         if not check_inputs_available(spec.inputs, conn)
     ]
+
+
+_CATALOG_WINDOW_DAYS: int = 30
+"""Fixed look-back window (in days) for :func:`metric_summary`."""
+
+
+def list_metric_ids(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    limit: int = 50,
+    offset: int = 0,
+) -> list[str]:
+    """Return registered metric IDs from ``hp.dim_metric``, ordered and paginated.
+
+    Catalog enumeration is metadata only: it reads the metric registry
+    (``hp.dim_metric``) — never the fact tables — and does not trigger the
+    built-in signal loader.  This is the Stage 2 owner of metric-id
+    enumeration, so the Stage 3 surface never has to issue raw warehouse SQL
+    of its own to discover which metrics exist.
+    """
+    rows = conn.execute(
+        "SELECT metric_id FROM hp.dim_metric ORDER BY metric_id LIMIT ? OFFSET ?",
+        [limit, offset],
+    ).fetchall()
+    return [str(row[0]) for row in rows]
+
+
+def list_metric_catalog(
+    metric_ids: list[str],
+    conn: duckdb.DuckDBPyConnection,
+) -> list[MetricCatalogEntry]:
+    """Return a validity-gated catalog entry for each requested metric.
+
+    For each metric ID the entry contains declared metadata from
+    ``hp.dim_metric`` plus a computed validity status and latest usable
+    observation.  Unknown metric IDs and known-but-empty metrics both yield
+    ``unavailable`` entries; they carry distinct messages so callers can tell
+    them apart.
+
+    This helper does **not** trigger the built-in signal loader.  The catalog
+    is metadata only — it does not depend on any signal registry.
+
+    Freshness semantics:
+
+    * ``current``     — the latest observation is within the metric's
+                        ``validity_window`` (or no window is declared, meaning
+                        any present value is acceptable).
+    * ``stale``       — an observation exists but is older than the window.
+    * ``unavailable`` — no usable observation exists, or the metric is not
+                        registered in ``hp.dim_metric``.
+    """
+    from ._query import LatestValue, latest_usable_value, load_metric_policy
+
+    entries: list[MetricCatalogEntry] = []
+    for metric_id in metric_ids:
+        policy = load_metric_policy(conn, metric_id)
+        if policy is None:
+            entries.append(
+                MetricCatalogEntry(
+                    metric_id=metric_id,
+                    validity_status=FreshnessState.UNAVAILABLE,
+                    validity_window=None,
+                    missing_data_policy=None,
+                    unit="",
+                    message=f"metric '{metric_id}' is not registered in the catalog",
+                ).validate()
+            )
+            continue
+
+        lv: LatestValue = latest_usable_value(conn, policy)
+        obs = lv.observation
+        entries.append(
+            MetricCatalogEntry(
+                metric_id=metric_id,
+                validity_status=lv.freshness_state,
+                validity_window=policy.validity_window_text,
+                missing_data_policy=policy.missing_data_policy,
+                unit=policy.unit,
+                latest_observation_at=obs.ts if obs is not None else None,
+                latest_value=obs.value if obs is not None else None,
+                message=(
+                    "no data recorded yet"
+                    if lv.freshness_state is FreshnessState.UNAVAILABLE
+                    else None
+                ),
+            ).validate()
+        )
+    return entries
+
+
+def metric_summary(
+    metric_id: str,
+    conn: duckdb.DuckDBPyConnection,
+) -> MetricSummaryEntry:
+    """Return a per-metric validity summary over a fixed 30-day window.
+
+    Reports the latest usable value and observation timestamp plus explicit
+    coverage metadata (``sample_size``, ``imputed_proportion``, ``gap_count``)
+    for the recent window.  No all-time extrema are included.
+
+    ``imputed_proportion`` reflects the fraction of the window that relied on
+    carried-forward (LOCF) imputation; it is always ``0.0`` for metrics whose
+    ``missing_data_policy`` is ``none``.
+
+    When the metric is unknown or has no data, all numeric fields are ``None``
+    and ``validity_status`` is ``unavailable``.
+    """
+    from ._query import latest_usable_value, load_metric_policy, ordered_window
+
+    policy = load_metric_policy(conn, metric_id)
+    if policy is None:
+        return MetricSummaryEntry(
+            metric_id=metric_id,
+            validity_status=FreshnessState.UNAVAILABLE,
+            validity_window=None,
+            missing_data_policy=None,
+            unit="",
+            window_days=_CATALOG_WINDOW_DAYS,
+            message=f"metric '{metric_id}' is not registered in the catalog",
+        ).validate()
+
+    lv = latest_usable_value(conn, policy)
+    window = ordered_window(
+        conn,
+        policy,
+        span=timedelta(days=_CATALOG_WINDOW_DAYS),
+    )
+
+    if lv.freshness_state is FreshnessState.UNAVAILABLE:
+        return MetricSummaryEntry(
+            metric_id=metric_id,
+            validity_status=FreshnessState.UNAVAILABLE,
+            validity_window=policy.validity_window_text,
+            missing_data_policy=policy.missing_data_policy,
+            unit=policy.unit,
+            window_days=_CATALOG_WINDOW_DAYS,
+            message="no data recorded yet",
+        ).validate()
+
+    obs = lv.observation
+    total_buckets = window.observed_count + window.imputed_count + window.gap_count
+    imputed_proportion = (
+        window.imputed_count / total_buckets if total_buckets > 0 else 0.0
+    )
+
+    return MetricSummaryEntry(
+        metric_id=metric_id,
+        validity_status=lv.freshness_state,
+        validity_window=policy.validity_window_text,
+        missing_data_policy=policy.missing_data_policy,
+        unit=policy.unit,
+        window_days=_CATALOG_WINDOW_DAYS,
+        latest_observation_at=obs.ts if obs is not None else None,
+        latest_value=obs.value if obs is not None else None,
+        sample_size=window.observed_count,
+        imputed_proportion=imputed_proportion,
+        gap_count=window.gap_count,
+    ).validate()
 
 
 def _ensure_builtin_signals_loaded() -> None:
