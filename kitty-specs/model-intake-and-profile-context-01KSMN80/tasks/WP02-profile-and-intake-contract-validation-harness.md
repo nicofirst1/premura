@@ -175,3 +175,4 @@ If the answer is no, the harness is too weak.
 - 2026-05-27T12:47:02Z – claude:opus:implementer:implementer – shell_pid=47453 – Ready for review
 - 2026-05-27T12:47:35Z – claude:opus:reviewer:reviewer – shell_pid=75247 – Started review via action command
 - 2026-05-27T12:49:33Z – claude:opus:reviewer:reviewer – shell_pid=75247 – Review passed: WP02 adds tests/test_profile_intake_contracts.py only (scope clean, docs/architecture byte-identical to WP01); 22/22 pass; gates enforce semantics (closed 5-home set, one-home mapping, height/calories overlap distinctness, supersession path, partial-knowledge optionality, dependency required-fields covering profile+nutrition+supplement, opportunistic-fallback ban, no transport leakage) and were mutation-verified to fail on real drift.
+- 2026-05-27T13:38:48Z – claude:opus:reviewer:reviewer – shell_pid=75247 – Force-closed to done after merge confirmation | Done override: User confirmed work already merged
