@@ -17,8 +17,8 @@ subtasks:
 - T008
 - T009
 - T010
-agent: "claude:sonnet:reviewer:reviewer"
-shell_pid: "88564"
+agent: "claude:sonnet:implementer:implementer"
+shell_pid: "29837"
 history:
 - at: '2026-05-27T07:06:15Z'
   action: planned
@@ -166,3 +166,4 @@ Then combine with WP01 engine coverage when both are present.
 - 2026-05-27T07:32:52Z – claude:sonnet:implementer:implementer – shell_pid=50998 – Ready for review: rewired list_metrics and metric_summary to call engine.list_metric_catalog and engine.metric_summary; added T009 catalog/summary payload tests; all 154 tests pass
 - 2026-05-27T07:33:24Z – claude:sonnet:reviewer:reviewer – shell_pid=88564 – Started review via action command
 - 2026-05-27T07:41:08Z – claude:sonnet:reviewer:reviewer – shell_pid=88564 – Review cycle 1: missing unknown/unregistered catalog test at list_metrics MCP surface
+- 2026-05-27T07:41:56Z – claude:sonnet:implementer:implementer – shell_pid=29837 – Started implementation via action command
