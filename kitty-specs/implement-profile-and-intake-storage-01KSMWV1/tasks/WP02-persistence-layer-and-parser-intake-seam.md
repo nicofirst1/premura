@@ -20,8 +20,8 @@ subtasks:
 - T006
 - T007
 - T008
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "84537"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "32098"
 history:
 - timestamp: '2026-05-27T14:35:44Z'
   agent: gpt-5.4
@@ -235,3 +235,4 @@ Ask:
 - 2026-05-27T14:35:44Z – gpt-5.4 – Prompt generated via /spec-kitty.tasks
 - 2026-05-27T14:56:14Z – claude:opus:python-implementer:implementer – shell_pid=84537 – Started implementation via action command
 - 2026-05-27T15:05:09Z – claude:opus:python-implementer:implementer – shell_pid=84537 – Ready for review: persistence service (record_profile_context append/supersede + persist_intake_batch idempotent via dedupe_key) and normalized parser intake seam (IntakeBatch, distinct from IngestBatch). 42 new tests, full suite 247 passed, ruff clean on owned files.
+- 2026-05-27T15:05:42Z – claude:opus:python-reviewer:reviewer – shell_pid=32098 – Started review via action command
