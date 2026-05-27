@@ -1,0 +1,29 @@
+surface: operator-entrypoint
+entrypoint:
+  command: premura-mcp-operator
+  transport: stdio
+purpose: >
+  Lower-guarantee MCP surface for expert or explicitly user-approved advanced exploration.
+shared_core:
+  reuses: src/premura/mcp/server.py and src/premura/mcp/entrypoint.py registration helpers
+tool_registration:
+  includes_default_surface: true
+  adds:
+    - query_warehouse
+policy:
+  explicit_user_approval_required_for_agent_use: true
+  caller_must_disclose_lower_guarantee_mode: true
+  disclosure_message_requirement: >
+    The caller must state that it is leaving the fully validity-gated surface and that
+    acuity/trustworthiness is not guaranteed in the same way as the default path.
+query_warehouse_contract:
+  capability:
+    - arbitrary read-only SQL against the local warehouse
+  constraints:
+    - read-only connection only
+    - no implication that results are freshness-gated or imputation-aware
+    - remains an expert/operator escape hatch, not the default analytical path
+future_evolution:
+  note: >
+    This separate entrypoint is intentionally allowed to diverge further later without
+    contaminating the default agent-facing surface.

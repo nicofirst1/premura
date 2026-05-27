@@ -1,9 +1,9 @@
-# Implementation Plan: [FEATURE]
-*Path: [templates/plan-template.md](templates/plan-template.md)*
+# Implementation Plan: Close the Stage 3 Direct-Read Exception
+*Path: `kitty-specs/close-stage-3-direct-read-exception-01KSJVFG/plan.md`*
 
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/kitty-specs/[###-feature-name]/spec.md`
+**Branch**: `master` | **Date**: 2026-05-27 | **Spec**: `kitty-specs/close-stage-3-direct-read-exception-01KSJVFG/spec.md`
+**Input**: Feature specification from `kitty-specs/close-stage-3-direct-read-exception-01KSJVFG/spec.md`
 
 **Note**: This template is filled in by the `/spec-kitty.plan` command. See `src/specify_cli/missions/software-dev/command-templates/plan.md` for the execution workflow.
 
@@ -11,7 +11,7 @@ The planner will not begin until all planning questions have been answered—cap
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+Close the last Stage 3 direct-read exception by moving `list_metrics` and `metric_summary` behind new validity-gated Stage 2 engine helpers, while splitting `query_warehouse` into a separate operator entrypoint. The default `premura-mcp` surface becomes fully doctrine-compliant and agent-safe; a new operator entrypoint keeps raw SQL available for expert use and for explicitly user-approved advanced agent exploration. The operator entrypoint shares the same server core but registers one extra low-guarantee tool and is intentionally allowed to diverge later.
 
 ## Technical Context
 
@@ -21,34 +21,40 @@ The planner will not begin until all planning questions have been answered—cap
   the iteration process.
 -->
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [Project-specific test approach or NEEDS CLARIFICATION]
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: Python 3.11+  
+**Primary Dependencies**: `mcp` Python SDK / FastMCP surface, DuckDB >=1.1, Polars, Typer, Pydantic settings  
+**Storage**: Local DuckDB warehouse (`data/duck/health.duckdb`) in read-only mode for Stage 3  
+**Testing**: `pytest -q`, with MCP server tests, signal-tool tests, engine lazy-load contract tests, and full regression suite where practical  
+**Target Platform**: macOS primary, but warehouse and encrypted artifacts remain cross-platform portable  
+**Project Type**: Single Python project with `src/premura/` package and `tests/`  
+**Performance Goals**: Preserve charter soft targets: non-ingest CLI verbs under 2 s; no noticeable regression in MCP startup or tool invocation latency  
+**Constraints**: Reuse existing freshness vocabulary and Stage 2 primitives; preserve engine lazy-load behavior; keep outputs non-diagnostic; explicit user approval required before any agent switches to the operator entrypoint  
+**Scale/Scope**: Focused cross-package refactor spanning `src/premura/engine/`, `src/premura/mcp/`, targeted tests, and the relevant docs / ADR only
 
 ## Charter Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on charter file]
+- **DIRECTIVE_010 / 024**: Keep the change faithful to the spec and tightly scoped to engine catalog helpers, MCP entrypoints, tests, and docs. No unrelated refactors.
+- **DIRECTIVE_030 / 034 / 036**: Add failing tests first for default-vs-operator entrypoint registration and for validity-gated catalog / summary behavior. Assert through public interfaces only.
+- **Quality gates**: `ruff`, `mypy` on changed scope, and `pytest -q` must be green before review handoff.
+- **Risk boundaries**: Default agent surface must remain fully validity-gated. Operator/raw mode may exist only behind an explicit separate entrypoint and requires explicit user approval before an agent uses it. No live API access, no PHI leakage, no diagnostic overreach.
+- **Status**: PASS for Phase 0 research. No charter conflict remains after the planning clarifications.
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```
-kitty-specs/[###-feature]/
-├── plan.md              # This file (/spec-kitty.plan command output)
-├── research.md          # Phase 0 output (/spec-kitty.plan command)
-├── data-model.md        # Phase 1 output (/spec-kitty.plan command)
-├── quickstart.md        # Phase 1 output (/spec-kitty.plan command)
-├── contracts/           # Phase 1 output (/spec-kitty.plan command)
-└── tasks.md             # Phase 2 output (/spec-kitty.tasks command - NOT created by /spec-kitty.plan)
+kitty-specs/close-stage-3-direct-read-exception-01KSJVFG/
+├── plan.md
+├── research.md
+├── data-model.md
+├── quickstart.md
+├── contracts/
+│   ├── default-agent-surface.yaml
+│   └── operator-entrypoint.yaml
+└── tasks.md             # Created later by /spec-kitty.tasks
 ```
 
 ### Source Code (repository root)
@@ -60,49 +66,40 @@ kitty-specs/[###-feature]/
 -->
 
 ```
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
 src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+└── premura/
+    ├── cli.py
+    ├── config.py
+    ├── engine/
+    │   ├── __init__.py
+    │   ├── _query.py
+    │   ├── _registry.py
+    │   ├── _results.py
+    │   ├── descriptive_signals.py
+    │   ├── comparative_signals.py
+    │   └── lab_ratios.py
+    └── mcp/
+        ├── __init__.py
+        ├── entrypoint.py
+        └── server.py
 
 tests/
-├── contract/
-├── integration/
-└── unit/
+├── test_engine.py
+├── test_engine_contract.py
+├── test_mcp_server.py
+├── test_mcp_signal_tools.py
+└── test_skeleton.py
 
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+docs/
+├── architecture/STAGES.md
+└── adr/
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Use the existing single-project Python layout. Add new Stage 2 catalog/summary helpers under `src/premura/engine/`, extend `src/premura/mcp/server.py` to consume them, and split entrypoint registration in `src/premura/mcp/entrypoint.py` so `premura-mcp` stays agent-safe while a new operator entrypoint can register `query_warehouse`.
 
 ## Complexity Tracking
 
-*Fill ONLY if Charter Check has violations that must be justified*
+No justified charter violations are planned.
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |

@@ -1,0 +1,57 @@
+surface: default-agent-entrypoint
+entrypoint:
+  command: premura-mcp
+  transport: stdio
+purpose: >
+  Fully validity-gated MCP surface for normal agent-mediated analysis.
+tool_registration:
+  includes:
+    - list_metrics
+    - metric_summary
+    - resting_hr_status
+    - resting_hr_trend
+    - steps_trend
+    - weight_trend
+    - sleep_deep_pct_baseline
+    - hrv_change_around_date
+  excludes:
+    - query_warehouse
+contracts:
+  list_metrics:
+    result_shape:
+      items:
+        - metric_id
+        - validity_status
+        - validity_window
+        - missing_data_policy
+        - latest_observation_at
+        - latest_value
+        - unit
+        - message
+    guarantees:
+      - no direct fact-table passthrough
+      - no raw row-count field
+      - freshness vocabulary limited to current/stale/unavailable
+  metric_summary:
+    result_shape:
+      fields:
+        - metric_id
+        - validity_status
+        - latest_observation_at
+        - latest_value
+        - unit
+        - validity_window
+        - missing_data_policy
+        - sample_size
+        - imputed_proportion
+        - gap_count
+        - window_days
+        - message
+    guarantees:
+      - no all-time extrema fields
+      - machine-branchable validity/imputation envelope
+      - honest absence for empty or unknown metrics
+non_functional:
+  - preserves six existing signal-backed tool behaviors
+  - preserves engine lazy-load boundary
+  - remains non-diagnostic
