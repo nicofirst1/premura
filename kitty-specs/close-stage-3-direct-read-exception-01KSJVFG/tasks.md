@@ -24,11 +24,11 @@
 | T013 | Wire packaging / command entrypoints so the operator surface is invokable explicitly | WP03 | No | [D] |
 | T014 | Add tool-list tests confirming default vs operator surfaces differ only by `query_warehouse` | WP03 | No | [D] |
 | T015 | Encode lower-guarantee operator mode language in entrypoint or tool descriptions without implying validity guarantees | WP03 | No | [D] |
-| T016 | Remove the Stage 2 -> Stage 3 exception language from boundary documentation and restate the clean contract | WP04 | No |
-| T017 | Add a new ADR documenting the separate operator entrypoint decision and lower-guarantee mode | WP04 | No |
-| T018 | Update top-level product/ops docs to show the default agent-facing path and the operator fallback path | WP04 | No |
-| T019 | Align `src/premura/mcp/__init__.py` package documentation with the cleaned boundary | WP04 | No |
-| T020 | Update `tests/test_skeleton.py` and any doc-facing assertions to match the new architectural truth | WP04 | No |
+| T016 | Remove the Stage 2 -> Stage 3 exception language from boundary documentation and restate the clean contract | WP04 | No | [D] |
+| T017 | Add a new ADR documenting the separate operator entrypoint decision and lower-guarantee mode | WP04 | No | [D] |
+| T018 | Update top-level product/ops docs to show the default agent-facing path and the operator fallback path | WP04 | No | [D] |
+| T019 | Align `src/premura/mcp/__init__.py` package documentation with the cleaned boundary | WP04 | No | [D] |
+| T020 | Update `tests/test_skeleton.py` and any doc-facing assertions to match the new architectural truth | WP04 | No | [D] |
 
 ## Work Package 1 - Stage 2 Catalog and Summary Primitives
 
@@ -142,11 +142,11 @@
 
 ### Included subtasks
 
-- [ ] T016 Remove the Stage 2 -> Stage 3 exception language from boundary documentation and restate the clean contract (WP04)
-- [ ] T017 Add a new ADR documenting the separate operator entrypoint decision and lower-guarantee mode (WP04)
-- [ ] T018 Update top-level product/ops docs to show the default agent-facing path and the operator fallback path (WP04)
-- [ ] T019 Align `src/premura/mcp/__init__.py` package documentation with the cleaned boundary (WP04)
-- [ ] T020 Update `tests/test_skeleton.py` and any doc-facing assertions to match the new architectural truth (WP04)
+- [x] T016 Remove the Stage 2 -> Stage 3 exception language from boundary documentation and restate the clean contract (WP04)
+- [x] T017 Add a new ADR documenting the separate operator entrypoint decision and lower-guarantee mode (WP04)
+- [x] T018 Update top-level product/ops docs to show the default agent-facing path and the operator fallback path (WP04)
+- [x] T019 Align `src/premura/mcp/__init__.py` package documentation with the cleaned boundary (WP04)
+- [x] T020 Update `tests/test_skeleton.py` and any doc-facing assertions to match the new architectural truth (WP04)
 
 ### Implementation sketch
 
