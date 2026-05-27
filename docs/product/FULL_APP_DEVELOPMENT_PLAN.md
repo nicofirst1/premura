@@ -290,7 +290,7 @@ This is not a rigid dependency chain for every sub-issue. It is the default prod
 
 ## Dependency Notes
 
-- The MCP/warehouse access decision (Phase 1) is settled; the remaining Stage 3 gating debt is narrower: the raw exploratory tools still bypass Stage 2, so agent-facing analytical expansion should either route through Stage 2 or explicitly stay operator-only.
+- The MCP/warehouse access decision (Phase 1) is settled, and the default agent-facing Stage 3 surface is now fully validity-gated. The only remaining lower-guarantee path is the explicit operator entrypoint, which stays separate from the default surface and requires human approval for agent use.
 - Lab ingest and Stage 2 lab rules (Phase 2) do not need to wait for the full analytical surface, but lab Stage 3 exposure should.
 - Parser ecosystem validation (Phase 4) does not need to wait for the teaching layer.
 - Teaching (Phase 5) should wait until there is enough real analytical substance to teach from.
@@ -333,7 +333,7 @@ When a risk retires, its entry in the Risk Retirement Map is updated to note the
 Treat the near-term roadmap as:
 
 - First, treat Phases 1 and 2 as shipped in their initial form: M1-M3 are closed, the first grounded Stage 2/3 slice is live, and labs exist in-tree.
-- Second, use the open follow-on issues to decide what starts `v2.2 analytical depth`: close the Stage 3 direct-read exception for agent-facing analysis, model baseline personal profile attributes, then open one or more deterministic-stats missions.
+- Second, use the open follow-on issues to decide what starts `v2.2 analytical depth`: model baseline personal profile attributes, then open one or more deterministic-stats missions.
 - Third, revisit this plan with evidence from that analytical-depth work before locking parser-ecosystem or teaching missions too tightly.
 
 The biggest mistake would be to plan the teaching layer, parser ecosystem, and ingest expansion in equal detail before the analytical access path and first Stage 2 rules are proven in code.

@@ -218,6 +218,6 @@ Treat this document as the record of the first application pass, not as the curr
 
 Current next mission candidates should start from the open follow-on issues instead:
 
-1. `#5` close the Stage 3 direct-read exception for agent-facing MCP work.
-2. `#6` model baseline personal profile attributes for engine functions.
-3. File the first `v2.2 analytical depth` mission once those prerequisites are clear enough.
+1. `#6` model baseline personal profile attributes for engine functions.
+2. File the first `v2.2 analytical depth` mission once those prerequisites are clear enough.
+3. Treat the closed Stage 3 direct-read-exception mission as part of the shipped analytical-surface foundation, not as pending follow-on work.
