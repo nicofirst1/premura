@@ -49,7 +49,9 @@ Experimental: `hpipe ingest --source lab PATH` uses local docling extraction for
 
 ## MCP surface
 
-Primary agent-facing runtime surface:
+### Default agent-facing surface (`premura-mcp`)
+
+Primary analytical path for agents. Fully validity-gated — all tools delegate to the Stage 2 signal engine; no raw `hp.*` SQL on this surface.
 
 ```bash
 uv run premura-mcp
@@ -58,20 +60,28 @@ uv run premura-mcp --warehouse-path /absolute/path/to/health.duckdb
 
 By default it resolves the warehouse from `HPIPE_DATA_DIR/duck/health.duckdb`.
 
-This is the default analytical path. Direct DuckDB and notebook work remain available, but they are expert fallback interfaces rather than the main product flow.
+Tools exposed:
 
-Current tools:
+- `list_metrics` — validity-gated catalog entries (engine-delegated, structured envelopes)
+- `metric_summary` — validity summary for one metric (engine-delegated)
+- `resting_hr_status` — current resting HR with freshness verdict
+- `resting_hr_trend` — resting-HR trend with gap visibility
+- `steps_trend` — daily-steps trend (never imputes missing days)
+- `weight_trend` — body-weight trend with carry-forward caveats
+- `sleep_deep_pct_baseline` — latest deep-sleep % vs user's own baseline
+- `hrv_change_around_date` — overnight HRV before/after a user-named date
 
-- `query_warehouse`
-- `list_metrics`
-- `metric_summary`
-- `resting_hr_status`
-- `resting_hr_trend`
-- `steps_trend`
-- `weight_trend`
-- `sleep_deep_pct_baseline`
-- `hrv_change_around_date`
+The six signal-backed tools return structured `available` / `missing_input` / `stale_input` / `insufficient_data` payloads.
 
-`query_warehouse` returns up to 200 rows by default and accepts `max_rows` up to 1000. The six signal-backed tools return structured `available` / `missing_input` / `stale_input` / `insufficient_data` payloads for those question shapes.
+### Operator fallback surface (`premura-mcp-operator`)
+
+Lower-guarantee expert mode. Adds `query_warehouse` (raw SQL escape hatch) on top of all eight default tools. No Stage 2 validity guarantees apply to `query_warehouse` results — callers own all result interpretation. **Agent use requires explicit user approval.**
+
+```bash
+uv run premura-mcp-operator
+uv run premura-mcp-operator --warehouse-path /absolute/path/to/health.duckdb
+```
+
+`query_warehouse` returns up to 200 rows by default and accepts `max_rows` up to 1000. Direct DuckDB and notebook work remain available as additional expert interfaces.
 
 Tests: `uv run python -m pytest -q`. See [STATUS.md](docs/operations/STATUS.md) for the current shipped pass count and coverage summary.

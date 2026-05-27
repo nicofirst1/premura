@@ -28,7 +28,12 @@ The first grounded analytical behavior now exists on top of the v1 ingest pipeli
 
 These are descriptive/comparative only — no reference ranges, no diagnosis, no statistical significance, no causation. They return explicit stale / unavailable / insufficient-data states instead of presenting a misleading answer. Profile-dependent answers (BMI, age-adjusted interpretation) remain deferred to issue `#6`.
 
-**Stage 3 — nine MCP tools.** `src/premura/mcp/` publishes the three preserved raw warehouse tools (`query_warehouse`, `list_metrics`, `metric_summary`) plus six new signal-backed tools — one per Stage 2 answer above. The signal-backed tools delegate to the engine (no direct fact-table SQL) and return a structured payload whose `status` is `available` / `missing_input` / `stale_input` / `insufficient_data`. When an answer is unavailable, the payload's `message` carries the signal's authored missing-input guidance (which data to connect or record), and `missing_input` / `stale_input` responses also attach a structured `missing_input` report (`required_inputs` / `missing_inputs` / `stale_inputs`) a caller can branch on. Direct-read debt is therefore **narrowed for those six question shapes but not eliminated**: the raw tools still read `hp.*` directly for open-ended exploration.
+**Stage 3 — two entrypoints, clean boundary.** `src/premura/mcp/` ships two entrypoints:
+
+- **Default agent surface (`premura-mcp`)** — eight tools: two validity-gated catalog/summary helpers (`list_metrics`, `metric_summary`) that delegate entirely to the Stage 2 engine, plus the six signal-backed tools listed above. No tool on this surface reads `hp.*` directly; all catalog and signal access goes through the engine. This is the fully validity-gated default path.
+- **Operator surface (`premura-mcp-operator`)** — all eight default tools plus `query_warehouse` (raw SQL escape hatch). Lower-guarantee: `query_warehouse` returns raw rows without Stage 2 validity, freshness, or imputation guarantees. Agent use requires explicit user approval.
+
+The signal-backed tools return a structured payload whose `status` is `available` / `missing_input` / `stale_input` / `insufficient_data`. When an answer is unavailable the payload's `message` carries the signal's authored missing-input guidance, and `missing_input` / `stale_input` responses attach a structured `missing_input` report (`required_inputs` / `missing_inputs` / `stale_inputs`) a caller can branch on.
 
 ## What's working end-to-end
 

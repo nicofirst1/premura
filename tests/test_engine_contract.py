@@ -307,3 +307,130 @@ def test_engine_contract_doc_ships_with_package() -> None:
 def test_parser_contract_points_to_engine_contract() -> None:
     text = files("premura.parsers").joinpath("CONTRACT.md").read_text(encoding="utf-8")
     assert "src/premura/engine/CONTRACT.md" in text
+
+
+# --- T005: WP01 Stage 2 catalog/summary helpers lazy-load contract ----------
+
+
+def test_catalog_and_summary_helpers_exported_from_public_surface() -> None:
+    """list_metric_catalog and metric_summary must be on the public engine surface."""
+    import premura.engine as engine
+
+    for symbol in ("list_metric_catalog", "metric_summary"):
+        assert symbol in engine.__all__, f"{symbol!r} missing from engine.__all__"
+        assert hasattr(engine, symbol), f"{symbol!r} not accessible on engine"
+
+
+def test_catalog_and_summary_result_envelopes_exported_from_public_surface() -> None:
+    """MetricCatalogEntry and MetricSummaryEntry must be in engine.__all__."""
+    import premura.engine as engine
+
+    for symbol in ("MetricCatalogEntry", "MetricSummaryEntry"):
+        assert symbol in engine.__all__, f"{symbol!r} missing from engine.__all__"
+        assert hasattr(engine, symbol), f"{symbol!r} not accessible on engine"
+
+
+def test_importing_engine_after_reset_does_not_populate_registry(monkeypatch) -> None:
+    """Importing premura.engine for catalog/summary does not eagerly load signal modules.
+
+    The new catalog helpers (list_metric_catalog, metric_summary) must not
+    call _ensure_builtin_signals_loaded at import time, leaving REGISTRY empty
+    until a query or compute helper forces the lazy load.
+    """
+    # Reset engine state to simulate a fresh import.
+    for mod in list(sys.modules):
+        if mod == "premura.engine" or mod.startswith("premura.engine."):
+            del sys.modules[mod]
+
+    engine = importlib.import_module("premura.engine")
+
+    # REGISTRY is still empty — no signal module was eagerly imported.
+    assert engine.REGISTRY == {}
+    assert "premura.engine.lab_ratios" not in sys.modules
+    assert "premura.engine.descriptive_signals" not in sys.modules
+
+    # The new helpers are accessible without triggering the loader.
+    assert hasattr(engine, "list_metric_catalog")
+    assert hasattr(engine, "metric_summary")
+
+    # REGISTRY remains empty because we haven't called any loader-triggering helper.
+    assert engine.REGISTRY == {}
+
+
+def test_catalog_helpers_do_not_populate_registry_on_call(monkeypatch) -> None:
+    """Calling list_metric_catalog / metric_summary must not load signal modules.
+
+    These are catalog-metadata helpers; they should NOT invoke
+    _ensure_builtin_signals_loaded and therefore must not cause REGISTRY to
+    grow with built-in signals.
+    """
+    import duckdb
+
+    import premura.engine as engine
+
+    # Snapshot state so this test is safe even if built-ins are already loaded.
+    saved_registry = dict(engine.REGISTRY)
+    saved_flag = engine._BUILTINS_LOADED
+
+    # Force the "not yet loaded" precondition.
+    engine.REGISTRY.clear()
+    engine._BUILTINS_LOADED = False
+
+    try:
+        # Use an in-memory DuckDB to satisfy the function signature without
+        # needing the full warehouse schema — both helpers handle unknown
+        # metrics gracefully.
+        conn = duckdb.connect(":memory:")
+        conn.execute(
+            """
+            CREATE SCHEMA IF NOT EXISTS hp;
+            CREATE TABLE IF NOT EXISTS hp.dim_metric (
+                metric_id VARCHAR PRIMARY KEY,
+                display_name VARCHAR,
+                canonical_unit VARCHAR,
+                value_kind VARCHAR,
+                validity_window VARCHAR,
+                missing_data_policy VARCHAR
+            );
+            CREATE TABLE IF NOT EXISTS hp.fact_measurement (
+                ts_utc TIMESTAMP,
+                metric_id VARCHAR,
+                value_num DOUBLE,
+                value_text VARCHAR,
+                unit VARCHAR,
+                source_id VARCHAR,
+                source_uuid VARCHAR,
+                dedupe_key VARCHAR PRIMARY KEY
+            );
+            CREATE TABLE IF NOT EXISTS hp.fact_interval (
+                start_utc TIMESTAMP,
+                end_utc TIMESTAMP,
+                metric_id VARCHAR,
+                value_num DOUBLE,
+                unit VARCHAR,
+                source_id VARCHAR,
+                source_uuid VARCHAR,
+                dedupe_key VARCHAR PRIMARY KEY
+            );
+            """
+        )
+
+        # Call both helpers with an unknown metric — they must not raise and
+        # must not load signal modules.
+        entries = engine.list_metric_catalog(["metric:unknown_for_contract_test"], conn)
+        assert len(entries) == 1
+        assert entries[0].validity_status.value == "unavailable"
+
+        summary = engine.metric_summary("metric:unknown_for_contract_test", conn)
+        assert summary.validity_status.value == "unavailable"
+
+        # REGISTRY must still be empty — no built-in loader was triggered.
+        assert engine.REGISTRY == {}, (
+            "list_metric_catalog / metric_summary must not populate REGISTRY"
+        )
+        assert engine._BUILTINS_LOADED is False
+        conn.close()
+    finally:
+        engine.REGISTRY.clear()
+        engine.REGISTRY.update(saved_registry)
+        engine._BUILTINS_LOADED = saved_flag

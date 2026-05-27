@@ -6,9 +6,14 @@ FastMCP tools.
 
 Two families of helpers live here:
 
-* **Raw warehouse tools** (``query_warehouse`` / ``list_metrics`` /
-  ``metric_summary``) — exploratory utilities that run read-only SQL against the
-  warehouse. They are unchanged by WP04 and remain the low-level escape hatch.
+* **Default catalog/summary tools** (``list_metrics`` / ``metric_summary``) —
+  validity-gated catalog and summary helpers that delegate entirely to the
+  Stage 2 engine (``premura.engine.list_metric_catalog`` /
+  ``premura.engine.metric_summary``). They return structured validity/imputation
+  envelopes with machine-branchable fields — no raw row counts, no all-time
+  extrema.
+* **Raw warehouse tool** (``query_warehouse``) — exploratory escape hatch that
+  runs arbitrary read-only SQL against the warehouse.
 * **Signal-backed tools** (``resting_hr_status`` and friends) — the supported
   path for the six approved Stage 2 answers. Each one opens the warehouse
   through the same safe read-only connection, delegates to the Stage 2 signal
@@ -84,97 +89,49 @@ def _open_warehouse(warehouse_path: Path | None) -> Iterator[duckdb.DuckDBPyConn
 def list_metrics(
     *, warehouse_path: Path | None = None, limit: int = 50, offset: int = 0
 ) -> list[dict[str, Any]]:
-    """List canonical metrics with lightweight warehouse coverage counts."""
+    """List canonical metrics as validity-gated catalog entries.
+
+    Delegates entirely to the Stage 2 engine helper
+    (:func:`premura.engine.list_metric_catalog`).  Returns explicit
+    ``validity_status`` / ``validity_window`` / ``missing_data_policy`` fields
+    per metric so downstream callers can branch on availability without parsing
+    prose.  No raw row counts or all-time extrema are exposed.
+    """
     _ensure_non_negative_int("limit", limit)
     _ensure_non_negative_int("offset", offset)
-    result = query_warehouse(
-        """
-        SELECT
-            m.metric_id,
-            m.display_name,
-            m.canonical_unit,
-            m.value_kind,
-            m.category,
-            COALESCE(fm.measurement_count, 0) AS measurement_count,
-            COALESCE(fi.interval_count, 0) AS interval_count
-        FROM hp.dim_metric AS m
-        LEFT JOIN (
-            SELECT metric_id, COUNT(*) AS measurement_count
-            FROM hp.fact_measurement
-            GROUP BY metric_id
-        ) AS fm USING (metric_id)
-        LEFT JOIN (
-            SELECT metric_id, COUNT(*) AS interval_count
-            FROM hp.fact_interval
-            GROUP BY metric_id
-        ) AS fi USING (metric_id)
-        ORDER BY m.metric_id
-        LIMIT ? OFFSET ?
-        """,
+    # Resolve the paged metric IDs from dim_metric via the read-only connection,
+    # then delegate all freshness/coverage logic to the Stage 2 catalog helper.
+    id_result = query_warehouse(
+        "SELECT metric_id FROM hp.dim_metric ORDER BY metric_id LIMIT ? OFFSET ?",
         [limit, offset],
         warehouse_path=warehouse_path,
     )
-    return result["rows"]
+    metric_ids = [row["metric_id"] for row in id_result["rows"]]
+    if not metric_ids:
+        return []
+    with _open_warehouse(warehouse_path) as conn:
+        entries = engine.list_metric_catalog(metric_ids, conn)
+    return [entry.to_dict() for entry in entries]
 
 
-def metric_summary(metric_id: str, *, warehouse_path: Path | None = None) -> dict[str, Any] | None:
-    """Return metadata and basic numeric coverage for one canonical metric."""
+def metric_summary(metric_id: str, *, warehouse_path: Path | None = None) -> dict[str, Any]:
+    """Return a validity summary for one canonical metric over a fixed 30-day window.
+
+    Delegates entirely to the Stage 2 engine helper
+    (:func:`premura.engine.metric_summary`).  Returns explicit
+    ``validity_status``, ``sample_size``, ``imputed_proportion``, and
+    ``gap_count`` fields so downstream callers can branch on availability and
+    coverage without parsing prose.  No all-time extrema (min/max/avg) or raw
+    row counts are exposed.
+
+    Unknown metrics return an ``unavailable`` entry (not ``None``) — the
+    structured envelope distinguishes unknown from known-but-empty.
+    """
     if not metric_id.strip():
         raise ValueError("metric_id must not be empty")
-    metadata = query_warehouse(
-        """
-        SELECT metric_id, display_name, canonical_unit, value_kind, description, category,
-               validity_window, missing_data_policy, loinc, ieee1752
-        FROM hp.dim_metric
-        WHERE metric_id = ?
-        """,
-        [metric_id],
-        warehouse_path=warehouse_path,
-    )["rows"]
-    if not metadata:
-        return None
-
-    measurement = query_warehouse(
-        """
-        SELECT
-            COUNT(*) AS measurement_count,
-            MAX(ts_utc) AS latest_measurement_at,
-            MIN(value_num) FILTER (WHERE value_num IS NOT NULL) AS min_value,
-            MAX(value_num) FILTER (WHERE value_num IS NOT NULL) AS max_value,
-            AVG(value_num) FILTER (WHERE value_num IS NOT NULL) AS avg_value
-        FROM hp.fact_measurement
-        WHERE metric_id = ?
-        """,
-        [metric_id],
-        warehouse_path=warehouse_path,
-    )["rows"][0]
-    interval = query_warehouse(
-        """
-        SELECT
-            COUNT(*) AS interval_count,
-            MAX(end_utc) AS latest_interval_end
-        FROM hp.fact_interval
-        WHERE metric_id = ?
-        """,
-        [metric_id],
-        warehouse_path=warehouse_path,
-    )["rows"][0]
-
-    summary = metadata[0] | {
-        "measurement_count": measurement["measurement_count"],
-        "interval_count": interval["interval_count"],
-        "latest_measurement_at": measurement["latest_measurement_at"],
-        "latest_interval_end": interval["latest_interval_end"],
-    }
-    if measurement["min_value"] is not None:
-        summary["numeric_summary"] = {
-            "min": measurement["min_value"],
-            "max": measurement["max_value"],
-            "avg": measurement["avg_value"],
-        }
-    else:
-        summary["numeric_summary"] = None
-    return summary
+    with _open_warehouse(warehouse_path) as conn:
+        entry = engine.metric_summary(metric_id, conn)
+    return entry.to_dict()
 
 
 # --------------------------------------------------------------------------- #

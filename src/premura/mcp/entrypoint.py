@@ -1,4 +1,20 @@
-"""Thin MCP server entrypoint over Premura's warehouse helpers."""
+"""Thin MCP server entrypoint over Premura's warehouse helpers.
+
+Two entrypoints are provided:
+
+* **Default surface** (``premura-mcp``, :func:`build_server`) — the agent-safe
+  surface.  Exposes catalog, summary, and all six approved Stage 2 signal tools.
+  ``query_warehouse`` is intentionally absent; agents should use the
+  signal-backed tools and the catalog helpers instead.
+
+* **Operator surface** (``premura-mcp-operator``, :func:`build_operator_server``)
+  — lower-guarantee expert mode intended for operator/developer use only,
+  **not** for autonomous agent consumption.  Adds :func:`query_warehouse` on top
+  of the full default tool set.  This surface must only be invoked after
+  explicit user approval; that policy is enforced at the calling layer, not
+  inside this server.  No Stage 2 validity guarantees apply to results returned
+  by ``query_warehouse``.
+"""
 
 from __future__ import annotations
 
@@ -14,24 +30,12 @@ from . import server as warehouse_server
 JsonScalar = str | int | float | bool | None
 
 
-def build_server(*, warehouse_path: Path | None = None) -> FastMCP:
-    """Build Premura's first MCP server surface."""
-    mcp = FastMCP(
-        "premura",
-        instructions="Read-only access to the local Premura warehouse.",
-    )
+def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> None:
+    """Register the full agent-safe default tool set on *mcp*.
 
-    @mcp.tool()
-    def query_warehouse(
-        sql: str, params: list[JsonScalar] | None = None, max_rows: int = 200
-    ) -> dict[str, Any]:
-        """Run one read-only SQL query against the local Premura warehouse."""
-        return warehouse_server.query_warehouse(
-            sql,
-            params,
-            warehouse_path=warehouse_path,
-            max_rows=max_rows,
-        )
+    This is the shared core.  It does NOT include ``query_warehouse`` — that
+    raw SQL escape hatch lives exclusively on the operator surface.
+    """
 
     @mcp.tool()
     def list_metrics(limit: int = 50, offset: int = 0) -> dict[str, Any]:
@@ -112,19 +116,91 @@ def build_server(*, warehouse_path: Path | None = None) -> FastMCP:
             warehouse_path=warehouse_path,
         )
 
+
+def build_server(*, warehouse_path: Path | None = None) -> FastMCP:
+    """Build the default agent-safe MCP server surface.
+
+    Exposes catalog, summary, and the six approved Stage 2 signal tools.
+    ``query_warehouse`` is intentionally excluded — use :func:`build_operator_server`
+    to obtain a surface that includes the raw SQL escape hatch.
+    """
+    mcp = FastMCP(
+        "premura",
+        instructions="Read-only access to the local Premura warehouse.",
+    )
+    _register_default_tools(mcp, warehouse_path=warehouse_path)
+    return mcp
+
+
+def build_operator_server(*, warehouse_path: Path | None = None) -> FastMCP:
+    """Build the operator MCP server surface — lower-guarantee expert mode.
+
+    Registers the full default tool set PLUS ``query_warehouse``, the raw SQL
+    escape hatch.  This surface is intended for operator/developer use only and
+    MUST NOT be used by an autonomous agent without explicit user approval.
+
+    No Stage 2 validity or freshness guarantees apply to results returned by
+    ``query_warehouse``; callers own all result interpretation.  The signal-backed
+    and catalog tools on this surface retain their normal Stage 2 guarantees.
+    """
+    mcp = FastMCP(
+        "premura-operator",
+        instructions=(
+            "OPERATOR MODE — lower-guarantee expert surface. "
+            "Includes query_warehouse (raw SQL escape hatch). "
+            "No Stage 2 validity guarantees apply to query_warehouse results. "
+            "This surface must only be used after explicit user approval; "
+            "it is not safe for autonomous agent consumption."
+        ),
+    )
+    _register_default_tools(mcp, warehouse_path=warehouse_path)
+
+    @mcp.tool()
+    def query_warehouse(
+        sql: str, params: list[JsonScalar] | None = None, max_rows: int = 200
+    ) -> dict[str, Any]:
+        """Run one read-only SQL query against the local Premura warehouse.
+
+        OPERATOR-ONLY ESCAPE HATCH.  This tool runs arbitrary read-only SQL and
+        returns raw rows without any Stage 2 validity, freshness, or imputation
+        guarantees.  Results must be interpreted by the caller without assuming
+        coverage or correctness.  Requires explicit user approval before use;
+        autonomous agents must not invoke this tool unsupervised.
+        """
+        return warehouse_server.query_warehouse(
+            sql,
+            params,
+            warehouse_path=warehouse_path,
+            max_rows=max_rows,
+        )
+
     return mcp
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    args = _parse_args(argv)
+    args = _parse_args(argv, prog="premura-mcp", operator_mode=False)
     build_server(warehouse_path=args.warehouse_path).run(transport="stdio")
 
 
-def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        prog="premura-mcp",
-        description="Run Premura's read-only MCP server over one DuckDB warehouse.",
+def main_operator(argv: Sequence[str] | None = None) -> None:
+    args = _parse_args(argv, prog="premura-mcp-operator", operator_mode=True)
+    build_operator_server(warehouse_path=args.warehouse_path).run(transport="stdio")
+
+
+def _parse_args(
+    argv: Sequence[str] | None = None,
+    *,
+    prog: str,
+    operator_mode: bool,
+) -> argparse.Namespace:
+    description = (
+        "Run Premura's operator MCP server over one DuckDB warehouse. "
+        "Includes query_warehouse (raw SQL escape hatch). "
+        "Lower-guarantee expert mode — requires explicit user approval."
+        if operator_mode
+        else "Run Premura's read-only MCP server over one DuckDB warehouse."
     )
+    parser = argparse.ArgumentParser(prog=prog, description=description)
     parser.add_argument(
         "--warehouse-path",
         type=Path,
@@ -139,7 +215,7 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     return args
 
 
-__all__ = ["build_server", "main"]
+__all__ = ["build_operator_server", "build_server", "main", "main_operator"]
 
 
 if __name__ == "__main__":
