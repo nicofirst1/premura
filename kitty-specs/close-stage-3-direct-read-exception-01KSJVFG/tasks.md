@@ -14,11 +14,11 @@
 | T003 | Implement engine helper for per-metric validity summaries over a fixed 30-day window | WP01 | No | [D] |
 | T004 | Add engine tests for current/stale/unavailable catalog and summary semantics | WP01 | No | [D] |
 | T005 | Extend lazy-load contract coverage for the new engine helpers | WP01 | No | [D] |
-| T006 | Rewire `list_metrics` in `src/premura/mcp/server.py` to consume Stage 2 catalog helpers | WP02 | No |
-| T007 | Rewire `metric_summary` in `src/premura/mcp/server.py` to consume Stage 2 summary helpers | WP02 | No |
-| T008 | Serialize machine-branchable validity/imputation fields with honest absence semantics | WP02 | No |
-| T009 | Add MCP payload tests for fresh/stale/empty/unknown catalog and summary responses | WP02 | No |
-| T010 | Re-run and tighten signal-tool regression coverage so six existing signal-backed tools do not regress | WP02 | No |
+| T006 | Rewire `list_metrics` in `src/premura/mcp/server.py` to consume Stage 2 catalog helpers | WP02 | No | [D] |
+| T007 | Rewire `metric_summary` in `src/premura/mcp/server.py` to consume Stage 2 summary helpers | WP02 | No | [D] |
+| T008 | Serialize machine-branchable validity/imputation fields with honest absence semantics | WP02 | No | [D] |
+| T009 | Add MCP payload tests for fresh/stale/empty/unknown catalog and summary responses | WP02 | No | [D] |
+| T010 | Re-run and tighten signal-tool regression coverage so six existing signal-backed tools do not regress | WP02 | No | [D] |
 | T011 | Refactor MCP registration into shared core plus explicit default/operator entrypoint builders | WP03 | No |
 | T012 | Add a separate operator entrypoint that registers `query_warehouse` on top of the default tool set | WP03 | No |
 | T013 | Wire packaging / command entrypoints so the operator surface is invokable explicitly | WP03 | No |
@@ -74,11 +74,11 @@
 
 ### Included subtasks
 
-- [ ] T006 Rewire `list_metrics` in `src/premura/mcp/server.py` to consume Stage 2 catalog helpers (WP02)
-- [ ] T007 Rewire `metric_summary` in `src/premura/mcp/server.py` to consume Stage 2 summary helpers (WP02)
-- [ ] T008 Serialize machine-branchable validity/imputation fields with honest absence semantics (WP02)
-- [ ] T009 Add MCP payload tests for fresh/stale/empty/unknown catalog and summary responses (WP02)
-- [ ] T010 Re-run and tighten signal-tool regression coverage so six existing signal-backed tools do not regress (WP02)
+- [x] T006 Rewire `list_metrics` in `src/premura/mcp/server.py` to consume Stage 2 catalog helpers (WP02)
+- [x] T007 Rewire `metric_summary` in `src/premura/mcp/server.py` to consume Stage 2 summary helpers (WP02)
+- [x] T008 Serialize machine-branchable validity/imputation fields with honest absence semantics (WP02)
+- [x] T009 Add MCP payload tests for fresh/stale/empty/unknown catalog and summary responses (WP02)
+- [x] T010 Re-run and tighten signal-tool regression coverage so six existing signal-backed tools do not regress (WP02)
 
 ### Implementation sketch
 
