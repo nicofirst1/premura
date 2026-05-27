@@ -15,6 +15,8 @@ subtasks:
 - T013
 - T014
 - T015
+agent: "claude:sonnet:implementer:implementer"
+shell_pid: "53502"
 history:
 - at: '2026-05-27T07:06:15Z'
   action: planned
@@ -145,3 +147,7 @@ pytest -q tests/test_mcp_server.py
 - Confirm there is only one shared server core.
 - Confirm no config flag is required to achieve the split.
 - Confirm the operator surface is clearly signposted as lower-guarantee.
+
+## Activity Log
+
+- 2026-05-27T07:48:02Z – claude:sonnet:implementer:implementer – shell_pid=53502 – Started implementation via action command
