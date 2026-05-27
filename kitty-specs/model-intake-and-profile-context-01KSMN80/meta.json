@@ -1,0 +1,10 @@
+{
+  "created_at": "2026-05-27T12:06:14.663653+00:00",
+  "friendly_name": "model intake and profile context",
+  "mission_id": "01KSMN80WBKTQTX18MH7D72SFM",
+  "mission_number": null,
+  "mission_slug": "model-intake-and-profile-context-01KSMN80",
+  "mission_type": "software-dev",
+  "slug": "model-intake-and-profile-context-01KSMN80",
+  "target_branch": "master"
+}
