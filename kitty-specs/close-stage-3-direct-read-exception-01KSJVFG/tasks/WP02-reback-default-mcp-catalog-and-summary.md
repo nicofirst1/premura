@@ -167,3 +167,4 @@ Then combine with WP01 engine coverage when both are present.
 - 2026-05-27T07:33:24Z – claude:sonnet:reviewer:reviewer – shell_pid=88564 – Started review via action command
 - 2026-05-27T07:41:08Z – claude:sonnet:reviewer:reviewer – shell_pid=88564 – Review cycle 1: missing unknown/unregistered catalog test at list_metrics MCP surface
 - 2026-05-27T07:41:56Z – claude:sonnet:implementer:implementer – shell_pid=29837 – Started implementation via action command
+- 2026-05-27T07:45:15Z – claude:sonnet:implementer:implementer – shell_pid=29837 – Fix cycle 1: added list_metrics unknown-boundary test
