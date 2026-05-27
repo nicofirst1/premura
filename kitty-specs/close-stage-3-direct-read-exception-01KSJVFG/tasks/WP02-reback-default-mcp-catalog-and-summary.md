@@ -17,6 +17,8 @@ subtasks:
 - T008
 - T009
 - T010
+agent: "claude:sonnet:implementer:implementer"
+shell_pid: "50998"
 history:
 - at: '2026-05-27T07:06:15Z'
   action: planned
@@ -157,3 +159,7 @@ Then combine with WP01 engine coverage when both are present.
 
 - Inspect `src/premura/mcp/server.py` for any lingering direct-read logic in the default catalog/summary path.
 - Confirm the tests drive the public tool functions, not hidden helpers.
+
+## Activity Log
+
+- 2026-05-27T07:25:17Z – claude:sonnet:implementer:implementer – shell_pid=50998 – Started implementation via action command
