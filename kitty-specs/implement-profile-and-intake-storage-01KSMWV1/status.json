@@ -1,7 +1,7 @@
 {
-  "event_count": 16,
-  "last_event_id": "01KSMZSCRRJH4MRRYD6VGT7TJ5",
-  "materialized_at": "2026-05-27T15:10:29.144987+00:00",
+  "event_count": 17,
+  "last_event_id": "01KSN08DRRZ3M9P4YW4P6G8YRZ",
+  "materialized_at": "2026-05-27T15:18:41.688872+00:00",
   "mission_number": "",
   "mission_slug": "implement-profile-and-intake-storage-01KSMWV1",
   "mission_type": "software-dev",
@@ -11,8 +11,8 @@
     "canceled": 0,
     "claimed": 0,
     "done": 0,
-    "for_review": 0,
-    "in_progress": 1,
+    "for_review": 1,
+    "in_progress": 0,
     "in_review": 0,
     "planned": 1
   },
@@ -32,11 +32,11 @@
       "last_transition_at": "2026-05-27T15:09:56.648832+00:00"
     },
     "WP03": {
-      "actor": "claude:opus:python-implementer:implementer",
+      "actor": "user",
       "force_count": 1,
-      "lane": "in_progress",
-      "last_event_id": "01KSMZSCRRJH4MRRYD6VGT7TJ5",
-      "last_transition_at": "2026-05-27T15:10:29.144987+00:00"
+      "lane": "for_review",
+      "last_event_id": "01KSN08DRRZ3M9P4YW4P6G8YRZ",
+      "last_transition_at": "2026-05-27T15:18:41.688872+00:00"
     },
     "WP04": {
       "actor": "finalize-tasks",
