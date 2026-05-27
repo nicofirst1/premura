@@ -1,7 +1,7 @@
 {
-  "event_count": 4,
-  "last_event_id": "01KSM48GD9533ZFGCQAM8N5X4S",
-  "materialized_at": "2026-05-27T07:09:24.265296+00:00",
+  "event_count": 6,
+  "last_event_id": "01KSM4GCMYEVV60HXCFX3PE2C2",
+  "materialized_at": "2026-05-27T07:13:42.558806+00:00",
   "mission_number": "",
   "mission_slug": "close-stage-3-direct-read-exception-01KSJVFG",
   "mission_type": "software-dev",
@@ -12,17 +12,17 @@
     "claimed": 0,
     "done": 0,
     "for_review": 0,
-    "in_progress": 0,
+    "in_progress": 1,
     "in_review": 0,
-    "planned": 4
+    "planned": 3
   },
   "work_packages": {
     "WP01": {
-      "actor": "finalize-tasks",
+      "actor": "implement-command",
       "force_count": 1,
-      "lane": "planned",
-      "last_event_id": "01KSM48G9NC9CKA4T9MBKVDC2J",
-      "last_transition_at": "2026-05-27T07:09:24.149312+00:00"
+      "lane": "in_progress",
+      "last_event_id": "01KSM4GCMYEVV60HXCFX3PE2C2",
+      "last_transition_at": "2026-05-27T07:13:42.558806+00:00"
     },
     "WP02": {
       "actor": "finalize-tasks",
