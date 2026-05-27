@@ -15,6 +15,8 @@ subtasks:
 - T018
 - T019
 - T020
+agent: "claude:sonnet:implementer:implementer"
+shell_pid: "93299"
 history:
 - at: '2026-05-27T07:06:15Z'
   action: planned
@@ -140,3 +142,7 @@ Then run the full suite after all implementation WPs are in place.
 
 - Search for old exception wording across docs.
 - Verify the ADR matches the actual implementation shape and does not promise server-enforced approval if that remains external.
+
+## Activity Log
+
+- 2026-05-27T07:57:38Z – claude:sonnet:implementer:implementer – shell_pid=93299 – Started implementation via action command
