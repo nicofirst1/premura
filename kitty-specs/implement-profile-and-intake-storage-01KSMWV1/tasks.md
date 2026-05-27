@@ -28,9 +28,9 @@
 
 | ID | Description | WP | Parallel |
 |---|---|---|---|
-| T001 | Add a new DuckDB migration that creates separate profile-capture, profile-assertion, nutrition-intake, and supplement-intake tables with the provenance and supersession columns planned for this mission. | WP01 |  |
-| T002 | Encode one-home separation directly in the migration shape by giving nutrition and supplement records their own event/item/quantity or dose tables rather than reusing observation or note tables. | WP01 |  |
-| T003 | Add migration-level verification that warehouse initialization applies the new schema cleanly and leaves the existing observation tables intact. | WP01 |  |
+| T001 | Add a new DuckDB migration that creates separate profile-capture, profile-assertion, nutrition-intake, and supplement-intake tables with the provenance and supersession columns planned for this mission. | WP01 |  | [D] |
+| T002 | Encode one-home separation directly in the migration shape by giving nutrition and supplement records their own event/item/quantity or dose tables rather than reusing observation or note tables. | WP01 |  | [D] |
+| T003 | Add migration-level verification that warehouse initialization applies the new schema cleanly and leaves the existing observation tables intact. | WP01 |  | [D] |
 | T004 | Add runtime profile-field support loading so the bounded allowlist from planning becomes an enforceable application surface rather than documentation only. | WP02 |  |
 | T005 | Add `src/premura/store/profile_intake.py` with the concrete persistence service for bounded profile capture and parser-ready intake persistence. | WP02 |  |
 | T006 | Extend `src/premura/parsers/base.py` with normalized nutrition/supplement persistence types that future parsers can emit outside the current `IngestBatch` observation path. | WP02 | [P] |
@@ -58,9 +58,9 @@
 - Estimated prompt size: ~260 lines
 
 Included subtasks:
-- [ ] T001 Add a new DuckDB migration that creates separate profile-capture, profile-assertion, nutrition-intake, and supplement-intake tables with the provenance and supersession columns planned for this mission. (WP01)
-- [ ] T002 Encode one-home separation directly in the migration shape by giving nutrition and supplement records their own event/item/quantity or dose tables rather than reusing observation or note tables. (WP01)
-- [ ] T003 Add migration-level verification that warehouse initialization applies the new schema cleanly and leaves the existing observation tables intact. (WP01)
+- [x] T001 Add a new DuckDB migration that creates separate profile-capture, profile-assertion, nutrition-intake, and supplement-intake tables with the provenance and supersession columns planned for this mission. (WP01)
+- [x] T002 Encode one-home separation directly in the migration shape by giving nutrition and supplement records their own event/item/quantity or dose tables rather than reusing observation or note tables. (WP01)
+- [x] T003 Add migration-level verification that warehouse initialization applies the new schema cleanly and leaves the existing observation tables intact. (WP01)
 
 Implementation sketch:
 1. Design the `004_profile_intake.sql` schema directly from `data-model.md`, not from convenience with existing fact tables.
