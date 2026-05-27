@@ -203,3 +203,4 @@ pytest -q tests/test_engine.py tests/test_engine_contract.py
 ## Activity Log
 
 - 2026-05-27T07:13:43Z – claude:sonnet:implementer:implementer – shell_pid=68140 – Assigned agent via action command
+- 2026-05-27T07:20:35Z – claude:sonnet:implementer:implementer – shell_pid=68140 – Ready for review: added MetricCatalogEntry and MetricSummaryEntry envelopes, list_metric_catalog and metric_summary engine helpers, T004 semantic tests and T005 lazy-load contract tests. All 148 tests green, ruff clean on changed files.
