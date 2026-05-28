@@ -26,7 +26,11 @@ The first grounded analytical behavior now exists on top of the v1 ingest pipeli
 | `sleep_deep_pct_baseline` | baseline | "Is my latest deep-sleep % below my **own** recent normal?" |
 | `hrv_change_around_date` | change | "Did my overnight HRV shift after a date I name?" |
 
-These are descriptive/comparative only — no reference ranges, no diagnosis, no statistical significance, no causation. They return explicit stale / unavailable / insufficient-data states instead of presenting a misleading answer. Profile-dependent answers (BMI, age-adjusted interpretation) remain deferred to issue `#6`.
+These are descriptive/comparative only — no reference ranges, no diagnosis, no statistical significance, no causation. They return explicit stale / unavailable / insufficient-data states instead of presenting a misleading answer.
+
+**BMI cross-domain proof consumer (shipped).** Stage 2 now hosts the first cross-domain signal: `bmi` (family `status`). It resolves a declared standing height from profile context plus a usable body-weight observation from observation history through the new input-resolution seam, computes `BMI = weight_kg / height_m**2`, and refuses honestly (`missing_input` / `stale_input` / `insufficient_data`) when either prerequisite is missing or stale. BMI is a **structural proof consumer**, not a clinical or diagnostic interpretation.
+
+**Input-resolution seam (shipped).** `premura.engine.resolve_dependency`, `RESOLVERS`, and the `@resolver(domain=...)` decorator (re-exported from `premura.engine`) wire declared dependencies to domain-aware resolvers. Two concrete resolvers ship in this mission: `observation_history` (`premura/engine/views/observation.py`) and `profile_context` (`premura/engine/views/profile.py`). Two `SEMANTIC_DOMAINS` remain declarable but unresolved — `nutrition_intake` and `supplement_intake` — and currently return an explicit `usable=False, absence_reason="unsupported_domain"` outcome until a future mission ships their concrete resolvers.
 
 **Stage 3 — two entrypoints, clean boundary.** `src/premura/mcp/` ships two entrypoints:
 
@@ -46,7 +50,7 @@ The `implement-profile-and-intake-storage-01KSMWV1` mission gave the profile/int
 **Explicitly not shipped (still follow-on work):**
 
 - **No built-in nutrition/supplement importer.** The intake tables and load path exist, but adapting a *specific* source (a meal-logging app export, a supplement log) into them is parser/plugin work, exactly like the wearable sources. There is no built-in MyFitnessPal-style importer.
-- **No profile-dependent signals.** BMI and age-adjusted interpretation remain deferred; `age` stays derived from `birth_date` at evaluation time, never stored.
+- **Age-adjusted interpretation remains deferred.** `age` stays derived from `birth_date` at evaluation time, never stored. BMI is no longer in the deferred set — it now ships as the first cross-domain Stage 2 proof consumer using the input-resolution seam (see "Stage 2 / Stage 3 baseline" above). Issue `#6`'s "profile-dependent signals" framing is **partially** satisfied by BMI; the remaining deferred items under that thread are age-adjusted interpretation and any further profile-dependent signal that requires a new declared dependency type.
 
 ## What's working end-to-end
 

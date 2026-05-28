@@ -2,7 +2,7 @@
   "created_at": "2026-05-28T07:01:42.309819+00:00",
   "friendly_name": "Stage 2 Input Resolution And BMI",
   "mission_id": "01KSPP73Q501XP9QEKHBJ8JE95",
-  "mission_number": null,
+  "mission_number": 8,
   "mission_slug": "stage-2-input-resolution-and-bmi-01KSPP73",
   "mission_type": "software-dev",
   "slug": "stage-2-input-resolution-and-bmi-01KSPP73",

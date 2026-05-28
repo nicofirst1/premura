@@ -26,13 +26,28 @@ loader calls. See the WP02 report note about ``_BUILTIN_SIGNAL_MODULES``.
 
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
-from . import _query
+# WP03: import ``resolve_dependency`` and the declaration/request dataclasses at
+# module load time, not inside :func:`bmi`. Two reasons:
+#
+# 1. BMI is the first cross-domain proof consumer; the seam is the contract, so
+#    it must be visible at the top of the consumer module rather than buried in
+#    a function body.
+# 2. Tests need a stable monkeypatch target. Importing ``resolve_dependency``
+#    here exposes ``premura.engine.descriptive_signals.resolve_dependency`` as a
+#    module-level attribute that
+#    ``unittest.mock.patch("premura.engine.descriptive_signals.resolve_dependency")``
+#    can rebind, so the no-bypass guarantee (BMI calls the seam exactly twice
+#    via the public surface) is exercised through a spy in
+#    ``tests/test_bmi_signal.py``.
+from . import _query, resolve_dependency
 from ._registry import REGISTRY, SignalSpec
+from ._resolution import DependencyDeclaration, ResolutionRequest
 from ._results import (
     FreshnessState,
+    MissingInputReport,
     StatusResult,
     TrendDirection,
     TrendPoint,
@@ -267,6 +282,255 @@ def _trend_caveats(
 
 
 # --------------------------------------------------------------------------- #
+# WP03 — BMI (first cross-domain proof consumer)
+# --------------------------------------------------------------------------- #
+#
+# BMI is intentionally narrow: it proves the Stage 2 input-resolution seam can
+# carry one Stage 2 answer across two semantic domains honestly. It is NOT a
+# clinical interpretation surface, a reference-range lookup, or a new answer
+# family — it returns the existing ``StatusResult`` envelope so the four-family
+# Stage 2 contract stays closed for this mission.
+#
+# Key design rules (see contracts/bmi-proof-consumer.yaml and the spec's FR-004
+# / FR-005):
+#
+# * BMI declares its prerequisites through ``DependencyDeclaration`` and
+#   resolves them through :func:`premura.engine.resolve_dependency`. It does
+#   NOT call ``_query.latest_usable_value`` directly, does NOT read
+#   ``hp.profile_context_assertion`` directly, and does NOT compose a one-off
+#   warehouse query of its own.
+# * Both dependencies must resolve as ``usable=True`` before BMI computes a
+#   value. Otherwise a single :class:`MissingInputReport` names exactly which
+#   prerequisites are missing or stale (no silent substitution, no hidden
+#   fallback into measured height).
+# * The freshness window of the answer is borrowed from the binding-constraint
+#   domain — body weight — because that is the prerequisite whose freshness is
+#   actually time-sensitive at the anchor.
+
+_BMI_REQUIRED_INPUTS: list[str] = [
+    "profile:standing_height_cm",
+    "observation:weight",
+]
+"""Stable, declared inputs surfaced by :class:`MissingInputReport`.
+
+These strings are the same form ``SignalSpec.inputs`` uses (a free-form
+metric-id-like vocabulary). The existing engine helper
+:func:`premura.engine.check_inputs_available` does not understand them natively
+because BMI mixes two domains; that is acceptable for a proof consumer and is
+documented in :func:`bmi`'s docstring. The honest refusal path is the
+:class:`MissingInputReport` returned by :func:`bmi`, not a generic input-check.
+"""
+
+_BMI_PROOF_CAVEAT: str = (
+    "BMI is a proof consumer for the Stage 2 input-resolution seam; not a "
+    "clinical or diagnostic interpretation."
+)
+
+
+def bmi(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    anchor_ts: datetime | None = None,
+) -> StatusResult | MissingInputReport:
+    """First cross-domain Stage 2 proof consumer.
+
+    Resolves declared standing height from ``profile_context`` and body weight
+    from ``observation_history`` through
+    :func:`premura.engine.resolve_dependency`. Returns a :class:`StatusResult`
+    only when BOTH dependencies resolve as usable; otherwise returns a
+    :class:`MissingInputReport` naming the unmet prerequisite(s).
+
+    This is intentionally narrow proof scope: ``BMI = weight_kg / height_m**2``.
+    No reference ranges, no diagnostic interpretation, no opening a new answer
+    family. See ``contracts/bmi-proof-consumer.yaml``.
+
+    Parameters
+    ----------
+    conn:
+        Live DuckDB connection. Required by both resolvers.
+    anchor_ts:
+        Time reference for the resolution. ``None`` defaults to
+        ``datetime.now(tz=UTC)``. A naive datetime is assumed to already be
+        UTC; the resolvers handle the naive-UTC coercion.
+    """
+    if anchor_ts is None:
+        anchor_ts = datetime.now(tz=UTC)
+
+    # Declare and resolve both prerequisites through the public seam. The two
+    # declarations are exactly the pair listed in
+    # ``contracts/bmi-proof-consumer.yaml`` — kept in this order so the
+    # human-facing message lists prerequisites in the same order as the
+    # contract.
+    height_request = ResolutionRequest(
+        anchor_ts=anchor_ts,
+        dependency=DependencyDeclaration(
+            consumer_name="bmi",
+            depends_on_domain="profile_context",
+            required_key="standing_height_cm",
+            failure_mode="explicit_missing_input",
+        ),
+    )
+    weight_request = ResolutionRequest(
+        anchor_ts=anchor_ts,
+        dependency=DependencyDeclaration(
+            consumer_name="bmi",
+            depends_on_domain="observation_history",
+            required_key="weight",
+            failure_mode="explicit_missing_or_stale_input",
+        ),
+    )
+
+    height_result = resolve_dependency(conn=conn, request=height_request)
+    weight_result = resolve_dependency(conn=conn, request=weight_request)
+
+    # ---------------- Refusal path ----------------
+    # If either dependency is unusable, refuse explicitly. A combined report is
+    # returned when both fail, so the caller sees the complete picture in one
+    # message rather than chasing a refusal at a time.
+    if not (height_result.usable and weight_result.usable):
+        return _build_missing_input_report(height_result, weight_result)
+
+    # ---------------- Success path ----------------
+    assert height_result.payload is not None  # narrow for type-checkers
+    assert weight_result.payload is not None
+    height_cm_raw = height_result.payload["resolved_value"]
+    weight_kg_raw = weight_result.payload["resolved_value"]
+
+    # The profile slot for ``standing_height_cm`` is QUANTITY -> value_num, and
+    # the observation resolver returns the numeric ``value`` directly, so both
+    # are expected to be ``float`` here. A defensive coerce keeps a wrong-typed
+    # row from masquerading as a usable BMI input.
+    if not isinstance(height_cm_raw, (int, float)) or not isinstance(
+        weight_kg_raw, (int, float)
+    ):
+        return MissingInputReport(
+            tool_name="bmi",
+            required_inputs=list(_BMI_REQUIRED_INPUTS),
+            missing_inputs=list(_BMI_REQUIRED_INPUTS),
+            message=(
+                "BMI requires numeric height and weight values; the resolver "
+                "returned a non-numeric payload, which is treated as missing "
+                "rather than guessed."
+            ),
+        )
+
+    height_cm = float(height_cm_raw)
+    weight_kg = float(weight_kg_raw)
+    height_m = height_cm / 100.0
+
+    if height_m <= 0:
+        # Programmer-error-shaped data (e.g. a zero or negative height landed in
+        # profile context) is treated as missing rather than crashing the
+        # engine. The caller still gets an explicit, named refusal.
+        return MissingInputReport(
+            tool_name="bmi",
+            required_inputs=list(_BMI_REQUIRED_INPUTS),
+            missing_inputs=["profile:standing_height_cm"],
+            message=(
+                "BMI requires a positive declared standing height; the resolved "
+                "value is not valid."
+            ),
+        )
+
+    bmi_value = weight_kg / (height_m ** 2)
+
+    # Freshness is borrowed from the binding-constraint domain (body weight),
+    # because that is the prerequisite whose freshness actually limits trust at
+    # the anchor. Profile context is slowly changing and uses as-of semantics,
+    # not a freshness window. The validity_window text is the metric's seeded
+    # ``validity_window`` from ``hp.dim_metric``; we fall back to weight's
+    # documented P1W window when the policy lookup is unexpectedly empty.
+    weight_policy = _query.load_metric_policy(conn, "weight")
+    validity_window = (
+        weight_policy.validity_window_text
+        if weight_policy is not None and weight_policy.validity_window_text is not None
+        else "P1W"
+    )
+    observed_at = weight_result.payload["observed_at"]
+
+    return StatusResult(
+        signal_name="bmi",
+        metric_id="bmi",
+        display_name="Body Mass Index",
+        unit="kg_per_m2",
+        freshness_state=FreshnessState.CURRENT,
+        validity_window=validity_window,
+        value=round(bmi_value, 2),
+        observed_at=observed_at,
+        caveats=[_BMI_PROOF_CAVEAT],
+    ).validate()
+
+
+def _build_missing_input_report(
+    height_result: object,
+    weight_result: object,
+) -> MissingInputReport:
+    """Compose a single :class:`MissingInputReport` for the BMI refusal path.
+
+    Walks each unresolved dependency and folds it into the right bucket:
+
+    * a ``usable=False, absence_reason="missing"`` outcome adds the input to
+      ``missing_inputs``;
+    * any other unusable outcome (``"stale"``, ``"unknown_metric"``,
+      ``"unsupported_domain"``, …) adds the input to ``stale_inputs`` — that
+      bucket is the catch-all for "present-but-not-usable" so the caller can
+      still tell missing-from-the-warehouse apart from data-was-found-but-old.
+
+    A combined message lists each refusal reason in order so a caller sees the
+    full picture instead of chasing one failure at a time.
+    """
+    missing_inputs: list[str] = []
+    stale_inputs: list[str] = []
+    message_parts: list[str] = []
+
+    if not height_result.usable:  # type: ignore[attr-defined]
+        reason = height_result.absence_reason  # type: ignore[attr-defined]
+        if reason == "missing":
+            missing_inputs.append("profile:standing_height_cm")
+            message_parts.append(
+                "BMI requires a declared standing height in profile context; "
+                "no assertion is on file as of the anchor time."
+            )
+        else:
+            stale_inputs.append("profile:standing_height_cm")
+            message_parts.append(
+                "BMI requires a usable declared standing height in profile "
+                f"context; the resolver returned {reason!r} rather than a "
+                "usable value."
+            )
+
+    if not weight_result.usable:  # type: ignore[attr-defined]
+        reason = weight_result.absence_reason  # type: ignore[attr-defined]
+        if reason == "missing":
+            missing_inputs.append("observation:weight")
+            message_parts.append(
+                "BMI requires a usable body-weight observation; none is "
+                "available within the validity window as of the anchor time."
+            )
+        elif reason == "stale":
+            stale_inputs.append("observation:weight")
+            message_parts.append(
+                "BMI requires a usable body-weight observation; the most "
+                "recent reading is outside the freshness window for the "
+                "anchor time."
+            )
+        else:
+            stale_inputs.append("observation:weight")
+            message_parts.append(
+                "BMI requires a usable body-weight observation; the resolver "
+                f"returned {reason!r} rather than a usable value."
+            )
+
+    return MissingInputReport(
+        tool_name="bmi",
+        required_inputs=list(_BMI_REQUIRED_INPUTS),
+        missing_inputs=missing_inputs,
+        stale_inputs=stale_inputs,
+        message=" ".join(message_parts),
+    )
+
+
+# --------------------------------------------------------------------------- #
 # Built-in registration (CONTRACT.md built-in loading contract)
 # --------------------------------------------------------------------------- #
 def register_builtin_signals() -> None:
@@ -354,6 +618,36 @@ def register_builtin_signals() -> None:
             ),
         )
     )
+    # WP03 — BMI proof consumer. Registered under the existing "status" family
+    # so the four-family Stage 2 contract stays closed. The ``inputs`` list
+    # uses the engine's free-form metric-id-like strings; these are NOT strict
+    # ``dim_metric.metric_id`` values because BMI mixes two semantic domains
+    # (a profile attribute key and an observation metric_id). The honest
+    # refusal path is the :class:`MissingInputReport` returned by :func:`bmi`,
+    # not :func:`check_inputs_available` — see :func:`bmi`'s docstring.
+    _register(
+        SignalSpec(
+            name="bmi",
+            domain=["body_composition", "cross_domain_proof"],
+            inputs=["profile:standing_height_cm", "observation:weight"],
+            output=None,
+            priority="normal",
+            auto_safe=False,
+            revision="1",
+            fn=bmi,
+            question="What is my BMI right now?",
+            family="status",
+            missing_input_hint=(
+                "BMI needs a declared standing height (set it via profile "
+                "capture) AND a recent body-weight observation."
+            ),
+            caveat_summary=(
+                "BMI is a proof of the cross-domain resolver seam, not a "
+                "clinical interpretation; it carries no reference-range or "
+                "diagnostic claim.",
+            ),
+        )
+    )
 
 
 def _register(spec: SignalSpec) -> None:
@@ -365,5 +659,6 @@ __all__ = [
     "resting_hr_trend",
     "steps_trend",
     "weight_trend",
+    "bmi",
     "register_builtin_signals",
 ]

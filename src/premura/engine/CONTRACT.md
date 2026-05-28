@@ -16,6 +16,13 @@ through a DuckDB connection and returns either a derived measurement row or one
 of the shared result envelopes. Stage 3 (MCP) wraps a signal one-to-one and
 surfaces it to the user.
 
+A Stage 2 consumer may also declare **cross-domain dependencies** and resolve
+them through the input-resolution seam shipped under `premura.engine` — see
+"Declaring dependencies through the input-resolution seam" below. The seam is
+the next analytical foundation: a domain-aware way to ask for declared inputs,
+not a universal prepared-series layer. BMI is the first proof consumer of that
+seam.
+
 ## Symbols you implement against
 
 All live in this package:
@@ -28,6 +35,14 @@ All live in this package:
   `TrendResult`, `BaselineComparisonResult`, `ChangeAroundDateResult`, and the
   cross-cutting `MissingInputReport`. Re-exported from `premura.engine`.
 - `RESULT_FAMILIES` (`premura.engine`) — the set of allowed `family` values.
+  Closed in this mission to `{status, trend, baseline, change}`; see
+  "Answer-family extension trigger" below for the rule that governs growth.
+- `DependencyDeclaration`, `ResolutionRequest`, `ResolvedInput`,
+  `resolve_dependency`, `SEMANTIC_DOMAINS`, `@resolver(domain=...)`, and
+  `RESOLVERS` (`premura.engine`) — the input-resolution seam. All are
+  re-exported from `premura.engine`; consumers must reach them through
+  `from premura.engine import ...` rather than the private
+  `premura.engine._resolution` module.
 
 ## What kinds of Stage 2 functions belong here
 
@@ -105,6 +120,58 @@ satisfied by meaning, not by table shape. The worked examples (BMI, a
 protein-intake summary, a supplement-adherence summary) live in that dependency
 contract.
 
+## Declaring dependencies through the input-resolution seam
+
+The seam that turns a declared prerequisite into a resolved value is the Stage 2
+**input-resolution seam**. It is the next analytical foundation — domain-aware
+resolution of *declared* inputs, not a universal prepared-series layer that
+quietly collapses every domain into observation-shaped time series.
+
+A consumer declares one dependency with `DependencyDeclaration(consumer_name,
+depends_on_domain, required_key, failure_mode)` and asks for its value via
+`resolve_dependency(conn, ResolutionRequest(anchor_ts=..., dependency=...))`.
+The seam returns a `ResolvedInput` whose `usable` flag and `absence_reason`
+encode honest-refusal context; resolvers never raise for ordinary missing data.
+
+Dispatch is **registry-driven**, not an `if`/`elif` chain. `RESOLVERS` is the
+static in-tree map from semantic domain to resolver function, populated by the
+`@resolver(domain=...)` decorator. The four valid `SEMANTIC_DOMAINS` are:
+
+- `observation_history` — concrete resolver shipped (`premura.engine.views.observation`).
+- `profile_context` — concrete resolver shipped (`premura.engine.views.profile`).
+- `nutrition_intake` — valid declaration target; resolves to
+  `usable=False, absence_reason="unsupported_domain"` until a future mission
+  ships a concrete resolver backed by real rows.
+- `supplement_intake` — valid declaration target; same explicit
+  `unsupported_domain` outcome until a future mission ships its resolver.
+
+Dispatch is **open** by design: adding a new supported domain means landing one
+new module under `premura/engine/views/` that registers itself through
+`@resolver(domain=...)` and appending its dotted name to
+`_BUILTIN_RESOLVER_MODULES`. Existing resolvers are not touched. There is no
+filesystem scanning and no third-party plugin loader.
+
+Consumers **must** go through `resolve_dependency` for cross-domain inputs.
+Reaching directly into `_query.py`, observation-history SQL, or
+`hp.profile_context_assertion` from a cross-domain consumer bypasses the seam
+and reintroduces the silent-coercion failure mode the seam exists to prevent.
+
+### Answer-family extension trigger
+
+`RESULT_FAMILIES` is **closed** in this mission to `{status, trend, baseline,
+change}`. A new family is added only when both of the following hold:
+
+1. A desired answer genuinely cannot be honestly mapped onto status, trend,
+   baseline, or change. Repackaging is not a trigger — if a question can be
+   answered as one of the existing families with adjusted wording, prefer that.
+2. The new question shape itself has been approved through a dedicated planning
+   mission with its own spec, plan, and reviewer sign-off. Adding a family is a
+   contract change, not a code-style preference.
+
+Cosmetic packaging concerns (a nicer output struct, a more compact field set)
+are not triggers. Likewise, multi-domain inputs alone do not motivate a new
+family: BMI is multi-domain and ships under the existing `status` family.
+
 ## Caveats that must be named
 
 - Vendor-estimated metrics (e.g. sleep stages, HRV) must carry an
@@ -122,13 +189,15 @@ contract.
 - No statistical-significance claims: no p-values, confidence intervals, or
   causal language (especially in the `change` family).
 - A `trend` direction is plain direction only — never "significant" change.
-- Do not depend on profile or intake context opportunistically. No shipped
-  Stage 2 signal consumes profile/intake data today; profile-dependent answers
-  (e.g. BMI, age-adjusted interpretation) remain deferred. A future signal that
-  needs such context must **declare** the prerequisite explicitly (see "Declaring
-  profile and intake prerequisites" above) and must never silently substitute a
-  measurement that happens to be present for a declared profile/intake
-  dependency.
+- Do not depend on profile or intake context opportunistically. BMI now ships
+  as the first cross-domain Stage 2 proof consumer (`name="bmi"`, family
+  `status`) and resolves declared height plus weight through the
+  input-resolution seam; age-adjusted interpretation remains deferred. Any
+  further signal that needs profile or intake context must **declare** the
+  prerequisite explicitly (see "Declaring profile and intake prerequisites"
+  and "Declaring dependencies through the input-resolution seam" above) and
+  must never silently substitute a measurement that happens to be present for
+  a declared profile/intake dependency.
 
 ## Built-in loading
 

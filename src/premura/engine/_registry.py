@@ -2,11 +2,22 @@
 
 This module defines the data shape that signal functions register against.
 Importing this module never imports any actual signal implementation.
+
+It also hosts the Stage 2 **resolver registry** (:data:`RESOLVERS` and the
+:func:`resolver` decorator) — the static in-tree dispatch map from semantic
+domain to a concrete input resolver. The resolver registry deliberately mirrors
+the signal registry shape so contributors learn one extension pattern, but the
+two registries are independent: signals answer Stage 2 questions, resolvers
+turn declared dependencies into resolved inputs for those answers.
 """
 from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ._resolution import Resolver
 
 
 @dataclass(frozen=True)
@@ -148,6 +159,72 @@ def signal(
             missing_input_hint=missing_input_hint,
             caveat_summary=tuple(caveat_summary),
         )
+        return fn
+
+    return deco
+
+
+# ---------------------------------------------------------------------------
+# Stage 2 resolver registry (WP01)
+# ---------------------------------------------------------------------------
+#
+# The resolver registry maps one semantic domain (e.g. ``"observation_history"``)
+# to the resolver function responsible for turning a declared dependency on
+# that domain into a :class:`ResolvedInput`. It is the structural twin of
+# :data:`REGISTRY` above: signals register answers; resolvers register the
+# input-resolution behavior those answers depend on.
+#
+# Importing this module does NOT import any resolver implementation. The
+# registry is empty until concrete resolver modules opt into registration
+# through :func:`resolver` (typically via the lazy
+# :func:`premura.engine._ensure_builtin_resolvers_loaded` loader, which mirrors
+# the signal loader).
+
+RESOLVERS: dict[str, Resolver] = {}
+"""Module-level resolver registry, keyed by semantic-domain string.
+
+Empty at import time; populated by ``@resolver(domain=...)`` decorators when
+resolver implementation modules (under ``premura.engine.views``) are imported.
+WP01 ships this surface empty; WP02 lands concrete observation and profile
+resolvers. Unsupported-but-declarable domains (``nutrition_intake``,
+``supplement_intake``) intentionally have no entry here — they resolve via the
+fall-through ``unsupported_domain`` outcome in
+:func:`premura.engine._resolution.resolve_dependency`.
+"""
+
+
+def resolver(*, domain: str) -> Callable[[Resolver], Resolver]:
+    """Register a resolver function for one semantic domain.
+
+    Usage::
+
+        from premura.engine import resolver
+
+        @resolver(domain="observation_history")
+        def resolve_observation(conn, request):
+            ...
+
+    The decorator validates that ``domain`` is a known semantic domain (one of
+    :data:`premura.engine._resolution.SEMANTIC_DOMAINS`), stores the function
+    under ``RESOLVERS[domain]``, and returns the function unchanged so it can
+    still be called directly in unit tests.
+
+    Re-registering the same ``domain`` overwrites the previous entry; this
+    matches the signal registry's "last write wins" convention. Reviewers catch
+    accidental collisions at PR time.
+    """
+    # Local import to avoid a circular import: _resolution imports SignalSpec
+    # types only at TYPE_CHECKING time, but SEMANTIC_DOMAINS is a runtime
+    # constant defined in _resolution.
+    from ._resolution import SEMANTIC_DOMAINS
+
+    if domain not in SEMANTIC_DOMAINS:
+        raise ValueError(
+            f"resolver domain {domain!r} must be one of {sorted(SEMANTIC_DOMAINS)}"
+        )
+
+    def deco(fn: Resolver) -> Resolver:
+        RESOLVERS[domain] = fn
         return fn
 
     return deco

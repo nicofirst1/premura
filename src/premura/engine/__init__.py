@@ -36,7 +36,15 @@ from datetime import UTC, datetime, timedelta
 from importlib import import_module
 from typing import TYPE_CHECKING, Any
 
-from ._registry import REGISTRY, RESULT_FAMILIES, SignalSpec, signal
+from ._registry import REGISTRY, RESOLVERS, RESULT_FAMILIES, SignalSpec, resolver, signal
+from ._resolution import (
+    SEMANTIC_DOMAINS,
+    DependencyDeclaration,
+    ResolutionRequest,
+    ResolvedInput,
+    Resolver,
+)
+from ._resolution import resolve_dependency as _resolve_dependency
 from ._results import (
     BaselineComparisonResult,
     ChangeAroundDateResult,
@@ -75,6 +83,30 @@ _BUILTIN_SIGNAL_MODULES: tuple[str, ...] = (
 # ``_BUILTIN_SIGNAL_MODULES`` imports and registers successfully.
 _BUILTINS_LOADED: bool = False
 
+# Static list of built-in resolver modules, in load order. Each module must
+# register its resolvers as a side effect of import (via the @resolver(...)
+# decorator from :mod:`premura.engine._registry`). Importing
+# ``premura.engine`` does NOT import any of these — they are loaded lazily by
+# :func:`_ensure_builtin_resolvers_loaded` the first time a caller resolves a
+# dependency.
+#
+# WP02 populates this with the two concrete in-tree resolver modules. Each
+# module registers its resolver as a side effect of import via the
+# ``@resolver(domain=...)`` decorator. Adding a new supported domain in a
+# future mission means landing one new module under ``views/`` and appending
+# its dotted name here — no filesystem scanning, no entry points.
+_BUILTIN_RESOLVER_MODULES: tuple[str, ...] = (
+    "premura.engine.views.observation",
+    "premura.engine.views.profile",
+)
+
+# Tracks whether the built-in resolver modules have been imported and
+# registered. Mirrors ``_BUILTINS_LOADED`` above and is similarly decoupled
+# from ``RESOLVERS`` truthiness: a test may register a custom resolver before
+# the first lazy load, and that must NOT be mistaken for "built-ins already
+# loaded" (which would silently suppress every built-in resolver).
+_RESOLVERS_LOADED: bool = False
+
 __all__ = [
     "REGISTRY",
     "RESULT_FAMILIES",
@@ -89,6 +121,15 @@ __all__ = [
     "list_metric_ids",
     "list_metric_catalog",
     "metric_summary",
+    # Stage 2 input-resolution seam (WP01)
+    "SEMANTIC_DOMAINS",
+    "DependencyDeclaration",
+    "ResolutionRequest",
+    "ResolvedInput",
+    "Resolver",
+    "RESOLVERS",
+    "resolver",
+    "resolve_dependency",
     # Result envelopes (premura.engine._results)
     "FreshnessState",
     "TrendDirection",
@@ -102,6 +143,36 @@ __all__ = [
     "MetricCatalogEntry",
     "MetricSummaryEntry",
 ]
+
+
+def resolve_dependency(
+    conn: duckdb.DuckDBPyConnection | None,
+    request: ResolutionRequest,
+) -> ResolvedInput:
+    """Resolve one declared dependency through the static resolver registry.
+
+    This is the public Stage 2 input-resolution seam. It is intentionally the
+    only resolution entrypoint callers should import — tests, consumers, and
+    downstream WPs all reach it through ``from premura.engine import
+    resolve_dependency`` rather than poking ``premura.engine._resolution``
+    directly.
+
+    Behavior is identical to :func:`premura.engine._resolution.resolve_dependency`
+    with one wrapper responsibility: ensure the built-in resolver modules
+    listed in :data:`_BUILTIN_RESOLVER_MODULES` are imported and registered
+    before dispatch happens. This mirrors how :func:`compute` lazily loads the
+    built-in signal modules.
+
+    Resolution outcomes:
+
+    * Unknown semantic domain → :class:`ValueError`.
+    * Known domain with no registered resolver → :class:`ResolvedInput` with
+      ``usable=False`` and ``absence_reason="unsupported_domain"``.
+    * Known domain with a registered resolver → the resolver's
+      :class:`ResolvedInput`.
+    """
+    _ensure_builtin_resolvers_loaded()
+    return _resolve_dependency(conn, request)
 
 
 def compute(spec_name: str, conn: duckdb.DuckDBPyConnection) -> object:
@@ -360,6 +431,32 @@ def _ensure_builtin_signals_loaded() -> None:
     # Only mark loaded after every module imported and registered without
     # error, so a failed import does not leave the flag wrongly true.
     _BUILTINS_LOADED = True
+
+
+def _ensure_builtin_resolvers_loaded() -> None:
+    """Lazily import every module in :data:`_BUILTIN_RESOLVER_MODULES`.
+
+    Resolver modules under ``premura.engine.views`` register themselves as a
+    side effect of import (via the ``@resolver(domain=...)`` decorator from
+    :mod:`premura.engine._registry`). Unlike the signal modules, they do not
+    expose a separate ``register_builtin_signals()`` hook — registration
+    happens at import time, in line with how the resolver registry is
+    designed.
+
+    Idempotent: the ``_RESOLVERS_LOADED`` flag short-circuits subsequent calls.
+    The flag is only flipped to ``True`` after every module imports without
+    error, so a failed import does not leave it wrongly set.
+
+    WP02 fills ``_BUILTIN_RESOLVER_MODULES`` with the concrete observation and
+    profile resolver modules; each registers a resolver as a side effect of
+    being imported here.
+    """
+    global _RESOLVERS_LOADED
+    if _RESOLVERS_LOADED:
+        return
+    for module_name in _BUILTIN_RESOLVER_MODULES:
+        import_module(module_name)
+    _RESOLVERS_LOADED = True
 
 
 def _persist_derived_rows(

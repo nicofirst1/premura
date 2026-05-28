@@ -44,9 +44,12 @@ Two things follow from that, and they matter for review:
   **agent-mediated capture** path; nutrition and supplement intake have real
   **storage and a normalized load path**, but **no built-in importer for any
   specific nutrition/supplement source ships** — adapting a particular source
-  into these tables is follow-on parser/plugin work. No profile-dependent Stage 2
-  answer (BMI, age-adjusted interpretation) ships either. What is and is not built
-  is itemized under "Concrete storage now exists" and "What stays deferred".
+  into these tables is follow-on parser/plugin work. The first cross-domain
+  Stage 2 consumer — **BMI** — now ships as a proof consumer of the
+  input-resolution seam (declared height from profile context plus weight from
+  observation history); age-adjusted interpretation remains deferred. What is
+  and is not built is itemized under "Concrete storage now exists" and "What
+  stays deferred".
 
 ## The three new domains
 
@@ -113,6 +116,62 @@ branded product whose full ingredient breakdown is unknown, a single named
 ingredient, or a multi-ingredient stack. The model preserves the **dose that was
 actually taken** even when the underlying ingredients are not all known, and it
 never fabricates an ingredient list from a brand name alone.
+
+> **Declarable today, resolved later.** `nutrition_intake` and
+> `supplement_intake` are valid declaration targets in the Stage 2
+> input-resolution surface **today**: a future consumer may name them in a
+> `DependencyDeclaration`, and the seam will accept the declaration. The
+> declaration resolves to an explicit `unsupported_domain` outcome
+> (`usable=False`, `absence_reason="unsupported_domain"`) until a future mission
+> ships a concrete resolver backed by real parser-produced rows. The contract is
+> deliberately strict here: the declaration surface stays open, but unresolved
+> domains do not silently fall back into observation history.
+
+## Domain-vs-shape rubric
+
+Future contributors will keep finding new kinds of data and asking the same
+question: **is this a new SEMANTIC DOMAIN, or a new SHAPE inside an existing
+domain?** The answer governs whether a new resolver is needed at all. The
+rubric:
+
+1. **A new domain has a distinct MEANING contract.** Observation history is
+   timestamped, source-provenanced facts a device or lab measured. Profile
+   context is a declared assertion with an effective time (the operator's
+   account of themselves). Nutrition and supplement intake are events with
+   attached quantities (what was consumed and how much). If a proposed data
+   type does not fit any of these meaning shapes, it is a candidate for a new
+   domain. If it does fit one of them, it is not.
+2. **Temporal shape alone is NOT a domain.** "This data is episodic," "this
+   data arrives in bursts," "this data is denser than weight observations" —
+   none of these is enough. Sparse blood-marker rows and dense wearable rows
+   are both observation history because they share the observation meaning
+   contract. A new sampling cadence is a `dim_metric` policy concern, not a
+   domain concern.
+3. **Numeric value alone is NOT a domain.** A number can fit profile context
+   (a declared standing height), observation history (a smart scale's measured
+   height), or a nutrition fact (a meal's `energy_kcal`). The same numeric
+   shape may belong in any of three domains depending on what the number
+   *means*. The model already enumerates the canonical worked example of this
+   ambiguity (declared height vs measured height) and keeps them apart.
+4. **A new domain must support a NEW QUESTION TYPE.** A genuinely new domain
+   unlocks a question none of the existing domains can answer honestly. If the
+   same question can be answered by adding a new `metric_id` under
+   `observation_history`, prefer that — registering a metric is much cheaper
+   than declaring a fifth semantic domain. Domains are the bounded surface;
+   metrics are the unbounded one.
+5. **When in doubt, propose it through a planning mission**, not by adding a
+   domain string. The four-domain set
+   (`observation_history`, `profile_context`, `nutrition_intake`,
+   `supplement_intake`) is the bounded semantic surface. Extending it is a
+   contract change, not a code style preference; it requires its own spec,
+   plan, and reviewer sign-off.
+
+These rules also govern whether a proposal needs a **new resolver**. A new
+resolver is added only when a new (or existing-but-not-yet-resolved) declared
+semantic domain is involved. Adding a metric, adjusting a freshness window,
+or shipping a new Stage 2 answer over already-resolved domains does *not*
+require a new resolver — it goes through the existing observation or profile
+resolver.
 
 ## How these differ from observation history and note history
 
@@ -259,15 +318,24 @@ parser/plugin follow-on work named below.
 
 ## What stays deferred
 
-Storage and the agent-mediated profile-capture path now ship. Explicitly still
-deferred to later missions:
+Storage and the agent-mediated profile-capture path now ship. The Stage 2
+**input-resolution seam** is also now wired (see
+[`src/premura/engine/_resolution.py`](../../src/premura/engine/_resolution.py)
+and `src/premura/engine/CONTRACT.md`'s "Declaring dependencies through the
+input-resolution seam"): observation history and profile context have concrete
+resolvers, and **BMI ships as the first cross-domain Stage 2 proof consumer**
+that uses them. What is **still** deferred to later missions:
 
 - parsers/plugins that adapt a specific nutrition or supplement source into the
   intake tables (there is a load path and a normalized seam, but no built-in
   importer for any particular source),
-- any new Stage 2 signal or Stage 3 MCP tool that *consumes* these domains —
-  BMI and age-adjusted interpretation included (`age` remains derived, never
-  stored),
+- concrete resolvers for `nutrition_intake` and `supplement_intake` (the
+  declarations stay valid in the seam today; they currently return an explicit
+  `unsupported_domain` outcome rather than being silently coerced into another
+  domain),
+- further profile-dependent Stage 2 signals beyond BMI — **age-adjusted
+  interpretation** remains the next deferred candidate (`age` remains derived
+  from `birth_date`, never stored),
 - user-facing teaching copy for the captured domains.
 
 When those missions run, the open questions should be implementation and workflow

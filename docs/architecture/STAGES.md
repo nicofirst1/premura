@@ -53,7 +53,11 @@ Deterministic Python functions that turn raw rows into *answerable* signals. Thi
 - `sleep_deep_pct_baseline` — latest deep-sleep percentage versus the user's **own** recent normal (baseline).
 - `hrv_change_around_date` — plain before/after average of overnight HRV around a user-named date (change).
 
-These are **descriptive and comparative only**: no reference ranges, no diagnosis, no statistical significance, no causation. A `change` answer never reports a p-value or implies the named date caused anything; a `baseline` is the user's own history, never a population norm. They refuse to answer (stale / unavailable / insufficient data) rather than present a misleading result. Profile-dependent answers (e.g. BMI, age-adjusted interpretation) are **not** here — they remain deferred as future implementation over the profile/intake contract, whose semantic boundary is now settled (see [PROFILE_AND_INTAKE_CONTRACT.md](PROFILE_AND_INTAKE_CONTRACT.md)).
+These are **descriptive and comparative only**: no reference ranges, no diagnosis, no statistical significance, no causation. A `change` answer never reports a p-value or implies the named date caused anything; a `baseline` is the user's own history, never a population norm. They refuse to answer (stale / unavailable / insufficient data) rather than present a misleading result. **BMI now ships as the first cross-domain Stage 2 proof consumer** using the input-resolution seam (see "Input-resolution seam" below); age-adjusted interpretation remains deferred as future implementation over the profile/intake contract, whose semantic boundary is now settled (see [PROFILE_AND_INTAKE_CONTRACT.md](PROFILE_AND_INTAKE_CONTRACT.md)).
+
+**Input-resolution seam.** Stage 2's next foundation is **domain-aware input resolution**, not a universal prepared-series layer. A Stage 2 consumer declares one dependency per `DependencyDeclaration(consumer_name, depends_on_domain, required_key, failure_mode)` and asks for its value via `resolve_dependency(conn, ResolutionRequest(...))` (both re-exported from `premura.engine`). Dispatch is registry-driven through `RESOLVERS`, populated by the `@resolver(domain=...)` decorator. Four `SEMANTIC_DOMAINS` are valid in declarations — `observation_history`, `profile_context`, `nutrition_intake`, `supplement_intake` — but only the first two have concrete resolvers shipped in this mission; the other two return an explicit `usable=False, absence_reason="unsupported_domain"` outcome until a future mission ships their resolvers. Adding a new supported domain means landing one new module under `premura/engine/views/` and appending its dotted name to `_BUILTIN_RESOLVER_MODULES`, without touching existing dispatch.
+
+**Answer-family closure.** The Stage 2 `RESULT_FAMILIES` set (`status`, `trend`, `baseline`, `change`) stays **closed** in this mission. A new family is added only when a desired answer cannot be honestly mapped onto one of the four AND the question shape itself is approved through a dedicated planning mission. Resolver dispatch is open; answer families are not.
 
 Four families of function:
 
@@ -137,11 +141,16 @@ semantic domains, fixed in
 > storage (migration `004_profile_intake.sql`, dedicated `hp.*` tables) and an
 > **agent-mediated profile-capture** path, without adding a stage. What ships:
 > bounded profile capture through MCP/CLI tools, and storage + a normalized load
-> path for nutrition/supplement intake. What does **not** ship: any built-in
-> importer for a specific nutrition/supplement source (that stays parser/plugin
-> follow-on work), and any profile-dependent Stage 2 answer (BMI, age-adjusted
-> interpretation). Do not infer a built-in nutrition importer from the existence
-> of the intake tables.
+> path for nutrition/supplement intake. **BMI now ships** as the first
+> cross-domain Stage 2 proof consumer using the input-resolution seam. What
+> does **not** ship: any built-in importer for a specific nutrition/supplement
+> source (that stays parser/plugin follow-on work), concrete resolvers for the
+> intake domains (declarations against `nutrition_intake` or
+> `supplement_intake` remain valid but currently resolve to an explicit
+> `unsupported_domain` outcome — they are not silently coerced into
+> observations), and further profile-dependent Stage 2 answers beyond BMI
+> (age-adjusted interpretation is the next deferred candidate). Do not infer a
+> built-in nutrition importer from the existence of the intake tables.
 
 ### Where the new domains sit relative to observations and notes
 
@@ -156,11 +165,16 @@ today, but the data is *meant* differently:
   (`persist_intake_batch`), but a parser that adapts a *specific* source into it
   is still follow-on work; no built-in importer ships.
 - **Stage 2 (Signal processing)** may *read* profile/intake context to answer a
-  question, but only by **declaring** that dependency explicitly (see
+  question, but only by **declaring** that dependency explicitly through the
+  input-resolution seam (see
   [PROFILE_AND_INTAKE_CONTRACT.md](PROFILE_AND_INTAKE_CONTRACT.md), "How future
   functions declare what they need", and `src/premura/engine/CONTRACT.md`).
-  Nothing in Stage 2 consumes these domains today; BMI and age-adjusted
-  interpretation remain deferred (and `age` stays derived, never stored).
+  BMI is the first Stage 2 consumer that uses this seam (declared height from
+  profile context plus weight from observation history); age-adjusted
+  interpretation remains deferred, and `age` stays derived, never stored.
+  `nutrition_intake` and `supplement_intake` remain **valid declaration
+  targets** but currently resolve to an explicit `unsupported_domain` outcome
+  — they are not silently coerced into observations.
 - **Stages 3–4 (MCP, UI)** surface whatever Stage 2 produces and **also host the
   agent-mediated profile-capture write path**: the default MCP surface exposes
   `profile_context_supported_fields` / `profile_context_record`, mirrored by the
