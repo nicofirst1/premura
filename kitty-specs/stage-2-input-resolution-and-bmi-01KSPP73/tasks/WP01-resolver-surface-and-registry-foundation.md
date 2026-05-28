@@ -10,7 +10,9 @@ requirement_refs:
 planning_base_branch: master
 merge_target_branch: master
 branch_strategy: Planning artifacts for this feature were generated on master. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into master unless the human explicitly redirects the landing branch.
-created_at: '2026-05-28T08:13:11Z'
+base_branch: kitty/mission-stage-2-input-resolution-and-bmi-01KSPP73
+base_commit: 06f17df200337f8492558ab697ba7f1a65294509
+created_at: '2026-05-28T08:22:16.358543+00:00'
 subtasks:
 - T001
 - T002
@@ -18,6 +20,7 @@ subtasks:
 - T004
 - T005
 agent: ''
+shell_pid: '84126'
 history:
 - timestamp: '2026-05-28T08:13:11Z'
   agent: gpt-5.4
