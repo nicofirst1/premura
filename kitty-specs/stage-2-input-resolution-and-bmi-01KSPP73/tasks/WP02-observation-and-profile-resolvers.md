@@ -200,3 +200,4 @@ Ask:
 
 - 2026-05-28T08:13:11Z – gpt-5.4 – Prompt generated via /spec-kitty.tasks
 - 2026-05-28T08:41:28Z – claude:opus-4.7:python-implementer:implementer – shell_pid=56464 – Started implementation via action command
+- 2026-05-28T09:04:50Z – claude:opus-4.7:python-implementer:implementer – shell_pid=56464 – Ready: observation + profile-as-of resolvers, anchor-time-aware, no-hidden-fallback locked by tests. NOTE: 3 WP01-locked tests in test_engine_input_resolution_surface.py now fail by construction (test_wp01_ships_no_builtin_resolvers_yet plus 2 parametrized cases of test_every_declared_domain_falls_through_to_unsupported_in_wp01[observation_history|profile_context]); these specifically locked the WP01 'no resolvers yet' state and are obsoleted by WP02 per resolver-registry-surface.yaml initial_supported_domains. Surfaced rather than worked around.
