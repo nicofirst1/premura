@@ -1,16 +1,16 @@
 {
-  "event_count": 25,
-  "last_event_id": "01KSQ4BK38V9QQP8XQ1BYAEW7B",
-  "materialized_at": "2026-05-28T11:08:48.616903+00:00",
+  "event_count": 26,
+  "last_event_id": "01KSQ4BMQ4FK8J53E04FXR89A5",
+  "materialized_at": "2026-05-28T11:08:50.276168+00:00",
   "mission_number": "8",
   "mission_slug": "stage-2-input-resolution-and-bmi-01KSPP73",
   "mission_type": "software-dev",
   "summary": {
-    "approved": 3,
+    "approved": 2,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
-    "done": 1,
+    "done": 2,
     "for_review": 0,
     "in_progress": 0,
     "in_review": 0,
@@ -26,10 +26,10 @@
     },
     "WP02": {
       "actor": "user",
-      "force_count": 1,
-      "lane": "approved",
-      "last_event_id": "01KSPY1ZB2Z62Z7STK6G515G2W",
-      "last_transition_at": "2026-05-28T09:18:42.018053+00:00"
+      "force_count": 2,
+      "lane": "done",
+      "last_event_id": "01KSQ4BMQ4FK8J53E04FXR89A5",
+      "last_transition_at": "2026-05-28T11:08:50.276168+00:00"
     },
     "WP03": {
       "actor": "user",
