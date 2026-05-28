@@ -19,8 +19,8 @@ subtasks:
 - T003
 - T004
 - T005
-agent: "claude:opus-4.7:python-implementer:implementer"
-shell_pid: "84126"
+agent: "claude:opus-4.7:python-reviewer:reviewer"
+shell_pid: "34226"
 history:
 - timestamp: '2026-05-28T08:13:11Z'
   agent: gpt-5.4
@@ -238,3 +238,4 @@ Ask:
 - 2026-05-28T08:13:11Z – gpt-5.4 – Prompt generated via /spec-kitty.tasks
 - 2026-05-28T08:22:17Z – claude:opus-4.7:python-implementer:implementer – shell_pid=84126 – Assigned agent via action command
 - 2026-05-28T08:32:37Z – claude:opus-4.7:python-implementer:implementer – shell_pid=84126 – Ready for review: resolver surface + registry + public re-exports + black-box tests; resolvers populated in WP02
+- 2026-05-28T08:33:29Z – claude:opus-4.7:python-reviewer:reviewer – shell_pid=34226 – Started review via action command
