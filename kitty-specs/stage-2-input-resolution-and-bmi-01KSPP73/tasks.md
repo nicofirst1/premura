@@ -41,10 +41,10 @@
 | T011 | Implement BMI as a Stage 2 proof consumer that resolves declared height from profile context and weight from observation history. | WP03 |  | [D] |
 | T012 | Ensure BMI returns explicit refusal or missing-input outcomes when declared profile height is absent, stale, or unsupported or when weight is stale or absent. | WP03 |  | [D] |
 | T013 | Add end-to-end proof coverage that BMI uses the new resolver seam and that unresolved intake domains do not interfere with the BMI flow. | WP03 |  | [D] |
-| T014 | Update `src/premura/engine/CONTRACT.md` so the Stage 2 boundary is framed as domain-aware input resolution and the trigger for extending answer families is explicit. | WP04 | [P] |
-| T015 | Update `docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md` with the domain-vs-shape rubric for future domain proposals. | WP04 | [P] |
-| T016 | Update `docs/architecture/STAGES.md` and `docs/operations/STATUS.md` so the shipped Stage 2 foundation and BMI proof consumer are described accurately, including the still-unresolved intake domains. | WP04 | [P] |
-| T017 | Update `docs/product/ROADMAP.md` and `docs/product/FULL_APP_DEVELOPMENT_PLAN.md` so future analytical planning starts from domain-aware input resolution instead of prepared-series language. | WP04 | [P] |
+| T014 | Update `src/premura/engine/CONTRACT.md` so the Stage 2 boundary is framed as domain-aware input resolution and the trigger for extending answer families is explicit. | WP04 | [D] |
+| T015 | Update `docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md` with the domain-vs-shape rubric for future domain proposals. | WP04 | [D] |
+| T016 | Update `docs/architecture/STAGES.md` and `docs/operations/STATUS.md` so the shipped Stage 2 foundation and BMI proof consumer are described accurately, including the still-unresolved intake domains. | WP04 | [D] |
+| T017 | Update `docs/product/ROADMAP.md` and `docs/product/FULL_APP_DEVELOPMENT_PLAN.md` so future analytical planning starts from domain-aware input resolution instead of prepared-series language. | WP04 | [D] |
 
 ## Work Packages
 
@@ -166,10 +166,10 @@ Reviewer focus:
 - Estimated prompt size: ~260 lines
 
 Included subtasks:
-- [ ] T014 Update `src/premura/engine/CONTRACT.md` so the Stage 2 boundary is framed as domain-aware input resolution and the trigger for extending answer families is explicit. (WP04)
-- [ ] T015 Update `docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md` with the domain-vs-shape rubric for future domain proposals. (WP04)
-- [ ] T016 Update `docs/architecture/STAGES.md` and `docs/operations/STATUS.md` so the shipped Stage 2 foundation and BMI proof consumer are described accurately, including the still-unresolved intake domains. (WP04)
-- [ ] T017 Update `docs/product/ROADMAP.md` and `docs/product/FULL_APP_DEVELOPMENT_PLAN.md` so future analytical planning starts from domain-aware input resolution instead of prepared-series language. (WP04)
+- [x] T014 Update `src/premura/engine/CONTRACT.md` so the Stage 2 boundary is framed as domain-aware input resolution and the trigger for extending answer families is explicit. (WP04)
+- [x] T015 Update `docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md` with the domain-vs-shape rubric for future domain proposals. (WP04)
+- [x] T016 Update `docs/architecture/STAGES.md` and `docs/operations/STATUS.md` so the shipped Stage 2 foundation and BMI proof consumer are described accurately, including the still-unresolved intake domains. (WP04)
+- [x] T017 Update `docs/product/ROADMAP.md` and `docs/product/FULL_APP_DEVELOPMENT_PLAN.md` so future analytical planning starts from domain-aware input resolution instead of prepared-series language. (WP04)
 
 Implementation sketch:
 1. Update the engine contract first so future contributors see the corrected boundary in the most code-adjacent guidance.
