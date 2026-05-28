@@ -28,11 +28,11 @@
 
 | ID | Description | WP | Parallel |
 |---|---|---|---|
-| T001 | Add failing public-interface tests that define the Stage 2 input-resolution surface and prove unsupported future domains fail explicitly rather than being coerced into another domain. | WP01 |  |
-| T002 | Add the shared declared-input resolution entrypoint and supporting types so Stage 2 consumers can resolve dependencies by semantic domain and anchor time. | WP01 |  |
-| T003 | Add a static built-in resolver registry pattern that mirrors the existing signal-registry shape without introducing dynamic discovery. | WP01 |  |
-| T004 | Wire the public engine surface so the new resolution seam is reachable through existing public imports rather than private helper paths. | WP01 |  |
-| T005 | Finish foundation coverage for registry dispatch, unsupported-domain behavior, and public-surface determinism. | WP01 |  |
+| T001 | Add failing public-interface tests that define the Stage 2 input-resolution surface and prove unsupported future domains fail explicitly rather than being coerced into another domain. | WP01 |  | [D] |
+| T002 | Add the shared declared-input resolution entrypoint and supporting types so Stage 2 consumers can resolve dependencies by semantic domain and anchor time. | WP01 |  | [D] |
+| T003 | Add a static built-in resolver registry pattern that mirrors the existing signal-registry shape without introducing dynamic discovery. | WP01 |  | [D] |
+| T004 | Wire the public engine surface so the new resolution seam is reachable through existing public imports rather than private helper paths. | WP01 |  | [D] |
+| T005 | Finish foundation coverage for registry dispatch, unsupported-domain behavior, and public-surface determinism. | WP01 |  | [D] |
 | T006 | Add failing public-interface tests for observation-history resolution, including anchor-time freshness and honest missing/stale behavior. | WP02 |  |
 | T007 | Implement the observation resolver by reusing existing `_query.py` policy and freshness helpers rather than re-querying ad hoc. | WP02 |  |
 | T008 | Implement the profile-as-of resolver over shipped profile assertions with latest-valid-as-of semantics. | WP02 |  |
@@ -59,11 +59,11 @@
 - Estimated prompt size: ~320 lines
 
 Included subtasks:
-- [ ] T001 Add failing public-interface tests that define the Stage 2 input-resolution surface and prove unsupported future domains fail explicitly rather than being coerced into another domain. (WP01)
-- [ ] T002 Add the shared declared-input resolution entrypoint and supporting types so Stage 2 consumers can resolve dependencies by semantic domain and anchor time. (WP01)
-- [ ] T003 Add a static built-in resolver registry pattern that mirrors the existing signal-registry shape without introducing dynamic discovery. (WP01)
-- [ ] T004 Wire the public engine surface so the new resolution seam is reachable through existing public imports rather than private helper paths. (WP01)
-- [ ] T005 Finish foundation coverage for registry dispatch, unsupported-domain behavior, and public-surface determinism. (WP01)
+- [x] T001 Add failing public-interface tests that define the Stage 2 input-resolution surface and prove unsupported future domains fail explicitly rather than being coerced into another domain. (WP01)
+- [x] T002 Add the shared declared-input resolution entrypoint and supporting types so Stage 2 consumers can resolve dependencies by semantic domain and anchor time. (WP01)
+- [x] T003 Add a static built-in resolver registry pattern that mirrors the existing signal-registry shape without introducing dynamic discovery. (WP01)
+- [x] T004 Wire the public engine surface so the new resolution seam is reachable through existing public imports rather than private helper paths. (WP01)
+- [x] T005 Finish foundation coverage for registry dispatch, unsupported-domain behavior, and public-surface determinism. (WP01)
 
 Implementation sketch:
 1. Start by writing failing public-interface tests that define what it means to resolve a declared dependency at an anchor time.
