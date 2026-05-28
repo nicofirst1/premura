@@ -37,10 +37,10 @@
 | T007 | Implement the observation resolver by reusing existing `_query.py` policy and freshness helpers rather than re-querying ad hoc. | WP02 |  | [D] |
 | T008 | Implement the profile-as-of resolver over shipped profile assertions with latest-valid-as-of semantics. | WP02 |  | [D] |
 | T009 | Extend resolver coverage to prove there is no hidden fallback from measured height when a declared profile height is required. | WP02 |  | [D] |
-| T010 | Add failing public-interface tests for BMI as the first cross-domain proof consumer. | WP03 |  |
-| T011 | Implement BMI as a Stage 2 proof consumer that resolves declared height from profile context and weight from observation history. | WP03 |  |
-| T012 | Ensure BMI returns explicit refusal or missing-input outcomes when declared profile height is absent, stale, or unsupported or when weight is stale or absent. | WP03 |  |
-| T013 | Add end-to-end proof coverage that BMI uses the new resolver seam and that unresolved intake domains do not interfere with the BMI flow. | WP03 |  |
+| T010 | Add failing public-interface tests for BMI as the first cross-domain proof consumer. | WP03 |  | [D] |
+| T011 | Implement BMI as a Stage 2 proof consumer that resolves declared height from profile context and weight from observation history. | WP03 |  | [D] |
+| T012 | Ensure BMI returns explicit refusal or missing-input outcomes when declared profile height is absent, stale, or unsupported or when weight is stale or absent. | WP03 |  | [D] |
+| T013 | Add end-to-end proof coverage that BMI uses the new resolver seam and that unresolved intake domains do not interfere with the BMI flow. | WP03 |  | [D] |
 | T014 | Update `src/premura/engine/CONTRACT.md` so the Stage 2 boundary is framed as domain-aware input resolution and the trigger for extending answer families is explicit. | WP04 | [P] |
 | T015 | Update `docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md` with the domain-vs-shape rubric for future domain proposals. | WP04 | [P] |
 | T016 | Update `docs/architecture/STAGES.md` and `docs/operations/STATUS.md` so the shipped Stage 2 foundation and BMI proof consumer are described accurately, including the still-unresolved intake domains. | WP04 | [P] |
@@ -131,10 +131,10 @@ Reviewer focus:
 - Estimated prompt size: ~280 lines
 
 Included subtasks:
-- [ ] T010 Add failing public-interface tests for BMI as the first cross-domain proof consumer. (WP03)
-- [ ] T011 Implement BMI as a Stage 2 proof consumer that resolves declared height from profile context and weight from observation history. (WP03)
-- [ ] T012 Ensure BMI returns explicit refusal or missing-input outcomes when declared profile height is absent, stale, or unsupported or when weight is stale or absent. (WP03)
-- [ ] T013 Add end-to-end proof coverage that BMI uses the new resolver seam and that unresolved intake domains do not interfere with the BMI flow. (WP03)
+- [x] T010 Add failing public-interface tests for BMI as the first cross-domain proof consumer. (WP03)
+- [x] T011 Implement BMI as a Stage 2 proof consumer that resolves declared height from profile context and weight from observation history. (WP03)
+- [x] T012 Ensure BMI returns explicit refusal or missing-input outcomes when declared profile height is absent, stale, or unsupported or when weight is stale or absent. (WP03)
+- [x] T013 Add end-to-end proof coverage that BMI uses the new resolver seam and that unresolved intake domains do not interfere with the BMI flow. (WP03)
 
 Implementation sketch:
 1. Start with failing tests that define BMI success and refusal through public Stage 2 interfaces.
