@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "mission_slug": "stage-2-input-resolution-and-bmi-01KSPP73",
+  "mission_id": "01KSPP73Q501XP9QEKHBJ8JE95",
+  "mission_branch": "kitty/mission-stage-2-input-resolution-and-bmi-01KSPP73",
+  "target_branch": "master",
+  "lanes": [
+    {
+      "lane_id": "lane-a",
+      "wp_ids": [
+        "WP01",
+        "WP02",
+        "WP03",
+        "WP04"
+      ],
+      "write_scope": [
+        "docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md",
+        "docs/architecture/STAGES.md",
+        "docs/operations/STATUS.md",
+        "docs/product/FULL_APP_DEVELOPMENT_PLAN.md",
+        "docs/product/ROADMAP.md",
+        "src/premura/engine/CONTRACT.md",
+        "src/premura/engine/__init__.py",
+        "src/premura/engine/_query.py",
+        "src/premura/engine/_registry.py",
+        "src/premura/engine/_resolution.py",
+        "src/premura/engine/descriptive_signals.py",
+        "src/premura/engine/views/__init__.py",
+        "src/premura/engine/views/observation.py",
+        "src/premura/engine/views/profile.py",
+        "tests/test_bmi_signal.py",
+        "tests/test_engine_input_resolution_surface.py",
+        "tests/test_engine_resolvers.py"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    }
+  ],
+  "computed_at": "2026-05-28T08:17:09.751969+00:00",
+  "computed_from": "dependency_graph+ownership",
+  "planning_artifact_wps": [],
+  "collapse_report": {
+    "events": [
+      {
+        "wp_a": "WP02",
+        "wp_b": "WP01",
+        "rule": "dependency",
+        "evidence": "WP02 depends on WP01"
+      },
+      {
+        "wp_a": "WP03",
+        "wp_b": "WP01",
+        "rule": "dependency",
+        "evidence": "WP03 depends on WP01"
+      },
+      {
+        "wp_a": "WP04",
+        "wp_b": "WP01",
+        "rule": "dependency",
+        "evidence": "WP04 depends on WP01"
+      }
+    ],
+    "total_merges": 3,
+    "independent_wps_collapsed": 0,
+    "by_rule": {
+      "dependency": 3
+    }
+  }
+}
