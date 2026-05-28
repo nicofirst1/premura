@@ -15,12 +15,11 @@ Public callers should always reach this surface through ``premura.engine``::
         resolve_dependency,
     )
 
-The seam ships four valid semantic domains. WP01 wires the surface but
-registers **no** concrete resolvers — every domain currently falls through to
-the explicit ``unsupported_domain`` outcome. WP02 will register concrete
-``observation_history`` and ``profile_context`` resolvers; ``nutrition_intake``
-and ``supplement_intake`` remain valid declaration targets and intentionally
-return ``unsupported_domain`` until later parser missions ship real rows.
+The seam ships four valid semantic domains. Two now have concrete resolvers:
+``observation_history`` and ``profile_context``. The other two
+(``nutrition_intake`` and ``supplement_intake``) remain valid declaration
+targets and intentionally return ``unsupported_domain`` until later parser
+missions ship real rows.
 
 Key design rules (do not relax without a new mission):
 

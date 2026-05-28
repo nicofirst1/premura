@@ -4,11 +4,10 @@ This package is the static in-tree home for the resolver implementations that
 turn declared dependencies into resolved inputs (see
 :mod:`premura.engine._resolution`).
 
-WP01 ships this package empty on purpose: it exists so WP02 can land
-``observation.py`` (observation-history resolver) and ``profile.py`` (profile-
-as-of resolver) without needing to introduce a new package at the same time as
-the resolvers. Importing :mod:`premura.engine` must NOT import any module here
-eagerly; the public surface loads them lazily via
+This package now hosts the first two concrete resolver modules:
+``observation.py`` (observation-history resolver) and ``profile.py``
+(profile-as-of resolver). Importing :mod:`premura.engine` must NOT import any
+module here eagerly; the public surface loads them lazily via
 ``_ensure_builtin_resolvers_loaded()`` the first time a caller resolves a
 dependency.
 

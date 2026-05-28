@@ -185,10 +185,10 @@ RESOLVERS: dict[str, Resolver] = {}
 
 Empty at import time; populated by ``@resolver(domain=...)`` decorators when
 resolver implementation modules (under ``premura.engine.views``) are imported.
-WP01 ships this surface empty; WP02 lands concrete observation and profile
-resolvers. Unsupported-but-declarable domains (``nutrition_intake``,
-``supplement_intake``) intentionally have no entry here — they resolve via the
-fall-through ``unsupported_domain`` outcome in
+The merged mission ships concrete observation and profile resolvers.
+Unsupported-but-declarable domains (``nutrition_intake``, ``supplement_intake``)
+intentionally have no entry here — they resolve via the fall-through
+``unsupported_domain`` outcome in
 :func:`premura.engine._resolution.resolve_dependency`.
 """
 
