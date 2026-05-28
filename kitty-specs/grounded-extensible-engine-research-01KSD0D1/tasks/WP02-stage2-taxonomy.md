@@ -62,7 +62,7 @@ Do not begin this WP until WP01's baseline artifact is available in the assigned
 ## Inputs You Should Reuse
 
 - `research/01-repo-baseline.md` from WP01
-- `docs/product/VISION.md`
+- `docs/history/product/VISION.md`
 - `docs/architecture/STAGES.md`
 - `docs/product/ROADMAP.md`
 - `docs/product/FULL_APP_DEVELOPMENT_PLAN.md`

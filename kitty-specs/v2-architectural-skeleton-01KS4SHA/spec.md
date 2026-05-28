@@ -7,12 +7,12 @@
 > **Last refined**: 2026-05-21 (post `/spec-kitty.plan` discovery)
 > **Status**: Refined Draft
 >
-> Companion to the project-wide docs: [VISION.md](../../docs/VISION.md), [STAGES.md](../../docs/STAGES.md), [SPEC.md](../../docs/SPEC.md), [PLAN.md](../../docs/PLAN.md), [STATUS.md](../../docs/STATUS.md), [ROADMAP.md](../../docs/ROADMAP.md), [FEATURE_BLOOD.md](../../docs/FEATURE_BLOOD.md), [RISK_OPPORTUNITY.md](../../docs/RISK_OPPORTUNITY.md).
+> Companion to the project-wide docs: [VISION.md](../../docs/history/product/VISION.md), [STAGES.md](../../docs/architecture/STAGES.md), [SPEC.md](../../docs/product/SPEC.md), [STATUS.md](../../docs/operations/STATUS.md), [ROADMAP.md](../../docs/product/ROADMAP.md), [RISK_OPPORTUNITY.md](../../docs/history/product/RISK_OPPORTUNITY.md).
 > Sibling handoff to a parallel agent: [V1_CLOSEOUT.md](../../docs/V1_CLOSEOUT.md).
 
 ## 1. Purpose
 
-Land the architectural skeleton for the v2 vision in [VISION.md](../../docs/VISION.md) and the four-stage data flow in [STAGES.md](../../docs/STAGES.md). After this mission merges, every future v2 work item has a *named, importable place to live*, and the contracts between stages exist as Python Protocols, dataclasses, migrations, registry shape, and skill manifests — but no behavior is added.
+Land the architectural skeleton for the v2 vision in [VISION.md](../../docs/history/product/VISION.md) and the four-stage data flow in [STAGES.md](../../docs/architecture/STAGES.md). After this mission merges, every future v2 work item has a *named, importable place to live*, and the contracts between stages exist as Python Protocols, dataclasses, migrations, registry shape, and skill manifests — but no behavior is added.
 
 The mission commits two **load-bearing federated contracts**:
 
@@ -103,7 +103,7 @@ The skeleton is **placeholder-only**: no implementations of the new v2 layers sh
 
 | ID | Constraint | Rationale | Status |
 |---|---|---|---|
-| C-001 | The `_lang/` stub's documented contract MUST specify "local-only translation; no external API calls". | [VISION.md Pillar 6](../../docs/VISION.md) — no PHI leaves the machine. | Draft |
+| C-001 | The `_lang/` stub's documented contract MUST specify "local-only translation; no external API calls". | [VISION.md Pillar 6](../../docs/history/product/VISION.md) — no PHI leaves the machine. | Draft |
 | C-002 | Existing v1 user-facing behavior for ingest/export/upload/doctor/run-monthly/gc/install-launchd and the four shipped v1 parsers MUST remain unchanged in this mission. Files under `src/premura/parsers/{health_connect,garmin_gdpr,sleep_as_android,bmt}.py`, `src/premura/{encrypt,notify,upload,dedupe,loader,config}.py`, and existing tests under `tests/test_parsers/` MAY NOT be behaviorally modified. Additive edits to `cli.py`, `store/duck.py`, `parsers/base.py`, and `dim_metric.yaml` are allowed as specified elsewhere in this spec. The existing `Parser` Protocol, `Measurement`, `Interval`, `ParseResult` symbols in `parsers/base.py` MUST remain unchanged. | v1 close-out is owned by the parallel agent ([V1_CLOSEOUT.md](../../docs/V1_CLOSEOUT.md)); scope discipline avoids regressions while allowing the skeleton's additive contracts. | Draft |
 | C-003 | No new third-party dependency MAY be added to `pyproject.toml` in this mission. | Skeleton ships zero behavior; libs (scipy, statsmodels, ruptures, mcp SDK, docling) belong to the missions that actually use them. | Draft |
 | C-004 | No CLI verbs MAY be added beyond `install-skills`. | Defers UI surface decisions to Stage 4 work. `hpipe revalidate` / `hpipe rebuild` belong to the update-strategy follow-up. | Draft |
@@ -228,7 +228,7 @@ After this mission merges and `bash ops/bootstrap.sh` runs:
 
 - **Skeleton** — placeholder modules with declared contracts but no behavior. Importing them succeeds; calling their functions raises `NotImplementedError`.
 - **Stage** — one of the four data-flow layers in [STAGES.md](../../docs/STAGES.md): Ingest, Engine (was "Signal processing"), MCP, UI.
-- **Pillar** — one of the six trajectory commitments in [VISION.md](../../docs/VISION.md).
+- **Pillar** — one of the six trajectory commitments in [VISION.md](../../docs/history/product/VISION.md).
 - **Skill** — a Claude Code skill manifest (`SKILL.md` + frontmatter). When installed under `.claude/skills/<name>/`, Claude Code discovers it.
 - **`PluginParser`** — the Protocol future community parsers implement. Adds `declares_metrics`, `language_hint`, and a `PluginParseResult` return type to the existing `Parser` contract.
 - **`SignalSpec`** — the registry record for one signal function in the engine. Carries domain tags, inputs, output, priority, revision, and auto_safe.

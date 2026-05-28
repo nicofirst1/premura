@@ -28,8 +28,8 @@ owned_files:
 - docs/adr/0005-profile-and-intake-contract.md
 - docs/product/FULL_APP_DEVELOPMENT_PLAN.md
 - docs/product/ROADMAP.md
-- docs/product/ROADMAP_BOOTSTRAP_PLAN.md
-- docs/product/VISION.md
+- docs/history/product/ROADMAP_BOOTSTRAP_PLAN.md
+- docs/history/product/VISION.md
 tags: []
 ---
 
@@ -52,8 +52,8 @@ This WP should leave the repo with one clear answer to the original dilemma:
 - `docs/adr/0005-profile-and-intake-contract.md`
 - `docs/product/FULL_APP_DEVELOPMENT_PLAN.md`
 - `docs/product/ROADMAP.md`
-- `docs/product/ROADMAP_BOOTSTRAP_PLAN.md`
-- `docs/product/VISION.md`
+- `docs/history/product/ROADMAP_BOOTSTRAP_PLAN.md`
+- `docs/history/product/VISION.md`
 
 Do not modify files outside this list in this WP.
 
@@ -134,7 +134,7 @@ broader contract direction.
 
 **Required changes**
 
-- Update `docs/product/ROADMAP_BOOTSTRAP_PLAN.md`.
+- Update `docs/history/product/ROADMAP_BOOTSTRAP_PLAN.md`.
 - Replace stale language that treats the gap as profile-only when the new mission
   intentionally covers profile context plus nutrition and supplement intake.
 - Keep historical context readable instead of rewriting the past confusingly.
@@ -148,7 +148,7 @@ new end-user capability shipped.
 
 **Required changes**
 
-- Update `docs/product/VISION.md` lightly.
+- Update `docs/history/product/VISION.md` lightly.
 - Acknowledge that the system now has a clearer semantic path for profile and
   intake-aware reasoning.
 - Do not present intake capture or profile-aware analysis as already delivered.

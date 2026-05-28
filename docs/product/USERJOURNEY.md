@@ -2,7 +2,7 @@
 
 > Status: authoritative. Source of truth for the intended human experience over time.
 >
-> Companion to [DOCTRINE.md](DOCTRINE.md) (product stance), [SPEC.md](SPEC.md) (what the system must do), [ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md) (how it was built), [STATUS.md](../operations/STATUS.md) (what works today), and [ROADMAP.md](ROADMAP.md) (what's next).
+> Companion to [DOCTRINE.md](DOCTRINE.md) (product stance), [SPEC.md](SPEC.md) (what the system must do), [../history/architecture/ARCHITECTURE_HISTORY.md](../history/architecture/ARCHITECTURE_HISTORY.md) (how it was built), [STATUS.md](../operations/STATUS.md) (what works today), and [ROADMAP.md](ROADMAP.md) (what's next).
 > This document is the source of truth for **the human experience over time**. Per [DOCTRINE.md](DOCTRINE.md), the human is the primary beneficiary even though the agent is the default operational client.
 
 ## Persona

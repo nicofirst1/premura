@@ -2,9 +2,9 @@
 
 > Status: live reference. Intended sequencing of future work, not a contract.
 >
-> Companion to [DOCTRINE.md](DOCTRINE.md), [SPEC.md](SPEC.md), [ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](USERJOURNEY.md), [STATUS.md](../operations/STATUS.md), [STAGES.md](../architecture/STAGES.md), [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md), [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md).
+> Companion to [DOCTRINE.md](DOCTRINE.md), [SPEC.md](SPEC.md), [../history/architecture/ARCHITECTURE_HISTORY.md](../history/architecture/ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](USERJOURNEY.md), [STATUS.md](../operations/STATUS.md), [STAGES.md](../architecture/STAGES.md), [../history/research/PROPOSAL_LABS.md](../history/research/PROPOSAL_LABS.md), [../history/product/ROADMAP_BOOTSTRAP_PLAN.md](../history/product/ROADMAP_BOOTSTRAP_PLAN.md).
 >
-> For the **current planning surface** — milestones, missions, tasks, and their sequencing — see [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md). This doc retains the prose narrative and the deferred-items backlog; missions and tasks are tracked there (and, once created, in GitHub issues). All future roadmap work should be read through the product stance in [DOCTRINE.md](DOCTRINE.md): agent-primary execution, human-primary purpose.
+> For **phase-level planning**, see [FULL_APP_DEVELOPMENT_PLAN.md](FULL_APP_DEVELOPMENT_PLAN.md). For the historical record of how the first M1-M3 backlog was instantiated, see [../history/product/ROADMAP_BOOTSTRAP_PLAN.md](../history/product/ROADMAP_BOOTSTRAP_PLAN.md). This file is the short live pointer doc: what is next in broad terms, what is already settled, and which deeper doc to read.
 
 Items below are sorted by reasonable build order, not priority. Anything in v1 scope (SPEC §2) that is still ⏳ in [STATUS.md](../operations/STATUS.md) is the prerequisite for the rest.
 
@@ -15,88 +15,58 @@ see [STATUS.md](../operations/STATUS.md) and [README.md](../../README.md).
 
 The user is actively writing more requirements; this section will grow.
 
-## Near-term — close out v1 barebone
+## Near-term residue
 
-> Shipped items from this section have been pruned. Live encrypt round-trip and launchd installation both completed 2026-05-21 — see [STATUS.md](../operations/STATUS.md). The remaining open residue is tracked as `v1.1 closeout` in [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md).
+> Shipped items from this section have been pruned. Live encrypt round-trip and launchd installation both completed 2026-05-21 — see [STATUS.md](../operations/STATUS.md). What remains here is cleanup, not the main next product bet.
 
 1. **Real SAA ingest on the next monthly cadence** (bootstrap task T2)
    - The synthetic-CSV unit tests pass, but the format is permissive enough that the first real export likely surfaces a parser quirk. Catch it on the first live run.
 2. **Wiki hub page** in the operator's personal knowledge wiki (bootstrap task T3). Separate repo, location operator-specific — needs cross-repo write authorization.
 
-## Mid-term — analytical layer
+## Next major phase — analytical depth
 
-> Deferred from the first roadmap pass — see [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md) §"Items I Would Not Pull Into The First Roadmap Pass." These are real future work, not abandoned.
+> This is the current main planning thread. The phase-level source of truth is [FULL_APP_DEVELOPMENT_PLAN.md](FULL_APP_DEVELOPMENT_PLAN.md) §"Phase 3: `v2.2 analytical depth`".
 
-1. **Read-only DuckDB views** for common slices: daily summary join, sleep+HRV daily, training load + readiness, weight + body composition over time.
-   - Lives as `migrations/002_views.sql`; analysts open the warehouse read-only and `SELECT * FROM hp.v_daily_summary` instead of memorizing the long-format schema.
-2. **HRV/respiration sample-level expansion** from Garmin (currently we only have daily aggregates from `healthStatusData`; the per-3-min or per-minute samples live in other files we haven't decoded yet — surface them via the "unhandled files" log already in the parser).
-3. **Per-activity FIT-file decoding** (PLAN §"Out of scope (v1)" — explicitly deferred). Brings power, cadence, GPS, lap structure into `fact_interval`.
-4. **Backfill historical Garmin dumps** — Garmin's 2-year health / 5-year activity horizon means each monthly dump still contains older rows. The `dedupe_key UNIQUE` + cross-source priority already make this safe to do today; just need a script that walks a `data/archive/garmin/*.zip` directory.
+1. **Analytical foundation first.** Before adding a large tool surface, Premura needs a stable analysis-ready hand-off between Stage 2 and Stage 3: validity-aware prepared series, explicit missingness/imputation reporting, and machine-readable confound warnings.
+2. **Then the first deterministic tools.** The first tools should stay conservative and reproducible: `correlate`, `rolling_mean`, `change_point`, and only later broader significance-testing coverage. The goal is honest n-of-1 analysis, not statistical theater.
+3. **Then literature grounding.** PubMed search/fetch and the literature-to-warehouse bridge belong after the deterministic tool layer exists, so citations attach to tool-grounded analysis rather than free-form narration.
+4. **Then reproducible research traces.** Analytical sessions should leave behind a markdown trace of tool calls, outputs, and caveats.
+
+Read the full phase doc for the rationale, risk retirement, and exit criteria:
+
+- [FULL_APP_DEVELOPMENT_PLAN.md](FULL_APP_DEVELOPMENT_PLAN.md) §"Phase 3: `v2.2 analytical depth`"
+- [STAGES.md](../architecture/STAGES.md) for the Stage 2 / Stage 3 boundary
+- [`src/premura/engine/CONTRACT.md`](../../src/premura/engine/CONTRACT.md) for what Stage 2 may and may not claim
 
 ## Profile and intake — storage seam shipped, source adaptation and signals are the open work
 
-> The semantic boundary is decided ([PROFILE_AND_INTAKE_CONTRACT.md](../architecture/PROFILE_AND_INTAKE_CONTRACT.md), `docs/architecture/contracts/profile_and_intake_*.yaml`, design decision note [0005](../adr/0005-profile-and-intake-contract.md)), and the `implement-profile-and-intake-storage-01KSMWV1` mission then shipped its **storage seam and the first write path** (design decision note [0006](../adr/0006-profile-intake-storage-and-capture.md)). Concrete `hp.*` domain tables now exist for baseline profile context, nutrition intake, and supplement intake (migration `004_profile_intake.sql`); profile context has an **agent-mediated bounded capture** path; and nutrition/supplement intake has a normalized idempotent load path. What did **not** ship: any built-in importer for a specific nutrition/supplement source, and any profile-dependent Stage 2 answer.
+> The semantic boundary is decided ([PROFILE_AND_INTAKE_CONTRACT.md](../architecture/PROFILE_AND_INTAKE_CONTRACT.md), design decision notes [0005](../adr/0005-profile-and-intake-contract.md) and [0006](../adr/0006-profile-intake-storage-and-capture.md)), and the storage seam is shipped. Future work here is implementation over that seam, not another modeling pass.
 
 What this changes about the roadmap — future missions inherit the shipped seam instead of re-opening it:
 
-- **The seam is stable *and now real in code*.** Earlier framing treated "model baseline profile attributes for engine functions" (issue `#6`) as an open boundary question, then as a contract-only decision. It is now backed by storage: a future signal must *declare* the profile/intake keys it depends on and read them from their domain tables, never fish a value out of `fact_measurement`, and never re-pick the storage shape.
+- **The seam is stable and real in code.** A future signal must *declare* the profile/intake keys it depends on and read them from their domain tables, never fish a value out of `fact_measurement`, and never re-pick the storage shape.
 - **Remaining follow-on work, in likely order:** (1) **parser/plugin source adaptation for nutrition/supplements** — teach a parser to turn a real meal-logging or supplement export into a normalized `IntakeBatch` that `persist_intake_batch` loads; this is the same federated-parser path the wearable sources use, *not* a built-in importer; (2) **future profile-aware signals** such as BMI and age-adjusted interpretation, built over the captured profile context under the declared-dependency rule (`age` stays derived from `birth_date`, never stored). Capture of the bounded baseline allowlist (`birth_date`, `sex`, `standing_height_cm`) is already done, so no further "how does the human enter their profile" work is needed there.
 - **Review gates should be machine-checkable, not tasteful.** In an agent-reviewed repo a boundary violation (a declared height written as an observation, a meal's energy merged with a wearable's total kcal) reads as a working change unless the rule is encoded. The contract's enumerated invariants and worked examples (the `profile_and_intake_*.yaml` files, exercised by the contract test harness) plus the now-structural one-home table separation are the gate each follow-on mission must pass.
 
 These future signals stay **descriptive, non-diagnostic, and local-first** like the existing six: profile context is the operator's own account, BMI and age-adjusted reads are interpretive aids over the user's own data, never population diagnosis, and nothing here sends data off the machine.
 
-## New source class — clinical labs (blood / urine / stool)
+## Labs — shipped foundation, narrower follow-ons remain
 
-> Tracked as mission **M3** in [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md). See [PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md) for the full design proposal. Summary:
+> The first lab mission shipped. What remains here is narrower follow-on work, not the original lab-ingest foundation.
 
-- Adds a new source class — clinical lab PDFs — alongside the four wearable/app sources. Schema-free (existing long-format star already accepts it).
-- Prior art: an operator-local standalone OCR repo has already extracted a real multi-year, multi-language lab-PDF corpus into structured rows. We adopt its **name-normalisation maps, date heuristics, and value-quirk handlers** verbatim, but **not** its extraction engine wholesale — we first spike **[docling](https://github.com/docling-project/docling)** as a local-only, table-aware alternative to the prior repo's Claude-vision pipeline (which sends PHI to the Anthropic API; in tension with VISION Pillar 6).
-- Forces two real signal-processing rules: per-metric **`validity_window`** in `dim_metric` (lab values stale after weeks to months, not seconds), and per-metric **`missing_data_policy`** with lab markers defaulting to `none` (never impute across multi-month gaps). Both are general — once introduced for blood, they apply to all existing metrics.
-- First derived signals: `derived:ldl_hdl_ratio`, `derived:ast_alt_ratio`, `derived:tg_hdl_ratio`.
+- Stage 3 lab exposure through the analytical surface
+- extraction-quality validation tooling / UI
+- any parser corrections surfaced by real operator use
 
-Estimated effort: 4–5 days once a docling spike confirms extraction quality on a real lab-PDF corpus.
+See [FULL_APP_DEVELOPMENT_PLAN.md](FULL_APP_DEVELOPMENT_PLAN.md) §"Phase 2: `v2.1 labs`" for the shipped slice and [../history/research/PROPOSAL_LABS.md](../history/research/PROPOSAL_LABS.md) for the original design proposal.
 
-## Big idea — health-research MCP server
+## Historical note — the earlier MCP-server framing
 
-> Tracked as missions **M1** (boundary spike) and **M2** (first analytical server, warehouse-query tools only — stats and PubMed deferred to follow-on missions) in [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md). The full surface described below is the long-term shape, not the M2 scope.
->
-> **Shipped since:** the first MCP query surface (`query_warehouse`, `list_metrics`, `metric_summary`) now exists, and a later mission added six grounded Stage 2 signals plus six signal-backed Stage 3 tools that route through them (current resting HR, resting-HR trend, steps trend, weight trend, deep-sleep vs own baseline, overnight-HRV change around a date — see [STATUS.md](../operations/STATUS.md) and [STAGES.md](../architecture/STAGES.md)). Those six question shapes are no longer hypothetical and no longer depend on raw-table reads. Everything else in this section — deterministic stats tools, PubMed, the literature↔warehouse bridge, the signal selector — remains future work. Profile-dependent answers (BMI, age-adjusted interpretation) stay deferred, but the *boundary* they need is no longer open: the profile/intake meaning contract (below) decides where declared profile context and intake data live, so the deferred work is now implementation over a fixed seam rather than an unresolved modelling question.
-
-A single MCP server that exposes:
-
-1. **Read-only DuckDB query** (parameterized + safe; no DDL).
-2. **A curated set of deterministic stat tools** — Pearson/Spearman correlation, partial correlation, paired/unpaired t-test, Mann-Whitney, linear and mixed-effects regression, rolling-window means, change-point detection, lag-correlation. The LLM picks the test; the tool runs the computation; the answer comes back with effect size + CI + sample size so the LLM can't fudge magnitudes.
-3. **PubMed search + fetch** (E-utilities is free, no key required for low volume) — keyword, MeSH, author. Returns abstract + DOI; never the full paper.
-4. **PubMed → personal-data bridge** — a tool that turns a PubMed-cited finding into a parameterized query against the warehouse ("paper says deep-sleep% correlates with weekly HRV in 30-50yo males; check it in my data over 2024-2026").
-
-### Does this exist already?
-
-- **DuckDB-over-MCP**: yes. `motherduck/mcp-server-motherduck` is the closest match — it speaks DuckDB locally too, not just MotherDuck Cloud. Several community DuckDB MCP servers exist as well.
-- **PubMed-over-MCP**: yes. `andybrandt/mcp-simple-pubmed` wraps NCBI Entrez.
-- **The combination** (personal health DuckDB + stats tools + PubMed cross-reference, opinionated for a single user) — not that I'm aware of. The two halves are stitched-together free MCP servers; nobody seems to be building the **opinionated middle layer** that makes self-experimentation actually rigorous.
-
-### My take
-
-Worth building, with two caveats:
-
-1. **Determinism via tools, not narration.** The LLM should call `correlate(metric_a="hrv_rmssd_overnight", metric_b="sleep_deep_pct", window_days=90)` and receive `{r=0.42, n=78, p=0.0001, ci=[0.21, 0.59]}`. Never let it report effect sizes from inside its own head. Code is the ground truth.
-2. **PubMed retrieval is the easy part. Citing it accurately is the hard part.** The LLM will invent DOIs if you let it. Force every claim to round-trip through `pubmed_fetch(pmid=...)`; reject any cited finding the tool can't echo back.
-
-### Concrete build order
-
-1. ✅ **Done.** `src/premura/mcp/server.py` (+ `entrypoint.py`) using the `mcp` Python SDK. Raw tools `query_warehouse`, `list_metrics`, `metric_summary` shipped, then six signal-backed tools that delegate to the Stage 2 engine for the six approved question shapes.
-2. **Next — `stats.py`** with `correlate`, `paired_t_test`, `rolling_mean`, `change_point` — each returning a structured dict. Not started; this is the statistics layer the current mission deliberately did **not** build.
-3. Add `pubmed.py` wrapper around Entrez (`esearch`, `efetch`); keep responses ≤25 hits.
-4. Expose all of the above through the MCP server. Configure Claude Desktop to load it.
-5. Add a "research notebook" mode: each Q&A round emits a markdown trace into `data/research/YYYY-MM-DD.md` with the tool calls + responses, so findings are reproducible.
-
-Default boundary assumption for the first pass: MCP opens the local warehouse in read-only mode, while `age` remains the protection for exported and uploaded artifacts rather than the live working DuckDB file.
-
-This would turn the warehouse from a passive store into an **inferential** workbench — the original payoff of bypassing Health Connect.
+> The older long-form MCP-server writeup is now superseded by the phase plan in [FULL_APP_DEVELOPMENT_PLAN.md](FULL_APP_DEVELOPMENT_PLAN.md), the shipped-state summary in [STATUS.md](../operations/STATUS.md), and the stage-boundary rules in [STAGES.md](../architecture/STAGES.md). Keep those three docs aligned rather than re-expanding the same argument here.
 
 ## Smaller follow-ups
 
-> Also deferred from the first roadmap pass — see [ROADMAP_BOOTSTRAP_PLAN.md](ROADMAP_BOOTSTRAP_PLAN.md) §"Items I Would Not Pull Into The First Roadmap Pass." Per the partition rule, items here that introduce a new CLI verb or schema change (e.g. `hpipe inspect`, `fact_interval.unit`) will be reclassified as missions, not tasks, when they reach the active backlog.
+> Also deferred from the first roadmap pass — see [../history/product/ROADMAP_BOOTSTRAP_PLAN.md](../history/product/ROADMAP_BOOTSTRAP_PLAN.md) §"Items I Would Not Pull Into The First Roadmap Pass." Per the partition rule, items here that introduce a new CLI verb or schema change (e.g. `hpipe inspect`, `fact_interval.unit`) will be reclassified as missions, not tasks, when they reach the active backlog.
 
 - **`hpipe inspect <file>`** subcommand that runs each parser's dispatcher in dry-run mode and prints the file→handler routing + any unhandled-filename log. Replaces the inline-Python exploration that built the v1 Garmin handler set.
 - **`hpipe gc` extension** to also prune `data/raw/` (currently only `data/exports/`), with a `--dry-run` flag.

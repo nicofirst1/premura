@@ -31,7 +31,7 @@ owned_files:
 - docs/operations/STATUS.md
 - docs/product/ROADMAP.md
 - docs/product/FULL_APP_DEVELOPMENT_PLAN.md
-- docs/product/VISION.md
+- docs/history/product/VISION.md
 tags: []
 ---
 
@@ -49,7 +49,7 @@ This WP should leave the repo with a coherent story: the six approved grounded a
 - `docs/operations/STATUS.md`
 - `docs/product/ROADMAP.md`
 - `docs/product/FULL_APP_DEVELOPMENT_PLAN.md`
-- `docs/product/VISION.md`
+- `docs/history/product/VISION.md`
 
 Do not modify files outside this list in this WP.
 

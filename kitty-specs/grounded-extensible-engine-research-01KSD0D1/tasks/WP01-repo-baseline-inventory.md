@@ -67,7 +67,7 @@ Primary repo sources for this WP:
 - `CONTEXT.md`
 - `docs/architecture/STAGES.md`
 - `docs/architecture/UPDATE_STRATEGY.md`
-- `docs/product/VISION.md`
+- `docs/history/product/VISION.md`
 - `docs/product/ROADMAP.md`
 - `docs/product/FULL_APP_DEVELOPMENT_PLAN.md`
 - `docs/operations/STATUS.md`

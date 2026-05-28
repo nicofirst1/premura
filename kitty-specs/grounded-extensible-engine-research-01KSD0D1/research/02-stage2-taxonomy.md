@@ -17,7 +17,7 @@ Three rules govern the whole taxonomy:
 
 A **health direction** is the user-facing area a person enters through — a routing choice, not a metric and not a UI tab (WP01 "Terminology notes"; `CONTEXT.md`). The repo already names a candidate set in two places that mostly agree:
 
-- VISION Pillar 4 interview list: *Sleep & recovery · Cardiovascular fitness & training load · Metabolic health & body composition · Stress & autonomic balance · Mental / cognitive · General overview* (`docs/product/VISION.md` Pillar 4).
+- VISION Pillar 4 interview list: *Sleep & recovery · Cardiovascular fitness & training load · Metabolic health & body composition · Stress & autonomic balance · Mental / cognitive · General overview* (`docs/history/product/VISION.md` Pillar 4).
 - STAGES §4 interview list: *sleep, cardio, metabolic, stress, mental, gut, lab/cardiometabolic, overview* (`docs/architecture/STAGES.md` §4).
 
 We do **not** adopt the whole union. The first-wave filter is simple and defensible: **a direction is in the first wave only if the warehouse already carries enough signal to answer real questions about it today**, using the metrics inventoried in `docs/operations/STATUS.md` "Warehouse contents" and the policies in `src/premura/dim_metric.yaml`. This keeps Stage 2 work pointed at data that exists rather than at aspirational coverage.

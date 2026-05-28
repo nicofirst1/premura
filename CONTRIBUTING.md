@@ -69,7 +69,7 @@ Authoritative stage guidance lives in `docs/architecture/STAGES.md`.
 ## Source of truth
 
 - Product and data-contract intent: `docs/product/SPEC.md`
-- Architecture and repo shape: `docs/architecture/ARCHITECTURE_HISTORY.md`
+- Architecture and repo shape: `docs/history/architecture/ARCHITECTURE_HISTORY.md`
 - Stage boundaries: `docs/architecture/STAGES.md`
 - Warehouse update policy: `docs/architecture/UPDATE_STRATEGY.md`
 - Parser plugin contract: `src/premura/parsers/CONTRACT.md`

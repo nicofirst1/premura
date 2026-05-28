@@ -54,7 +54,7 @@
 | T023 | Update `docs/operations/STATUS.md` with the new Stage 2 and Stage 3 capabilities after implementation. | WP05 | [D] |
 | T024 | Update `docs/product/ROADMAP.md` so future analytical work starts from the new shipped baseline rather than the old stubbed state. | WP05 | [D] |
 | T025 | Update `docs/product/FULL_APP_DEVELOPMENT_PLAN.md` so phase-level planning no longer describes Stage 2 and Stage 3 as entirely missing. | WP05 | [D] |
-| T026 | Update `docs/product/VISION.md` with a light reference to the first grounded question flows while preserving the privacy and non-diagnostic stance. | WP05 | [D] |
+| T026 | Update `docs/history/product/VISION.md` with a light reference to the first grounded question flows while preserving the privacy and non-diagnostic stance. | WP05 | [D] |
 
 ## Work Packages
 
@@ -209,7 +209,7 @@ Reviewer focus:
 - Priority: Medium
 - Independent validation: the affected docs describe the new shipped baseline, future work starts from the right state, and the privacy plus non-diagnostic posture remains unchanged.
 - Dependencies: WP01, WP02, WP03, WP04.
-- Owned files: `docs/architecture/STAGES.md`, `docs/operations/STATUS.md`, `docs/product/ROADMAP.md`, `docs/product/FULL_APP_DEVELOPMENT_PLAN.md`, `docs/product/VISION.md`
+- Owned files: `docs/architecture/STAGES.md`, `docs/operations/STATUS.md`, `docs/product/ROADMAP.md`, `docs/product/FULL_APP_DEVELOPMENT_PLAN.md`, `docs/history/product/VISION.md`
 - Estimated prompt size: ~280 lines
 
 Included subtasks:
@@ -217,7 +217,7 @@ Included subtasks:
 - [x] T023 Update `docs/operations/STATUS.md` with the new Stage 2 and Stage 3 capabilities after implementation. (WP05)
 - [x] T024 Update `docs/product/ROADMAP.md` so future analytical work starts from the new shipped baseline rather than the old stubbed state. (WP05)
 - [x] T025 Update `docs/product/FULL_APP_DEVELOPMENT_PLAN.md` so phase-level planning no longer describes Stage 2 and Stage 3 as entirely missing. (WP05)
-- [x] T026 Update `docs/product/VISION.md` with a light reference to the first grounded question flows while preserving the privacy and non-diagnostic stance. (WP05)
+- [x] T026 Update `docs/history/product/VISION.md` with a light reference to the first grounded question flows while preserving the privacy and non-diagnostic stance. (WP05)
 
 Implementation sketch:
 1. Update architecture truth first so the cross-stage boundary story is current.

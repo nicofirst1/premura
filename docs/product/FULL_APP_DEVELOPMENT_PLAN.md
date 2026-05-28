@@ -1,6 +1,6 @@
 # Premura Full App Development Plan
 
-> Status: review draft. Phase-level development plan for the whole app trajectory from the current shipped state forward. Complements `ROADMAP_BOOTSTRAP_PLAN.md`, which now serves mainly as the record of how the first concrete backlog (M1-M3) was instantiated. Product-identity questions are settled in `DOCTRINE.md`.
+> Status: authoritative. Phase-level development plan for the whole app trajectory from the current shipped state forward. Complements `../history/product/ROADMAP_BOOTSTRAP_PLAN.md`, which now serves mainly as the record of how the first concrete backlog (M1-M3) was instantiated. Product-identity questions are settled in `DOCTRINE.md`.
 >
 > **Vocabulary note**: this doc uses the project vocabulary defined in `CONTEXT.md` §"Planning" (e.g. "ablation study" rather than "spike", "design decision note" rather than "ADR"). Live GitHub artifacts (issue titles, label values, file paths) keep their existing names — only prose follows the new vocabulary.
 
@@ -20,20 +20,20 @@ This file is not the GitHub backlog and not the first execution plan. It is the 
 - `CONTEXT.md` (vocabulary)
 - `docs/product/DOCTRINE.md`
 - `docs/operations/STATUS.md`
-- `docs/product/VISION.md`
+- `docs/history/product/VISION.md`
 - `docs/product/ROADMAP.md`
-- `docs/product/RISK_OPPORTUNITY.md`
-- `docs/product/ROADMAP_BOOTSTRAP_PLAN.md`
+- `docs/history/product/RISK_OPPORTUNITY.md`
+- `docs/history/product/ROADMAP_BOOTSTRAP_PLAN.md`
 - `docs/architecture/STAGES.md`
 - `docs/architecture/UPDATE_STRATEGY.md`
-- `docs/research/PROPOSAL_LABS.md`
+- `docs/history/research/PROPOSAL_LABS.md`
 - `/tmp/premura-planning-handoff-2026-05-22.md`
 
 ## Relation To Existing Docs
 
-- `docs/product/VISION.md` covers the long-term pillars (extensibility, warehouse, AI tools, interview, teaching, privacy). This file is the phase-level expression of how those pillars get built in code.
-- **This file is the source of truth for phase-level planning.** `docs/product/ROADMAP.md` is the older prose narrative of upcoming work; several of its phase-shaped sections ("Big idea — MCP server," "New source class — clinical labs," "Smaller follow-ups," "Mid-term — analytical layer") now overlap with the phases below. ROADMAP.md should be compressed in a follow-up doc pass to pointers into this file. **That compression is pending — track as a small follow-up doc task.**
-- `docs/product/ROADMAP_BOOTSTRAP_PLAN.md` is the concrete first pass that justified the original M1-M3 issue set. It still records the rationale for Phases 1 and 2, but it is no longer the current next-action list.
+- `docs/history/product/VISION.md` covers the long-term pillars (extensibility, warehouse, AI tools, interview, teaching, privacy). This file is the phase-level expression of how those pillars get built in code.
+- **This file is the source of truth for phase-level planning.** `docs/product/ROADMAP.md` is now the shorter live pointer doc for near-term sequencing and deferred follow-ons; it should summarize and link rather than restate the phase detail here.
+- `docs/history/product/ROADMAP_BOOTSTRAP_PLAN.md` is the concrete first pass that justified the original M1-M3 issue set. It still records the rationale for Phases 1 and 2, but it is no longer the current next-action list.
 - This file sits between VISION (long-term) and BOOTSTRAP/ROADMAP (near-term execution).
 
 ## Current Starting Point
@@ -65,12 +65,12 @@ Small v1 residue (real-data SAA validation, project wiki hub page) is not schedu
 1. Resolve architectural uncertainty before scaling surface area.
 2. Prefer one real end-to-end slice over many speculative documents.
 3. Treat Stage 2 and Stage 3 as product-critical; v2 is not just "more parsers."
-4. Use real risk retirement from `RISK_OPPORTUNITY.md` to decide what comes next.
+4. Use real risk retirement from `../history/product/RISK_OPPORTUNITY.md` to decide what comes next.
 5. Keep the system local-first and faithful to the stage boundaries in `STAGES.md`.
 
 ## Conventions
 
-This plan follows the conventions established in `ROADMAP_BOOTSTRAP_PLAN.md` §"Conventions":
+This plan follows the conventions established in `../history/product/ROADMAP_BOOTSTRAP_PLAN.md` §"Conventions":
 
 - **Tag-cut on milestone close**: each phase ships as a milestone (`v2.0`, `v2.1`, …) and closes with a corresponding `git tag` (`v2.0.0`, `v2.1.0`, …). Tags are restore points.
 - **Design decision note timing**: design decision notes land *before* missions that introduce a new stage interface or a new public type; *after* missions where the decision is an implementation detail inside an already-approved direction. See `docs/adr/0001-ingest-batch-parser-seam.md` for the post-mission template (the folder `docs/adr/` is kept for filesystem stability; in prose call them "design decision notes").
@@ -103,7 +103,7 @@ This is the highest-leverage open question in the current docs. If Premura is su
 
 #### Risks retired
 
-- the open MCP-access question from `RISK_OPPORTUNITY.md:151`
+- the open MCP-access question from `docs/history/product/RISK_OPPORTUNITY.md:151`
 - a major source of uncertainty for all later analytical work
 
 #### Likely work shape
@@ -321,7 +321,7 @@ R7 likely never goes to zero. The practical goal is to constrain and surface unc
 
 ## How To Use This Plan
 
-- Use `ROADMAP_BOOTSTRAP_PLAN.md` as the record of why M1-M3 were the first missions, not as the current execution queue.
+- Use `docs/history/product/ROADMAP_BOOTSTRAP_PLAN.md` as the record of why M1-M3 were the first missions, not as the current execution queue.
 - Use this file to decide whether a new proposal belongs in the current phase, the next phase, or the parking lot.
 - Use `ROADMAP.md` as the shorter live reference until the deferred compression pass folds its phase-shaped sections into pointers here.
 

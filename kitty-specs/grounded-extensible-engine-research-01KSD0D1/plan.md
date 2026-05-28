@@ -23,7 +23,7 @@ Two assumptions drive this plan:
 **Authoritative repo boundaries**: `docs/architecture/STAGES.md` says Stage 2 stays deterministic, local, and responsible for validity, missing-data policy, derived signals, and signal selection.
 **Known debt to account for**: `docs/architecture/STAGES.md` records that today's MCP tools still read warehouse tables directly as a temporary exception while Stage 2 remains thin.
 **Existing ontology support**: `src/premura/dim_metric.yaml` and `docs/architecture/UPDATE_STRATEGY.md` already define validity windows, missing-data policy, and the `derived:` namespace reserved for engine outputs.
-**Product framing to preserve**: `docs/product/VISION.md`, `docs/product/ROADMAP.md`, `docs/product/FULL_APP_DEVELOPMENT_PLAN.md`, and `docs/operations/STATUS.md` all position Stage 2 as the deterministic layer that turns warehouse rows into answerable signals and supports later MCP/UI teaching work.
+**Product framing to preserve**: `docs/history/product/VISION.md`, `docs/product/ROADMAP.md`, `docs/product/FULL_APP_DEVELOPMENT_PLAN.md`, and `docs/operations/STATUS.md` all position Stage 2 as the deterministic layer that turns warehouse rows into answerable signals and supports later MCP/UI teaching work.
 
 ## Charter Check
 

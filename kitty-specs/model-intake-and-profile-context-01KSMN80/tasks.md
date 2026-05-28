@@ -44,8 +44,8 @@
 | T014 | Add a design decision note capturing the ports/adapters decision: storage stays flexible, semantics stay strict at the contract boundary. | WP04 |  | [D] |
 | T015 | Update `docs/product/FULL_APP_DEVELOPMENT_PLAN.md` so future implementation work starts from the new contract baseline and not from the unresolved issue-`#6` framing alone. | WP04 | [D] |
 | T016 | Update `docs/product/ROADMAP.md` to sequence follow-on work from the new domain contract, including the need for machine-checkable review gates. | WP04 | [D] |
-| T017 | Update `docs/product/ROADMAP_BOOTSTRAP_PLAN.md` so the backlog language around issue `#6` reflects the broader profile-plus-intake contract now being defined. | WP04 | [D] |
-| T018 | Update `docs/product/VISION.md` lightly so it acknowledges the new contract seam without overstating shipped user-facing capability. | WP04 | [D] |
+| T017 | Update `docs/history/product/ROADMAP_BOOTSTRAP_PLAN.md` so the backlog language around issue `#6` reflects the broader profile-plus-intake contract now being defined. | WP04 | [D] |
+| T018 | Update `docs/history/product/VISION.md` lightly so it acknowledges the new contract seam without overstating shipped user-facing capability. | WP04 | [D] |
 
 ## Work Packages
 
@@ -163,15 +163,15 @@ Reviewer focus:
 - Priority: Medium
 - Independent validation: the design decision note and product-planning docs consistently describe the ports/adapters choice, the invariant-first review strategy, and the follow-on work now unlocked or still deferred.
 - Dependencies: WP01, WP03.
-- Owned files: `docs/adr/0005-profile-and-intake-contract.md`, `docs/product/FULL_APP_DEVELOPMENT_PLAN.md`, `docs/product/ROADMAP.md`, `docs/product/ROADMAP_BOOTSTRAP_PLAN.md`, `docs/product/VISION.md`
+- Owned files: `docs/adr/0005-profile-and-intake-contract.md`, `docs/product/FULL_APP_DEVELOPMENT_PLAN.md`, `docs/product/ROADMAP.md`, `docs/history/product/ROADMAP_BOOTSTRAP_PLAN.md`, `docs/history/product/VISION.md`
 - Estimated prompt size: ~280 lines
 
 Included subtasks:
 - [x] T014 Add a design decision note capturing the ports/adapters decision: storage stays flexible, semantics stay strict at the contract boundary. (WP04)
 - [x] T015 Update `docs/product/FULL_APP_DEVELOPMENT_PLAN.md` so future implementation work starts from the new contract baseline and not from the unresolved issue-`#6` framing alone. (WP04)
 - [x] T016 Update `docs/product/ROADMAP.md` to sequence follow-on work from the new domain contract, including the need for machine-checkable review gates. (WP04)
-- [x] T017 Update `docs/product/ROADMAP_BOOTSTRAP_PLAN.md` so the backlog language around issue `#6` reflects the broader profile-plus-intake contract now being defined. (WP04)
-- [x] T018 Update `docs/product/VISION.md` lightly so it acknowledges the new contract seam without overstating shipped user-facing capability. (WP04)
+- [x] T017 Update `docs/history/product/ROADMAP_BOOTSTRAP_PLAN.md` so the backlog language around issue `#6` reflects the broader profile-plus-intake contract now being defined. (WP04)
+- [x] T018 Update `docs/history/product/VISION.md` lightly so it acknowledges the new contract seam without overstating shipped user-facing capability. (WP04)
 
 Implementation sketch:
 1. Record the architectural decision first in a design decision note so the follow-on docs can point to one clear decision.
