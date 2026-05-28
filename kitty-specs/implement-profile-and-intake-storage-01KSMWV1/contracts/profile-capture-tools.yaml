@@ -2,7 +2,9 @@ version: 1
 surface: agent_profile_capture
 summary: >-
   Bounded agent-facing tools for capturing stable profile facts without using
-  direct SQL or open-ended key/value writes.
+  direct SQL or open-ended key/value writes. The record tool writes exactly one
+  assertion per call (single-attribute), not a batch; the capture session is
+  opened internally for provenance, not supplied by the caller.
 
 tools:
   - name: profile_context_supported_fields
@@ -12,41 +14,40 @@ tools:
       fields:
         type: array
         items:
-          key: string
-          value_type: string
-          required: boolean
-          prompt_hint: string
-          unit: [string, "null"]
-
-  - name: profile_context_record
-    purpose: Persist one bounded profile capture session and its assertions.
-    input:
-      capture_session:
-        actor_kind: agent
-        actor_ref: [string, "null"]
-      assertions:
-        type: array
-        items:
           attribute_key: string
-          value_text: [string, "null"]
-          value_num: [number, "null"]
-          value_date: [string, "null"]
+          value_kind: string
+          description: string
           unit: [string, "null"]
-          effective_start_utc: [string, "null"]
-          supersedes_assertion_id: [string, "null"]
-    output:
-      capture_session_id: string
-      stored_assertion_ids:
+          allowed_values: [array, "null"]   # closed set for enum fields, else null
+      supported_keys:
         type: array
         items: string
-      rejected_assertions:
-        type: array
-        items:
-          attribute_key: string
-          reason: string
+      source_kind: string                    # always "agent_profile_capture"
+
+  - name: profile_context_record
+    purpose: Record one bounded profile fact (single assertion) via the agent-mediated path.
+    input:
+      attribute_key: string                  # must be in the supported allowlist
+      value: [string, number]
+      effective_start_utc: [string, "null"]  # defaults to now (UTC) when null
+      source_ref: [string, "null"]
+      notes: [string, "null"]
+    output:
+      status: string                         # "recorded" | "rejected"
+      # --- when status == "recorded" ---
+      attribute_key: string
+      value_kind: [string, "null"]
+      assertion_id: [string, "null"]
+      capture_session_id: [string, "null"]
+      source_kind: [string, "null"]          # "agent_profile_capture"
+      superseded_assertion_id: [string, "null"]  # prior open assertion this supersedes
+      current: [object, "null"]              # read-back of the now-current assertion
+      # --- when status == "rejected" (unsupported/derived key or bad value) ---
+      reason: [string, "null"]
+      supported_keys: [array, "null"]
 
 cli_wrappers:
-  - command: hpipe profile schema
+  - command: hpipe profile-fields
     mirrors_tool: profile_context_supported_fields
-  - command: hpipe profile record
+  - command: hpipe profile-record
     mirrors_tool: profile_context_record

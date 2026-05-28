@@ -13,8 +13,8 @@ agent-mediated profile capture path.
    - `profile_context_supported_fields`
    - `profile_context_record`
 3. Add matching CLI wrappers for fallback/testing:
-   - `hpipe profile schema`
-   - `hpipe profile record`
+   - `hpipe profile-fields`
+   - `hpipe profile-record`
 4. Run a black-box test that:
    - asks for the supported schema,
    - records `birth_date`, `sex`, and `standing_height_cm`,

@@ -191,13 +191,22 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
 def build_server(*, warehouse_path: Path | None = None) -> FastMCP:
     """Build the default agent-safe MCP server surface.
 
-    Exposes catalog, summary, and the six approved Stage 2 signal tools.
+    Exposes catalog, summary, and the six approved Stage 2 signal tools (all
+    read-only), plus the bounded agent-mediated profile-capture tools
+    ``profile_context_supported_fields`` and ``profile_context_record``. The
+    record tool is the only write path on this surface and is constrained to the
+    profile allowlist (unsupported/derived keys are rejected, not stored).
     ``query_warehouse`` is intentionally excluded — use :func:`build_operator_server`
     to obtain a surface that includes the raw SQL escape hatch.
     """
     mcp = FastMCP(
         "premura",
-        instructions="Read-only access to the local Premura warehouse.",
+        instructions=(
+            "Local-first Premura warehouse. Read-only Stage 2 analysis (catalog, "
+            "summary, signal tools) plus a bounded agent-mediated profile-capture "
+            "write path (profile_context_record, constrained to the profile "
+            "allowlist). No raw SQL on this surface."
+        ),
     )
     _register_default_tools(mcp, warehouse_path=warehouse_path)
     return mcp
@@ -293,7 +302,10 @@ def _parse_args(
         "Includes query_warehouse (raw SQL escape hatch). "
         "Lower-guarantee expert mode — requires explicit user approval."
         if operator_mode
-        else "Run Premura's read-only MCP server over one DuckDB warehouse."
+        else (
+            "Run Premura's local MCP server over one DuckDB warehouse: "
+            "read-only Stage 2 analysis plus a bounded profile-capture write path."
+        )
     )
     parser = argparse.ArgumentParser(prog=prog, description=description)
     parser.add_argument(
