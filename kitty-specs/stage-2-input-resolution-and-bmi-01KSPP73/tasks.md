@@ -33,10 +33,10 @@
 | T003 | Add a static built-in resolver registry pattern that mirrors the existing signal-registry shape without introducing dynamic discovery. | WP01 |  | [D] |
 | T004 | Wire the public engine surface so the new resolution seam is reachable through existing public imports rather than private helper paths. | WP01 |  | [D] |
 | T005 | Finish foundation coverage for registry dispatch, unsupported-domain behavior, and public-surface determinism. | WP01 |  | [D] |
-| T006 | Add failing public-interface tests for observation-history resolution, including anchor-time freshness and honest missing/stale behavior. | WP02 |  |
-| T007 | Implement the observation resolver by reusing existing `_query.py` policy and freshness helpers rather than re-querying ad hoc. | WP02 |  |
-| T008 | Implement the profile-as-of resolver over shipped profile assertions with latest-valid-as-of semantics. | WP02 |  |
-| T009 | Extend resolver coverage to prove there is no hidden fallback from measured height when a declared profile height is required. | WP02 |  |
+| T006 | Add failing public-interface tests for observation-history resolution, including anchor-time freshness and honest missing/stale behavior. | WP02 |  | [D] |
+| T007 | Implement the observation resolver by reusing existing `_query.py` policy and freshness helpers rather than re-querying ad hoc. | WP02 |  | [D] |
+| T008 | Implement the profile-as-of resolver over shipped profile assertions with latest-valid-as-of semantics. | WP02 |  | [D] |
+| T009 | Extend resolver coverage to prove there is no hidden fallback from measured height when a declared profile height is required. | WP02 |  | [D] |
 | T010 | Add failing public-interface tests for BMI as the first cross-domain proof consumer. | WP03 |  |
 | T011 | Implement BMI as a Stage 2 proof consumer that resolves declared height from profile context and weight from observation history. | WP03 |  |
 | T012 | Ensure BMI returns explicit refusal or missing-input outcomes when declared profile height is absent, stale, or unsupported or when weight is stale or absent. | WP03 |  |
@@ -96,10 +96,10 @@ Reviewer focus:
 - Estimated prompt size: ~300 lines
 
 Included subtasks:
-- [ ] T006 Add failing public-interface tests for observation-history resolution, including anchor-time freshness and honest missing/stale behavior. (WP02)
-- [ ] T007 Implement the observation resolver by reusing existing `_query.py` policy and freshness helpers rather than re-querying ad hoc. (WP02)
-- [ ] T008 Implement the profile-as-of resolver over shipped profile assertions with latest-valid-as-of semantics. (WP02)
-- [ ] T009 Extend resolver coverage to prove there is no hidden fallback from measured height when a declared profile height is required. (WP02)
+- [x] T006 Add failing public-interface tests for observation-history resolution, including anchor-time freshness and honest missing/stale behavior. (WP02)
+- [x] T007 Implement the observation resolver by reusing existing `_query.py` policy and freshness helpers rather than re-querying ad hoc. (WP02)
+- [x] T008 Implement the profile-as-of resolver over shipped profile assertions with latest-valid-as-of semantics. (WP02)
+- [x] T009 Extend resolver coverage to prove there is no hidden fallback from measured height when a declared profile height is required. (WP02)
 
 Implementation sketch:
 1. Write failing tests for both resolver families through the public seam.
