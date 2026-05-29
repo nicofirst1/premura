@@ -218,3 +218,4 @@ Check that family coverage is broad but policy shapes are few. Push back on any 
 ## Activity Log
 
 - 2026-05-29T12:29:39Z – claude:opus:implementer:implementer – shell_pid=18704 – Started implementation via action command
+- 2026-05-29T12:35:06Z – claude:opus:implementer:implementer – shell_pid=18704 – Ready for review: built-in registry, 12 family groups across 8 reusable shapes (8<12), evaluator smoke tests pass
