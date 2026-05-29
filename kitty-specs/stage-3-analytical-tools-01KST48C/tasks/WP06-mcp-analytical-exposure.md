@@ -15,8 +15,8 @@ subtasks:
 - T022
 - T023
 - T024
-agent: "claude:opus:implementer:implementer"
-shell_pid: "52112"
+agent: "claude:opus:reviewer:reviewer"
+shell_pid: "64832"
 history:
 - 2026-05-29T15:18:42Z tasks generated
 authoritative_surface: src/premura/mcp/
@@ -124,3 +124,4 @@ Focus on boundary discipline: MCP should serialize and delegate, not compute.
 
 - 2026-05-29T15:59:39Z – claude:opus:implementer:implementer – shell_pid=52112 – Started implementation via action command
 - 2026-05-29T16:15:52Z – claude:opus:implementer:implementer – shell_pid=52112 – Ready for review: change_point and smoothed_average exposed on default MCP surface via thin delegating wrappers; query_warehouse stays operator-only; full suite 466 passed
+- 2026-05-29T16:16:29Z – claude:opus:reviewer:reviewer – shell_pid=64832 – Started review via action command
