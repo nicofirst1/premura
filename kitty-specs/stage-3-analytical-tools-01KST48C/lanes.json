@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "mission_slug": "stage-3-analytical-tools-01KST48C",
+  "mission_id": "01KST48C2SJJZB8P7P756WCNDB",
+  "mission_branch": "kitty/mission-stage-3-analytical-tools-01KST48C",
+  "target_branch": "master",
+  "lanes": [
+    {
+      "lane_id": "lane-a",
+      "wp_ids": [
+        "WP02",
+        "WP03",
+        "WP04",
+        "WP05",
+        "WP06"
+      ],
+      "write_scope": [
+        "src/premura/engine/__init__.py",
+        "src/premura/engine/analytical.py",
+        "src/premura/engine/analytical_contract.py",
+        "src/premura/engine/analytical_inputs.py",
+        "src/premura/engine/analytical_tools.py",
+        "src/premura/mcp/entrypoint.py",
+        "src/premura/mcp/server.py",
+        "tests/test_engine_analytical_contract.py",
+        "tests/test_engine_analytical_inputs.py",
+        "tests/test_engine_analytical_public_surface.py",
+        "tests/test_engine_analytical_tools.py",
+        "tests/test_mcp_analytical_tools.py"
+      ],
+      "predicted_surfaces": [
+        "api"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    },
+    {
+      "lane_id": "lane-planning",
+      "wp_ids": [
+        "WP01"
+      ],
+      "write_scope": [
+        "docs/history/research/STAGE3_ANALYTICAL_TOOLS_RESEARCH.md"
+      ],
+      "predicted_surfaces": [
+        "planning"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    }
+  ],
+  "computed_at": "2026-05-29T15:22:07.751915+00:00",
+  "computed_from": "dependency_graph+ownership",
+  "planning_artifact_wps": [
+    "WP01"
+  ],
+  "collapse_report": {
+    "events": [
+      {
+        "wp_a": "WP03",
+        "wp_b": "WP02",
+        "rule": "dependency",
+        "evidence": "WP03 depends on WP02"
+      },
+      {
+        "wp_a": "WP04",
+        "wp_b": "WP03",
+        "rule": "dependency",
+        "evidence": "WP04 depends on WP03"
+      },
+      {
+        "wp_a": "WP05",
+        "wp_b": "WP04",
+        "rule": "dependency",
+        "evidence": "WP05 depends on WP04"
+      },
+      {
+        "wp_a": "WP06",
+        "wp_b": "WP05",
+        "rule": "dependency",
+        "evidence": "WP06 depends on WP05"
+      }
+    ],
+    "total_merges": 4,
+    "independent_wps_collapsed": 0,
+    "by_rule": {
+      "dependency": 4
+    }
+  }
+}

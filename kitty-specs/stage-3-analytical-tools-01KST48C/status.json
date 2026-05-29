@@ -1,0 +1,63 @@
+{
+  "event_count": 6,
+  "last_event_id": "01KST58505PRZAQK9VWSH7SZVF",
+  "materialized_at": "2026-05-29T15:22:07.749247+00:00",
+  "mission_number": "",
+  "mission_slug": "stage-3-analytical-tools-01KST48C",
+  "mission_type": "software-dev",
+  "summary": {
+    "approved": 0,
+    "blocked": 0,
+    "canceled": 0,
+    "claimed": 0,
+    "done": 0,
+    "for_review": 0,
+    "in_progress": 0,
+    "in_review": 0,
+    "planned": 6
+  },
+  "work_packages": {
+    "WP01": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KST584WJGHX7P84D115D9Y7X",
+      "last_transition_at": "2026-05-29T15:22:07.634555+00:00"
+    },
+    "WP02": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KST584ZYH94NKBP25209QEAM",
+      "last_transition_at": "2026-05-29T15:22:07.742702+00:00"
+    },
+    "WP03": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KST58500YEYSVK3EGQQ8VZN3",
+      "last_transition_at": "2026-05-29T15:22:07.744390+00:00"
+    },
+    "WP04": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KST58501FDWN7ZW2CCA2F6KD",
+      "last_transition_at": "2026-05-29T15:22:07.746001+00:00"
+    },
+    "WP05": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KST58503E3YWHH16BDYEZX2K",
+      "last_transition_at": "2026-05-29T15:22:07.747586+00:00"
+    },
+    "WP06": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KST58505PRZAQK9VWSH7SZVF",
+      "last_transition_at": "2026-05-29T15:22:07.749247+00:00"
+    }
+  }
+}

@@ -10,7 +10,7 @@ requirement_refs:
 - FR-012
 planning_base_branch: master
 merge_target_branch: master
-branch_strategy: 'Current branch at workflow start: master. Planning/base branch for this feature: master. Completed changes must merge into master.'
+branch_strategy: Planning artifacts for this feature were generated on master. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into master unless the human explicitly redirects the landing branch.
 subtasks:
 - T013
 - T014
