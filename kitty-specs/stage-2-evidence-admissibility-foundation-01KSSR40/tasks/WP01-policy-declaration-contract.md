@@ -222,3 +222,4 @@ Review that the model is bounded but not over-enumerated. The safe action for fu
 ## Activity Log
 
 - 2026-05-29T12:07:53Z – claude:opus:implementer:implementer – shell_pid=75455 – Assigned agent via action command
+- 2026-05-29T12:20:06Z – claude:opus:implementer:implementer – shell_pid=75455 – Ready for review: policy declaration model (enums + frozen dataclasses + validation); 19 tests pass, ruff/mypy clean
