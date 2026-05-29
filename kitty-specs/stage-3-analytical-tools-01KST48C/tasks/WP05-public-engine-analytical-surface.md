@@ -14,8 +14,8 @@ subtasks:
 - T018
 - T019
 - T020
-agent: "claude:opus:implementer:implementer"
-shell_pid: "42623"
+agent: "claude:opus:reviewer:reviewer"
+shell_pid: "48503"
 history:
 - 2026-05-29T15:18:42Z tasks generated
 authoritative_surface: src/premura/engine/
@@ -106,3 +106,4 @@ Confirm public imports and invocation behavior are what MCP will depend on.
 
 - 2026-05-29T15:51:35Z – claude:opus:implementer:implementer – shell_pid=42623 – Started implementation via action command
 - 2026-05-29T15:56:49Z – claude:opus:implementer:implementer – shell_pid=42623 – Ready for review
+- 2026-05-29T15:57:22Z – claude:opus:reviewer:reviewer – shell_pid=48503 – Started review via action command
