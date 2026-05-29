@@ -15,6 +15,8 @@ subtasks:
 - T010
 - T011
 - T012
+agent: "claude:opus:implementer:implementer"
+shell_pid: "24585"
 history:
 - 2026-05-29T15:18:42Z tasks generated
 authoritative_surface: src/premura/engine/
@@ -113,3 +115,7 @@ Cover:
 ## Reviewer Guidance
 
 Check that no proof method bypasses this layer later.
+
+## Activity Log
+
+- 2026-05-29T15:35:23Z – claude:opus:implementer:implementer – shell_pid=24585 – Started implementation via action command
