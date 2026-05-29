@@ -18,8 +18,8 @@ subtasks:
 - T006
 - T007
 - T008
-shell_pid: "15705"
-agent: "claude:opus:implementer:implementer"
+shell_pid: "21733"
+agent: "claude:opus:reviewer:reviewer"
 history:
 - 2026-05-29T15:18:42Z tasks generated
 authoritative_surface: src/premura/engine/
@@ -127,3 +127,4 @@ Verify that this WP defines a bounded extension point rather than a tool-specifi
 
 - 2026-05-29T15:28:07Z – claude:opus:implementer:implementer – shell_pid=15705 – Assigned agent via action command
 - 2026-05-29T15:33:09Z – claude:opus:implementer:implementer – shell_pid=15705 – Ready for review: analytical contract model (registry, descriptor, result/refusal envelope, closed confound + question vocabularies, validation); 17 tests pass; no MCP/warehouse imports
+- 2026-05-29T15:33:36Z – claude:opus:reviewer:reviewer – shell_pid=21733 – Started review via action command
