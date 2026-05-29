@@ -16,6 +16,8 @@ subtasks:
 - T014
 - T015
 - T016
+agent: "claude:opus:implementer:implementer"
+shell_pid: "34351"
 history:
 - 2026-05-29T15:18:42Z tasks generated
 authoritative_surface: src/premura/engine/
@@ -113,3 +115,7 @@ Tests should assert caveats/messages avoid:
 ## Reviewer Guidance
 
 Review estimates for honesty and refusal behavior, not for advanced statistical breadth.
+
+## Activity Log
+
+- 2026-05-29T15:43:47Z – claude:opus:implementer:implementer – shell_pid=34351 – Started implementation via action command
