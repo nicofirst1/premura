@@ -27,11 +27,11 @@
 | T008 | Implement sufficiency checks and no-admissible-evidence refusal aggregation. | WP02 | No | [D] |
 | T009 | Add evaluator tests for stale, sparse, missing timestamp, wrong question type, and separated admissible/rejected evidence. | WP02 | No | [D] |
 | T010 | Add tests proving evaluator output is deterministic for identical inputs. | WP02 | No | [D] |
-| T011 | Add a lightweight policy registry for built-in family declarations with duplicate detection. | WP03 | No |
-| T012 | Add representative built-in policy declarations covering at least 10 metric families through shared policy shapes. | WP03 | No |
-| T013 | Add standing caveats, rationale text, and source notes to built-in declarations without claiming clinical authority. | WP03 | No |
-| T014 | Add built-in registry tests for family coverage, policy shape reuse, duplicate rejection, and no exhaustive matrix drift. | WP03 | No |
-| T015 | Add default-policy smoke tests that run representative candidates through the evaluator. | WP03 | No |
+| T011 | Add a lightweight policy registry for built-in family declarations with duplicate detection. | WP03 | No | [D] |
+| T012 | Add representative built-in policy declarations covering at least 10 metric families through shared policy shapes. | WP03 | No | [D] |
+| T013 | Add standing caveats, rationale text, and source notes to built-in declarations without claiming clinical authority. | WP03 | No | [D] |
+| T014 | Add built-in registry tests for family coverage, policy shape reuse, duplicate rejection, and no exhaustive matrix drift. | WP03 | No | [D] |
+| T015 | Add default-policy smoke tests that run representative candidates through the evaluator. | WP03 | No | [D] |
 | T016 | Export the policy authoring/evaluation surface from `premura.engine` after the model, evaluator, and defaults exist. | WP04 | No |
 | T017 | Update the Stage 2 engine contributor contract to explain the policy declaration pattern and PubMed review boundary. | WP04 | No |
 | T018 | Add public-surface tests that import only through `premura.engine` and verify no runtime network/PubMed dependency is introduced. | WP04 | No |
@@ -114,11 +114,11 @@ None until WP01 lands. After WP02 lands, WP03 can proceed independently of WP04.
 
 ### Included Subtasks
 
-- [ ] T011 Add a lightweight policy registry for built-in family declarations with duplicate detection. (WP03)
-- [ ] T012 Add representative built-in policy declarations covering at least 10 metric families through shared policy shapes. (WP03)
-- [ ] T013 Add standing caveats, rationale text, and source notes to built-in declarations without claiming clinical authority. (WP03)
-- [ ] T014 Add built-in registry tests for family coverage, policy shape reuse, duplicate rejection, and no exhaustive matrix drift. (WP03)
-- [ ] T015 Add default-policy smoke tests that run representative candidates through the evaluator. (WP03)
+- [x] T011 Add a lightweight policy registry for built-in family declarations with duplicate detection. (WP03)
+- [x] T012 Add representative built-in policy declarations covering at least 10 metric families through shared policy shapes. (WP03)
+- [x] T013 Add standing caveats, rationale text, and source notes to built-in declarations without claiming clinical authority. (WP03)
+- [x] T014 Add built-in registry tests for family coverage, policy shape reuse, duplicate rejection, and no exhaustive matrix drift. (WP03)
+- [x] T015 Add default-policy smoke tests that run representative candidates through the evaluator. (WP03)
 
 ### Implementation Sketch
 
