@@ -11,6 +11,18 @@ The primary maintainer is an AI researcher, not a day-to-day software engineer. 
 - Explain any SE-native term in one short line the first time it appears in a new doc.
 - Do not introduce invented coinages (e.g. "decomposition surface", "compression bias") or Jira-isms (e.g. "epic", "story points"). If a concept genuinely needs a name, name it after a familiar idea, not after the methodology that originated it.
 
+### Explaining a plan, design, or review to the maintainer
+
+When the maintainer asks you to *explain* work (not write the spec itself), this layered plain-English walkthrough has worked well — prefer it over a jargon-dense summary:
+
+1. **What this is** — one line placing the thing ("a draft plan for the next mission").
+2. **What it proposes, in everyday terms** — translate each technical idea inline, anchored to a concrete health example (resting heart rate is a good default). Never leave a technical word unglossed.
+3. **The key idea / why it's built this way** — name the one real design tension and how it's handled (e.g. *guide, don't enumerate*).
+4. **The reviews / tradeoffs** — what came up and how it resolved, in plain terms.
+5. **Where it stands + a low-pressure next step** — end with the current state and an optional next action, not a push to proceed.
+
+Keep it warm and readable; favor short sections over dense tables, and explain any unavoidable technical term the first time it appears.
+
 ## Language
 
 ### Data shape
