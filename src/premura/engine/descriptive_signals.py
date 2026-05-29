@@ -221,9 +221,8 @@ def _status(
 # ``policies/_defaults.py``. That family deliberately does NOT admit an absolute
 # ``CURRENT_STATUS`` answer — resting HR is only honest read relative to the
 # operator's own baseline. So when we evaluate a resting-HR reading as a
-# present-tense candidate, the evaluator surfaces *why* (stale-for-question
-# when the reading is past its window, or an unsupported-for-current-status
-# verdict otherwise). Either way we fold one concise, descriptive sentence into
+# present-tense candidate, the evaluator surfaces *why* stale evidence cannot
+# support a current-status answer. We fold one concise, descriptive sentence into
 # the caveats — no diagnosis, reference range, population norm, or advice.
 
 _RESTING_HR_POLICY_FAMILY = "hrv_resting_recovery"
@@ -277,12 +276,11 @@ def _resting_hr_policy_caveat(result: StatusResult) -> str | None:
     the built-in family policies. Returns a short, descriptive caveat when the
     evaluator does not admit the reading as a current-status answer, else None.
 
-    The evaluator is pure and reads nothing from the warehouse — we pass the
-    reading's own timestamp as ``reference_time`` so the recency comparison is
-    deterministic and the verdict reflects *this* reading's place in its family
-    policy, not wall-clock drift between the query and now. The caveat is
-    additional context only: it never replaces the freshness-window caveat and
-    carries no diagnosis, reference range, population norm, or advice.
+    The evaluator is pure and reads nothing from the warehouse. We pass the same
+    naive-UTC clock helper used by the existing Stage 2 query code so a stale
+    status result is actually judged stale for the current-status question. The
+    caveat is additional context only: it never replaces the freshness-window
+    caveat and carries no diagnosis, reference range, population norm, or advice.
     """
     candidate = EvidenceCandidate(
         metric_id=result.metric_id,
@@ -295,7 +293,7 @@ def _resting_hr_policy_caveat(result: StatusResult) -> str | None:
         QuestionType.CURRENT_STATUS,
         [candidate],
         builtin_policies(),
-        reference_time=result.observed_at,
+        reference_time=_query._naive_utc_now(),
     )
     # If the policy layer were to admit this reading as a current-status answer
     # there would be no extra context to add. The baseline-relative resting-HR

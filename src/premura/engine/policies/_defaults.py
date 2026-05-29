@@ -374,6 +374,12 @@ def _baseline_relative(
     standardized, so it must always carry caveats (enforced by the model for
     this shape) and is read as deviation-from-baseline, never an absolute norm.
     """
+    current_rule = QuestionRule(
+        admissibility=Admissibility.LIMITED,
+        freshness=FreshnessRule(mode=FreshnessMode.BASELINE_RELATIVE, max_age=current_max_age),
+        required_context=("observed_at",),
+        refusal_mode=RefusalMode.OFFER_WITH_CAVEATS,
+    )
     relative_rule = QuestionRule(
         admissibility=Admissibility.LIMITED,
         freshness=FreshnessRule(mode=FreshnessMode.BASELINE_RELATIVE, max_age=current_max_age),
@@ -391,6 +397,7 @@ def _baseline_relative(
         rationale=rationale,
         source_notes=source_notes,
         question_rules={
+            QuestionType.CURRENT_STATUS: current_rule,
             QuestionType.RECENT_TREND: relative_rule,
             QuestionType.HISTORICAL_BASELINE: QuestionRule(
                 admissibility=Admissibility.LIMITED,
@@ -718,7 +725,7 @@ BUILTIN_POLICIES: tuple[MetricFamilyPolicy, ...] = (
     _baseline_relative(
         policy_id="builtin.hrv_resting_recovery.v1",
         metric_family="hrv_resting_recovery",
-        applies_to_metrics=("hrv", "resting_heart_rate", "recovery_score"),
+        applies_to_metrics=("hrv", "resting_hr", "recovery_score"),
         current_max_age=timedelta(days=2),
         standing_caveats=(
             "These are only meaningful relative to your own baseline and are "

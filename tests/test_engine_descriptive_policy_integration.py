@@ -27,7 +27,7 @@ import pytest
 
 from premura import engine
 from premura.engine import descriptive_signals
-from premura.engine._results import FreshnessState, TrendDirection
+from premura.engine._results import FreshnessState, StatusResult, TrendDirection, TrendResult
 
 
 @pytest.fixture()
@@ -140,6 +140,7 @@ def test_resting_hr_status_uses_policy_for_stale_current_status_evidence(
     )
 
     result = engine.compute("resting_hr_status", conn)
+    assert isinstance(result, StatusResult)
     out = result.to_dict()
 
     # Result family/shape is preserved.
@@ -183,7 +184,9 @@ def test_resting_hr_status_shape_is_preserved(registered: Any) -> None:
         source_id=src,
         key="rhr-fresh",
     )
-    out = engine.compute("resting_hr_status", conn).to_dict()
+    result = engine.compute("resting_hr_status", conn)
+    assert isinstance(result, StatusResult)
+    out = result.to_dict()
     assert set(out.keys()) == {
         "family",
         "signal_name",
@@ -218,7 +221,9 @@ def test_resting_hr_status_current_path_still_available(registered: Any) -> None
         source_id=src,
         key="rhr-fresh",
     )
-    out = engine.compute("resting_hr_status", conn).to_dict()
+    result = engine.compute("resting_hr_status", conn)
+    assert isinstance(result, StatusResult)
+    out = result.to_dict()
     assert out["family"] == "status"
     assert out["freshness_state"] == FreshnessState.CURRENT.value
     assert out["value"] == 54.0
@@ -238,7 +243,8 @@ def test_resting_hr_status_no_metric_definition_still_unavailable(
     """
     conn = empty_warehouse
     conn.execute("DELETE FROM hp.dim_metric WHERE metric_id = 'resting_hr'")
-    out = descriptive_signals.resting_hr_status(conn).to_dict()
+    result = descriptive_signals.resting_hr_status(conn)
+    out = result.to_dict()
     assert out["freshness_state"] == FreshnessState.UNAVAILABLE.value
     assert out["value"] is None
     assert out["observed_at"] is None
@@ -250,7 +256,9 @@ def test_resting_hr_status_no_observation_still_unavailable(
     registered: Any,
 ) -> None:
     """No resting-HR observation -> UNAVAILABLE behavior unchanged."""
-    out = engine.compute("resting_hr_status", registered).to_dict()
+    result = engine.compute("resting_hr_status", registered)
+    assert isinstance(result, StatusResult)
+    out = result.to_dict()
     assert out["freshness_state"] == FreshnessState.UNAVAILABLE.value
     assert out["value"] is None
     assert out["observed_at"] is None
@@ -274,7 +282,9 @@ def test_resting_hr_status_preserves_existing_caveat_and_adds_only_context(
         source_id=src,
         key="rhr-stale2",
     )
-    out = engine.compute("resting_hr_status", conn).to_dict()
+    result = engine.compute("resting_hr_status", conn)
+    assert isinstance(result, StatusResult)
+    out = result.to_dict()
     caveats = out["caveats"]
     # The original freshness caveat is still there...
     assert any("older" in c.lower() for c in caveats)
@@ -302,7 +312,9 @@ def test_trend_signals_not_migrated_by_proof_integration(registered: Any) -> Non
             source_id=src,
             key=f"rhr-trend-{i}",
         )
-    out = engine.compute("resting_hr_trend", conn).to_dict()
+    result = engine.compute("resting_hr_trend", conn)
+    assert isinstance(result, TrendResult)
+    out = result.to_dict()
     # Still the trend family, still a direction verdict — the policy layer did
     # not change this path.
     assert out["family"] == "trend"

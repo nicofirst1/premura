@@ -111,6 +111,21 @@ _BUILTIN_SIGNAL_MODULES: tuple[str, ...] = (
     "premura.engine.comparative_signals",
 )
 
+_BUILTIN_SIGNAL_NAMES: frozenset[str] = frozenset(
+    {
+        "ast_alt_ratio",
+        "ldl_hdl_ratio",
+        "tg_hdl_ratio",
+        "resting_hr_status",
+        "resting_hr_trend",
+        "steps_trend",
+        "weight_trend",
+        "bmi",
+        "sleep_deep_pct_baseline",
+        "hrv_change_around_date",
+    }
+)
+
 # Tracks whether the built-in signal modules have been imported and registered.
 # This is intentionally decoupled from ``REGISTRY`` truthiness: a contributor
 # may register a custom signal before the first lazy load, and that must NOT be
@@ -483,7 +498,7 @@ def metric_summary(
 
 def _ensure_builtin_signals_loaded() -> None:
     global _BUILTINS_LOADED
-    if _BUILTINS_LOADED:
+    if _BUILTINS_LOADED and _BUILTIN_SIGNAL_NAMES <= set(REGISTRY):
         return
     for module_name in _BUILTIN_SIGNAL_MODULES:
         module = import_module(module_name)

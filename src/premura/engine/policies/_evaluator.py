@@ -107,6 +107,11 @@ def _unsupported_policy_outcome(
     )
 
 
+def _declared_caveats(policy: MetricFamilyPolicy, rule: QuestionRule) -> tuple[str, ...]:
+    """Standing policy caveats plus question-specific caveats, de-duplicated."""
+    return tuple(dict.fromkeys((*policy.standing_caveats, *rule.caveats)))
+
+
 def _missing_context_fields(
     candidate: EvidenceCandidate,
     policy: MetricFamilyPolicy,
@@ -147,7 +152,7 @@ def _freshness_outcome(
     element is ``None`` the candidate passes freshness (possibly with caveats);
     otherwise it is a rejected outcome to surface as-is.
     """
-    caveats: list[str] = list(rule.caveats)
+    caveats: list[str] = list(_declared_caveats(policy, rule))
 
     # caveat_only never silently passes: it always attaches its caveats and
     # never rejects for age.
@@ -314,7 +319,7 @@ def _inadmissible_outcome(
             f"evidence to answer question '{question_type.value}'."
         ),
         rejection_reasons=reasons,
-        caveats=tuple(rule.caveats),
+        caveats=_declared_caveats(policy, rule),
         provenance=_provenance(candidate),
     )
 
@@ -346,7 +351,7 @@ def _missing_context_outcome(
             f"'{question_type.value}'."
         ),
         rejection_reasons=tuple(reasons),
-        caveats=tuple(rule.caveats),
+        caveats=_declared_caveats(policy, rule),
         provenance=_provenance(candidate),
     )
 
@@ -388,7 +393,7 @@ def _evaluate_candidate(
         return _missing_context_outcome(candidate, question_type, policy, rule, missing)
 
     # Freshness.
-    freshness_caveats: tuple[str, ...] = tuple(rule.caveats)
+    freshness_caveats: tuple[str, ...] = _declared_caveats(policy, rule)
     if rule.freshness is not None:
         freshness_reject, freshness_caveats = _freshness_outcome(
             candidate,
@@ -420,7 +425,7 @@ def _evaluate_candidate(
 
     # Admissible. Standing caveats from the policy always travel with the
     # result, plus any freshness/question caveats accumulated above.
-    caveats = tuple(dict.fromkeys((*policy.standing_caveats, *freshness_caveats)))
+    caveats = tuple(dict.fromkeys(freshness_caveats))
     return EvidenceOutcome(
         status=EvidenceStatus.ADMISSIBLE,
         question_type=question_type,

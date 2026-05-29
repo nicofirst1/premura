@@ -199,6 +199,37 @@ def test_question_rules_keys_must_be_question_types():
         )
 
 
+def test_question_rule_rejects_callable_admissibility():
+    with pytest.raises(ValueError, match="admissibility must be a Admissibility"):
+        QuestionRule(admissibility=lambda candidate: Admissibility.ADMISSIBLE)  # type: ignore[arg-type]
+
+
+def test_policy_rejects_callable_applies_to_metric():
+    with pytest.raises(ValueError, match="applies_to_metrics entries must be strings"):
+        MetricFamilyPolicy(
+            policy_id="bad.v1",
+            version=1,
+            metric_family="bad",
+            policy_shape=PolicyShape.POINT_IN_TIME_ACUTE,
+            temporal_meaning=TemporalMeaning.POINT_IN_TIME,
+            question_rules={QuestionType.CURRENT_STATUS: _admissible_rule()},
+            applies_to_metrics=(lambda: "bad",),  # type: ignore[arg-type]
+        )
+
+
+def test_policy_rejects_callable_required_provenance():
+    with pytest.raises(ValueError, match="required_provenance entries must be strings"):
+        MetricFamilyPolicy(
+            policy_id="bad.v1",
+            version=1,
+            metric_family="bad",
+            policy_shape=PolicyShape.POINT_IN_TIME_ACUTE,
+            temporal_meaning=TemporalMeaning.POINT_IN_TIME,
+            question_rules={QuestionType.CURRENT_STATUS: _admissible_rule()},
+            required_provenance=(lambda: "observed_at",),  # type: ignore[arg-type]
+        )
+
+
 def test_empty_policy_id_rejected():
     with pytest.raises(ValueError, match="policy_id must not be empty"):
         MetricFamilyPolicy(

@@ -197,6 +197,77 @@ def test_sparse_trend_candidate_is_insufficient() -> None:
     assert result.refusal is not None
 
 
+def test_insufficient_outcome_carries_policy_standing_caveats() -> None:
+    policy = MetricFamilyPolicy(
+        policy_id="method.sensitive.v1",
+        version=1,
+        metric_family="method_sensitive",
+        policy_shape=PolicyShape.SLOW_TRAJECTORY_METHOD_SENSITIVE,
+        temporal_meaning=TemporalMeaning.SLOW_TRAJECTORY,
+        standing_caveats=("Method-sensitive evidence must be interpreted cautiously.",),
+        question_rules={
+            QuestionType.RECENT_TREND: QuestionRule(
+                admissibility=Admissibility.ADMISSIBLE,
+                sufficiency=SufficiencyRule(
+                    min_observations=3,
+                    missing_data_behavior=MissingDataBehavior.REJECT,
+                ),
+                required_context=("observed_at",),
+            )
+        },
+    )
+    candidate = EvidenceCandidate(
+        metric_id="method-sensitive-1",
+        metric_family="method_sensitive",
+        value_kind="series",
+        observed_at=REFERENCE_TIME,
+        point_count=1,
+    )
+    result = evaluate_evidence(
+        QuestionType.RECENT_TREND,
+        [candidate],
+        policy,
+        reference_time=REFERENCE_TIME,
+    )
+    assert result.insufficient_evidence
+    assert result.insufficient_evidence[0].caveats == policy.standing_caveats
+
+
+def test_rejected_outcome_carries_policy_standing_caveats() -> None:
+    policy = MetricFamilyPolicy(
+        policy_id="baseline.relative.v1",
+        version=1,
+        metric_family="baseline_relative",
+        policy_shape=PolicyShape.BASELINE_RELATIVE,
+        temporal_meaning=TemporalMeaning.ROLLING_RECENT_PATTERN,
+        standing_caveats=("Only meaningful relative to your own baseline.",),
+        question_rules={
+            QuestionType.CURRENT_STATUS: QuestionRule(
+                admissibility=Admissibility.ADMISSIBLE,
+                freshness=FreshnessRule(
+                    mode=FreshnessMode.BASELINE_RELATIVE,
+                    max_age=timedelta(days=2),
+                ),
+                required_context=("observed_at",),
+            )
+        },
+    )
+    candidate = EvidenceCandidate(
+        metric_id="baseline-relative-1",
+        metric_family="baseline_relative",
+        value_kind="scalar",
+        observed_at=REFERENCE_TIME - timedelta(days=5),
+    )
+    result = evaluate_evidence(
+        QuestionType.CURRENT_STATUS,
+        [candidate],
+        policy,
+        reference_time=REFERENCE_TIME,
+    )
+    assert result.rejected_evidence
+    assert result.rejected_evidence[0].caveats == policy.standing_caveats
+
+
 def test_missing_timestamp_is_not_admissible() -> None:
     policy = _current_status_policy()
     candidate = EvidenceCandidate(

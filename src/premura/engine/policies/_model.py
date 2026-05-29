@@ -32,7 +32,41 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import timedelta
 from enum import StrEnum
-from typing import Any
+from typing import Any, TypeVar
+
+_EnumT = TypeVar("_EnumT", bound=StrEnum)
+
+
+def _require_enum(value: object, enum_type: type[_EnumT], field_name: str) -> _EnumT:
+    if not isinstance(value, enum_type):
+        raise ValueError(f"{field_name} must be a {enum_type.__name__} value, got {value!r}")
+    return value
+
+
+def _require_timedelta_or_none(value: object, field_name: str) -> timedelta | None:
+    if value is not None and not isinstance(value, timedelta):
+        raise ValueError(f"{field_name} must be a timedelta or None, got {value!r}")
+    return value
+
+
+def _require_tuple_of_str(values: tuple[object, ...], field_name: str) -> tuple[str, ...]:
+    for value in values:
+        if not isinstance(value, str):
+            raise ValueError(f"{field_name} entries must be strings, got {value!r}")
+        if not value.strip():
+            raise ValueError(f"{field_name} must not contain empty strings")
+    return values  # type: ignore[return-value]
+
+
+def _require_tuple_of_enum(
+    values: tuple[object, ...],
+    enum_type: type[_EnumT],
+    field_name: str,
+) -> tuple[_EnumT, ...]:
+    for value in values:
+        _require_enum(value, enum_type, f"{field_name} entry")
+    return values  # type: ignore[return-value]
+
 
 # ---------------------------------------------------------------------------
 # Closed vocabularies
@@ -171,6 +205,9 @@ class FreshnessRule:
     preferred_age: timedelta | None = None
 
     def __post_init__(self) -> None:
+        _require_enum(self.mode, FreshnessMode, "FreshnessRule.mode")
+        _require_timedelta_or_none(self.max_age, "FreshnessRule.max_age")
+        _require_timedelta_or_none(self.preferred_age, "FreshnessRule.preferred_age")
         if self.mode is FreshnessMode.STRICT_WINDOW and self.max_age is None:
             raise ValueError("FreshnessRule: strict_window requires max_age (a timedelta)")
         if self.mode is FreshnessMode.VALID_UNTIL_SUPERSEDED and self.max_age is not None:
@@ -194,6 +231,12 @@ class SufficiencyRule:
     missing_data_behavior: MissingDataBehavior = MissingDataBehavior.IGNORE_IF_NOT_REQUIRED
 
     def __post_init__(self) -> None:
+        _require_enum(
+            self.missing_data_behavior,
+            MissingDataBehavior,
+            "SufficiencyRule.missing_data_behavior",
+        )
+        _require_timedelta_or_none(self.min_span, "SufficiencyRule.min_span")
         if self.min_observations is not None and self.min_observations <= 0:
             raise ValueError("SufficiencyRule: min_observations must be positive")
         if self.min_span is not None and self.min_span <= timedelta(0):
@@ -219,16 +262,25 @@ class QuestionRule:
     caveats: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        _require_enum(self.admissibility, Admissibility, "QuestionRule.admissibility")
+        if self.freshness is not None and not isinstance(self.freshness, FreshnessRule):
+            raise ValueError("QuestionRule.freshness must be a FreshnessRule or None")
+        if self.sufficiency is not None and not isinstance(self.sufficiency, SufficiencyRule):
+            raise ValueError("QuestionRule.sufficiency must be a SufficiencyRule or None")
+        _require_tuple_of_str(self.required_context, "QuestionRule.required_context")
+        _require_tuple_of_enum(
+            self.default_rejection_reasons,
+            RejectionReason,
+            "QuestionRule.default_rejection_reasons",
+        )
+        _require_enum(self.refusal_mode, RefusalMode, "QuestionRule.refusal_mode")
+        _require_tuple_of_str(self.caveats, "QuestionRule.caveats")
         if self.admissibility is Admissibility.INADMISSIBLE and not self.default_rejection_reasons:
             raise ValueError(
                 "QuestionRule: an inadmissible rule must name at least one "
                 "default rejection reason so the evaluator can explain the "
                 "refusal"
             )
-        if any(not c.strip() for c in self.caveats):
-            raise ValueError("QuestionRule: caveats must not contain empty strings")
-        if any(not c.strip() for c in self.required_context):
-            raise ValueError("QuestionRule: required_context must not contain empty strings")
 
 
 @dataclass(frozen=True)
@@ -245,6 +297,13 @@ class PolicyExample:
     expected_rejection_reasons: tuple[RejectionReason, ...] = ()
 
     def __post_init__(self) -> None:
+        _require_enum(self.question_type, QuestionType, "PolicyExample.question_type")
+        _require_enum(self.expected_status, EvidenceStatus, "PolicyExample.expected_status")
+        _require_tuple_of_enum(
+            self.expected_rejection_reasons,
+            RejectionReason,
+            "PolicyExample.expected_rejection_reasons",
+        )
         if not self.description.strip():
             raise ValueError("PolicyExample: description must not be empty")
         if (
@@ -281,6 +340,18 @@ class MetricFamilyPolicy:
     examples: tuple[PolicyExample, ...] = ()
 
     def __post_init__(self) -> None:
+        _require_enum(self.policy_shape, PolicyShape, "MetricFamilyPolicy.policy_shape")
+        _require_enum(self.temporal_meaning, TemporalMeaning, "MetricFamilyPolicy.temporal_meaning")
+        _require_tuple_of_str(self.applies_to_metrics, "MetricFamilyPolicy.applies_to_metrics")
+        _require_tuple_of_str(self.required_provenance, "MetricFamilyPolicy.required_provenance")
+        _require_tuple_of_str(self.standing_caveats, "MetricFamilyPolicy.standing_caveats")
+        _require_tuple_of_str(self.source_notes, "MetricFamilyPolicy.source_notes")
+        for example in self.examples:
+            if not isinstance(example, PolicyExample):
+                raise ValueError(
+                    "MetricFamilyPolicy.examples entries must be PolicyExample values, "
+                    f"got {example!r}"
+                )
         if not self.policy_id.strip():
             raise ValueError("MetricFamilyPolicy: policy_id must not be empty")
         if not self.metric_family.strip():
@@ -301,8 +372,6 @@ class MetricFamilyPolicy:
                 "method-sensitive/baseline-relative and must carry at least one "
                 "standing caveat"
             )
-        if any(not c.strip() for c in self.standing_caveats):
-            raise ValueError("MetricFamilyPolicy: standing_caveats must not contain empty strings")
         # Freeze the mapping so the declaration cannot be mutated after build.
         object.__setattr__(self, "question_rules", dict(self.question_rules))
 
@@ -330,6 +399,12 @@ class EvidenceCandidate:
     context: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        if self.observed_at is not None and not hasattr(self.observed_at, "__sub__"):
+            raise ValueError("EvidenceCandidate.observed_at must be datetime-like or None")
+        if self.source_id is not None and not isinstance(self.source_id, str):
+            raise ValueError("EvidenceCandidate.source_id must be a string or None")
+        if not isinstance(self.context, Mapping):
+            raise ValueError("EvidenceCandidate.context must be a mapping")
         if not self.metric_id.strip():
             raise ValueError("EvidenceCandidate: metric_id must not be empty")
         if not self.metric_family.strip():
@@ -359,6 +434,16 @@ class EvidenceOutcome:
     provenance: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        _require_enum(self.status, EvidenceStatus, "EvidenceOutcome.status")
+        _require_enum(self.question_type, QuestionType, "EvidenceOutcome.question_type")
+        _require_tuple_of_enum(
+            self.rejection_reasons,
+            RejectionReason,
+            "EvidenceOutcome.rejection_reasons",
+        )
+        _require_tuple_of_str(self.caveats, "EvidenceOutcome.caveats")
+        if not isinstance(self.provenance, Mapping):
+            raise ValueError("EvidenceOutcome.provenance must be a mapping")
         if not self.message.strip():
             raise ValueError("EvidenceOutcome: message must not be empty")
         if (
@@ -369,8 +454,6 @@ class EvidenceOutcome:
                 f"EvidenceOutcome: a {self.status.value} outcome must name at "
                 "least one rejection reason (a generic 'failed' is not enough)"
             )
-        if any(not c.strip() for c in self.caveats):
-            raise ValueError("EvidenceOutcome: caveats must not contain empty strings")
         object.__setattr__(self, "provenance", dict(self.provenance))
 
     def to_dict(self) -> dict[str, Any]:
@@ -402,6 +485,20 @@ class EvaluationResult:
     refusal: EvidenceOutcome | None = None
 
     def __post_init__(self) -> None:
+        _require_enum(self.question_type, QuestionType, "EvaluationResult.question_type")
+        for field_name, outcomes in (
+            ("admissible_evidence", self.admissible_evidence),
+            ("rejected_evidence", self.rejected_evidence),
+            ("insufficient_evidence", self.insufficient_evidence),
+        ):
+            for outcome in outcomes:
+                if not isinstance(outcome, EvidenceOutcome):
+                    raise ValueError(
+                        f"EvaluationResult.{field_name} entries must be EvidenceOutcome values, "
+                        f"got {outcome!r}"
+                    )
+        if self.refusal is not None and not isinstance(self.refusal, EvidenceOutcome):
+            raise ValueError("EvaluationResult.refusal must be an EvidenceOutcome or None")
         if not self.admissible_evidence and self.refusal is None:
             raise ValueError(
                 "EvaluationResult: a refusal outcome is required when no "

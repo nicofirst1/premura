@@ -108,6 +108,14 @@ def test_named_research_family_groups_are_covered() -> None:
     assert not missing, f"missing named family groups: {sorted(missing)}"
 
 
+def test_hrv_resting_recovery_uses_warehouse_resting_hr_metric_id() -> None:
+    registry = build_builtin_registry()
+    policy = registry.get("hrv_resting_recovery")
+    assert policy is not None
+    assert "resting_hr" in policy.applies_to_metrics
+    assert "resting_heart_rate" not in policy.applies_to_metrics
+
+
 def test_no_per_question_duplicate_family_block() -> None:
     """No family is split into one declaration per question type.
 
@@ -244,6 +252,26 @@ def test_long_term_marker_admitted_for_long_term_control() -> None:
     )
     assert result.admissible_evidence
     assert result.admissible_evidence[0].status is EvidenceStatus.ADMISSIBLE
+
+
+def test_baseline_relative_current_status_rejects_stale_evidence() -> None:
+    registry = build_builtin_registry()
+    candidate = _candidate(
+        "hrv_resting_recovery",
+        metric_id="resting_hr",
+        observed_at=NOW - timedelta(days=5),
+    )
+    result = evaluate_evidence(
+        QuestionType.CURRENT_STATUS,
+        [candidate],
+        registry.policies(),
+        reference_time=NOW,
+    )
+    assert not result.admissible_evidence
+    assert result.rejected_evidence
+    rejected = result.rejected_evidence[0]
+    assert RejectionReason.STALE_FOR_QUESTION in rejected.rejection_reasons
+    assert rejected.caveats
 
 
 def test_profile_fact_not_rejected_for_age_alone() -> None:
