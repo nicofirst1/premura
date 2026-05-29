@@ -123,3 +123,4 @@ Focus on boundary discipline: MCP should serialize and delegate, not compute.
 ## Activity Log
 
 - 2026-05-29T15:59:39Z – claude:opus:implementer:implementer – shell_pid=52112 – Started implementation via action command
+- 2026-05-29T16:15:52Z – claude:opus:implementer:implementer – shell_pid=52112 – Ready for review: change_point and smoothed_average exposed on default MCP surface via thin delegating wrappers; query_warehouse stays operator-only; full suite 466 passed
