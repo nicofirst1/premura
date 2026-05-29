@@ -59,6 +59,42 @@ from ._results import (
     TrendResult,
 )
 
+# Stage 2 evidence-admissibility policy surface (WP01-WP03). These are the
+# *stable* contributor names a future policy author imports; the private
+# ``premura.engine.policies._model`` / ``._evaluator`` / ``._registry`` modules
+# stay internal. Importing them here is cheap and side-effect-free: the policy
+# package only pulls in frozen dataclasses, closed enums, and the pure
+# evaluator/registry — it does NOT touch DuckDB, the signal/resolver
+# registries, PubMed, or any network/MCP module, so this import does not
+# disturb the lazy built-in signal/resolver loading documented above.
+from .policies import (
+    CAVEAT_REQUIRED_SHAPES,
+    Admissibility,
+    EvaluationResult,
+    EvidenceCandidate,
+    EvidenceOutcome,
+    EvidenceStatus,
+    FreshnessMode,
+    FreshnessRule,
+    MetricFamilyPolicy,
+    MissingDataBehavior,
+    PolicyExample,
+    PolicyShape,
+    QuestionRule,
+    QuestionType,
+    RefusalMode,
+    RejectionReason,
+    SufficiencyRule,
+    TemporalMeaning,
+)
+from .policies._defaults import BUILTIN_POLICIES, builtin_policies
+from .policies._evaluator import evaluate_evidence
+from .policies._registry import (
+    DuplicatePolicyError,
+    PolicyRegistry,
+    build_builtin_registry,
+)
+
 if TYPE_CHECKING:
     import duckdb
 
@@ -142,6 +178,34 @@ __all__ = [
     "MissingInputReport",
     "MetricCatalogEntry",
     "MetricSummaryEntry",
+    # Stage 2 evidence-admissibility policy surface (WP01-WP03).
+    # Closed vocabularies + frozen declaration/result dataclasses (WP01):
+    "QuestionType",
+    "EvidenceStatus",
+    "RejectionReason",
+    "FreshnessMode",
+    "Admissibility",
+    "TemporalMeaning",
+    "PolicyShape",
+    "MissingDataBehavior",
+    "RefusalMode",
+    "CAVEAT_REQUIRED_SHAPES",
+    "FreshnessRule",
+    "SufficiencyRule",
+    "QuestionRule",
+    "PolicyExample",
+    "MetricFamilyPolicy",
+    "EvidenceCandidate",
+    "EvidenceOutcome",
+    "EvaluationResult",
+    # Deterministic evaluator (WP02):
+    "evaluate_evidence",
+    # Built-in family defaults + registry (WP03):
+    "BUILTIN_POLICIES",
+    "builtin_policies",
+    "PolicyRegistry",
+    "DuplicatePolicyError",
+    "build_builtin_registry",
 ]
 
 
@@ -257,9 +321,7 @@ def list_unavailable(
     layer for user-facing "go get this lab" suggestions.
     """
     return [
-        spec
-        for spec in list_by_domain(domain)
-        if not check_inputs_available(spec.inputs, conn)
+        spec for spec in list_by_domain(domain) if not check_inputs_available(spec.inputs, conn)
     ]
 
 
@@ -402,9 +464,7 @@ def metric_summary(
 
     obs = lv.observation
     total_buckets = window.observed_count + window.imputed_count + window.gap_count
-    imputed_proportion = (
-        window.imputed_count / total_buckets if total_buckets > 0 else 0.0
-    )
+    imputed_proportion = window.imputed_count / total_buckets if total_buckets > 0 else 0.0
 
     return MetricSummaryEntry(
         metric_id=metric_id,

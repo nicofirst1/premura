@@ -208,6 +208,83 @@ filesystem scanning, eager imports, or a third-party plugin/manifest loader.
 Importing `premura.engine` must stay lazy: the registry is empty until a query
 or compute helper needs the built-in signals.
 
+## Declaring an evidence-admissibility policy
+
+A separate Stage 2 surface decides *whether a value is admissible as evidence
+for a given question* — distinct from a signal, which computes an answer. You
+declare admissibility through **frozen-dataclass policies**, not a signal.
+
+All names below are re-exported from `premura.engine`; reach them through
+`from premura.engine import ...`, never through `premura.engine.policies._*`:
+
+- Closed vocabularies: `QuestionType`, `EvidenceStatus`, `RejectionReason`,
+  `FreshnessMode`, `Admissibility`, `TemporalMeaning`, `PolicyShape`,
+  `MissingDataBehavior`, `RefusalMode`, plus `CAVEAT_REQUIRED_SHAPES`.
+- Declaration dataclasses (frozen, parameters only): `MetricFamilyPolicy`,
+  `QuestionRule`, `FreshnessRule`, `SufficiencyRule`, `PolicyExample`.
+- Evaluation: `EvidenceCandidate` (input), `EvidenceOutcome` /
+  `EvaluationResult` (output), and the pure helper `evaluate_evidence(...)`.
+- Built-in defaults + registry: `BUILTIN_POLICIES` / `builtin_policies()`,
+  `PolicyRegistry`, `build_builtin_registry()`, `DuplicatePolicyError`.
+
+### How policies are keyed
+
+A policy is a **family-level declaration with per-question modifiers**. One
+`MetricFamilyPolicy` covers a metric *family* (e.g. resting heart rate as a
+family, not each individual metric id), and its `question_rules` map a closed
+`QuestionType` to the freshness/sufficiency behavior for *that question*. The
+same family answers "what is X now?" and "how has X trended?" with different
+admissibility windows because the question, not the metric, drives the rule.
+
+This is deliberately **not YAML**. No human domain reviewer reads policy files
+directly — capture and review are agent-mediated — and typed, code-native
+declarations match the rest of Stage 2 and get caught by the model, evaluator,
+and defaults tests. A YAML policy layer would add a parser, a schema, and a
+second source of truth for zero agent-facing benefit.
+
+### Declarations are parameters only
+
+A policy declaration carries **values, not behavior**: closed enum members,
+duration/count thresholds, required-provenance field names, and caveat
+strings. It must contain **no expressions, conditionals, callables, SQL, or
+network calls**. The single place that turns those parameters into decisions is
+`evaluate_evidence`. This separation is the guardrail against a creeping policy
+mini-language: if a new rule cannot be expressed as a parameter on the existing
+dataclasses, that is a signal to open a future mission, not to embed logic in a
+declaration.
+
+### The PubMed boundary
+
+Literature tooling (e.g. a PubMed MCP) may help an agent **author or review** a
+policy — choosing a defensible freshness window, sanity-checking a caveat — and
+the rationale it produces belongs in `PolicyExample` / caveat text. **Stage 2
+must never call PubMed (or any network service) at runtime.** Evaluation is pure
+over the candidates the caller passes; literature is rationale captured at
+authoring time, never a runtime evidence source.
+
+### How to add a policy
+
+1. If you need background, use a PubMed MCP or other sources **only** during
+   research/review — never wire them into runtime.
+2. Reuse an existing `QuestionType` and `PolicyShape` where the question fits.
+3. Add a family-level `MetricFamilyPolicy` to the built-in defaults, with a
+   `QuestionRule` per relevant question type.
+4. Capture rationale, caveats, and at least one admissible and one refusal
+   `PolicyExample` so the intent survives without reading the mission folder.
+5. Run the policy model, evaluator, and defaults tests
+   (`tests/test_engine_policy_model.py`, `tests/test_engine_policy_evaluator.py`,
+   `tests/test_engine_policy_defaults.py`) plus the public-surface test.
+
+### What not to do (this mission)
+
+- Do **not** add YAML policy files or any external policy config.
+- Do **not** add runtime literature fetching or any network call to evaluation.
+- Do **not** add a custom evaluator branch for one metric; if a metric needs
+  behavior the parameters cannot express, that is a future mission.
+- Do **not** introduce a new `QuestionType`, `RejectionReason`, or a fifth
+  result family. New question types or result families change the authoring
+  contract and require a dedicated future mission with its own sign-off.
+
 ## Tests and review notes a contributor must include
 
 - Follow the repo's test-first rule. Assert through **public** imports
@@ -233,3 +310,21 @@ When reviewing a Stage 2 signal PR, confirm:
 - Built-in registration uses the static module list, not a new loader.
 - Tests assert through public imports against DuckDB fixtures and cover refusal
   paths.
+
+### Reviewing an evidence-policy change
+
+When reviewing a new or changed `MetricFamilyPolicy`, confirm:
+
+- It uses **existing** `QuestionType` values and `RejectionReason` values — a
+  new question type or rejection reason is a future mission, not a PR.
+- It claims **no clinical authority**: no diagnosis, treatment, reference
+  ranges, population norms, or significance/causation language; caveats stay
+  plain-English.
+- Its rejection reasons stay **distinct** — each refusal maps to one specific,
+  machine-readable reason, not an overloaded catch-all.
+- Any PubMed/literature note is **rationale only** (in `PolicyExample`/caveat
+  text), never a runtime dependency of evaluation.
+- It includes worked examples for **both** admissible and refusal behavior so
+  intent is reviewable without re-deriving it.
+- The declaration is **parameters only** — no expressions, callables, SQL, or
+  network calls smuggled into the dataclass.

@@ -54,6 +54,18 @@ from ._results import (
     TrendResult,
 )
 
+# WP05 — resting-HR proof integration. The status path for resting HR is the
+# first existing Stage 2 signal to hand its latest evidence to the new
+# evidence-admissibility evaluator (WP01–WP04). It is imported at module load
+# time, like ``resolve_dependency`` above, because the policy seam is part of
+# this consumer's contract and must be visible at the top of the module rather
+# than buried in a function body. This import is cheap and side-effect-free:
+# the policy package only pulls in frozen dataclasses, closed enums, and the
+# pure evaluator/registry — it touches neither DuckDB nor the network.
+from .policies import EvidenceCandidate, QuestionType
+from .policies._defaults import builtin_policies
+from .policies._evaluator import evaluate_evidence
+
 if TYPE_CHECKING:
     import duckdb
 
@@ -80,8 +92,17 @@ def resting_hr_status(conn: duckdb.DuckDBPyConnection) -> StatusResult:
     as ``STALE`` (value retained, but caveated), and an absent value as
     ``UNAVAILABLE`` (value omitted). No trend, reference-range, or training
     interpretation.
+
+    WP05 proof integration: once the existing freshness verdict is computed, the
+    latest reading is handed to the Stage 2 evidence-admissibility evaluator as
+    a ``CURRENT_STATUS`` candidate (see :func:`_resting_hr_policy_caveat`). The
+    evaluator's verdict is mapped back into *additional caveat context only* —
+    the ``StatusResult`` shape, the freshness state, and the retained value are
+    all unchanged. This proves the policy handoff for one existing signal
+    without migrating trend signals or BMI.
     """
-    return _status("resting_hr_status", "resting_hr", conn)
+    result = _status("resting_hr_status", "resting_hr", conn)
+    return _augment_resting_hr_status_with_policy(result)
 
 
 # --------------------------------------------------------------------------- #
@@ -184,6 +205,112 @@ def _status(
     ).validate()
 
 
+# --------------------------------------------------------------------------- #
+# WP05 — resting_hr_status policy-evaluator proof integration
+# --------------------------------------------------------------------------- #
+#
+# This is the FIRST behavior-touching slice of the evidence-admissibility
+# mission, and it is intentionally narrow: ONLY ``resting_hr_status`` consults
+# the policy evaluator, and it does so purely to *add caveat context*. The
+# freshness verdict and retained value computed by :func:`_status` stay
+# authoritative; the policy layer never relabels CURRENT/STALE/UNAVAILABLE and
+# never changes the result family.
+#
+# The resting-HR metric (``resting_hr``) belongs to the built-in
+# ``hrv_resting_recovery`` family, declared as ``baseline_relative`` in
+# ``policies/_defaults.py``. That family deliberately does NOT admit an absolute
+# ``CURRENT_STATUS`` answer — resting HR is only honest read relative to the
+# operator's own baseline. So when we evaluate a resting-HR reading as a
+# present-tense candidate, the evaluator surfaces *why* (stale-for-question
+# when the reading is past its window, or an unsupported-for-current-status
+# verdict otherwise). Either way we fold one concise, descriptive sentence into
+# the caveats — no diagnosis, reference range, population norm, or advice.
+
+_RESTING_HR_POLICY_FAMILY = "hrv_resting_recovery"
+"""Metric family the resting-HR policy is keyed under (see ``_defaults.py``)."""
+
+
+def _augment_resting_hr_status_with_policy(result: StatusResult) -> StatusResult:
+    """Fold the evidence-admissibility verdict into a resting-HR status result.
+
+    Returns the SAME ``StatusResult`` shape with at most one extra caveat. The
+    proof scope is deliberately the STALE case: when a present-but-old reading
+    is offered for a present-tense question, the policy layer is consulted and
+    its verdict is folded into the caveats as additional context. A ``CURRENT``
+    reading keeps its existing clean contract (no added caveat), and an
+    ``UNAVAILABLE`` result has no candidate to judge — both are returned
+    untouched so this proof does not widen into a behavior change for the
+    healthy/fresh path.
+    """
+    if result.freshness_state is not FreshnessState.STALE or result.observed_at is None:
+        return result
+
+    policy_caveat = _resting_hr_policy_caveat(result)
+    if policy_caveat is None:
+        return result
+
+    # Preserve the existing freshness caveat(s); append-only, de-duplicated.
+    caveats = list(result.caveats)
+    if policy_caveat not in caveats:
+        caveats.append(policy_caveat)
+
+    # Rebuild the frozen envelope with the augmented caveats; every other field
+    # (including the freshness verdict and retained value) is carried verbatim.
+    return StatusResult(
+        signal_name=result.signal_name,
+        metric_id=result.metric_id,
+        display_name=result.display_name,
+        unit=result.unit,
+        freshness_state=result.freshness_state,
+        validity_window=result.validity_window,
+        value=result.value,
+        observed_at=result.observed_at,
+        caveats=caveats,
+    ).validate()
+
+
+def _resting_hr_policy_caveat(result: StatusResult) -> str | None:
+    """Evaluate the stale resting-HR reading and derive one caveat sentence.
+
+    Builds an :class:`EvidenceCandidate` from the already-computed status result
+    and runs it through :func:`evaluate_evidence` for ``CURRENT_STATUS`` against
+    the built-in family policies. Returns a short, descriptive caveat when the
+    evaluator does not admit the reading as a current-status answer, else None.
+
+    The evaluator is pure and reads nothing from the warehouse — we pass the
+    reading's own timestamp as ``reference_time`` so the recency comparison is
+    deterministic and the verdict reflects *this* reading's place in its family
+    policy, not wall-clock drift between the query and now. The caveat is
+    additional context only: it never replaces the freshness-window caveat and
+    carries no diagnosis, reference range, population norm, or advice.
+    """
+    candidate = EvidenceCandidate(
+        metric_id=result.metric_id,
+        metric_family=_RESTING_HR_POLICY_FAMILY,
+        value_kind="point_in_time",
+        observed_at=result.observed_at,
+        point_count=1,
+    )
+    evaluation = evaluate_evidence(
+        QuestionType.CURRENT_STATUS,
+        [candidate],
+        builtin_policies(),
+        reference_time=result.observed_at,
+    )
+    # If the policy layer were to admit this reading as a current-status answer
+    # there would be no extra context to add. The baseline-relative resting-HR
+    # family does not admit an absolute current-status answer, so in practice a
+    # refusal is always present for a stale reading; guard regardless so the
+    # verdict — not a hard-coded assumption — drives whether a caveat is added.
+    if evaluation.admissible_evidence:
+        return None
+    return (
+        "Resting-HR admissibility policy: a reading older than its freshness "
+        "window cannot stand in for your resting HR right now, so it is not "
+        "treated as a current-status answer."
+    )
+
+
 def _trend(
     signal_name: str,
     metric_id: str,
@@ -206,10 +333,7 @@ def _trend(
         ).validate()
 
     window = _query.ordered_window(conn, policy, span=_TREND_SPAN)
-    points = [
-        TrendPoint(ts=p.ts, value=p.value, is_imputed=p.is_imputed)
-        for p in window.points
-    ]
+    points = [TrendPoint(ts=p.ts, value=p.value, is_imputed=p.is_imputed) for p in window.points]
 
     direction = _direction(window.observed_count, window.points)
     caveats = _trend_caveats(policy, window, direction)
@@ -258,9 +382,7 @@ def _trend_caveats(
 ) -> list[str]:
     caveats: list[str] = []
     if direction is TrendDirection.UNKNOWN:
-        caveats.append(
-            "Not enough observed points in this window to describe a direction."
-        )
+        caveats.append("Not enough observed points in this window to describe a direction.")
     if window.imputed_count > 0:
         caveats.append(
             f"{window.imputed_count} point(s) are carried forward from an earlier "
@@ -400,9 +522,7 @@ def bmi(
     # the observation resolver returns the numeric ``value`` directly, so both
     # are expected to be ``float`` here. A defensive coerce keeps a wrong-typed
     # row from masquerading as a usable BMI input.
-    if not isinstance(height_cm_raw, (int, float)) or not isinstance(
-        weight_kg_raw, (int, float)
-    ):
+    if not isinstance(height_cm_raw, (int, float)) or not isinstance(weight_kg_raw, (int, float)):
         return MissingInputReport(
             tool_name="bmi",
             required_inputs=list(_BMI_REQUIRED_INPUTS),
@@ -427,12 +547,11 @@ def bmi(
             required_inputs=list(_BMI_REQUIRED_INPUTS),
             missing_inputs=["profile:standing_height_cm"],
             message=(
-                "BMI requires a positive declared standing height; the resolved "
-                "value is not valid."
+                "BMI requires a positive declared standing height; the resolved value is not valid."
             ),
         )
 
-    bmi_value = weight_kg / (height_m ** 2)
+    bmi_value = weight_kg / (height_m**2)
 
     # Freshness is borrowed from the binding-constraint domain (body weight),
     # because that is the prerequisite whose freshness actually limits trust at
@@ -554,8 +673,7 @@ def register_builtin_signals() -> None:
             question="What is my resting heart rate right now, and can I trust it?",
             family="status",
             missing_input_hint=(
-                "Connect a wearable that records daily resting heart rate to "
-                "answer this."
+                "Connect a wearable that records daily resting heart rate to answer this."
             ),
         )
     )
@@ -572,8 +690,7 @@ def register_builtin_signals() -> None:
             question="Is my resting heart rate going up, down, or flat recently?",
             family="trend",
             missing_input_hint=(
-                "Connect a wearable that records daily resting heart rate to "
-                "answer this."
+                "Connect a wearable that records daily resting heart rate to answer this."
             ),
         )
     )
@@ -589,12 +706,8 @@ def register_builtin_signals() -> None:
             fn=steps_trend,
             question="Are my daily steps trending up or down?",
             family="trend",
-            missing_input_hint=(
-                "Connect a step-tracking source to answer this."
-            ),
-            caveat_summary=(
-                "Step days with no record are shown as gaps, not zero days.",
-            ),
+            missing_input_hint=("Connect a step-tracking source to answer this."),
+            caveat_summary=("Step days with no record are shown as gaps, not zero days.",),
         )
     )
     _register(
@@ -609,9 +722,7 @@ def register_builtin_signals() -> None:
             fn=weight_trend,
             question="Is my weight rising, falling, or flat over the last month?",
             family="trend",
-            missing_input_hint=(
-                "Record body weight (e.g. from a smart scale) to answer this."
-            ),
+            missing_input_hint=("Record body weight (e.g. from a smart scale) to answer this."),
             caveat_summary=(
                 "Days without a new weigh-in reuse the last reading within its "
                 "freshness window and are flagged as carried forward.",
