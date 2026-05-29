@@ -15,6 +15,8 @@ subtasks:
 - T022
 - T023
 - T024
+agent: "claude:opus:implementer:implementer"
+shell_pid: "52112"
 history:
 - 2026-05-29T15:18:42Z tasks generated
 authoritative_surface: src/premura/mcp/
@@ -117,3 +119,7 @@ If unrelated pre-existing failures appear, document them in the WP result with a
 ## Reviewer Guidance
 
 Focus on boundary discipline: MCP should serialize and delegate, not compute.
+
+## Activity Log
+
+- 2026-05-29T15:59:39Z – claude:opus:implementer:implementer – shell_pid=52112 – Started implementation via action command
