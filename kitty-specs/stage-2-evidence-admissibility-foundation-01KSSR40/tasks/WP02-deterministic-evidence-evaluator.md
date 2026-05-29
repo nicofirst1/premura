@@ -19,8 +19,8 @@ subtasks:
 - T008
 - T009
 - T010
-agent: "claude:opus:implementer:implementer"
-shell_pid: "6606"
+agent: "claude:opus:reviewer:reviewer"
+shell_pid: "16473"
 history:
 - timestamp: '2026-05-29T11:59:19Z'
   agent: gpt-5.5
@@ -227,3 +227,4 @@ Focus review on whether branching lives in the evaluator and whether declaration
 
 - 2026-05-29T12:22:20Z – claude:opus:implementer:implementer – shell_pid=6606 – Started implementation via action command
 - 2026-05-29T12:26:41Z – claude:opus:implementer:implementer – shell_pid=6606 – Ready for review: deterministic evaluator (freshness/sufficiency/refusal), all tests pass
+- 2026-05-29T12:27:33Z – claude:opus:reviewer:reviewer – shell_pid=16473 – Started review via action command
