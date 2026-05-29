@@ -32,10 +32,10 @@
 | T013 | Add standing caveats, rationale text, and source notes to built-in declarations without claiming clinical authority. | WP03 | No | [D] |
 | T014 | Add built-in registry tests for family coverage, policy shape reuse, duplicate rejection, and no exhaustive matrix drift. | WP03 | No | [D] |
 | T015 | Add default-policy smoke tests that run representative candidates through the evaluator. | WP03 | No | [D] |
-| T016 | Export the policy authoring/evaluation surface from `premura.engine` after the model, evaluator, and defaults exist. | WP04 | No |
-| T017 | Update the Stage 2 engine contributor contract to explain the policy declaration pattern and PubMed review boundary. | WP04 | No |
-| T018 | Add public-surface tests that import only through `premura.engine` and verify no runtime network/PubMed dependency is introduced. | WP04 | No |
-| T019 | Add reviewer guidance for future agents adding or changing policy declarations. | WP04 | No |
+| T016 | Export the policy authoring/evaluation surface from `premura.engine` after the model, evaluator, and defaults exist. | WP04 | No | [D] |
+| T017 | Update the Stage 2 engine contributor contract to explain the policy declaration pattern and PubMed review boundary. | WP04 | No | [D] |
+| T018 | Add public-surface tests that import only through `premura.engine` and verify no runtime network/PubMed dependency is introduced. | WP04 | No | [D] |
+| T019 | Add reviewer guidance for future agents adding or changing policy declarations. | WP04 | No | [D] |
 | T020 | Add a failing proof-integration test for `resting_hr_status` showing stale current-status evidence is evaluated through the new policy layer. | WP05 | No |
 | T021 | Wire `resting_hr_status` through the evidence evaluator while preserving its existing `StatusResult` output shape. | WP05 | No |
 | T022 | Preserve existing resting-HR caveats and add policy-derived rejection context without adding diagnosis or population claims. | WP05 | No |
@@ -145,10 +145,10 @@ None until WP01 and WP02 land.
 
 ### Included Subtasks
 
-- [ ] T016 Export the policy authoring/evaluation surface from `premura.engine` after the model, evaluator, and defaults exist. (WP04)
-- [ ] T017 Update the Stage 2 engine contributor contract to explain the policy declaration pattern and PubMed review boundary. (WP04)
-- [ ] T018 Add public-surface tests that import only through `premura.engine` and verify no runtime network/PubMed dependency is introduced. (WP04)
-- [ ] T019 Add reviewer guidance for future agents adding or changing policy declarations. (WP04)
+- [x] T016 Export the policy authoring/evaluation surface from `premura.engine` after the model, evaluator, and defaults exist. (WP04)
+- [x] T017 Update the Stage 2 engine contributor contract to explain the policy declaration pattern and PubMed review boundary. (WP04)
+- [x] T018 Add public-surface tests that import only through `premura.engine` and verify no runtime network/PubMed dependency is introduced. (WP04)
+- [x] T019 Add reviewer guidance for future agents adding or changing policy declarations. (WP04)
 
 ### Implementation Sketch
 
