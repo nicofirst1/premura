@@ -1,10 +1,12 @@
 {
   "created_at": "2026-05-29T11:32:41.507188+00:00",
-  "friendly_name": "stage 2 evidence admissibility foundation",
+  "friendly_name": "Stage 2 Evidence Admissibility Foundation",
   "mission_id": "01KSSR40VQAN3Z4J5XXC98M229",
   "mission_number": null,
   "mission_slug": "stage-2-evidence-admissibility-foundation-01KSSR40",
   "mission_type": "software-dev",
   "slug": "stage-2-evidence-admissibility-foundation-01KSSR40",
-  "target_branch": "master"
+  "source_description": "Build the first Stage 2 foundation that deterministically decides which personal-health evidence is admissible before later analytical tools use it, based on the research captured in docs/history/research/STAGE2_EVIDENCE_ADMISSIBILITY_RESEARCH.md.",
+  "target_branch": "master",
+  "vcs": "git"
 }
