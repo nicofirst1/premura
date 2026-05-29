@@ -19,6 +19,8 @@ subtasks:
 - T017
 - T018
 - T019
+agent: "claude:opus:implementer:implementer"
+shell_pid: "27993"
 history:
 - timestamp: '2026-05-29T11:59:19Z'
   agent: gpt-5.5
@@ -214,3 +216,7 @@ Implementation worktrees are allocated later per computed lane from `lanes.json`
 ## Reviewer Guidance
 
 Review for surface area discipline. The public API should be useful but not expose every internal helper.
+
+## Activity Log
+
+- 2026-05-29T12:38:03Z – claude:opus:implementer:implementer – shell_pid=27993 – Started implementation via action command
