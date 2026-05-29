@@ -220,3 +220,4 @@ Review for surface area discipline. The public API should be useful but not expo
 ## Activity Log
 
 - 2026-05-29T12:38:03Z – claude:opus:implementer:implementer – shell_pid=27993 – Started implementation via action command
+- 2026-05-29T12:44:21Z – claude:opus:implementer:implementer – shell_pid=27993 – Ready for review: public policy surface + CONTRACT.md guidance, lazy signal loading preserved, no PubMed runtime dep
