@@ -3,6 +3,27 @@
 > Repo-root router for humans and AI agents. Use this file to find the right
 > working guide, not as the full contract itself.
 
+## Read this first — two rules govern everything here
+
+Premura is **operated and extended by AI agents**, for a human beneficiary
+(agent-first in execution, human-first in purpose — roughly 80% agents, 20%
+humans). Two rules follow, and they govern every spec, plan, contract, and doc:
+
+1. **Agent-first.** The agent is the primary operational client; the human
+   supplies data, goals, and approvals. Do not design human forms, dashboards,
+   or human-operated flows as the default. Capture and analysis are
+   agent-mediated.
+2. **Design a level above — guide, don't enumerate.** Write specs, contracts,
+   and docs as bounded abstractions agents fill in (registries, rubrics,
+   contracts), **not** as exhaustive lists of domains, metrics, questions, or
+   policies. Self-check at specify/plan/review time: *does this hardcode a list
+   where it should define the rule for adding to the list?*
+
+**Before writing or reviewing any spec or plan, read
+[`docs/product/DOCTRINE.md`](docs/product/DOCTRINE.md)** — it is the
+authoritative statement of both rules, with worked examples. This is not
+optional context; it is the thing agents most often get wrong.
+
 - Before producing prose, planning docs, or onboarding material, read
   `CONTEXT.md` §"Maintainer mental model" and §"Planning" — they define the
   canonical vocabulary and explain when to prefer plain English over SE/agile

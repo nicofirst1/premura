@@ -27,6 +27,34 @@ The human brings the source artifacts, states the question or goal, and approves
 8. **Stable profile facts are captured through an agent-mediated bounded interview, not a human-filled form.** A small closed allowlist of baseline attributes (today `birth_date`, `sex`, `standing_height_cm`) is recorded one fact at a time through the agent surface against that allowlist. Anything outside it — including derived values like `age` — is refused at the store boundary rather than written. There is no general profile form and no open attribute bucket.
 9. **New nutrition/supplement source support arrives by the parser/plugin path, not by a built-in importer.** Bulk consumption data lands through the same federated-parser seam as the wearable sources. The system does not ship (and does not assume) a built-in MyFitnessPal-style importer, label scanner, or supplement catalog as the default way to get intake data in.
 
+10. **Design a level above the concrete case.** Because agents extend Premura, its specs, contracts, and docs are written as guided abstractions, not exhaustive enumerations. See the next section.
+
+## Design altitude: guide, don't enumerate
+
+Premura is extended by agents, so its specs, contracts, and docs must be written **a level above** the concrete case. Provide bounded extension points — registries, rubrics, contracts, allowlists-with-rules — that an agent fills in. Do **not** enumerate the full set of domains, metrics, questions, or policies and call that the design.
+
+The test, applied at specify/plan time and again at review:
+
+> **Does this artifact hardcode a list where it should define the rule for adding to the list?**
+
+The two failure modes, in the maintainer's words:
+
+- **Too broad / under-specified** → "the agents will end up creating their own custom conventions and then PR becomes impossible."
+- **Too narrow / over-enumerated** → "the agent might decide it's too strict and limiting and come up with their own solution anyway, or violate the boundaries."
+
+The target is the middle: *guide agents to create their own policies; don't strictly limit them, but don't give so much freedom that they invent random stuff.* When you catch yourself listing every domain, metric, question, or policy, stop and define the abstraction that lets an agent add the next one correctly without a central edit.
+
+**Right (a level above):** the federated parser seam — a `PluginParser` contract, a fixed `suggest_metric()` resolution order, and an `unmapped_metrics` surface — so any agent can add a vendor without anyone editing a central list.
+**Wrong (enumerated):** an `if source == "garmin" … elif source == "fitbit" …` ladder, or a spec that lists every supported metric instead of the rule for admitting a new one.
+
+## Docs altitude: separate the audiences
+
+Premura is roughly **agent-first in execution, human-first in purpose** ("~80% for agents, 20% for humans"). Documentation must keep three audiences distinct rather than blur them into one developer-facing voice (tracked in issue #8):
+
+- **Human using the app** — what it is, how to point an agent at their data. (README, top of `AGENTS.md`.)
+- **Agent operating/extending the repo** — the contracts, rubrics, and this doctrine. (`AGENTS.md` router → `CONTEXT.md`, `DOCTRINE.md`, contracts.)
+- **Contributor (human or agent) opening a PR** — how to extend correctly. (`CONTRIBUTING.md`, parser contract.)
+
 ## What Premura is not
 
 - Not a dashboard-first product.
