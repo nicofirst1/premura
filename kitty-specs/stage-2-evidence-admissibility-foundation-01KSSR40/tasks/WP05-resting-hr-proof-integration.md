@@ -22,8 +22,8 @@ subtasks:
 - T021
 - T022
 - T023
-agent: "claude:opus:implementer:implementer"
-shell_pid: "37978"
+agent: "claude:opus:reviewer:reviewer"
+shell_pid: "46607"
 history:
 - timestamp: '2026-05-29T11:59:19Z'
   agent: gpt-5.5
@@ -222,3 +222,4 @@ Review for scope control. This WP succeeds when one existing signal proves the p
 
 - 2026-05-29T12:47:45Z – claude:opus:implementer:implementer – shell_pid=37978 – Started implementation via action command
 - 2026-05-29T12:56:48Z – claude:opus:implementer:implementer – shell_pid=37978 – Ready for review: resting_hr_status proof integration, StatusResult shape preserved, trends/BMI untouched
+- 2026-05-29T12:57:26Z – claude:opus:reviewer:reviewer – shell_pid=46607 – Started review via action command
