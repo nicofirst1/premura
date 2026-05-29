@@ -36,10 +36,10 @@
 | T017 | Update the Stage 2 engine contributor contract to explain the policy declaration pattern and PubMed review boundary. | WP04 | No | [D] |
 | T018 | Add public-surface tests that import only through `premura.engine` and verify no runtime network/PubMed dependency is introduced. | WP04 | No | [D] |
 | T019 | Add reviewer guidance for future agents adding or changing policy declarations. | WP04 | No | [D] |
-| T020 | Add a failing proof-integration test for `resting_hr_status` showing stale current-status evidence is evaluated through the new policy layer. | WP05 | No |
-| T021 | Wire `resting_hr_status` through the evidence evaluator while preserving its existing `StatusResult` output shape. | WP05 | No |
-| T022 | Preserve existing resting-HR caveats and add policy-derived rejection context without adding diagnosis or population claims. | WP05 | No |
-| T023 | Add regression checks proving trend signals and BMI behavior are not broadly refactored by this proof integration. | WP05 | No |
+| T020 | Add a failing proof-integration test for `resting_hr_status` showing stale current-status evidence is evaluated through the new policy layer. | WP05 | No | [D] |
+| T021 | Wire `resting_hr_status` through the evidence evaluator while preserving its existing `StatusResult` output shape. | WP05 | No | [D] |
+| T022 | Preserve existing resting-HR caveats and add policy-derived rejection context without adding diagnosis or population claims. | WP05 | No | [D] |
+| T023 | Add regression checks proving trend signals and BMI behavior are not broadly refactored by this proof integration. | WP05 | No | [D] |
 
 ## WP01: Policy Declaration Contract
 
@@ -175,10 +175,10 @@ None until WP01-WP03 land.
 
 ### Included Subtasks
 
-- [ ] T020 Add a failing proof-integration test for `resting_hr_status` showing stale current-status evidence is evaluated through the new policy layer. (WP05)
-- [ ] T021 Wire `resting_hr_status` through the evidence evaluator while preserving its existing `StatusResult` output shape. (WP05)
-- [ ] T022 Preserve existing resting-HR caveats and add policy-derived rejection context without adding diagnosis or population claims. (WP05)
-- [ ] T023 Add regression checks proving trend signals and BMI behavior are not broadly refactored by this proof integration. (WP05)
+- [x] T020 Add a failing proof-integration test for `resting_hr_status` showing stale current-status evidence is evaluated through the new policy layer. (WP05)
+- [x] T021 Wire `resting_hr_status` through the evidence evaluator while preserving its existing `StatusResult` output shape. (WP05)
+- [x] T022 Preserve existing resting-HR caveats and add policy-derived rejection context without adding diagnosis or population claims. (WP05)
+- [x] T023 Add regression checks proving trend signals and BMI behavior are not broadly refactored by this proof integration. (WP05)
 
 ### Implementation Sketch
 
