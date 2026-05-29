@@ -169,6 +169,8 @@ def test_metric_summary_rejects_blank_metric_id(tmp_path: Path) -> None:
 
 # WP03: default surface omits query_warehouse; the agent-safe tools = the six
 # Stage 2 signals + two catalog tools + the two bounded profile-capture tools.
+# WP06: the two Stage 3 analytical tools (change_point / smoothed_average) join
+# the same default surface.
 _DEFAULT_TOOLS = sorted(
     [
         "list_metrics",
@@ -181,6 +183,8 @@ _DEFAULT_TOOLS = sorted(
         "hrv_change_around_date",
         "profile_context_supported_fields",
         "profile_context_record",
+        "change_point",
+        "smoothed_average",
     ]
 )
 

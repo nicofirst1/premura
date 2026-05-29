@@ -27,13 +27,23 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from contextlib import contextmanager
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from .. import engine
 from ..config import settings
-from ..engine import MissingInputReport, comparative_signals
+from ..engine import (
+    AnalyticalInputSeries,
+    AnalyticalQuestionType,
+    AnalyticalResultEnvelope,
+    EvidenceCandidate,
+    MissingInputReport,
+    PreparedPoint,
+    comparative_signals,
+)
+from ..engine import _query as engine_query
+from ..engine.policies._defaults import builtin_policies
 from ..profile_fields import (
     SUPPORTED_PROFILE_FIELDS,
     UnsupportedProfileFieldError,
@@ -362,9 +372,7 @@ def steps_trend(
 ) -> dict[str, Any]:
     """Recent daily-steps trend without imputing missing days (trend family)."""
     _ensure_optional_window("lookback_days", lookback_days, minimum=7, maximum=90)
-    return _run_signal(
-        "steps_trend", warehouse_path=warehouse_path, requested_window=lookback_days
-    )
+    return _run_signal("steps_trend", warehouse_path=warehouse_path, requested_window=lookback_days)
 
 
 def weight_trend(
@@ -406,9 +414,7 @@ def hrv_change_around_date(
     _ensure_optional_window("window_days", window_days, minimum=3, maximum=30)
     with _open_warehouse(warehouse_path) as conn:
         result = comparative_signals.hrv_change_around_date(conn, parsed_anchor)
-    return _serialize_signal_result(
-        "hrv_change_around_date", result, requested_window=window_days
-    )
+    return _serialize_signal_result("hrv_change_around_date", result, requested_window=window_days)
 
 
 def _run_signal(
@@ -421,6 +427,208 @@ def _run_signal(
     with _open_warehouse(warehouse_path) as conn:
         result = engine.compute(spec_name, conn)
     return _serialize_signal_result(spec_name, result, requested_window=requested_window)
+
+
+# --------------------------------------------------------------------------- #
+# Stage 3 analytical tools (WP06) — change_point and smoothed_average
+#
+# These two wrappers expose the WP04 proof tools on the default MCP surface.
+# They are deliberately THIN: each validates only the caller-facing parameter
+# shape, reads warehouse evidence through the SAME engine-owned Stage 2 query
+# layer the descriptive signals use (``premura.engine._query`` — the wrapper
+# itself issues NO raw fact-table SQL), hands that evidence to the engine's
+# public input-preparation + dispatch surface
+# (``premura.engine.prepare_input_series`` / ``invoke_analytical_tool``), and
+# serializes the returned envelope. There is NO statistical computation and NO
+# caveat/estimate invention here — the engine owns all of that.
+# --------------------------------------------------------------------------- #
+
+# The window of history the analytical tools read, mirroring the descriptive
+# trend span. The engine layer owns admissibility and method bounds; this is
+# only how much recent history the warehouse glue offers as candidate evidence.
+_ANALYTICAL_WINDOW_SPAN = timedelta(days=90)
+
+
+def change_point(
+    metric_id: str,
+    *,
+    min_side_observations: int | None = None,
+    warehouse_path: Path | None = None,
+) -> dict[str, Any]:
+    """Detect a single level shift in one metric's recent series (delegates to engine).
+
+    Validates the caller-facing parameter shape only, then delegates entirely to
+    the engine: warehouse evidence is read through the Stage 2 query layer, fed to
+    ``prepare_input_series`` (admissibility gate), and dispatched through
+    ``invoke_analytical_tool``. The wrapper performs no statistical computation and
+    never names a cause; refusals (stale / inadmissible / insufficient /
+    out-of-bounds) flow straight through from the engine with a distinct reason and
+    no estimate.
+    """
+    params: dict[str, object] = {}
+    if min_side_observations is not None:
+        _ensure_positive_int("min_side_observations", min_side_observations)
+        params["min_side_observations"] = min_side_observations
+    return _run_analytical_tool(
+        "change_point",
+        metric_id,
+        question_type=AnalyticalQuestionType.LEVEL_SHIFT_DETECTION,
+        params=params,
+        warehouse_path=warehouse_path,
+    )
+
+
+def smoothed_average(
+    metric_id: str,
+    *,
+    window: int | None = None,
+    min_coverage: float | None = None,
+    warehouse_path: Path | None = None,
+) -> dict[str, Any]:
+    """Return a conservative trailing smoothed pattern for one metric (delegates to engine).
+
+    Validates the caller-facing parameter shape only, then delegates entirely to
+    the engine (Stage 2 evidence read → ``prepare_input_series`` →
+    ``invoke_analytical_tool``). The wrapper computes nothing and implies no
+    prediction or statistical significance; smoothing/window metadata and any
+    refusal come from the engine envelope unchanged.
+    """
+    params: dict[str, object] = {}
+    if window is not None:
+        _ensure_positive_int("window", window)
+        params["window"] = window
+    if min_coverage is not None:
+        _ensure_unit_fraction("min_coverage", min_coverage)
+        params["min_coverage"] = min_coverage
+    return _run_analytical_tool(
+        "smoothed_average",
+        metric_id,
+        question_type=AnalyticalQuestionType.SMOOTHED_PATTERN,
+        params=params,
+        warehouse_path=warehouse_path,
+    )
+
+
+def _run_analytical_tool(
+    tool_name: str,
+    metric_id: str,
+    *,
+    question_type: AnalyticalQuestionType,
+    params: dict[str, object],
+    warehouse_path: Path | None,
+) -> dict[str, Any]:
+    """Read evidence, prepare the input series, dispatch the tool, serialize.
+
+    All warehouse access is through the engine's Stage 2 query layer; all
+    admissibility, computation, and refusal logic is the engine's. The wrapper
+    only assembles the prepared-input call and serializes the engine's envelope.
+    """
+    if not metric_id or not metric_id.strip():
+        raise ValueError("metric_id must not be empty")
+    metric_id = metric_id.strip()
+    with _open_warehouse(warehouse_path) as conn:
+        series = _prepare_analytical_series(conn, metric_id, question_type)
+        envelope = engine.invoke_analytical_tool(tool_name, series, **params)
+    return _serialize_analytical_result(envelope)
+
+
+def _prepare_analytical_series(
+    conn: duckdb.DuckDBPyConnection,
+    metric_id: str,
+    question_type: AnalyticalQuestionType,
+) -> AnalyticalInputSeries:
+    """Turn engine-read warehouse evidence into a prepared analytical input series.
+
+    Evidence is read through the engine's Stage 2 query helpers
+    (:func:`premura.engine._query.load_metric_policy` /
+    :func:`~premura.engine._query.ordered_window`) — the same layer the
+    descriptive signals use — so this wrapper never issues raw fact-table SQL of
+    its own. The admissibility gate, refusal construction, and all downstream
+    computation belong to :func:`premura.engine.prepare_input_series` and the
+    invoked tool; this function only assembles the candidate and points.
+    """
+    reference_time = engine_query._naive_utc_now()
+    policy = engine_query.load_metric_policy(conn, metric_id)
+    if policy is None:
+        # Unknown metric: hand the engine an empty-evidence call so it produces a
+        # first-class refusal (no points -> evidence_missing) rather than the
+        # wrapper inventing a reason of its own.
+        return engine.prepare_input_series(
+            metric_id,
+            question_type,
+            candidate=EvidenceCandidate(
+                metric_id=metric_id,
+                metric_family=metric_id,
+                value_kind="unknown",
+                observed_at=None,
+                point_count=0,
+            ),
+            policies=builtin_policies(),
+            points=[],
+            reference_time=reference_time,
+        )
+
+    window = engine_query.ordered_window(
+        conn, policy, span=_ANALYTICAL_WINDOW_SPAN, now=reference_time
+    )
+    points = [PreparedPoint(ts=p.ts, value=p.value, is_imputed=p.is_imputed) for p in window.points]
+    observed_at = points[-1].ts if points else None
+    candidate = EvidenceCandidate(
+        metric_id=metric_id,
+        metric_family=_metric_family_for(metric_id),
+        value_kind="interval" if policy.is_interval else "aggregate",
+        observed_at=observed_at,
+        point_count=len(points),
+    )
+    return engine.prepare_input_series(
+        metric_id,
+        question_type,
+        candidate=candidate,
+        policies=builtin_policies(),
+        points=points,
+        reference_time=reference_time,
+        window_start=window.window_start,
+        window_end=window.window_end,
+        freshness_status=window.latest_freshness.value,
+    )
+
+
+def _metric_family_for(metric_id: str) -> str:
+    """Resolve the admissibility family that owns ``metric_id``.
+
+    The built-in family policies declare which metrics they cover via
+    ``applies_to_metrics``; this looks the metric up there rather than hard-coding
+    a per-metric family. An unmapped metric falls back to its own id, which the
+    evaluator will treat as having no covering policy and refuse accordingly.
+    """
+    for policy in builtin_policies():
+        if metric_id in policy.applies_to_metrics:
+            return policy.metric_family
+    return metric_id
+
+
+def _serialize_analytical_result(envelope: AnalyticalResultEnvelope) -> dict[str, Any]:
+    """Serialize one engine analytical envelope into the MCP tool payload.
+
+    The payload always carries ``tool_name``, ``status``, ``message``, and
+    ``result`` (the full engine envelope via ``to_dict()``). The status is the
+    engine's own ``available`` / ``refused`` verdict; the message is the engine's
+    refusal message for a refusal, or the engine's lead caveat for a non-refusal —
+    the wrapper authors no new prose, estimate, or caveat.
+    """
+    payload = envelope.to_dict()
+    refusal = payload.get("refusal")
+    if refusal is not None:
+        message = str(refusal.get("message", ""))
+    else:
+        caveats = payload.get("caveats") or []
+        message = str(caveats[0]) if caveats else "Analytical result available."
+    return {
+        "tool_name": payload["tool_name"],
+        "status": payload["status"],
+        "message": message,
+        "result": payload,
+    }
 
 
 def _serialize_signal_result(
@@ -584,9 +792,7 @@ def _parse_anchor_date(anchor_date: str) -> date:
         ) from exc
 
 
-def _ensure_optional_window(
-    name: str, value: int | None, *, minimum: int, maximum: int
-) -> None:
+def _ensure_optional_window(name: str, value: int | None, *, minimum: int, maximum: int) -> None:
     if value is None:
         return
     if not isinstance(value, int) or isinstance(value, bool):
@@ -611,6 +817,20 @@ def _ensure_non_negative_int(name: str, value: int) -> None:
         raise ValueError(f"{name} must be >= 0")
 
 
+def _ensure_positive_int(name: str, value: int) -> None:
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ValueError(f"{name} must be an integer")
+    if value < 1:
+        raise ValueError(f"{name} must be >= 1")
+
+
+def _ensure_unit_fraction(name: str, value: float) -> None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{name} must be a number")
+    if not (0.0 < value <= 1.0):
+        raise ValueError(f"{name} must be in the interval (0.0, 1.0]")
+
+
 def _ensure_bounded_positive_int(name: str, value: int, *, maximum: int) -> None:
     if value < 1:
         raise ValueError(f"{name} must be >= 1")
@@ -632,6 +852,7 @@ def _json_safe(value: object) -> Any:
 
 __all__ = [
     "PROFILE_CAPTURE_SOURCE_KIND",
+    "change_point",
     "hrv_change_around_date",
     "list_metrics",
     "metric_summary",
@@ -640,6 +861,7 @@ __all__ = [
     "resting_hr_status",
     "resting_hr_trend",
     "sleep_deep_pct_baseline",
+    "smoothed_average",
     "steps_trend",
     "supported_profile_fields",
     "weight_trend",

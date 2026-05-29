@@ -59,6 +59,42 @@ from ._results import (
     TrendResult,
 )
 
+# Stage 3 public analytical surface (WP05). This is the stable, MCP-facing
+# facade onto the analytical contract + proof tools. Only the three facade
+# functions and the result/refusal/input types MCP must construct or read are
+# re-exported here — the contract's internal helpers (the ``analytical_tool``
+# decorator, ``validate_confound_keys``, the closed-vocabulary frozensets) stay
+# importable from ``premura.engine.analytical_contract`` for tool *authors* but
+# are kept off the top-level engine surface to avoid public-API creep.
+#
+# Importing these is side-effect-free with respect to the registries: the
+# facade module imports only the contract (frozen dataclasses + the empty
+# REGISTRY) and ``importlib``; it does NOT import any tool implementation, so
+# the analytical ``REGISTRY`` stays empty until ``load_builtin_analytical_tools``
+# (or a facade helper that calls it) runs. This preserves the same lazy,
+# static-load posture as the built-in signal/resolver loaders above.
+from .analytical import (
+    invoke_analytical_tool,
+    list_analytical_tools,
+    load_builtin_analytical_tools,
+)
+from .analytical_contract import (
+    AnalyticalQuestionType,
+    AnalyticalResultEnvelope,
+    AnalyticalStatus,
+    AnalyticalToolSpec,
+    ConfoundEntry,
+    ConfoundKey,
+    RefusalOutcome,
+    Uncertainty,
+)
+from .analytical_inputs import (
+    AnalyticalInputSeries,
+    InputRefusalReason,
+    PreparedPoint,
+    prepare_input_series,
+)
+
 # Stage 2 evidence-admissibility policy surface (WP01-WP03). These are the
 # *stable* contributor names a future policy author imports; the private
 # ``premura.engine.policies._model`` / ``._evaluator`` / ``._registry`` modules
@@ -221,6 +257,25 @@ __all__ = [
     "PolicyRegistry",
     "DuplicatePolicyError",
     "build_builtin_registry",
+    # Stage 3 public analytical surface (WP05).
+    # Facade functions — the single entry points MCP/WP06 calls:
+    "load_builtin_analytical_tools",
+    "list_analytical_tools",
+    "invoke_analytical_tool",
+    # Result / refusal / vocabulary types MCP must construct or read:
+    "AnalyticalResultEnvelope",
+    "AnalyticalStatus",
+    "AnalyticalToolSpec",
+    "RefusalOutcome",
+    "ConfoundEntry",
+    "ConfoundKey",
+    "Uncertainty",
+    "AnalyticalQuestionType",
+    # Prepared-input types a caller builds to feed a tool:
+    "AnalyticalInputSeries",
+    "PreparedPoint",
+    "InputRefusalReason",
+    "prepare_input_series",
 ]
 
 

@@ -26,7 +26,9 @@ from premura.mcp.entrypoint import build_server
 from premura.store import duck
 
 # WP03: query_warehouse moved to operator surface; the default surface carries
-# the eight analytical tools plus the two bounded profile-capture tools.
+# the catalog + six signal tools and the two bounded profile-capture tools.
+# WP06 adds the two Stage 3 analytical tools (change_point / smoothed_average) to
+# the same default surface.
 _EIGHT_DEFAULT_TOOLS = sorted(
     [
         "list_metrics",
@@ -39,6 +41,8 @@ _EIGHT_DEFAULT_TOOLS = sorted(
         "hrv_change_around_date",
         "profile_context_supported_fields",
         "profile_context_record",
+        "change_point",
+        "smoothed_average",
     ]
 )
 

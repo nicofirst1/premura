@@ -3,9 +3,10 @@
 Two entrypoints are provided:
 
 * **Default surface** (``premura-mcp``, :func:`build_server`) — the agent-safe
-  surface.  Exposes catalog, summary, and all six approved Stage 2 signal tools.
+  surface.  Exposes catalog, summary, all six approved Stage 2 signal tools, and
+  the two Stage 3 analytical tools (``change_point`` / ``smoothed_average``).
   ``query_warehouse`` is intentionally absent; agents should use the
-  signal-backed tools and the catalog helpers instead.
+  signal-backed tools, the analytical tools, and the catalog helpers instead.
 
 * **Operator surface** (``premura-mcp-operator``, :func:`build_operator_server``)
   — lower-guarantee expert mode intended for operator/developer use only,
@@ -129,9 +130,7 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
         )
 
     @mcp.tool()
-    def hrv_change_around_date(
-        anchor_date: str, window_days: int | None = None
-    ) -> dict[str, Any]:
+    def hrv_change_around_date(anchor_date: str, window_days: int | None = None) -> dict[str, Any]:
         """Compare overnight HRV before/after the given anchor date (YYYY-MM-DD).
 
         No significance or causation is claimed; ``anchor_date`` is the
@@ -140,6 +139,52 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
         return warehouse_server.hrv_change_around_date(
             anchor_date,
             window_days=window_days,
+            warehouse_path=warehouse_path,
+        )
+
+    # --- Stage 3 analytical tools (WP06) --------------------------------- #
+    # change_point and smoothed_average live on the DEFAULT agent-safe surface.
+    # Each is a thin wrapper that delegates to the engine analytical path
+    # (premura.engine.invoke_analytical_tool) — it computes no statistics and
+    # issues no raw SQL. A stale / inadmissible / insufficient / out-of-bounds
+    # request returns a structured refusal with a distinct reason and no estimate.
+
+    @mcp.tool()
+    def change_point(metric_id: str, min_side_observations: int | None = None) -> dict[str, Any]:
+        """Detect whether and when one metric shifted to a new level.
+
+        Reports the most prominent single level shift in the metric's recent
+        admissible series (when, before/after levels, direction) with validity
+        metadata. Descriptive only: it never names a cause and carries no
+        p-value or significance claim. Stale, inadmissible, insufficient, or
+        out-of-bounds requests return a structured refusal with a distinct
+        reason and no estimate.
+        """
+        return warehouse_server.change_point(
+            metric_id,
+            min_side_observations=min_side_observations,
+            warehouse_path=warehouse_path,
+        )
+
+    @mcp.tool()
+    def smoothed_average(
+        metric_id: str,
+        window: int | None = None,
+        min_coverage: float | None = None,
+    ) -> dict[str, Any]:
+        """Summarize one metric's recent pattern with a conservative trailing average.
+
+        Returns a trailing rolling mean over the metric's recent admissible
+        series with smoothing/window metadata; under-covered windows are left
+        blank so missing data stays visible. It is a description of past
+        observations, not a forecast, and implies no statistical significance.
+        Stale, inadmissible, insufficient, or out-of-bounds requests return a
+        structured refusal with a distinct reason and no estimate.
+        """
+        return warehouse_server.smoothed_average(
+            metric_id,
+            window=window,
+            min_coverage=min_coverage,
             warehouse_path=warehouse_path,
         )
 
