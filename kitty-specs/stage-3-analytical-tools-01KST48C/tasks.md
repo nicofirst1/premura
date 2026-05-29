@@ -21,10 +21,10 @@
 | T010 | Add input-preparation refusal behavior before computation | WP03 |  | [D] |
 | T011 | Add analytical question-type policy wiring for prepared inputs | WP03 |  | [D] |
 | T012 | Add input-preparation tests with fixture-backed evidence | WP03 |  | [D] |
-| T013 | Implement conservative `change_point` computation | WP04 |  |
-| T014 | Implement smoothed-average computation | WP04 |  |
-| T015 | Add proof-tool tests for supported and refused inputs | WP04 |  |
-| T016 | Verify proof tools do not claim causation, prediction, or significance | WP04 |  |
+| T013 | Implement conservative `change_point` computation | WP04 |  | [D] |
+| T014 | Implement smoothed-average computation | WP04 |  | [D] |
+| T015 | Add proof-tool tests for supported and refused inputs | WP04 |  | [D] |
+| T016 | Verify proof tools do not claim causation, prediction, or significance | WP04 |  | [D] |
 | T017 | Add engine public analytical dispatch/load surface | WP05 |  |
 | T018 | Re-export stable analytical symbols from `premura.engine` | WP05 |  |
 | T019 | Add public-surface tests for registration, dispatch, determinism, and serialization | WP05 |  |
@@ -137,10 +137,10 @@ Risks:
 
 Included subtasks:
 
-- [ ] T013 Implement conservative `change_point` computation (WP04)
-- [ ] T014 Implement smoothed-average computation (WP04)
-- [ ] T015 Add proof-tool tests for supported and refused inputs (WP04)
-- [ ] T016 Verify proof tools do not claim causation, prediction, or significance (WP04)
+- [x] T013 Implement conservative `change_point` computation (WP04)
+- [x] T014 Implement smoothed-average computation (WP04)
+- [x] T015 Add proof-tool tests for supported and refused inputs (WP04)
+- [x] T016 Verify proof tools do not claim causation, prediction, or significance (WP04)
 
 Implementation sketch:
 
