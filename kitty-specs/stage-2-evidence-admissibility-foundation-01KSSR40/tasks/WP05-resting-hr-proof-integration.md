@@ -221,3 +221,4 @@ Review for scope control. This WP succeeds when one existing signal proves the p
 ## Activity Log
 
 - 2026-05-29T12:47:45Z – claude:opus:implementer:implementer – shell_pid=37978 – Started implementation via action command
+- 2026-05-29T12:56:48Z – claude:opus:implementer:implementer – shell_pid=37978 – Ready for review: resting_hr_status proof integration, StatusResult shape preserved, trends/BMI untouched
