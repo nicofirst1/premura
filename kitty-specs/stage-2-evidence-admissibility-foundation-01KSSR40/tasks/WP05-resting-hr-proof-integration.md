@@ -22,6 +22,8 @@ subtasks:
 - T021
 - T022
 - T023
+agent: "claude:opus:implementer:implementer"
+shell_pid: "37978"
 history:
 - timestamp: '2026-05-29T11:59:19Z'
   agent: gpt-5.5
@@ -215,3 +217,7 @@ Implementation worktrees are allocated later per computed lane from `lanes.json`
 ## Reviewer Guidance
 
 Review for scope control. This WP succeeds when one existing signal proves the policy handoff and everything else remains stable.
+
+## Activity Log
+
+- 2026-05-29T12:47:45Z – claude:opus:implementer:implementer – shell_pid=37978 – Started implementation via action command
