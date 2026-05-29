@@ -25,10 +25,10 @@
 | T014 | Implement smoothed-average computation | WP04 |  | [D] |
 | T015 | Add proof-tool tests for supported and refused inputs | WP04 |  | [D] |
 | T016 | Verify proof tools do not claim causation, prediction, or significance | WP04 |  | [D] |
-| T017 | Add engine public analytical dispatch/load surface | WP05 |  |
-| T018 | Re-export stable analytical symbols from `premura.engine` | WP05 |  |
-| T019 | Add public-surface tests for registration, dispatch, determinism, and serialization | WP05 |  |
-| T020 | Preserve static built-in loading and no dispatch ladder behavior | WP05 |  |
+| T017 | Add engine public analytical dispatch/load surface | WP05 |  | [D] |
+| T018 | Re-export stable analytical symbols from `premura.engine` | WP05 |  | [D] |
+| T019 | Add public-surface tests for registration, dispatch, determinism, and serialization | WP05 |  | [D] |
+| T020 | Preserve static built-in loading and no dispatch ladder behavior | WP05 |  | [D] |
 | T021 | Add MCP server wrappers for `change_point` and `smoothed_average` | WP06 |  |
 | T022 | Register analytical tools on the default MCP surface | WP06 |  |
 | T023 | Add MCP analytical-tool tests for success and refusal payloads | WP06 |  |
@@ -167,10 +167,10 @@ Risks:
 
 Included subtasks:
 
-- [ ] T017 Add engine public analytical dispatch/load surface (WP05)
-- [ ] T018 Re-export stable analytical symbols from `premura.engine` (WP05)
-- [ ] T019 Add public-surface tests for registration, dispatch, determinism, and serialization (WP05)
-- [ ] T020 Preserve static built-in loading and no dispatch ladder behavior (WP05)
+- [x] T017 Add engine public analytical dispatch/load surface (WP05)
+- [x] T018 Re-export stable analytical symbols from `premura.engine` (WP05)
+- [x] T019 Add public-surface tests for registration, dispatch, determinism, and serialization (WP05)
+- [x] T020 Preserve static built-in loading and no dispatch ladder behavior (WP05)
 
 Implementation sketch:
 
