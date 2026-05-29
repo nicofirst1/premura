@@ -1,0 +1,10 @@
+{
+  "created_at": "2026-05-29T15:04:46.931938+00:00",
+  "friendly_name": "stage 3 analytical tools",
+  "mission_id": "01KST48C2SJJZB8P7P756WCNDB",
+  "mission_number": null,
+  "mission_slug": "stage-3-analytical-tools-01KST48C",
+  "mission_type": "software-dev",
+  "slug": "stage-3-analytical-tools-01KST48C",
+  "target_branch": "master"
+}
