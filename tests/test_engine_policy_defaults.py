@@ -217,8 +217,24 @@ def test_builtins_register_without_collision() -> None:
 def _candidate(metric_family: str, **kwargs):  # type: ignore[no-untyped-def]
     from premura.engine.policies._model import EvidenceCandidate
 
+    default_metric_ids = {
+        "stable_profile_facts": "date_of_birth",
+        "acute_spot_measures": "body_temperature",
+        "home_blood_pressure": "systolic_bp",
+        "cgm": "glucose_cgm",
+        "a1c_like_control": "hba1c",
+        "lipid_like_control": "ldl_cholesterol",
+        "sparse_lab_panels": "vitamin_d",
+        "weight": "body_weight",
+        "body_composition": "body_fat_pct",
+        "activity": "steps",
+        "sleep": "sleep_duration",
+        "hrv_resting_recovery": "resting_hr",
+    }
     defaults = {
-        "metric_id": kwargs.pop("metric_id", f"{metric_family}_metric"),
+        "metric_id": kwargs.pop(
+            "metric_id", default_metric_ids.get(metric_family, f"{metric_family}_metric")
+        ),
         "metric_family": metric_family,
         "value_kind": kwargs.pop("value_kind", "scalar"),
     }

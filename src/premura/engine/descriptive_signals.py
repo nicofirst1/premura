@@ -244,14 +244,15 @@ def _augment_resting_hr_status_with_policy(result: StatusResult) -> StatusResult
     if result.freshness_state is not FreshnessState.STALE or result.observed_at is None:
         return result
 
-    policy_caveat = _resting_hr_policy_caveat(result)
-    if policy_caveat is None:
+    policy_caveats = _resting_hr_policy_caveats(result)
+    if not policy_caveats:
         return result
 
     # Preserve the existing freshness caveat(s); append-only, de-duplicated.
     caveats = list(result.caveats)
-    if policy_caveat not in caveats:
-        caveats.append(policy_caveat)
+    for policy_caveat in policy_caveats:
+        if policy_caveat not in caveats:
+            caveats.append(policy_caveat)
 
     # Rebuild the frozen envelope with the augmented caveats; every other field
     # (including the freshness verdict and retained value) is carried verbatim.
@@ -268,13 +269,14 @@ def _augment_resting_hr_status_with_policy(result: StatusResult) -> StatusResult
     ).validate()
 
 
-def _resting_hr_policy_caveat(result: StatusResult) -> str | None:
-    """Evaluate the stale resting-HR reading and derive one caveat sentence.
+def _resting_hr_policy_caveats(result: StatusResult) -> tuple[str, ...]:
+    """Evaluate the stale resting-HR reading and derive caveat sentences.
 
     Builds an :class:`EvidenceCandidate` from the already-computed status result
     and runs it through :func:`evaluate_evidence` for ``CURRENT_STATUS`` against
-    the built-in family policies. Returns a short, descriptive caveat when the
-    evaluator does not admit the reading as a current-status answer, else None.
+    the built-in family policies. Returns short, descriptive caveats when the
+    evaluator does not admit the reading as a current-status answer, else an
+    empty tuple.
 
     The evaluator is pure and reads nothing from the warehouse. We pass the same
     naive-UTC clock helper used by the existing Stage 2 query code so a stale
@@ -296,16 +298,29 @@ def _resting_hr_policy_caveat(result: StatusResult) -> str | None:
         reference_time=_query._naive_utc_now(),
     )
     # If the policy layer were to admit this reading as a current-status answer
-    # there would be no extra context to add. The baseline-relative resting-HR
-    # family does not admit an absolute current-status answer, so in practice a
-    # refusal is always present for a stale reading; guard regardless so the
-    # verdict — not a hard-coded assumption — drives whether a caveat is added.
+    # there would be no extra context to add. Stale readings should not be
+    # admitted; guard regardless so the verdict — not a hard-coded assumption —
+    # drives whether caveats are added.
     if evaluation.admissible_evidence:
-        return None
-    return (
-        "Resting-HR admissibility policy: a reading older than its freshness "
-        "window cannot stand in for your resting HR right now, so it is not "
-        "treated as a current-status answer."
+        return ()
+
+    evaluator_caveats: tuple[str, ...] = ()
+    if evaluation.rejected_evidence:
+        evaluator_caveats = evaluation.rejected_evidence[0].caveats
+    elif evaluation.insufficient_evidence:
+        evaluator_caveats = evaluation.insufficient_evidence[0].caveats
+    elif evaluation.refusal is not None:
+        evaluator_caveats = evaluation.refusal.caveats
+
+    return tuple(
+        dict.fromkeys(
+            (
+                *evaluator_caveats,
+                "Resting-HR admissibility policy: a reading older than its freshness "
+                "window cannot stand in for your resting HR right now, so it is not "
+                "treated as a current-status answer.",
+            )
+        )
     )
 
 

@@ -162,6 +162,9 @@ def test_resting_hr_status_uses_policy_for_stale_current_status_evidence(
     assert any("policy" in c.lower() or "current status" in c.lower() for c in out["caveats"]), (
         "a policy-derived caveat must be present"
     )
+    assert any("relative to your own baseline" in c.lower() for c in out["caveats"]), (
+        "the live consumer must surface policy standing caveats, not just a hardcoded string"
+    )
 
     # The added context must stay descriptive, never clinical.
     _assert_no_clinical_language(out["caveats"])

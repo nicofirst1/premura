@@ -25,6 +25,7 @@ from premura.engine.policies._model import (
     PolicyShape,
     QuestionRule,
     QuestionType,
+    RefusalMode,
     RejectionReason,
     SufficiencyRule,
     TemporalMeaning,
@@ -266,6 +267,107 @@ def test_rejected_outcome_carries_policy_standing_caveats() -> None:
     )
     assert result.rejected_evidence
     assert result.rejected_evidence[0].caveats == policy.standing_caveats
+
+
+def test_missing_data_behavior_caveat_admits_with_caveat() -> None:
+    policy = MetricFamilyPolicy(
+        policy_id="caveat.density.v1",
+        version=1,
+        metric_family="caveat_density",
+        policy_shape=PolicyShape.ROLLING_RECENT_PATTERN,
+        temporal_meaning=TemporalMeaning.ROLLING_RECENT_PATTERN,
+        question_rules={
+            QuestionType.RECENT_TREND: QuestionRule(
+                admissibility=Admissibility.ADMISSIBLE,
+                sufficiency=SufficiencyRule(
+                    min_observations=3,
+                    missing_data_behavior=MissingDataBehavior.CAVEAT,
+                ),
+                required_context=("observed_at",),
+            )
+        },
+    )
+    candidate = EvidenceCandidate(
+        metric_id="caveat-density-1",
+        metric_family="caveat_density",
+        value_kind="series",
+        observed_at=REFERENCE_TIME,
+        point_count=1,
+    )
+    result = evaluate_evidence(
+        QuestionType.RECENT_TREND,
+        [candidate],
+        policy,
+        reference_time=REFERENCE_TIME,
+    )
+    assert result.admissible_evidence
+    assert not result.insufficient_evidence
+    assert any("density is below" in caveat for caveat in result.admissible_evidence[0].caveats)
+
+
+def test_refusal_mode_suggest_different_question_adds_caveat() -> None:
+    policy = MetricFamilyPolicy(
+        policy_id="suggest.question.v1",
+        version=1,
+        metric_family="long_marker",
+        policy_shape=PolicyShape.INTEGRATED_LONG_TERM_CONTROL,
+        temporal_meaning=TemporalMeaning.INTEGRATES_OVER_MONTHS,
+        question_rules={
+            QuestionType.CURRENT_STATUS: QuestionRule(
+                admissibility=Admissibility.INADMISSIBLE,
+                default_rejection_reasons=(RejectionReason.WRONG_EVIDENCE_KIND,),
+                refusal_mode=RefusalMode.SUGGEST_DIFFERENT_QUESTION,
+            )
+        },
+    )
+    candidate = EvidenceCandidate(
+        metric_id="long-marker-1",
+        metric_family="long_marker",
+        value_kind="scalar",
+        observed_at=REFERENCE_TIME,
+    )
+    result = evaluate_evidence(
+        QuestionType.CURRENT_STATUS,
+        [candidate],
+        policy,
+        reference_time=REFERENCE_TIME,
+    )
+    assert result.rejected_evidence
+    assert any(
+        "different question type" in caveat for caveat in result.rejected_evidence[0].caveats
+    )
+
+
+def test_applies_to_metrics_rejects_undeclared_metric_id() -> None:
+    policy = MetricFamilyPolicy(
+        policy_id="scoped.family.v1",
+        version=1,
+        metric_family="scoped_family",
+        policy_shape=PolicyShape.POINT_IN_TIME_ACUTE,
+        temporal_meaning=TemporalMeaning.POINT_IN_TIME,
+        applies_to_metrics=("allowed_metric",),
+        question_rules={
+            QuestionType.CURRENT_STATUS: QuestionRule(
+                admissibility=Admissibility.ADMISSIBLE,
+                freshness=FreshnessRule(mode=FreshnessMode.CAVEAT_ONLY),
+            )
+        },
+    )
+    candidate = EvidenceCandidate(
+        metric_id="undeclared_metric",
+        metric_family="scoped_family",
+        value_kind="scalar",
+        observed_at=REFERENCE_TIME,
+    )
+    result = evaluate_evidence(
+        QuestionType.CURRENT_STATUS,
+        [candidate],
+        policy,
+        reference_time=REFERENCE_TIME,
+    )
+    assert not result.admissible_evidence
+    assert result.rejected_evidence
+    assert RejectionReason.WRONG_EVIDENCE_KIND in result.rejected_evidence[0].rejection_reasons
 
 
 def test_missing_timestamp_is_not_admissible() -> None:

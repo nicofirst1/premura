@@ -39,6 +39,7 @@ from premura.engine.policies._model import (
     MissingDataBehavior,
     QuestionRule,
     QuestionType,
+    RefusalMode,
     RejectionReason,
     SufficiencyRule,
 )
@@ -109,7 +110,19 @@ def _unsupported_policy_outcome(
 
 def _declared_caveats(policy: MetricFamilyPolicy, rule: QuestionRule) -> tuple[str, ...]:
     """Standing policy caveats plus question-specific caveats, de-duplicated."""
-    return tuple(dict.fromkeys((*policy.standing_caveats, *rule.caveats)))
+    refusal_caveats: tuple[str, ...]
+    if rule.refusal_mode is RefusalMode.OFFER_WITH_CAVEATS:
+        refusal_caveats = (
+            "This evidence may still be useful as context, but it is not strong "
+            "enough for the requested answer.",
+        )
+    elif rule.refusal_mode is RefusalMode.SUGGEST_DIFFERENT_QUESTION:
+        refusal_caveats = (
+            "This evidence may fit a different question type better than the one requested.",
+        )
+    else:
+        refusal_caveats = ()
+    return tuple(dict.fromkeys((*policy.standing_caveats, *rule.caveats, *refusal_caveats)))
 
 
 def _missing_context_fields(
@@ -356,6 +369,29 @@ def _missing_context_outcome(
     )
 
 
+def _wrong_metric_outcome(
+    candidate: EvidenceCandidate,
+    question_type: QuestionType,
+    policy: MetricFamilyPolicy,
+    rule: QuestionRule,
+) -> EvidenceOutcome:
+    """Reject a candidate whose metric is outside the family's declared scope."""
+    return EvidenceOutcome(
+        status=EvidenceStatus.REJECTED,
+        question_type=question_type,
+        metric_family=candidate.metric_family,
+        policy_id=policy.policy_id,
+        message=(
+            f"Metric '{candidate.metric_id}' is not declared as evidence for "
+            f"metric family '{candidate.metric_family}', so it is not used for "
+            f"question '{question_type.value}'."
+        ),
+        rejection_reasons=(RejectionReason.WRONG_EVIDENCE_KIND,),
+        caveats=_declared_caveats(policy, rule),
+        provenance=_provenance(candidate),
+    )
+
+
 def _evaluate_candidate(
     candidate: EvidenceCandidate,
     question_type: QuestionType,
@@ -381,6 +417,9 @@ def _evaluate_candidate(
             detail="the policy declares no rule for this question type",
             policy_id=policy.policy_id,
         )
+
+    if policy.applies_to_metrics and candidate.metric_id not in policy.applies_to_metrics:
+        return _wrong_metric_outcome(candidate, question_type, policy, rule)
 
     # Inadmissible families are wrong-evidence-kind for this question.
     if rule.admissibility is Admissibility.INADMISSIBLE:
@@ -420,6 +459,16 @@ def _evaluate_candidate(
             # caveat-only pass when the rule says the density is not required.
             if rule.sufficiency.missing_data_behavior is MissingDataBehavior.IGNORE_IF_NOT_REQUIRED:
                 pass  # fall through to admissible below; density was optional
+            elif rule.sufficiency.missing_data_behavior is MissingDataBehavior.CAVEAT:
+                freshness_caveats = tuple(
+                    dict.fromkeys(
+                        (
+                            *freshness_caveats,
+                            "Evidence density is below the preferred threshold for "
+                            "this question; treat the result as caveated context.",
+                        )
+                    )
+                )
             else:
                 return insufficient
 
