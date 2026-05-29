@@ -19,8 +19,8 @@ subtasks:
 - T003
 - T004
 - T005
-shell_pid: "75455"
-agent: "claude:opus:implementer:implementer"
+shell_pid: "93564"
+agent: "claude:opus:reviewer:reviewer"
 history:
 - timestamp: '2026-05-29T11:59:19Z'
   agent: gpt-5.5
@@ -223,3 +223,4 @@ Review that the model is bounded but not over-enumerated. The safe action for fu
 
 - 2026-05-29T12:07:53Z – claude:opus:implementer:implementer – shell_pid=75455 – Assigned agent via action command
 - 2026-05-29T12:20:06Z – claude:opus:implementer:implementer – shell_pid=75455 – Ready for review: policy declaration model (enums + frozen dataclasses + validation); 19 tests pass, ruff/mypy clean
+- 2026-05-29T12:20:30Z – claude:opus:reviewer:reviewer – shell_pid=93564 – Started review via action command
