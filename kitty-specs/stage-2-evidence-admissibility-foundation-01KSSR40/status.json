@@ -1,7 +1,7 @@
 {
-  "event_count": 10,
-  "last_event_id": "01KSSTXVWX3P2QVDXFSCGT2A96",
-  "materialized_at": "2026-05-29T12:21:44.989759+00:00",
+  "event_count": 12,
+  "last_event_id": "01KSSTYY7VG85XNP33ZBCDFEXS",
+  "materialized_at": "2026-05-29T12:22:20.155961+00:00",
   "mission_number": "",
   "mission_slug": "stage-2-evidence-admissibility-foundation-01KSSR40",
   "mission_type": "software-dev",
@@ -12,9 +12,9 @@
     "claimed": 0,
     "done": 0,
     "for_review": 0,
-    "in_progress": 0,
+    "in_progress": 1,
     "in_review": 0,
-    "planned": 4
+    "planned": 3
   },
   "work_packages": {
     "WP01": {
@@ -25,11 +25,11 @@
       "last_transition_at": "2026-05-29T12:21:44.989759+00:00"
     },
     "WP02": {
-      "actor": "finalize-tasks",
+      "actor": "claude:opus:implementer:implementer",
       "force_count": 1,
-      "lane": "planned",
-      "last_event_id": "01KSST0RXG610T23F36Z15Z3Z6",
-      "last_transition_at": "2026-05-29T12:05:51.664701+00:00"
+      "lane": "in_progress",
+      "last_event_id": "01KSSTYY7VG85XNP33ZBCDFEXS",
+      "last_transition_at": "2026-05-29T12:22:20.155961+00:00"
     },
     "WP03": {
       "actor": "finalize-tasks",

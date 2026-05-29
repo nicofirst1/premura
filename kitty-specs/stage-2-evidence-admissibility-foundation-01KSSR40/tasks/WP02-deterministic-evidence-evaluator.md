@@ -19,6 +19,8 @@ subtasks:
 - T008
 - T009
 - T010
+agent: "claude:opus:implementer:implementer"
+shell_pid: "6606"
 history:
 - timestamp: '2026-05-29T11:59:19Z'
   agent: gpt-5.5
@@ -220,3 +222,7 @@ Implementation worktrees are allocated later per computed lane from `lanes.json`
 ## Reviewer Guidance
 
 Focus review on whether branching lives in the evaluator and whether declarations remain parameters-only. Check that every negative outcome preserves a distinct reason.
+
+## Activity Log
+
+- 2026-05-29T12:22:20Z – claude:opus:implementer:implementer – shell_pid=6606 – Started implementation via action command
