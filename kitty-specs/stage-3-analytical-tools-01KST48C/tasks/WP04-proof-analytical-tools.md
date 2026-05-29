@@ -16,8 +16,8 @@ subtasks:
 - T014
 - T015
 - T016
-agent: "claude:opus:implementer:implementer"
-shell_pid: "34351"
+agent: "claude:opus:reviewer:reviewer"
+shell_pid: "38955"
 history:
 - 2026-05-29T15:18:42Z tasks generated
 authoritative_surface: src/premura/engine/
@@ -120,3 +120,4 @@ Review estimates for honesty and refusal behavior, not for advanced statistical 
 
 - 2026-05-29T15:43:47Z – claude:opus:implementer:implementer – shell_pid=34351 – Started implementation via action command
 - 2026-05-29T15:48:40Z – claude:opus:implementer:implementer – shell_pid=34351 – Ready for review
+- 2026-05-29T15:49:08Z – claude:opus:reviewer:reviewer – shell_pid=38955 – Started review via action command
