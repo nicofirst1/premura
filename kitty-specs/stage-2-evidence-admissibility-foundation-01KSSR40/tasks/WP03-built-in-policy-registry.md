@@ -17,6 +17,8 @@ subtasks:
 - T013
 - T014
 - T015
+agent: "claude:opus:implementer:implementer"
+shell_pid: "18704"
 history:
 - timestamp: '2026-05-29T11:59:19Z'
   agent: gpt-5.5
@@ -212,3 +214,7 @@ Implementation worktrees are allocated later per computed lane from `lanes.json`
 ## Reviewer Guidance
 
 Check that family coverage is broad but policy shapes are few. Push back on any declaration that reads like a clinical rule rather than a Premura admissibility default.
+
+## Activity Log
+
+- 2026-05-29T12:29:39Z – claude:opus:implementer:implementer – shell_pid=18704 – Started implementation via action command
