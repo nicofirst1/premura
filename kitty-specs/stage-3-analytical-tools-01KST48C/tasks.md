@@ -29,10 +29,10 @@
 | T018 | Re-export stable analytical symbols from `premura.engine` | WP05 |  | [D] |
 | T019 | Add public-surface tests for registration, dispatch, determinism, and serialization | WP05 |  | [D] |
 | T020 | Preserve static built-in loading and no dispatch ladder behavior | WP05 |  | [D] |
-| T021 | Add MCP server wrappers for `change_point` and `smoothed_average` | WP06 |  |
-| T022 | Register analytical tools on the default MCP surface | WP06 |  |
-| T023 | Add MCP analytical-tool tests for success and refusal payloads | WP06 |  |
-| T024 | Run final quality gates and document any unrelated pre-existing failures | WP06 |  |
+| T021 | Add MCP server wrappers for `change_point` and `smoothed_average` | WP06 |  | [D] |
+| T022 | Register analytical tools on the default MCP surface | WP06 |  | [D] |
+| T023 | Add MCP analytical-tool tests for success and refusal payloads | WP06 |  | [D] |
+| T024 | Run final quality gates and document any unrelated pre-existing failures | WP06 |  | [D] |
 
 ## Work Packages
 
@@ -197,10 +197,10 @@ Risks:
 
 Included subtasks:
 
-- [ ] T021 Add MCP server wrappers for `change_point` and `smoothed_average` (WP06)
-- [ ] T022 Register analytical tools on the default MCP surface (WP06)
-- [ ] T023 Add MCP analytical-tool tests for success and refusal payloads (WP06)
-- [ ] T024 Run final quality gates and document any unrelated pre-existing failures (WP06)
+- [x] T021 Add MCP server wrappers for `change_point` and `smoothed_average` (WP06)
+- [x] T022 Register analytical tools on the default MCP surface (WP06)
+- [x] T023 Add MCP analytical-tool tests for success and refusal payloads (WP06)
+- [x] T024 Run final quality gates and document any unrelated pre-existing failures (WP06)
 
 Implementation sketch:
 
