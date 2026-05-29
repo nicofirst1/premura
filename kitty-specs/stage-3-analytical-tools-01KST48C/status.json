@@ -1,16 +1,16 @@
 {
-  "event_count": 39,
-  "last_event_id": "01KST8T70076QJKSB0GSXGJ1JY",
-  "materialized_at": "2026-05-29T16:24:25.344913+00:00",
+  "event_count": 40,
+  "last_event_id": "01KST8T8GXG9DFQ0691AH7VJDF",
+  "materialized_at": "2026-05-29T16:24:26.909221+00:00",
   "mission_number": "10",
   "mission_slug": "stage-3-analytical-tools-01KST48C",
   "mission_type": "software-dev",
   "summary": {
-    "approved": 3,
+    "approved": 2,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
-    "done": 3,
+    "done": 4,
     "for_review": 0,
     "in_progress": 0,
     "in_review": 0,
@@ -40,10 +40,10 @@
     },
     "WP04": {
       "actor": "user",
-      "force_count": 1,
-      "lane": "approved",
-      "last_event_id": "01KST6X9VH9JP6Y18AR03T8QZA",
-      "last_transition_at": "2026-05-29T15:51:09.425915+00:00"
+      "force_count": 2,
+      "lane": "done",
+      "last_event_id": "01KST8T8GXG9DFQ0691AH7VJDF",
+      "last_transition_at": "2026-05-29T16:24:26.909221+00:00"
     },
     "WP05": {
       "actor": "user",
