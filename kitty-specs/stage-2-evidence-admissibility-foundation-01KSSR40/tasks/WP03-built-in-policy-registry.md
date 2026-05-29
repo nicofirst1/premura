@@ -17,8 +17,8 @@ subtasks:
 - T013
 - T014
 - T015
-agent: "claude:opus:implementer:implementer"
-shell_pid: "18704"
+agent: "claude:opus:reviewer:reviewer"
+shell_pid: "25234"
 history:
 - timestamp: '2026-05-29T11:59:19Z'
   agent: gpt-5.5
@@ -219,3 +219,4 @@ Check that family coverage is broad but policy shapes are few. Push back on any 
 
 - 2026-05-29T12:29:39Z – claude:opus:implementer:implementer – shell_pid=18704 – Started implementation via action command
 - 2026-05-29T12:35:06Z – claude:opus:implementer:implementer – shell_pid=18704 – Ready for review: built-in registry, 12 family groups across 8 reusable shapes (8<12), evaluator smoke tests pass
+- 2026-05-29T12:35:52Z – claude:opus:reviewer:reviewer – shell_pid=25234 – Started review via action command
