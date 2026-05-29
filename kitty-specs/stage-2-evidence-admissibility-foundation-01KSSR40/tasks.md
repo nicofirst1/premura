@@ -22,11 +22,11 @@
 | T003 | Implement lightweight declaration validation that fails early for missing fields, invalid combinations, and non-parameter-like content. | WP01 | No | [D] |
 | T004 | Expose the internal policy model through `premura.engine.policies` without touching the top-level engine surface yet. | WP01 | No | [D] |
 | T005 | Add model-level tests for valid declarations, invalid declarations, caveat requirements, and result validation. | WP01 | No | [D] |
-| T006 | Implement the deterministic evaluator entrypoint over question type, candidates, and metric-family policy declarations. | WP02 | No |
-| T007 | Implement freshness, provenance, and question-type admissibility decisions with distinct rejection reasons. | WP02 | No |
-| T008 | Implement sufficiency checks and no-admissible-evidence refusal aggregation. | WP02 | No |
-| T009 | Add evaluator tests for stale, sparse, missing timestamp, wrong question type, and separated admissible/rejected evidence. | WP02 | No |
-| T010 | Add tests proving evaluator output is deterministic for identical inputs. | WP02 | No |
+| T006 | Implement the deterministic evaluator entrypoint over question type, candidates, and metric-family policy declarations. | WP02 | No | [D] |
+| T007 | Implement freshness, provenance, and question-type admissibility decisions with distinct rejection reasons. | WP02 | No | [D] |
+| T008 | Implement sufficiency checks and no-admissible-evidence refusal aggregation. | WP02 | No | [D] |
+| T009 | Add evaluator tests for stale, sparse, missing timestamp, wrong question type, and separated admissible/rejected evidence. | WP02 | No | [D] |
+| T010 | Add tests proving evaluator output is deterministic for identical inputs. | WP02 | No | [D] |
 | T011 | Add a lightweight policy registry for built-in family declarations with duplicate detection. | WP03 | No |
 | T012 | Add representative built-in policy declarations covering at least 10 metric families through shared policy shapes. | WP03 | No |
 | T013 | Add standing caveats, rationale text, and source notes to built-in declarations without claiming clinical authority. | WP03 | No |
@@ -83,11 +83,11 @@ None. This WP is the foundation for all later WPs.
 
 ### Included Subtasks
 
-- [ ] T006 Implement the deterministic evaluator entrypoint over question type, candidates, and metric-family policy declarations. (WP02)
-- [ ] T007 Implement freshness, provenance, and question-type admissibility decisions with distinct rejection reasons. (WP02)
-- [ ] T008 Implement sufficiency checks and no-admissible-evidence refusal aggregation. (WP02)
-- [ ] T009 Add evaluator tests for stale, sparse, missing timestamp, wrong question type, and separated admissible/rejected evidence. (WP02)
-- [ ] T010 Add tests proving evaluator output is deterministic for identical inputs. (WP02)
+- [x] T006 Implement the deterministic evaluator entrypoint over question type, candidates, and metric-family policy declarations. (WP02)
+- [x] T007 Implement freshness, provenance, and question-type admissibility decisions with distinct rejection reasons. (WP02)
+- [x] T008 Implement sufficiency checks and no-admissible-evidence refusal aggregation. (WP02)
+- [x] T009 Add evaluator tests for stale, sparse, missing timestamp, wrong question type, and separated admissible/rejected evidence. (WP02)
+- [x] T010 Add tests proving evaluator output is deterministic for identical inputs. (WP02)
 
 ### Implementation Sketch
 
