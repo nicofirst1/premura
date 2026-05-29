@@ -17,11 +17,11 @@
 
 | ID | Description | WP | Parallel |
 |---|---|---|---|
-| T001 | Define closed policy enums for question type, outcome, rejection reason, freshness mode, temporal meaning, and policy shape. | WP01 | No |
-| T002 | Add frozen dataclasses for freshness, sufficiency, question rules, examples, policy declarations, evidence candidates, outcomes, and evaluation results. | WP01 | No |
-| T003 | Implement lightweight declaration validation that fails early for missing fields, invalid combinations, and non-parameter-like content. | WP01 | No |
-| T004 | Expose the internal policy model through `premura.engine.policies` without touching the top-level engine surface yet. | WP01 | No |
-| T005 | Add model-level tests for valid declarations, invalid declarations, caveat requirements, and result validation. | WP01 | No |
+| T001 | Define closed policy enums for question type, outcome, rejection reason, freshness mode, temporal meaning, and policy shape. | WP01 | No | [D] |
+| T002 | Add frozen dataclasses for freshness, sufficiency, question rules, examples, policy declarations, evidence candidates, outcomes, and evaluation results. | WP01 | No | [D] |
+| T003 | Implement lightweight declaration validation that fails early for missing fields, invalid combinations, and non-parameter-like content. | WP01 | No | [D] |
+| T004 | Expose the internal policy model through `premura.engine.policies` without touching the top-level engine surface yet. | WP01 | No | [D] |
+| T005 | Add model-level tests for valid declarations, invalid declarations, caveat requirements, and result validation. | WP01 | No | [D] |
 | T006 | Implement the deterministic evaluator entrypoint over question type, candidates, and metric-family policy declarations. | WP02 | No |
 | T007 | Implement freshness, provenance, and question-type admissibility decisions with distinct rejection reasons. | WP02 | No |
 | T008 | Implement sufficiency checks and no-admissible-evidence refusal aggregation. | WP02 | No |
@@ -52,11 +52,11 @@
 
 ### Included Subtasks
 
-- [ ] T001 Define closed policy enums for question type, outcome, rejection reason, freshness mode, temporal meaning, and policy shape. (WP01)
-- [ ] T002 Add frozen dataclasses for freshness, sufficiency, question rules, examples, policy declarations, evidence candidates, outcomes, and evaluation results. (WP01)
-- [ ] T003 Implement lightweight declaration validation that fails early for missing fields, invalid combinations, and non-parameter-like content. (WP01)
-- [ ] T004 Expose the internal policy model through `premura.engine.policies` without touching the top-level engine surface yet. (WP01)
-- [ ] T005 Add model-level tests for valid declarations, invalid declarations, caveat requirements, and result validation. (WP01)
+- [x] T001 Define closed policy enums for question type, outcome, rejection reason, freshness mode, temporal meaning, and policy shape. (WP01)
+- [x] T002 Add frozen dataclasses for freshness, sufficiency, question rules, examples, policy declarations, evidence candidates, outcomes, and evaluation results. (WP01)
+- [x] T003 Implement lightweight declaration validation that fails early for missing fields, invalid combinations, and non-parameter-like content. (WP01)
+- [x] T004 Expose the internal policy model through `premura.engine.policies` without touching the top-level engine surface yet. (WP01)
+- [x] T005 Add model-level tests for valid declarations, invalid declarations, caveat requirements, and result validation. (WP01)
 
 ### Implementation Sketch
 
