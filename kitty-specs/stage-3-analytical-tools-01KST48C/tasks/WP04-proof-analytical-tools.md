@@ -121,3 +121,4 @@ Review estimates for honesty and refusal behavior, not for advanced statistical 
 - 2026-05-29T15:43:47Z – claude:opus:implementer:implementer – shell_pid=34351 – Started implementation via action command
 - 2026-05-29T15:48:40Z – claude:opus:implementer:implementer – shell_pid=34351 – Ready for review
 - 2026-05-29T15:49:08Z – claude:opus:reviewer:reviewer – shell_pid=38955 – Started review via action command
+- 2026-05-29T15:51:09Z – claude:opus:reviewer:reviewer – shell_pid=38955 – Review passed: change_point (largest abs standardized level diff, no p-value/causal label) and smoothed_average (trailing mean, no gap-fill, Uncertainty.unavailable) both register via @analytical_tool into shared REGISTRY and route through WP03 points_for_computation; refusal path structurally enforced; 21 WP04 tests + 33 regression pass; ruff/format/mypy clean; determinism + honesty grep verified.
