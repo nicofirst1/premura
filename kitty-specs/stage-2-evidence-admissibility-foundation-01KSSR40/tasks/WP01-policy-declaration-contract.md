@@ -19,7 +19,8 @@ subtasks:
 - T003
 - T004
 - T005
-shell_pid: '75455'
+shell_pid: "75455"
+agent: "claude:opus:implementer:implementer"
 history:
 - timestamp: '2026-05-29T11:59:19Z'
   agent: gpt-5.5
@@ -217,3 +218,7 @@ Implementation worktrees are allocated later per computed lane from `lanes.json`
 ## Reviewer Guidance
 
 Review that the model is bounded but not over-enumerated. The safe action for future agents should be to fill these dataclasses, not invent policy logic.
+
+## Activity Log
+
+- 2026-05-29T12:07:53Z – claude:opus:implementer:implementer – shell_pid=75455 – Assigned agent via action command
