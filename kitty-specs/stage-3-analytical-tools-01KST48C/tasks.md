@@ -9,10 +9,10 @@
 
 | ID | Description | WP | Parallel |
 |---|---|---|---|
-| T001 | Write the durable Stage 3 analytical-depth research note | WP01 |  |
-| T002 | Capture method decisions for `change_point` and smoothed average | WP01 |  |
-| T003 | Capture analytical `QuestionType` and confound vocabulary decisions | WP01 |  |
-| T004 | Cross-check research note against doctrine, roadmap, and plan | WP01 |  |
+| T001 | Write the durable Stage 3 analytical-depth research note | WP01 |  | [D] |
+| T002 | Capture method decisions for `change_point` and smoothed average | WP01 |  | [D] |
+| T003 | Capture analytical `QuestionType` and confound vocabulary decisions | WP01 |  | [D] |
+| T004 | Cross-check research note against doctrine, roadmap, and plan | WP01 |  | [D] |
 | T005 | Add analytical registry and tool descriptor contract | WP02 |  |
 | T006 | Add analytical result/refusal/confound model types | WP02 |  |
 | T007 | Add contract validation for unknown confound keys and malformed results | WP02 |  |
@@ -47,10 +47,10 @@
 
 Included subtasks:
 
-- [ ] T001 Write the durable Stage 3 analytical-depth research note (WP01)
-- [ ] T002 Capture method decisions for `change_point` and smoothed average (WP01)
-- [ ] T003 Capture analytical `QuestionType` and confound vocabulary decisions (WP01)
-- [ ] T004 Cross-check research note against doctrine, roadmap, and plan (WP01)
+- [x] T001 Write the durable Stage 3 analytical-depth research note (WP01)
+- [x] T002 Capture method decisions for `change_point` and smoothed average (WP01)
+- [x] T003 Capture analytical `QuestionType` and confound vocabulary decisions (WP01)
+- [x] T004 Cross-check research note against doctrine, roadmap, and plan (WP01)
 
 Implementation sketch:
 
