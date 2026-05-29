@@ -13,10 +13,10 @@
 | T002 | Capture method decisions for `change_point` and smoothed average | WP01 |  | [D] |
 | T003 | Capture analytical `QuestionType` and confound vocabulary decisions | WP01 |  | [D] |
 | T004 | Cross-check research note against doctrine, roadmap, and plan | WP01 |  | [D] |
-| T005 | Add analytical registry and tool descriptor contract | WP02 |  |
-| T006 | Add analytical result/refusal/confound model types | WP02 |  |
-| T007 | Add contract validation for unknown confound keys and malformed results | WP02 |  |
-| T008 | Add contract tests through the new analytical contract module | WP02 |  |
+| T005 | Add analytical registry and tool descriptor contract | WP02 |  | [D] |
+| T006 | Add analytical result/refusal/confound model types | WP02 |  | [D] |
+| T007 | Add contract validation for unknown confound keys and malformed results | WP02 |  | [D] |
+| T008 | Add contract tests through the new analytical contract module | WP02 |  | [D] |
 | T009 | Add admissible input-series model and overlap metadata handling | WP03 |  |
 | T010 | Add input-preparation refusal behavior before computation | WP03 |  |
 | T011 | Add analytical question-type policy wiring for prepared inputs | WP03 |  |
@@ -77,10 +77,10 @@ Risks:
 
 Included subtasks:
 
-- [ ] T005 Add analytical registry and tool descriptor contract (WP02)
-- [ ] T006 Add analytical result/refusal/confound model types (WP02)
-- [ ] T007 Add contract validation for unknown confound keys and malformed results (WP02)
-- [ ] T008 Add contract tests through the new analytical contract module (WP02)
+- [x] T005 Add analytical registry and tool descriptor contract (WP02)
+- [x] T006 Add analytical result/refusal/confound model types (WP02)
+- [x] T007 Add contract validation for unknown confound keys and malformed results (WP02)
+- [x] T008 Add contract tests through the new analytical contract module (WP02)
 
 Implementation sketch:
 
