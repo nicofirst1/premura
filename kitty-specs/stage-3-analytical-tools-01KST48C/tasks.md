@@ -17,10 +17,10 @@
 | T006 | Add analytical result/refusal/confound model types | WP02 |  | [D] |
 | T007 | Add contract validation for unknown confound keys and malformed results | WP02 |  | [D] |
 | T008 | Add contract tests through the new analytical contract module | WP02 |  | [D] |
-| T009 | Add admissible input-series model and overlap metadata handling | WP03 |  |
-| T010 | Add input-preparation refusal behavior before computation | WP03 |  |
-| T011 | Add analytical question-type policy wiring for prepared inputs | WP03 |  |
-| T012 | Add input-preparation tests with fixture-backed evidence | WP03 |  |
+| T009 | Add admissible input-series model and overlap metadata handling | WP03 |  | [D] |
+| T010 | Add input-preparation refusal behavior before computation | WP03 |  | [D] |
+| T011 | Add analytical question-type policy wiring for prepared inputs | WP03 |  | [D] |
+| T012 | Add input-preparation tests with fixture-backed evidence | WP03 |  | [D] |
 | T013 | Implement conservative `change_point` computation | WP04 |  |
 | T014 | Implement smoothed-average computation | WP04 |  |
 | T015 | Add proof-tool tests for supported and refused inputs | WP04 |  |
@@ -107,10 +107,10 @@ Risks:
 
 Included subtasks:
 
-- [ ] T009 Add admissible input-series model and overlap metadata handling (WP03)
-- [ ] T010 Add input-preparation refusal behavior before computation (WP03)
-- [ ] T011 Add analytical question-type policy wiring for prepared inputs (WP03)
-- [ ] T012 Add input-preparation tests with fixture-backed evidence (WP03)
+- [x] T009 Add admissible input-series model and overlap metadata handling (WP03)
+- [x] T010 Add input-preparation refusal behavior before computation (WP03)
+- [x] T011 Add analytical question-type policy wiring for prepared inputs (WP03)
+- [x] T012 Add input-preparation tests with fixture-backed evidence (WP03)
 
 Implementation sketch:
 
