@@ -18,7 +18,8 @@ subtasks:
 - T006
 - T007
 - T008
-shell_pid: '15705'
+shell_pid: "15705"
+agent: "claude:opus:implementer:implementer"
 history:
 - 2026-05-29T15:18:42Z tasks generated
 authoritative_surface: src/premura/engine/
@@ -121,3 +122,7 @@ Cover:
 ## Reviewer Guidance
 
 Verify that this WP defines a bounded extension point rather than a tool-specific implementation.
+
+## Activity Log
+
+- 2026-05-29T15:28:07Z – claude:opus:implementer:implementer – shell_pid=15705 – Assigned agent via action command
