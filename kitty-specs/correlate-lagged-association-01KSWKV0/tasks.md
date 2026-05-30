@@ -8,11 +8,11 @@
 
 | ID | Description | WP | Parallel |
 |---|---|---|---|
-| T001 | Add failing contract tests for lagged-association vocabulary and `common_cause_plausible`. | WP01 | No |
-| T002 | Extend the closed analytical question and confound vocabularies for correlate. | WP01 | No |
-| T003 | Add evidence-policy question mapping and default sufficiency/freshness declarations for lagged association. | WP01 | No |
-| T004 | Add contract validation tests for paired input shape metadata and forbidden confound keys. | WP01 | No |
-| T005 | Verify no runtime network or PubMed dependency is introduced by the contract changes. | WP01 | No |
+| T001 | Add failing contract tests for lagged-association vocabulary and `common_cause_plausible`. | WP01 | No | [D] |
+| T002 | Extend the closed analytical question and confound vocabularies for correlate. | WP01 | No | [D] |
+| T003 | Add evidence-policy question mapping and default sufficiency/freshness declarations for lagged association. | WP01 | No | [D] |
+| T004 | Add contract validation tests for paired input shape metadata and forbidden confound keys. | WP01 | No | [D] |
+| T005 | Verify no runtime network or PubMed dependency is introduced by the contract changes. | WP01 | No | [D] |
 | T006 | Add failing paired-preparation tests for same-day pairing after caller-declared lag. | WP02 | No |
 | T007 | Define paired hypothesis/input data shapes and validation in the analytical input layer. | WP02 | No |
 | T008 | Implement paired input preparation over two usable series with narrowed overlap metadata. | WP02 | No |
@@ -46,11 +46,11 @@
 
 Included subtasks:
 
-- [ ] T001 Add failing contract tests for lagged-association vocabulary and `common_cause_plausible`. (WP01)
-- [ ] T002 Extend the closed analytical question and confound vocabularies for correlate. (WP01)
-- [ ] T003 Add evidence-policy question mapping and default sufficiency/freshness declarations for lagged association. (WP01)
-- [ ] T004 Add contract validation tests for paired input shape metadata and forbidden confound keys. (WP01)
-- [ ] T005 Verify no runtime network or PubMed dependency is introduced by the contract changes. (WP01)
+- [x] T001 Add failing contract tests for lagged-association vocabulary and `common_cause_plausible`. (WP01)
+- [x] T002 Extend the closed analytical question and confound vocabularies for correlate. (WP01)
+- [x] T003 Add evidence-policy question mapping and default sufficiency/freshness declarations for lagged association. (WP01)
+- [x] T004 Add contract validation tests for paired input shape metadata and forbidden confound keys. (WP01)
+- [x] T005 Verify no runtime network or PubMed dependency is introduced by the contract changes. (WP01)
 
 Implementation sketch:
 
