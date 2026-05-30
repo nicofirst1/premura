@@ -20,8 +20,8 @@ subtasks:
 - T008
 - T009
 - T010
-agent: "claude:opus:implementer:implementer"
-shell_pid: "59706"
+agent: "claude:opus:reviewer:reviewer"
+shell_pid: "70445"
 history:
 - 2026-05-30T14:27:30Z tasks generated for correlate lagged association mission
 authoritative_surface: src/premura/engine/
@@ -186,3 +186,4 @@ Validation:
 
 - 2026-05-30T14:45:00Z – claude:opus:implementer:implementer – shell_pid=59706 – Started implementation via action command
 - 2026-05-30T14:54:31Z – claude:opus:implementer:implementer – shell_pid=59706 – Ready for review: paired same-day-after-lag input prep (PreRegisteredAssociationHypothesis + PairedAnalyticalInput/PairedObservation), refusal-aware via WP01 policy delegation, imputed-pair pct + paired source provenance; 56 tests pass; no coefficient computed (deferred to WP03)
+- 2026-05-30T14:55:14Z – claude:opus:reviewer:reviewer – shell_pid=70445 – Started review via action command
