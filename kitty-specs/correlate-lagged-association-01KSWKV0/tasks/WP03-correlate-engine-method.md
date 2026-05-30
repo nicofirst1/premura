@@ -24,6 +24,8 @@ subtasks:
 - T014
 - T015
 - T016
+agent: "claude:opus:implementer:implementer"
+shell_pid: "73259"
 history:
 - 2026-05-30T14:27:30Z tasks generated for correlate lagged association mission
 authoritative_surface: src/premura/engine/
@@ -210,3 +212,7 @@ Validation:
 - Tie handling and autocorrelation truncation should be deterministic and simple.
 - Do not bury preparation failures inside the method; invalid pair inputs should
   already be refused by WP02.
+
+## Activity Log
+
+- 2026-05-30T14:57:49Z – claude:opus:implementer:implementer – shell_pid=73259 – Started implementation via action command
