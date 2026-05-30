@@ -28,10 +28,10 @@
 | T018 | Implement the thin MCP wrapper that delegates all behavior to the engine analytical path. | WP04 | No | [D] |
 | T019 | Validate wrapper serialization for available and refused outcomes. | WP04 | No | [D] |
 | T020 | Verify the MCP layer performs no statistical computation, no raw fact-table analysis, and no network/PubMed work. | WP04 | No | [D] |
-| T021 | Update engine and analytical contributor docs for lag, association, paired inputs, and confound rules. | WP05 | No |
-| T022 | Update product/status roadmap docs to show `correlate` shipped and ledger/PubMed still deferred. | WP05 | No |
-| T023 | Add the ADR-0008 back-pointer that `common_cause_plausible` was resolved by the research note. | WP05 | No |
-| T024 | Run changed-scope documentation and quality-gate checks, recording any pre-existing unrelated failures. | WP05 | No |
+| T021 | Update engine and analytical contributor docs for lag, association, paired inputs, and confound rules. | WP05 | No | [D] |
+| T022 | Update product/status roadmap docs to show `correlate` shipped and ledger/PubMed still deferred. | WP05 | No | [D] |
+| T023 | Add the ADR-0008 back-pointer that `common_cause_plausible` was resolved by the research note. | WP05 | No | [D] |
+| T024 | Run changed-scope documentation and quality-gate checks, recording any pre-existing unrelated failures. | WP05 | No | [D] |
 
 ## Work Packages
 
@@ -177,10 +177,10 @@ Risks:
 
 Included subtasks:
 
-- [ ] T021 Update engine and analytical contributor docs for lag, association, paired inputs, and confound rules. (WP05)
-- [ ] T022 Update product/status roadmap docs to show `correlate` shipped and ledger/PubMed still deferred. (WP05)
-- [ ] T023 Add the ADR-0008 back-pointer that `common_cause_plausible` was resolved by the research note. (WP05)
-- [ ] T024 Run changed-scope documentation and quality-gate checks, recording any pre-existing unrelated failures. (WP05)
+- [x] T021 Update engine and analytical contributor docs for lag, association, paired inputs, and confound rules. (WP05)
+- [x] T022 Update product/status roadmap docs to show `correlate` shipped and ledger/PubMed still deferred. (WP05)
+- [x] T023 Add the ADR-0008 back-pointer that `common_cause_plausible` was resolved by the research note. (WP05)
+- [x] T024 Run changed-scope documentation and quality-gate checks, recording any pre-existing unrelated failures. (WP05)
 
 Implementation sketch:
 
