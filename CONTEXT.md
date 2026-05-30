@@ -77,6 +77,16 @@ _Avoid_: parser output, synthetic field, convenience calculation
 The logic that ranks which signals can answer a user question given the actual warehouse contents and freshness rules.
 _Avoid_: recommender, query planner, search index
 
+### Analysis
+
+**Lag**:
+The directional, whole-day time-offset at which one metric's relationship to another is examined — metric X on a given day compared against metric Y some number of days later. It models a *physiological delay* (lactose eaten today, gut symptoms a day or two later; a hard training day today, suppressed overnight HRV tomorrow), so it is asymmetric and always caller-specified. It is **not** a symmetric "close-enough timestamp" measurement tolerance, and it is never discovered by scanning many offsets and keeping the best-fitting one.
+_Avoid_: tolerance window, time-shift fudge, lead/lag scan.
+
+**Association** (what a correlation reports):
+A descriptive statement that two metrics move together (or oppositely) over the days both were measured. It carries a strength and an honest uncertainty, never a direction of cause. "My HRV and my training load are associated at a one-day lag" is admissible; "my training load lowers my HRV" is not.
+_Avoid_: effect, impact, driver, link, relationship (these smuggle in causation).
+
 ### User intent
 
 **Health direction**:
