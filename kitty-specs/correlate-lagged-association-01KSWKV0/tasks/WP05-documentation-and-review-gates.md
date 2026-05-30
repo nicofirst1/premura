@@ -13,6 +13,8 @@ subtasks:
 - T022
 - T023
 - T024
+agent: "claude:opus:implementer:implementer"
+shell_pid: "8426"
 history:
 - 2026-05-30T14:27:30Z tasks generated for correlate lagged association mission
 authoritative_surface: docs/
@@ -140,3 +142,7 @@ Validation:
 - Watch for docs saying `correlate` proves cause or significance.
 - Watch for docs implying the session ledger or PubMed grounding shipped.
 - Watch for exhaustive metric-pair lists; the rule is the design, not examples.
+
+## Activity Log
+
+- 2026-05-30T15:39:46Z – claude:opus:implementer:implementer – shell_pid=8426 – Started implementation via action command
