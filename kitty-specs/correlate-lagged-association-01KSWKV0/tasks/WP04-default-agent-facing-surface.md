@@ -14,8 +14,8 @@ subtasks:
 - T018
 - T019
 - T020
-agent: "claude:opus:implementer:implementer"
-shell_pid: "92809"
+agent: "claude:opus:reviewer:reviewer"
+shell_pid: "5244"
 history:
 - 2026-05-30T14:27:30Z tasks generated for correlate lagged association mission
 authoritative_surface: src/premura/mcp/
@@ -144,3 +144,4 @@ Validation:
 
 - 2026-05-30T15:20:16Z – claude:opus:implementer:implementer – shell_pid=92809 – Started implementation via action command
 - 2026-05-30T15:34:19Z – claude:opus:implementer:implementer – shell_pid=92809 – Ready for review: thin MCP correlate wrapper on the default surface (12->13 tools); builds the pre-registered hypothesis and delegates pairing/computation/refusals to the engine (prepare_paired_input -> invoke_analytical_tool); available + refusal envelopes serialize JSON-safe and byte-stable; static + delegation guards prove no MCP-level stats/pairing/network. Full suite 554 passed.
+- 2026-05-30T15:34:58Z – claude:opus:reviewer:reviewer – shell_pid=5244 – Started review via action command
