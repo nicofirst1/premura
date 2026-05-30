@@ -13,11 +13,11 @@
 | T003 | Add evidence-policy question mapping and default sufficiency/freshness declarations for lagged association. | WP01 | No | [D] |
 | T004 | Add contract validation tests for paired input shape metadata and forbidden confound keys. | WP01 | No | [D] |
 | T005 | Verify no runtime network or PubMed dependency is introduced by the contract changes. | WP01 | No | [D] |
-| T006 | Add failing paired-preparation tests for same-day pairing after caller-declared lag. | WP02 | No |
-| T007 | Define paired hypothesis/input data shapes and validation in the analytical input layer. | WP02 | No |
-| T008 | Implement paired input preparation over two usable series with narrowed overlap metadata. | WP02 | No |
-| T009 | Implement paired-preparation refusal behavior for invalid lag, missing hypothesis, inadmissible input, no overlap, and weak paired support. | WP02 | No |
-| T010 | Add imputed-pair percentage and paired-source provenance to the paired input output. | WP02 | No |
+| T006 | Add failing paired-preparation tests for same-day pairing after caller-declared lag. | WP02 | No | [D] |
+| T007 | Define paired hypothesis/input data shapes and validation in the analytical input layer. | WP02 | No | [D] |
+| T008 | Implement paired input preparation over two usable series with narrowed overlap metadata. | WP02 | No | [D] |
+| T009 | Implement paired-preparation refusal behavior for invalid lag, missing hypothesis, inadmissible input, no overlap, and weak paired support. | WP02 | No | [D] |
+| T010 | Add imputed-pair percentage and paired-source provenance to the paired input output. | WP02 | No | [D] |
 | T011 | Add failing engine tool tests for available correlate output and core refusal classes. | WP03 | No |
 | T012 | Implement deterministic Spearman rho and rank handling for paired observations. | WP03 | No |
 | T013 | Implement effective sample size and association-band calculation with deterministic truncation. | WP03 | No |
@@ -79,11 +79,11 @@ Risks:
 
 Included subtasks:
 
-- [ ] T006 Add failing paired-preparation tests for same-day pairing after caller-declared lag. (WP02)
-- [ ] T007 Define paired hypothesis/input data shapes and validation in the analytical input layer. (WP02)
-- [ ] T008 Implement paired input preparation over two usable series with narrowed overlap metadata. (WP02)
-- [ ] T009 Implement paired-preparation refusal behavior for invalid lag, missing hypothesis, inadmissible input, no overlap, and weak paired support. (WP02)
-- [ ] T010 Add imputed-pair percentage and paired-source provenance to the paired input output. (WP02)
+- [x] T006 Add failing paired-preparation tests for same-day pairing after caller-declared lag. (WP02)
+- [x] T007 Define paired hypothesis/input data shapes and validation in the analytical input layer. (WP02)
+- [x] T008 Implement paired input preparation over two usable series with narrowed overlap metadata. (WP02)
+- [x] T009 Implement paired-preparation refusal behavior for invalid lag, missing hypothesis, inadmissible input, no overlap, and weak paired support. (WP02)
+- [x] T010 Add imputed-pair percentage and paired-source provenance to the paired input output. (WP02)
 
 Implementation sketch:
 
