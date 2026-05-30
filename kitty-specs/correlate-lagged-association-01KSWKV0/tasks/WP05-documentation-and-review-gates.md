@@ -13,8 +13,8 @@ subtasks:
 - T022
 - T023
 - T024
-agent: "claude:opus:implementer:implementer"
-shell_pid: "8426"
+agent: "claude:opus:reviewer:reviewer"
+shell_pid: "16795"
 history:
 - 2026-05-30T14:27:30Z tasks generated for correlate lagged association mission
 authoritative_surface: docs/
@@ -147,3 +147,4 @@ Validation:
 
 - 2026-05-30T15:39:46Z – claude:opus:implementer:implementer – shell_pid=8426 – Started implementation via action command
 - 2026-05-30T15:47:36Z – claude:opus:implementer:implementer – shell_pid=8426 – Ready for review: synced docs to correlate-shipped truth (CONTRACT.md analytical/correlate section, STATUS/ROADMAP/PLAN show correlate SHIPPED + 13-tool surface + 554 tests, ledger/PubMed kept DEFERRED, ADR-0008 common_cause_plausible back-pointer); gates run, full suite 554 green
+- 2026-05-30T15:48:12Z – claude:opus:reviewer:reviewer – shell_pid=16795 – Started review via action command
