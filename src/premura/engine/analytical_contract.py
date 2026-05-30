@@ -68,6 +68,21 @@ class AnalyticalQuestionType(StrEnum):
     SMOOTHED_PATTERN = "smoothed_pattern"
     """For the smoothed-average tool — a trailing rolling mean."""
 
+    LAGGED_ASSOCIATION = "lagged_association"
+    """For the ``correlate`` tool — a pre-registered, directional, integer-day
+    *lagged association* between **two** admissible daily series (ADR-0008).
+
+    This is deliberately its **own** closed value, not a reuse of a single-series
+    question: two-series association carries paired-sample sufficiency (a raw
+    paired floor and an effective-sample floor) and confound risks
+    (``common_cause_plausible``, ``temporal_autocorrelation``) that a
+    single-series shape cannot express. Collapsing it onto ``level_shift_detection``
+    or ``smoothed_pattern`` would hide exactly that correlation-specific
+    sufficiency, the same mistake research note D4 rejected for the single-series
+    tools. The matching policy ``QuestionType.LAGGED_ASSOCIATION`` declares its
+    own freshness/sufficiency; the input-preparation layer maps this value onto
+    it through the closed analytical->policy table."""
+
 
 class ConfoundKey(StrEnum):
     """The closed, committed confound vocabulary (research note D5).
@@ -105,6 +120,17 @@ class ConfoundKey(StrEnum):
     METHOD_UNCERTAINTY_UNAVAILABLE = "method_uncertainty_unavailable"
     """The method cannot express a natural uncertainty interval (the
     smoothed-average case in research note D3)."""
+
+    COMMON_CAUSE_PLAUSIBLE = "common_cause_plausible"
+    """A third, unmeasured variable (a lurking / common cause) could plausibly
+    drive **both** series, so a reported association may be confounded rather
+    than a direct relationship between the two metrics (correlate methodology
+    research Q4). This is the canonical confound of correlation and a distinct
+    axis from every other key: those describe data quality, estimator limits, or
+    interpretation context, whereas this one flags the *inferential* validity of
+    the association itself. Per "guide, don't enumerate" it is one rule-shaped
+    flag — the candidate common causes stay open and caller-supplied, never an
+    enumerated built-in catalog."""
 
 
 CONFOUND_KEYS: frozenset[str] = frozenset(key.value for key in ConfoundKey)

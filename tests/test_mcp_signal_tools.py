@@ -29,6 +29,8 @@ from premura.store import duck
 # the catalog + six signal tools and the two bounded profile-capture tools.
 # WP06 adds the two Stage 3 analytical tools (change_point / smoothed_average) to
 # the same default surface.
+# The correlate mission's WP04 adds ``correlate`` (now thirteen default tools;
+# the ``_EIGHT_`` name predates the later additions and is kept stable).
 _EIGHT_DEFAULT_TOOLS = sorted(
     [
         "list_metrics",
@@ -43,6 +45,7 @@ _EIGHT_DEFAULT_TOOLS = sorted(
         "profile_context_record",
         "change_point",
         "smoothed_average",
+        "correlate",
     ]
 )
 

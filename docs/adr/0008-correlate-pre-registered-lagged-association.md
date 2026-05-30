@@ -113,6 +113,10 @@ single-series shape. Whether the closed confound vocabulary needs **one new key*
 for the third-variable / common-cause risk (the defining correlation confound,
 only partly covered by `life_event_sensitive`) is an open question for the
 implementing mission — and, like the question types, would be a reviewed
-extension, not an ad-hoc string. The pre-registered-hypothesis input and the
+extension, not an ad-hoc string. *(Resolved: the answer was yes —
+`common_cause_plausible`, the rule-shaped lurking/common-cause flag settled by
+the research note ([`CORRELATE_METHODOLOGY_RESEARCH.md`](../history/research/CORRELATE_METHODOLOGY_RESEARCH.md)
+Q4) and shipped on the closed `ConfoundKey` vocabulary in the
+`correlate-lagged-association` mission, 2026-05-30.)* The pre-registered-hypothesis input and the
 provenance it lands in are the seam the later audit-trace mission builds on
 without a breaking change.

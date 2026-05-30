@@ -28,6 +28,7 @@ from premura.mcp.entrypoint import build_operator_server, build_server
 from premura.store import duck
 
 # WP06 adds the two analytical tools to the prior ten default tools.
+# The correlate mission's WP04 then adds ``correlate`` (twelve -> thirteen).
 _DEFAULT_TOOLS_WITH_ANALYTICAL = sorted(
     [
         "list_metrics",
@@ -42,6 +43,7 @@ _DEFAULT_TOOLS_WITH_ANALYTICAL = sorted(
         "profile_context_record",
         "change_point",
         "smoothed_average",
+        "correlate",
     ]
 )
 

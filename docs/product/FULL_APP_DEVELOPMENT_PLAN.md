@@ -158,13 +158,19 @@ The lab proposal is the first place where Premura becomes more than a wearable d
 
 ### Phase 3: `v2.2 analytical depth`
 
-> **Status: first slice shipped.** The evidence-admissibility foundation and the
-> bounded analytical contract landed, with two deterministic proof tools
-> (`change_point`, `smoothed_average`) on the default MCP surface, each carrying
-> the mandatory result envelope (estimate + validity metadata + closed confound
-> checklist) or a first-class refusal. See [STATUS.md](../operations/STATUS.md)
-> §"Stage 3 analytical tools". Remaining: `correlate` (next), `rolling_mean`,
-> `paired_t_test`, then PubMed grounding and reproducible research traces.
+> **Status: in progress, `correlate` landed.** The evidence-admissibility
+> foundation and the bounded analytical contract landed, and three deterministic
+> tools now sit on the default MCP surface — `change_point`, `smoothed_average`,
+> and `correlate` (the first multi-input tool: a pre-registered, caller-declared
+> whole-day-lagged Spearman *association* with an autocorrelation-corrected
+> `N_eff` band, never a p-value or "significant") — each carrying the mandatory
+> result envelope (estimate + validity metadata + closed confound checklist,
+> including the `common_cause_plausible` key) or a first-class refusal. See
+> [STATUS.md](../operations/STATUS.md) §"Stage 3 analytical tools" and design
+> decision note [0008](../adr/0008-correlate-pre-registered-lagged-association.md).
+> **Remaining (deferred):** `rolling_mean`, `paired_t_test`, PubMed grounding, and
+> the reproducible research trace / session-scoped multiplicity audit — each a
+> following mission, none shipped yet.
 
 #### Goal
 

@@ -47,6 +47,41 @@ from premura.engine.policies._model import (
 # Shared source anchor. Informational only — never read at runtime.
 _RESEARCH = "docs/history/research/STAGE2_EVIDENCE_ADMISSIBILITY_RESEARCH.md"
 
+# Conservative default raw paired-sample floor for the lagged-association
+# (correlate) question, from CORRELATE_METHODOLOGY_RESEARCH.md Q3: below 20
+# paired observations a correlation point estimate carries essentially no
+# information and the band spans nearly the whole range, so the default refuses.
+# This is the *raw* paired floor declared at the policy layer; the stricter
+# effective-sample floor (N_eff >= 12) is an autocorrelation-corrected check the
+# correlate tool enforces at compute time, not a declarative density parameter.
+_LAGGED_ASSOCIATION_MIN_PAIRED = 20
+
+
+def _lagged_association_rule(*, caveats: tuple[str, ...]) -> QuestionRule:
+    """The shared, conservative default rule for the lagged-association question.
+
+    A distinct rule — never the recent-trend rule object — so the paired-sample
+    floor cannot be hidden behind a single-series threshold. It reuses the
+    recent-run admissibility/freshness posture (a delayed-association hypothesis
+    is still about a recent daily window) but adds its own paired-sample
+    sufficiency. Declarative parameters only: the evaluator owns all branching.
+    """
+    return QuestionRule(
+        admissibility=Admissibility.ADMISSIBLE,
+        freshness=FreshnessRule(mode=FreshnessMode.CAVEAT_ONLY),
+        sufficiency=SufficiencyRule(
+            min_observations=_LAGGED_ASSOCIATION_MIN_PAIRED,
+            missing_data_behavior=MissingDataBehavior.REJECT,
+        ),
+        required_context=("observed_at",),
+        caveats=(
+            *caveats,
+            "A lagged association describes whether two of your own series tend "
+            "to move together at a declared day-offset; it is not evidence that "
+            "one causes the other, and a third factor could drive both.",
+        ),
+    )
+
 
 # ---------------------------------------------------------------------------
 # Reusable policy-shape builders
@@ -215,6 +250,7 @@ def _serial_average_short_run(
             QuestionType.RECENT_TREND: recent_run_rule,
             QuestionType.LEVEL_SHIFT_DETECTION: recent_run_rule,
             QuestionType.SMOOTHED_PATTERN: recent_run_rule,
+            QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=serial_caveat),
         },
         examples=(
             PolicyExample(
@@ -287,6 +323,7 @@ def _rolling_recent_pattern(
             QuestionType.RECENT_TREND: recent_pattern_rule,
             QuestionType.LEVEL_SHIFT_DETECTION: recent_pattern_rule,
             QuestionType.SMOOTHED_PATTERN: recent_pattern_rule,
+            QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=coverage_caveat),
         },
         examples=(
             PolicyExample(
@@ -414,6 +451,10 @@ def _baseline_relative(
             # sufficiency on top.
             QuestionType.LEVEL_SHIFT_DETECTION: relative_rule,
             QuestionType.SMOOTHED_PATTERN: relative_rule,
+            # Standing caveats (baseline-relative weakness) attach via the
+            # evaluator; the rule adds the paired-sample floor and the
+            # association-not-causation caveat.
+            QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=()),
             QuestionType.HISTORICAL_BASELINE: QuestionRule(
                 admissibility=Admissibility.LIMITED,
                 freshness=FreshnessRule(mode=FreshnessMode.CAVEAT_ONLY),
@@ -484,6 +525,10 @@ def _slow_trajectory_method_sensitive(
             # method-sensitivity caveats) and add method-level sufficiency.
             QuestionType.LEVEL_SHIFT_DETECTION: trajectory_rule,
             QuestionType.SMOOTHED_PATTERN: trajectory_rule,
+            # Method-sensitivity standing caveats attach via the evaluator; the
+            # rule adds the paired-sample floor and association-not-causation
+            # caveat.
+            QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=()),
             QuestionType.HISTORICAL_BASELINE: QuestionRule(
                 admissibility=Admissibility.ADMISSIBLE,
                 freshness=FreshnessRule(mode=FreshnessMode.CAVEAT_ONLY),
@@ -558,6 +603,7 @@ def _sparse_lab_analyte_specific(
             QuestionType.RECENT_TREND: repeats_required_rule,
             QuestionType.LEVEL_SHIFT_DETECTION: repeats_required_rule,
             QuestionType.SMOOTHED_PATTERN: repeats_required_rule,
+            QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=analyte_caveat),
         },
         examples=(
             PolicyExample(

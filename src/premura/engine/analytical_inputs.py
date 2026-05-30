@@ -43,8 +43,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from enum import StrEnum
+from math import isfinite
 from types import MappingProxyType
 from typing import Any
 
@@ -63,6 +64,17 @@ __all__ = [
     "ANALYTICAL_TO_POLICY_QUESTION",
     "prepare_input_series",
     "points_for_computation",
+    # Paired preparation (WP02 — correlate lagged association)
+    "ExpectedDirection",
+    "PairedInputRefusalReason",
+    "PreRegisteredAssociationHypothesis",
+    "PairedObservation",
+    "PairedAnalyticalInput",
+    "prepare_paired_input",
+    "paired_points_for_computation",
+    "LAG_FREE_ABS_MAX",
+    "LAG_JUSTIFIED_ABS_MAX",
+    "MIN_PAIRED_OBSERVATIONS",
 ]
 
 
@@ -113,6 +125,7 @@ ANALYTICAL_TO_POLICY_QUESTION: Mapping[AnalyticalQuestionType, QuestionType] = M
     {
         AnalyticalQuestionType.LEVEL_SHIFT_DETECTION: QuestionType.LEVEL_SHIFT_DETECTION,
         AnalyticalQuestionType.SMOOTHED_PATTERN: QuestionType.SMOOTHED_PATTERN,
+        AnalyticalQuestionType.LAGGED_ASSOCIATION: QuestionType.LAGGED_ASSOCIATION,
     }
 )
 """Closed analytical→policy question map used to drive the evaluator.
@@ -530,3 +543,540 @@ def points_for_computation(series: AnalyticalInputSeries) -> tuple[PreparedPoint
             f"(reason={series.refusal.reason!r}) must not be passed to computation"
         )
     return series.points
+
+
+# ===========================================================================
+# Paired input preparation (WP02 — correlate lagged association, ADR-0008)
+# ===========================================================================
+#
+# This is the *two-series* preparation seam. It deliberately reuses the
+# single-series contract above rather than forking it: both inputs are ordinary
+# :class:`AnalyticalInputSeries` values produced by :func:`prepare_input_series`,
+# so per-series admissibility/freshness/sufficiency is already gated by the WP01
+# evidence policy (``evaluate_evidence``). This module does **not** re-run the
+# evaluator — it delegates by inspecting each series' ``refusal`` and propagating
+# it. The only new gates here are the ones that exist solely because there are
+# two series and a pre-registered hypothesis: lag validity, same-day pairing,
+# overlap existence, and the raw paired-sample floor.
+#
+# No coefficient is computed here (that is WP03). The effective-sample-size floor
+# (N_eff >= 12) is likewise a compute-time check WP03 owns; WP02 stops at a
+# validated, refusal-aware, imputation-annotated paired bundle.
+
+
+# Lag bands (ADR-0008 + CORRELATE_METHODOLOGY_RESEARCH.md Q5): |lag| <= 3 is free;
+# 4..14 requires a stated justification the agent supplies; > 14 is refused.
+LAG_FREE_ABS_MAX = 3
+LAG_JUSTIFIED_ABS_MAX = 14
+
+# The conservative raw paired-sample floor (research note Q3). Below this a
+# correlation point estimate carries essentially no information; the paired
+# preparer refuses before any coefficient can run. Mirrors the policy-layer
+# ``_LAGGED_ASSOCIATION_MIN_PAIRED`` so the same number gates both the
+# per-series admissibility evidence and the post-pairing count.
+MIN_PAIRED_OBSERVATIONS = 20
+
+
+class ExpectedDirection(StrEnum):
+    """The closed, pre-registered expected sign of an association (ADR-0008).
+
+    The caller must declare this *before* the result exists — declaring the
+    expected direction up front is the anti-p-hacking discipline the ADR calls
+    out. It is a closed vocabulary so an agent cannot smuggle a free-form
+    ``"up a bit"``; WP03 compares the observed sign against this declared value.
+    """
+
+    POSITIVE = "positive"
+    NEGATIVE = "negative"
+
+
+class PairedInputRefusalReason(StrEnum):
+    """Why a *paired* analytical input is unusable, before any computation.
+
+    These are the paired-stage reasons, distinct from the single-series
+    :class:`InputRefusalReason` so an agent can branch on exactly what failed in
+    the two-series alignment. When a *constituent* series is itself refused, the
+    paired refusal propagates that series' :class:`InputRefusalReason` verbatim
+    (admissibility is the WP01 policy's job, never reimplemented here); these
+    paired reasons cover only the gates that exist because there are two series
+    and a pre-registered hypothesis.
+    """
+
+    MISSING_HYPOTHESIS = "missing_hypothesis"
+    """No pre-registered hypothesis was supplied, or it is malformed."""
+
+    INVALID_LAG = "invalid_lag"
+    """The requested lag is outside the supported band (``abs(lag) > 14``)."""
+
+    MISSING_LAG_JUSTIFICATION = "missing_lag_justification"
+    """A 4..14 day lag was requested without the required justification."""
+
+    NO_PAIRED_OVERLAP = "no_paired_overlap"
+    """Zero observations pair on the same calendar day after applying the lag."""
+
+    WEAK_PAIRED_SUPPORT = "weak_paired_support"
+    """Fewer than :data:`MIN_PAIRED_OBSERVATIONS` paired days remain."""
+
+
+@dataclass(frozen=True)
+class PreRegisteredAssociationHypothesis:
+    """The caller's declared question, recorded before computation (data-model).
+
+    A correlate call is *pre-registered*: the metric pair, the integer-day lag,
+    and the expected direction are mandatory inputs fixed before the result
+    exists. ``lag_justification`` is required only for a 4..14 day lag; common
+    cause candidates stay open and caller-supplied (never an enumerated
+    built-in catalog), per "guide, don't enumerate".
+    """
+
+    left_metric_id: str
+    right_metric_id: str
+    lag_days: int
+    expected_direction: ExpectedDirection
+    lag_justification: str | None = None
+    common_cause_candidates: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        # Normalise candidate tuple so the frozen shape stays hashable/JSON-safe.
+        object.__setattr__(
+            self, "common_cause_candidates", tuple(self.common_cause_candidates)
+        )
+
+    def validate(self) -> PreRegisteredAssociationHypothesis:
+        """Reject a malformed hypothesis. Returns ``self`` for fluent use.
+
+        Enforces the lag bands here (the typed preparation contract), so an
+        invalid hypothesis is caught before any pairing is attempted:
+
+        * both metric identifiers non-empty;
+        * ``expected_direction`` is a real :class:`ExpectedDirection`;
+        * ``lag_days`` is an integer;
+        * ``abs(lag_days) <= 3`` is free; ``4..14`` requires
+          ``lag_justification``; ``> 14`` is refused.
+        """
+        if not self.left_metric_id or not self.left_metric_id.strip():
+            raise ValueError(
+                "PreRegisteredAssociationHypothesis.left_metric_id must be non-empty"
+            )
+        if not self.right_metric_id or not self.right_metric_id.strip():
+            raise ValueError(
+                "PreRegisteredAssociationHypothesis.right_metric_id must be non-empty"
+            )
+        if not isinstance(self.expected_direction, ExpectedDirection):
+            raise ValueError(
+                "PreRegisteredAssociationHypothesis.expected_direction must be an "
+                f"ExpectedDirection value, got {self.expected_direction!r}"
+            )
+        if isinstance(self.lag_days, bool) or not isinstance(self.lag_days, int):
+            raise ValueError(
+                "PreRegisteredAssociationHypothesis.lag_days must be a whole-day integer"
+            )
+        magnitude = abs(self.lag_days)
+        if magnitude > LAG_JUSTIFIED_ABS_MAX:
+            raise ValueError(
+                f"lag_days={self.lag_days} exceeds the supported band "
+                f"(abs(lag) <= {LAG_JUSTIFIED_ABS_MAX}); a larger lag is refused"
+            )
+        if magnitude > LAG_FREE_ABS_MAX and not (
+            self.lag_justification and self.lag_justification.strip()
+        ):
+            raise ValueError(
+                f"lag_days={self.lag_days} (abs(lag) in "
+                f"{LAG_FREE_ABS_MAX + 1}..{LAG_JUSTIFIED_ABS_MAX}) requires a "
+                "lag_justification supplied by the caller"
+            )
+        return self
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "left_metric_id": self.left_metric_id,
+            "right_metric_id": self.right_metric_id,
+            "lag_days": self.lag_days,
+            "expected_direction": self.expected_direction.value,
+            "lag_justification": self.lag_justification,
+            "common_cause_candidates": list(self.common_cause_candidates),
+        }
+
+
+@dataclass(frozen=True)
+class PairedObservation:
+    """One paired day used for association (data-model → PairedObservation).
+
+    ``paired_day`` is the local calendar day the pair is keyed to (the *left*
+    series day after lag alignment). ``left_ts`` / ``right_ts`` keep the source
+    timestamps for traceability. A pair counts as imputed when *either* side is
+    imputed — that drives both the imputation percentage and the later
+    half-weighted effective support WP03 computes.
+    """
+
+    paired_day: date
+    left_ts: datetime
+    right_ts: datetime
+    left_value: float
+    right_value: float
+    left_is_imputed: bool = False
+    right_is_imputed: bool = False
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.paired_day, date):
+            raise ValueError("PairedObservation.paired_day must be a date")
+        if not (isfinite(self.left_value) and isfinite(self.right_value)):
+            raise ValueError("PairedObservation values must be finite numbers")
+
+    @property
+    def is_imputed(self) -> bool:
+        """True when either side of the pair is an imputed (carried-forward) value."""
+        return self.left_is_imputed or self.right_is_imputed
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "paired_day": self.paired_day.isoformat(),
+            "left_ts": self.left_ts.isoformat(),
+            "right_ts": self.right_ts.isoformat(),
+            "left_value": self.left_value,
+            "right_value": self.right_value,
+            "left_is_imputed": self.left_is_imputed,
+            "right_is_imputed": self.right_is_imputed,
+        }
+
+
+@dataclass(frozen=True)
+class PairedAnalyticalInput:
+    """The two-series post-admissibility input consumed by ``correlate`` (WP03).
+
+    Exactly one of two states, distinguished by ``refusal``:
+
+    * **usable** (``refusal is None``) — ``pairs`` are ordered by paired day and
+      computation-ready, and the overlap metadata is narrowed to the actual
+      paired days. This is the only state in which
+      :func:`paired_points_for_computation` returns pairs.
+    * **refused** (``refusal is not None``) — carries a first-class
+      :class:`RefusalOutcome` and **no** pairs and no overlap sample size, so a
+      coefficient can never run over an input that should not be analyzed.
+
+    No coefficient lives here. The structural guarantee mirrors the single-series
+    :class:`AnalyticalInputSeries`: refusal short-circuits before computation.
+    """
+
+    left_metric_id: str
+    right_metric_id: str
+    question_type: AnalyticalQuestionType
+    pairs: tuple[PairedObservation, ...] = ()
+    window_start: date | None = None
+    window_end: date | None = None
+    overlap_start: date | None = None
+    overlap_end: date | None = None
+    overlap_sample_size: int = 0
+    is_imputed_pct: float = 0.0
+    freshness_status: str | None = None
+    source_summary: Mapping[str, Any] = field(default_factory=dict)
+    refusal: RefusalOutcome | None = None
+
+    def __post_init__(self) -> None:
+        for name, value in (
+            ("left_metric_id", self.left_metric_id),
+            ("right_metric_id", self.right_metric_id),
+        ):
+            if not value or not value.strip():
+                raise ValueError(f"PairedAnalyticalInput.{name} must be a non-empty string")
+        if not isinstance(self.question_type, AnalyticalQuestionType):
+            raise ValueError(
+                "PairedAnalyticalInput.question_type must be an AnalyticalQuestionType value, "
+                f"got {self.question_type!r}"
+            )
+        object.__setattr__(self, "source_summary", dict(self.source_summary))
+
+        if self.refusal is not None:
+            self.refusal.validate()
+            if self.pairs:
+                raise ValueError(
+                    "a refused paired analytical input must not carry pairs"
+                )
+            if self.overlap_sample_size:
+                raise ValueError(
+                    "a refused paired analytical input must not report a sample size"
+                )
+            return
+
+        # Usable invariants.
+        if not (0.0 <= self.is_imputed_pct <= 100.0):
+            raise ValueError("PairedAnalyticalInput.is_imputed_pct must be in [0.0, 100.0]")
+        ordered_days = [p.paired_day for p in self.pairs]
+        if ordered_days != sorted(ordered_days):
+            raise ValueError("PairedAnalyticalInput.pairs must be ordered by paired day")
+        if self.overlap_sample_size != len(self.pairs):
+            raise ValueError(
+                "PairedAnalyticalInput.overlap_sample_size must match the number of pairs"
+            )
+        if (
+            self.window_start is None
+            or self.window_end is None
+            or self.overlap_start is None
+            or self.overlap_end is None
+        ):
+            raise ValueError(
+                "a usable PairedAnalyticalInput must populate its window/overlap metadata"
+            )
+        if self.window_start > self.window_end:
+            raise ValueError("PairedAnalyticalInput.window_start must not be after window_end")
+        if self.overlap_start > self.overlap_end:
+            raise ValueError("PairedAnalyticalInput.overlap_start must not be after overlap_end")
+
+    @property
+    def is_usable(self) -> bool:
+        """True when both inputs were admissible and the pair set passed the floor."""
+        return self.refusal is None
+
+    def to_dict(self) -> dict[str, Any]:
+        """JSON-safe summary (dates rendered ISO-8601). Byte-stable."""
+        return {
+            "left_metric_id": self.left_metric_id,
+            "right_metric_id": self.right_metric_id,
+            "question_type": self.question_type.value,
+            "pairs": [p.to_dict() for p in self.pairs],
+            "window_start": self.window_start.isoformat() if self.window_start else None,
+            "window_end": self.window_end.isoformat() if self.window_end else None,
+            "overlap_start": self.overlap_start.isoformat() if self.overlap_start else None,
+            "overlap_end": self.overlap_end.isoformat() if self.overlap_end else None,
+            "overlap_sample_size": self.overlap_sample_size,
+            "is_imputed_pct": self.is_imputed_pct,
+            "freshness_status": self.freshness_status,
+            "source_summary": dict(self.source_summary),
+            "refusal": self.refusal.to_dict() if self.refusal is not None else None,
+        }
+
+
+def _refused_paired(
+    refusal: RefusalOutcome,
+    *,
+    left_metric_id: str,
+    right_metric_id: str,
+) -> PairedAnalyticalInput:
+    return PairedAnalyticalInput(
+        left_metric_id=left_metric_id,
+        right_metric_id=right_metric_id,
+        question_type=AnalyticalQuestionType.LAGGED_ASSOCIATION,
+        refusal=refusal,
+    )
+
+
+def _series_source_summary(series: AnalyticalInputSeries) -> dict[str, Any]:
+    """A JSON-safe per-series provenance block for the paired source summary."""
+    return {
+        "metric_id": series.metric_id,
+        "sample_size": series.sample_size,
+        "freshness_status": series.freshness_status,
+        "policy_id": series.source_summary.get("policy_id"),
+        "metric_family": series.source_summary.get("metric_family"),
+    }
+
+
+def prepare_paired_input(
+    left_series: AnalyticalInputSeries,
+    right_series: AnalyticalInputSeries,
+    hypothesis: PreRegisteredAssociationHypothesis,
+    *,
+    min_paired_observations: int = MIN_PAIRED_OBSERVATIONS,
+) -> PairedAnalyticalInput:
+    """Prepare a paired analytical input from two usable series + a hypothesis.
+
+    The single seam ``correlate`` (WP03) and its MCP wrapper (WP04) call. It:
+
+    1. Refuses if the pre-registered hypothesis is missing or malformed (invalid
+       lag / missing required justification) — returned as a structured
+       :class:`RefusalOutcome` envelope, never a raised exception.
+    2. Refuses if *either* constituent series is itself refused, **propagating
+       that series' admissibility reason verbatim** — the WP01 evidence policy
+       already decided admissibility/freshness/sufficiency when the series was
+       prepared, so this never re-runs or reimplements the evaluator.
+    3. Applies the caller-declared integer-day lag to the **right** (responding)
+       series, then pairs observations that fall on the same local calendar day.
+       The lag is asymmetric and directional — never a tolerance window and never
+       a scan. The hypothesis reads "left at day D associates with right at day
+       D + lag", so a right observation taken on day ``D + lag`` aligns onto the
+       left day ``D``; the pair is keyed to the left day.
+    4. Refuses when zero pairs remain, or when the raw paired count is below
+       ``min_paired_observations`` (the conservative paired-sample floor).
+    5. Otherwise returns a usable bundle with overlap metadata narrowed to the
+       actual paired days, the imputed-pair percentage, and a paired source
+       summary that records both inputs and the lag (enough to reproduce the
+       pair set). No coefficient is computed.
+
+    This reads no warehouse, calls no network, and holds no clock — the only
+    "now" the layer ever needed was consumed upstream by ``prepare_input_series``.
+    """
+    left_metric = left_series.metric_id
+    right_metric = right_series.metric_id
+
+    # 1. Hypothesis presence + validity (the typed preparation contract).
+    if hypothesis is None:
+        return _refused_paired(
+            RefusalOutcome(
+                reason=PairedInputRefusalReason.MISSING_HYPOTHESIS.value,
+                message=(
+                    "A pre-registered association hypothesis (metric pair, lag, and "
+                    "expected direction) is required before a paired input can be prepared."
+                ),
+                missing_or_bad_inputs=(left_metric, right_metric),
+            ),
+            left_metric_id=left_metric,
+            right_metric_id=right_metric,
+        )
+    try:
+        hypothesis.validate()
+    except ValueError as exc:
+        message = str(exc)
+        lower = message.lower()
+        if "justification" in lower:
+            reason = PairedInputRefusalReason.MISSING_LAG_JUSTIFICATION
+        elif "lag" in lower:
+            reason = PairedInputRefusalReason.INVALID_LAG
+        else:
+            reason = PairedInputRefusalReason.MISSING_HYPOTHESIS
+        parameter_name = (
+            "lag_days" if reason is not PairedInputRefusalReason.MISSING_HYPOTHESIS else None
+        )
+        return _refused_paired(
+            RefusalOutcome(
+                reason=reason.value,
+                message=message,
+                missing_or_bad_inputs=(left_metric, right_metric),
+                parameter_name=parameter_name,
+            ),
+            left_metric_id=left_metric,
+            right_metric_id=right_metric,
+        )
+
+    # 2. Delegate per-series admissibility to the WP01 evidence policy: a series
+    #    is already refused if the policy found it inadmissible/stale/sparse. We
+    #    propagate that verdict rather than re-deciding it here.
+    for series in (left_series, right_series):
+        if series.refusal is not None:
+            src = series.refusal
+            return _refused_paired(
+                RefusalOutcome(
+                    reason=src.reason,
+                    message=(
+                        f"Paired input cannot be prepared: the series for metric "
+                        f"'{series.metric_id}' is not admissible — {src.message}"
+                    ),
+                    missing_or_bad_inputs=src.missing_or_bad_inputs or (series.metric_id,),
+                    parameter_name=src.parameter_name,
+                ),
+                left_metric_id=left_metric,
+                right_metric_id=right_metric,
+            )
+
+    # 3. Same-day pairing after the caller-declared lag. The right (responding)
+    #    series is shifted earlier by lag_days so its day D+lag aligns onto the
+    #    left day D; pairs are keyed to the left day.
+    lag = hypothesis.lag_days
+    left_by_day: dict[date, PreparedPoint] = {}
+    for point in left_series.points:
+        # Last-write-wins per calendar day keeps determinism if a day repeats.
+        left_by_day[point.ts.date()] = point
+    right_by_aligned_day: dict[date, PreparedPoint] = {}
+    for point in right_series.points:
+        aligned = point.ts.date() - timedelta(days=lag)
+        right_by_aligned_day[aligned] = point
+
+    shared_days = sorted(set(left_by_day) & set(right_by_aligned_day))
+    pairs = tuple(
+        PairedObservation(
+            paired_day=day,
+            left_ts=left_by_day[day].ts,
+            right_ts=right_by_aligned_day[day].ts,
+            left_value=left_by_day[day].value,
+            right_value=right_by_aligned_day[day].value,
+            left_is_imputed=left_by_day[day].is_imputed,
+            right_is_imputed=right_by_aligned_day[day].is_imputed,
+        )
+        for day in shared_days
+    )
+
+    # 4. No-overlap and weak-support refusals (before any computation).
+    if not pairs:
+        return _refused_paired(
+            RefusalOutcome(
+                reason=PairedInputRefusalReason.NO_PAIRED_OVERLAP.value,
+                message=(
+                    f"No observations of '{left_metric}' and '{right_metric}' fall on the "
+                    f"same local calendar day after applying a lag of {lag} day(s); there "
+                    "is nothing to correlate."
+                ),
+                missing_or_bad_inputs=(left_metric, right_metric),
+            ),
+            left_metric_id=left_metric,
+            right_metric_id=right_metric,
+        )
+    if len(pairs) < min_paired_observations:
+        return _refused_paired(
+            RefusalOutcome(
+                reason=PairedInputRefusalReason.WEAK_PAIRED_SUPPORT.value,
+                message=(
+                    f"Only {len(pairs)} paired day(s) remain after lag alignment, below the "
+                    f"minimum of {min_paired_observations} required for a usable association."
+                ),
+                missing_or_bad_inputs=(left_metric, right_metric),
+                parameter_name="min_paired_observations",
+            ),
+            left_metric_id=left_metric,
+            right_metric_id=right_metric,
+        )
+
+    # 5. Usable bundle. Overlap metadata is narrowed to the actual paired days;
+    #    the window is the same paired span (the usable analysis window for the
+    #    correlation run).
+    imputed_pairs = sum(1 for p in pairs if p.is_imputed)
+    is_imputed_pct = (imputed_pairs / len(pairs)) * 100.0
+    overlap_start = pairs[0].paired_day
+    overlap_end = pairs[-1].paired_day
+
+    freshness = "; ".join(
+        f"{s.metric_id}={s.freshness_status}"
+        for s in (left_series, right_series)
+        if s.freshness_status
+    ) or None
+
+    source_summary: dict[str, Any] = {
+        "lag_days": lag,
+        "expected_direction": hypothesis.expected_direction.value,
+        "lag_justification": hypothesis.lag_justification,
+        "common_cause_candidates": list(hypothesis.common_cause_candidates),
+        "left": _series_source_summary(left_series),
+        "right": _series_source_summary(right_series),
+    }
+
+    return PairedAnalyticalInput(
+        left_metric_id=left_metric,
+        right_metric_id=right_metric,
+        question_type=AnalyticalQuestionType.LAGGED_ASSOCIATION,
+        pairs=pairs,
+        window_start=overlap_start,
+        window_end=overlap_end,
+        overlap_start=overlap_start,
+        overlap_end=overlap_end,
+        overlap_sample_size=len(pairs),
+        is_imputed_pct=is_imputed_pct,
+        freshness_status=freshness,
+        source_summary=source_summary,
+    )
+
+
+def paired_points_for_computation(
+    paired: PairedAnalyticalInput,
+) -> tuple[PairedObservation, ...]:
+    """Return the computation-ready pairs, or refuse to.
+
+    The paired twin of :func:`points_for_computation`: a refused paired input
+    raises rather than hand back pairs, so the WP03 coefficient step cannot
+    accidentally compute over an input that did not pass the paired gates even if
+    it forgets to branch on ``paired.refusal``.
+    """
+    if paired.refusal is not None:
+        raise RuntimeError(
+            f"refused paired analytical input for "
+            f"'{paired.left_metric_id}'/'{paired.right_metric_id}' "
+            f"(reason={paired.refusal.reason!r}) must not be passed to computation"
+        )
+    return paired.pairs

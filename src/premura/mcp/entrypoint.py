@@ -188,6 +188,54 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
             warehouse_path=warehouse_path,
         )
 
+    # --- Stage 3 pre-registered lagged association (WP04) ---------------- #
+    # correlate reports a pre-registered association between two metrics at a
+    # caller-declared integer-day lag. It is a thin wrapper that delegates to the
+    # engine analytical path (prepare_paired_input -> invoke_analytical_tool):
+    # it computes no statistics, does no pairing, and issues no raw SQL. The agent
+    # MUST pre-register the hypothesis (pair, lag, expected direction) before
+    # seeing the result; an unsupported lag, missing justification, inadmissible
+    # input, no overlap, or weak support returns a structured refusal with a
+    # distinct reason and no estimate.
+
+    @mcp.tool()
+    def correlate(
+        left_metric_id: str,
+        right_metric_id: str,
+        lag_days: int,
+        expected_direction: str,
+        lag_justification: str | None = None,
+        common_cause_candidates: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Report a pre-registered lagged association between two daily metrics.
+
+        Answers one pre-registered question: are ``left_metric_id`` and
+        ``right_metric_id`` associated at ``lag_days`` (whole days; the right
+        series responds ``lag_days`` after the left), in the
+        ``expected_direction`` ("positive" or "negative") you declare up front?
+        A 4..14 day lag requires ``lag_justification``; lags beyond 14 days are
+        refused. Supply any plausible ``common_cause_candidates`` BEFORE
+        computation so the common-cause confound is flagged.
+
+        Returns Spearman's rho with observed/expected direction, a direction
+        match, an association band, raw and effective sample sizes, lag and
+        overlap metadata, imputation percentage, validity status, and a
+        closed-vocabulary confound checklist. It is descriptive association only:
+        it never asks for or reports a p-value, significance, the best lag, the
+        best pair, or a cause. Inadmissible, no-overlap, weak-support, or
+        unsupported-lag requests return a structured refusal with a distinct
+        reason and no estimate.
+        """
+        return warehouse_server.correlate(
+            left_metric_id,
+            right_metric_id,
+            lag_days=lag_days,
+            expected_direction=expected_direction,
+            lag_justification=lag_justification,
+            common_cause_candidates=common_cause_candidates,
+            warehouse_path=warehouse_path,
+        )
+
     # --- Agent-mediated profile capture (WP03) --------------------------- #
     # The bounded write path for stable baseline profile facts. These live on
     # the DEFAULT agent-safe surface (not the operator-only surface) because

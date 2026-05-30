@@ -2,11 +2,11 @@
   "created_at": "2026-05-30T14:15:35.799097+00:00",
   "friendly_name": "Correlate Lagged Association",
   "mission_id": "01KSWKV0W5C8DP8WCRMWD0G92Y",
-  "mission_number": null,
+  "mission_number": 11,
   "mission_slug": "correlate-lagged-association-01KSWKV0",
   "mission_type": "software-dev",
   "slug": "correlate-lagged-association-01KSWKV0",
-  "target_branch": "master",
   "source_description": "Specify the correlate mission as the first multi-input Stage 3 analytical tool, using ADR-0008 as the locked architecture contract and CORRELATE_METHODOLOGY_RESEARCH.md as the resolved research input.",
+  "target_branch": "master",
   "vcs": "git"
 }

@@ -196,7 +196,10 @@ def test_tool_descriptor_rejects_unknown_confound_key() -> None:
         ).validate()
 
 
-def test_committed_confound_vocabulary_is_the_eight_keys() -> None:
+def test_committed_confound_vocabulary_is_the_closed_set() -> None:
+    # The correlate mission (WP01) added ``common_cause_plausible`` as a reviewed
+    # closed key (methodology research Q4). This locks the full committed set so
+    # any further addition is a deliberate, reviewed vocabulary change.
     assert CONFOUND_KEYS == frozenset(
         {
             "high_imputation",
@@ -207,14 +210,19 @@ def test_committed_confound_vocabulary_is_the_eight_keys() -> None:
             "temporal_autocorrelation",
             "life_event_sensitive",
             "method_uncertainty_unavailable",
+            "common_cause_plausible",
         }
     )
 
 
-def test_two_analytical_question_types() -> None:
+def test_analytical_question_types_are_the_closed_set() -> None:
+    # The correlate mission (WP01) added ``lagged_association`` as its own
+    # first-class question type (ADR-0008), distinct from the single-series
+    # questions so its paired-sample sufficiency is never hidden.
     assert {qt.value for qt in AnalyticalQuestionType} == {
         "level_shift_detection",
         "smoothed_pattern",
+        "lagged_association",
     }
 
 

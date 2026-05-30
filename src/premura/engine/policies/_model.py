@@ -91,6 +91,12 @@ class QuestionType(StrEnum):
     # freshness/sufficiency — never by reusing a descriptive rule implicitly.
     LEVEL_SHIFT_DETECTION = "level_shift_detection"
     SMOOTHED_PATTERN = "smoothed_pattern"
+    # Multi-input Stage 3 analytical question (correlate mission, ADR-0008): a
+    # pre-registered, directional, integer-day lagged *association* between two
+    # daily series. Its rule carries its OWN paired-sample sufficiency (a raw
+    # paired floor); it is never collapsed onto recent_trend or a single-series
+    # analytical question, which would hide that correlation-specific floor.
+    LAGGED_ASSOCIATION = "lagged_association"
 
 
 class EvidenceStatus(StrEnum):

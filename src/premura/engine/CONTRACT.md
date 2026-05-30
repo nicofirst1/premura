@@ -285,6 +285,103 @@ authoring time, never a runtime evidence source.
   result family. New question types or result families change the authoring
   contract and require a dedicated future mission with its own sign-off.
 
+## Extending or reviewing a Stage 3 analytical tool
+
+A Stage 3 analytical tool is a different surface from a Stage 2 signal. A signal
+answers one of the four descriptive families; an analytical tool computes a
+deterministic *estimate* (change point, smoothed pattern, association) over one
+or more already-admitted input series and returns an `AnalyticalResultEnvelope`
+— an estimate **plus** mandatory validity metadata and a confound checklist, or
+a first-class refusal carrying no estimate. The names below are re-exported from
+`premura.engine`: `AnalyticalToolSpec`, `AnalyticalResultEnvelope`,
+`AnalyticalInputSeries`, `PairedAnalyticalInput`,
+`PreRegisteredAssociationHypothesis`, `AnalyticalQuestionType`, `ConfoundKey`,
+`prepare_input_series`, `prepare_paired_input`. The shipped tools are
+`change_point`, `smoothed_average`, and `correlate`; the rules a fourth must
+follow are below.
+
+The same invariants from the policy layer hold here: the engine is **stateless,
+deterministic, offline** — no clock, no network, no resampling. The only "now"
+the analytical layer touches is consumed upstream when `prepare_input_series`
+admits a window; everything after is pure over the prepared inputs.
+
+### `correlate` — pre-registered, lagged *association*, never significance
+
+`correlate` is the first **multi-input** analytical tool. Its locked
+architecture is design decision note
+[`0008`](../../../docs/adr/0008-correlate-pre-registered-lagged-association.md);
+its *statistical* choices (Spearman's rho, the effective-sample-size band, the
+paired-sample floor, the `common_cause_plausible` key, the lag ceiling) are
+settled in the research note
+[`CORRELATE_METHODOLOGY_RESEARCH.md`](../../../docs/history/research/CORRELATE_METHODOLOGY_RESEARCH.md).
+Read both before changing it. The rules that govern any review or extension:
+
+- **Association, not causation.** `correlate` reports a signed monotonic
+  *association* with an effect size and an honest plausible **range** — it must
+  never compute or return a p-value, the word "significant," or any causal
+  claim. The forbidden quantities are refused **before** computation: any extra
+  positional or keyword argument (a request for a p-value, a significance test, a
+  tolerance window, or a lag scan) is rejected with `unsupported_parameter`, so a
+  narrating model can never launder certainty the data cannot support.
+- **Lag is a caller-declared, directional, whole-day offset — never scanned and
+  never a tolerance.** The hypothesis reads "left at day *D* associates with
+  right at day *D + lag*"; the engine shifts the responding series by that whole
+  number of days and pairs on the same local calendar day. Lag defaults to 0 and
+  is asymmetric. Choosing the lag (or pair) that maximizes the coefficient is
+  p-hacking by another name — the engine never does it. Large lags require an
+  explicit caller-supplied justification; the deterministic engine never does the
+  literature research that justifies one.
+- **Paired inputs go through `prepare_paired_input`.** It takes two
+  already-admitted `AnalyticalInputSeries` plus the
+  `PreRegisteredAssociationHypothesis`, applies the declared lag to the right
+  series, pairs same-day-after-lag observations, **narrows the overlap window to
+  the actual paired days**, and records the imputed-pair fraction and a
+  reproducible paired source summary. It computes no coefficient. It propagates
+  each constituent series' admissibility verdict verbatim rather than re-running
+  the evidence policy, and refuses (no estimate) when the hypothesis is malformed,
+  either series was refused, or the raw paired count is below the conservative
+  floor.
+- **The uncertainty band is corrected for autocorrelation, never thresholded.**
+  Switching to a rank coefficient does **not** fix autocorrelation, so the band is
+  computed on an *effective* sample size `N_eff` (a Bartlett-type variance
+  inflation over the rank series, with imputed pairs down-weighted), not the raw
+  count, and back-transformed via Fisher's z. The result is a *plausible range
+  given how little independent information a short, day-to-day-correlated window
+  holds* — present it that way, never as a 95% confidence interval. When `N_eff`
+  falls far below the raw count the result carries `temporal_autocorrelation`;
+  when too much of the window is imputed it carries `high_imputation`; and the
+  tool **refuses** when the raw paired sample or `N_eff` is below the floor rather
+  than show a confident-looking spurious association to a non-expert.
+
+### Confounds are a closed, rule-shaped vocabulary — not an enumerated list
+
+A non-refusal analytical result must carry its confound checklist drawn from the
+closed `ConfoundKey` vocabulary; keys outside the set are rejected at
+registration, so agents cannot mint their own quality labels. The keys describe
+**axes of risk**, not specific confounders: `common_cause_plausible` is the
+canonical correlation confound — *a third, unmeasured variable could plausibly
+drive both series, so the association may be spurious rather than a direct
+relationship*. It is deliberately one rule-shaped flag, not an enumerated list of
+candidate causes; the candidate (illness, a training block) stays open and
+**agent-supplied**, reinforcing association-not-causation at the data layer. Add a
+new key only as a reviewed contract change through a dedicated mission, the same
+bar as a new `QuestionType` or result family — never as an ad-hoc string for one
+tool.
+
+### Literature is authoring/review context, never runtime
+
+PubMed or other literature tooling may help an agent **author or review** an
+analytical tool — picking a defensible lag ceiling, sanity-checking the band
+language, deciding whether a large lag is plausible — and that rationale belongs
+in the research note and caveat text. The analytical engine must **never** call
+PubMed or any network service at runtime: computation is pure over the prepared
+inputs the caller passes. PubMed grounding and a session-scoped reproducible
+research trace / multiplicity audit are **separate, deferred missions** (see
+[ROADMAP.md](../../../docs/product/ROADMAP.md) and design decision note `0008`),
+not part of this tool — per-call honesty cannot see an agent that ran many
+hypotheses and surfaced the one that fit, which is a stateful session-layer
+concern by design.
+
 ## Tests and review notes a contributor must include
 
 - Follow the repo's test-first rule. Assert through **public** imports

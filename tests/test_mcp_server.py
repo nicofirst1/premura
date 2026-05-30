@@ -171,6 +171,8 @@ def test_metric_summary_rejects_blank_metric_id(tmp_path: Path) -> None:
 # Stage 2 signals + two catalog tools + the two bounded profile-capture tools.
 # WP06: the two Stage 3 analytical tools (change_point / smoothed_average) join
 # the same default surface.
+# WP04 (correlate mission): the pre-registered lagged-association tool
+# ``correlate`` joins the same default surface (twelve -> thirteen tools).
 _DEFAULT_TOOLS = sorted(
     [
         "list_metrics",
@@ -185,6 +187,7 @@ _DEFAULT_TOOLS = sorted(
         "profile_context_record",
         "change_point",
         "smoothed_average",
+        "correlate",
     ]
 )
 

@@ -34,8 +34,8 @@ These are descriptive/comparative only — no reference ranges, no diagnosis, no
 
 **Stage 3 — two entrypoints, clean boundary.** `src/premura/mcp/` ships two entrypoints:
 
-- **Default agent surface (`premura-mcp`)** — twelve tools: two validity-gated catalog/summary helpers (`list_metrics`, `metric_summary`) that delegate entirely to the Stage 2 engine, the six signal-backed tools listed above, two agent-mediated profile-capture tools (`profile_context_supported_fields`, `profile_context_record`), and the two Stage 3 analytical proof tools (`change_point`, `smoothed_average` — see "Stage 3 analytical tools" below). No tool on this surface reads `hp.*` directly; catalog/signal access goes through the engine and profile capture goes through the bounded `record_profile_context` store boundary. This is the fully validity-gated / bounded default path.
-- **Operator surface (`premura-mcp-operator`)** — all twelve default tools plus `query_warehouse` (raw SQL escape hatch). Lower-guarantee: `query_warehouse` returns raw rows without Stage 2 validity, freshness, or imputation guarantees. Agent use requires explicit user approval, enforced by surface separation plus an explicit launch acknowledgment (`--ack` / `PREMURA_OPERATOR_ACK`) the operator entrypoint demands before exposing the raw-SQL tool.
+- **Default agent surface (`premura-mcp`)** — thirteen tools: two validity-gated catalog/summary helpers (`list_metrics`, `metric_summary`) that delegate entirely to the Stage 2 engine, the six signal-backed tools listed above, two agent-mediated profile-capture tools (`profile_context_supported_fields`, `profile_context_record`), and the three Stage 3 analytical tools (`change_point`, `smoothed_average`, `correlate` — see "Stage 3 analytical tools" below). No tool on this surface reads `hp.*` directly; catalog/signal access goes through the engine and profile capture goes through the bounded `record_profile_context` store boundary. This is the fully validity-gated / bounded default path.
+- **Operator surface (`premura-mcp-operator`)** — all thirteen default tools plus `query_warehouse` (raw SQL escape hatch). Lower-guarantee: `query_warehouse` returns raw rows without Stage 2 validity, freshness, or imputation guarantees. Agent use requires explicit user approval, enforced by surface separation plus an explicit launch acknowledgment (`--ack` / `PREMURA_OPERATOR_ACK`) the operator entrypoint demands before exposing the raw-SQL tool.
 
 The signal-backed tools return a structured payload whose `status` is `available` / `missing_input` / `stale_input` / `insufficient_data`. When an answer is unavailable the payload's `message` carries the signal's authored missing-input guidance, and `missing_input` / `stale_input` responses attach a structured `missing_input` report (`required_inputs` / `missing_inputs` / `stale_inputs`) a caller can branch on.
 
@@ -84,18 +84,21 @@ deterministic proof tools on top of the admissibility foundation.
 `analytical_tools.py` define the surface; `docs/history/research/STAGE3_ANALYTICAL_TOOLS_RESEARCH.md`
 records the design.
 
-- **Two deterministic proof tools, on the default MCP surface.** `change_point`
-  (level-shift detection — "did this metric step to a new level, and when?") and
-  `smoothed_average` (conservative trailing smoothed pattern). Both are exposed
-  through `premura-mcp` (the default validity-gated surface, now **twelve** tools),
+- **Three deterministic tools, on the default MCP surface.** `change_point`
+  (level-shift detection — "did this metric step to a new level, and when?"),
+  `smoothed_average` (conservative trailing smoothed pattern), and `correlate`
+  (the pre-registered, lagged *association* tool — see "Correlation as a
+  pre-registered lagged association" below). All three are exposed through
+  `premura-mcp` (the default validity-gated surface, now **thirteen** tools),
   delegate entirely to the engine, perform no statistics in the MCP layer, and
   **name no cause** — no causation, diagnosis, or treatment claims.
 - **Analytical question types are first-class.** Each tool routes to its own
   `QuestionType` (`change_point` → `level_shift_detection`,
-  `smoothed_average` → `smoothed_pattern`) with analytical `QuestionRules`
-  declared on the recent-run family policies. They are **not** collapsed onto
-  `recent_trend` — the research note (D4) rejected that, and the mission-review
-  fix (`42b0880`) made the separation real and lock-tested.
+  `smoothed_average` → `smoothed_pattern`, `correlate` → `lagged_association`)
+  with analytical `QuestionRules` declared on the relevant family policies. They
+  are **not** collapsed onto `recent_trend` — the research note (D4) rejected
+  that, and the mission-review fix (`42b0880`) made the separation real and
+  lock-tested.
 - **Admissibility gate before computation.** `prepare_input_series` builds an
   `AnalyticalInputSeries` whose window/overlap metadata is enforced non-null and
   ordered for any non-refusal series; inadmissible / stale / insufficient /
@@ -107,15 +110,46 @@ records the design.
   runtime-owned vocabulary (`ConfoundKey`: `high_imputation`, `low_sample_size`,
   `short_overlap_window`, `parameter_at_limit`, `vendor_estimate_input`,
   `temporal_autocorrelation`, `life_event_sensitive`,
-  `method_uncertainty_unavailable`). Agents cannot mint their own quality labels;
-  keys outside the set are rejected at registration. This directly addresses the
-  surfacing half of risk `R7` — confounds ship *alongside* the estimate.
+  `method_uncertainty_unavailable`, and `common_cause_plausible` — the
+  lurking/common-cause key added by the `correlate` mission). Agents cannot mint
+  their own quality labels; keys outside the set are rejected at registration.
+  This directly addresses the surfacing half of risk `R7` — confounds ship
+  *alongside* the estimate.
 
-**Explicitly not shipped (still Phase 3 follow-on):** the broader deterministic
-stats (`correlate`, `paired_t_test`, `rolling_mean`), PubMed grounding, and
-reproducible research traces. `change_point` / `smoothed_average` are the proof
-tools that retire the contract risk; the rest are future missions over this
-now-stable contract.
+### Correlation as a pre-registered lagged association (shipped 2026-05-30)
+
+The `correlate-lagged-association-01KSWKV0` mission landed `correlate`, the first
+**multi-input** analytical tool, on the same default MCP surface. Its locked
+architecture is design decision note
+[`0008`](../adr/0008-correlate-pre-registered-lagged-association.md) and its
+statistical choices are settled in
+[`CORRELATE_METHODOLOGY_RESEARCH.md`](../history/research/CORRELATE_METHODOLOGY_RESEARCH.md).
+
+- **Association, never significance.** `correlate` reports a signed Spearman's-rho
+  *association* with an effect size and an honest plausible **range** — it never
+  computes or returns a p-value or the word "significant," and names no cause.
+  Any request for a forbidden quantity (a p-value, a significance test, a
+  tolerance window, a lag scan) is refused *before* computation.
+- **Caller-declared, directional, whole-day lag.** The relationship is "left at
+  day *D* associates with right at day *D + lag*"; the engine shifts the
+  responding series by that whole number of days and pairs on the same local
+  calendar day. Lag is asymmetric, defaults to 0, and is **never scanned** for the
+  best fit. The pre-registered hypothesis (metric pair, lag, expected direction)
+  is a mandatory input.
+- **Paired inputs through `prepare_paired_input`.** Two already-admitted series
+  are aligned same-day-after-lag, the overlap window is narrowed to the actual
+  paired days, and the imputed-pair fraction plus a reproducible paired source
+  summary are recorded. The uncertainty band is computed on an
+  autocorrelation-corrected effective sample size (`N_eff`), not the raw count,
+  and the tool refuses below the conservative paired-sample / `N_eff` floor rather
+  than show a confident-looking spurious association.
+
+**Explicitly not shipped (still Phase 3 follow-on):** the remaining deterministic
+stats (`paired_t_test`, `rolling_mean`), PubMed grounding, and the session-scoped
+reproducible research trace / multiplicity audit (the per-session test ledger
+that design decision note `0008` pushes to a *following* mission). `change_point`,
+`smoothed_average`, and `correlate` are the shipped tools over the now-stable
+analytical contract; the rest are future missions.
 
 ## What's working end-to-end
 
@@ -133,7 +167,7 @@ now-stable contract.
 | Export artifact encryption | ✅ | Live round-trip verified 2026-05-21 against `~/.config/premura/age.key`; decrypted snapshot byte-identical to `data/duck/health.duckdb` (`diff` empty). Per-test keypair regression in `tests/test_encrypt_roundtrip.py`. |
 | Drive upload (now OPT-IN, not auto) | ⚠️ Code complete, not live | `hpipe upload` only runs on explicit invocation. `run-monthly` no longer pushes to Drive — it stops after the encrypted artifact lands locally. |
 | Launchd plist | ✅ | Bootstrapped 2026-05-21 (`com.nbrandizzi.premura.monthly`). `kickstart` fired the macOS notification, `run-monthly` reached the `_wait_for_ready` loop without ingesting (no `.ready`), exited cleanly on SIGTERM. Plist render covered by `tests/test_launchd_plist.py` (incl. `plutil -lint`). |
-| Tests | ✅ | 470/470 pytest pass, incl. a real-data HC regression that round-trips ~900k rows, the FR-6 `age` round-trip suite, FR-8 plist render + `plutil -lint`, full Stage 2 engine + Stage 3 signal-tool coverage (all six signal-backed tools end-to-end), the profile/intake contract harness, profile capture append/supersede + allowlist enforcement, idempotent intake-batch loading, the Stage 2 input-resolution seam + BMI proof-consumer coverage, the evidence-admissibility policy layer, and the Stage 3 analytical contract + `change_point`/`smoothed_average` end-to-end (admissibility gate, result envelope, closed confound vocabulary, first-class analytical question types). |
+| Tests | ✅ | 554/554 pytest pass, incl. a real-data HC regression that round-trips ~900k rows, the FR-6 `age` round-trip suite, FR-8 plist render + `plutil -lint`, full Stage 2 engine + Stage 3 signal-tool coverage (all six signal-backed tools end-to-end), the profile/intake contract harness, profile capture append/supersede + allowlist enforcement, idempotent intake-batch loading, the Stage 2 input-resolution seam + BMI proof-consumer coverage, the evidence-admissibility policy layer, the Stage 3 analytical contract + `change_point`/`smoothed_average` end-to-end (admissibility gate, result envelope, closed confound vocabulary, first-class analytical question types), and the `correlate` lagged-association tool end-to-end (paired-input preparation, same-day-after-lag pairing, Spearman + `N_eff` band, paired-sample floor refusals, forbidden-parameter refusals, `common_cause_plausible`, and the thin MCP wrapper). |
 
 ## Warehouse contents (current snapshot)
 

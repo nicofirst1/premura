@@ -38,8 +38,10 @@ from ..engine import (
     AnalyticalQuestionType,
     AnalyticalResultEnvelope,
     EvidenceCandidate,
+    ExpectedDirection,
     MissingInputReport,
     PreparedPoint,
+    PreRegisteredAssociationHypothesis,
     comparative_signals,
 )
 from ..engine import _query as engine_query
@@ -509,6 +511,99 @@ def smoothed_average(
     )
 
 
+# --------------------------------------------------------------------------- #
+# Stage 3 pre-registered lagged association (WP04) — correlate
+#
+# ``correlate`` is the paired sibling of the single-series analytical tools.
+# It is just as THIN: it validates only the caller-facing parameter shape, builds
+# the pre-registered hypothesis the engine requires, reads each series' evidence
+# through the SAME engine-owned Stage 2 query layer the single-series tools use
+# (``_prepare_analytical_series`` — no raw fact-table SQL of its own), then hands
+# the two prepared series + hypothesis to the engine: ``prepare_paired_input``
+# applies the lag/pairing and admissibility, and ``invoke_analytical_tool`` runs
+# the deterministic Spearman + N_eff estimate. The wrapper computes NO statistics,
+# does NO pairing, names NO confounds/caveats, and touches NO network/PubMed: the
+# returned envelope (available or refusal) is the engine's, serialized unchanged.
+# --------------------------------------------------------------------------- #
+
+
+def correlate(
+    left_metric_id: str,
+    right_metric_id: str,
+    *,
+    lag_days: int,
+    expected_direction: str,
+    lag_justification: str | None = None,
+    common_cause_candidates: Sequence[str] | None = None,
+    warehouse_path: Path | None = None,
+) -> dict[str, Any]:
+    """Report a pre-registered lagged association between two metrics (delegates to engine).
+
+    The caller pre-registers the metric pair, integer-day ``lag_days``, and
+    ``expected_direction`` ("positive"/"negative") BEFORE seeing the result — the
+    anti-p-hacking discipline of ADR-0008. A 4..14 day lag requires
+    ``lag_justification``; lags beyond 14 days are refused by the engine. Optional
+    ``common_cause_candidates`` (open, caller-supplied — never an enumerated
+    catalog) are passed through so the engine can flag the ``common_cause_plausible``
+    confound.
+
+    This wrapper validates only the caller-facing parameter shape and assembles the
+    hypothesis. Every series read goes through the engine's Stage 2 query layer; all
+    pairing, admissibility, computation (Spearman rho, effective sample size,
+    association band), confounds, caveats, and refusals belong to the engine. The
+    wrapper performs no statistics and never claims significance or causation; an
+    inadmissible / no-overlap / weak-support / unsupported-lag request flows back as
+    a structured refusal with a distinct reason and no estimate.
+    """
+    left = _require_metric_id("left_metric_id", left_metric_id)
+    right = _require_metric_id("right_metric_id", right_metric_id)
+    direction = _parse_expected_direction(expected_direction)
+    if isinstance(lag_days, bool) or not isinstance(lag_days, int):
+        raise ValueError("lag_days must be a whole-day integer")
+    candidates = tuple(common_cause_candidates) if common_cause_candidates else ()
+
+    hypothesis = PreRegisteredAssociationHypothesis(
+        left_metric_id=left,
+        right_metric_id=right,
+        lag_days=lag_days,
+        expected_direction=direction,
+        lag_justification=lag_justification,
+        common_cause_candidates=candidates,
+    )
+
+    with _open_warehouse(warehouse_path) as conn:
+        left_series = _prepare_analytical_series(
+            conn, left, AnalyticalQuestionType.LAGGED_ASSOCIATION
+        )
+        right_series = _prepare_analytical_series(
+            conn, right, AnalyticalQuestionType.LAGGED_ASSOCIATION
+        )
+        paired = engine.prepare_paired_input(left_series, right_series, hypothesis)
+        envelope = engine.invoke_analytical_tool("correlate", paired, hypothesis)
+    return _serialize_analytical_result(envelope)
+
+
+def _require_metric_id(name: str, value: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{name} must not be empty")
+    return value.strip()
+
+
+def _parse_expected_direction(value: str) -> ExpectedDirection:
+    """Map the caller-facing direction string onto the closed engine vocabulary.
+
+    The closed set (``positive`` / ``negative``) is the engine's; the wrapper does
+    not invent a third value, so an agent cannot smuggle a free-form expectation.
+    """
+    try:
+        return ExpectedDirection(value)
+    except ValueError as exc:
+        allowed = ", ".join(d.value for d in ExpectedDirection)
+        raise ValueError(
+            f"expected_direction must be one of: {allowed}; got {value!r}"
+        ) from exc
+
+
 def _run_analytical_tool(
     tool_name: str,
     metric_id: str,
@@ -853,6 +948,7 @@ def _json_safe(value: object) -> Any:
 __all__ = [
     "PROFILE_CAPTURE_SOURCE_KIND",
     "change_point",
+    "correlate",
     "hrv_change_around_date",
     "list_metrics",
     "metric_summary",

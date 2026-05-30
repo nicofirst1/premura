@@ -74,6 +74,7 @@ _BUILTIN_ANALYTICAL_NAMES: frozenset[str] = frozenset(
     {
         "change_point",
         "smoothed_average",
+        "correlate",
     }
 )
 

@@ -413,6 +413,7 @@ def test_analytical_questions_map_to_their_own_first_class_question_type() -> No
     assert ANALYTICAL_TO_POLICY_QUESTION == {
         AnalyticalQuestionType.LEVEL_SHIFT_DETECTION: QuestionType.LEVEL_SHIFT_DETECTION,
         AnalyticalQuestionType.SMOOTHED_PATTERN: QuestionType.SMOOTHED_PATTERN,
+        AnalyticalQuestionType.LAGGED_ASSOCIATION: QuestionType.LAGGED_ASSOCIATION,
     }
     # No analytical question is routed onto a descriptive question shape.
     descriptive = {

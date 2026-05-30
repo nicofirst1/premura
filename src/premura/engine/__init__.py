@@ -90,9 +90,16 @@ from .analytical_contract import (
 )
 from .analytical_inputs import (
     AnalyticalInputSeries,
+    ExpectedDirection,
     InputRefusalReason,
+    PairedAnalyticalInput,
+    PairedInputRefusalReason,
+    PairedObservation,
     PreparedPoint,
+    PreRegisteredAssociationHypothesis,
+    paired_points_for_computation,
     prepare_input_series,
+    prepare_paired_input,
 )
 
 # Stage 2 evidence-admissibility policy surface (WP01-WP03). These are the
@@ -276,6 +283,14 @@ __all__ = [
     "PreparedPoint",
     "InputRefusalReason",
     "prepare_input_series",
+    # Paired-input types the correlate tool (and its MCP wrapper) consume:
+    "PairedAnalyticalInput",
+    "PairedObservation",
+    "PairedInputRefusalReason",
+    "PreRegisteredAssociationHypothesis",
+    "ExpectedDirection",
+    "prepare_paired_input",
+    "paired_points_for_computation",
 ]
 
 
