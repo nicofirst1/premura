@@ -24,8 +24,8 @@ subtasks:
 - T014
 - T015
 - T016
-agent: "claude:opus:implementer:implementer"
-shell_pid: "73259"
+agent: "claude:opus:reviewer:reviewer"
+shell_pid: "87896"
 history:
 - 2026-05-30T14:27:30Z tasks generated for correlate lagged association mission
 authoritative_surface: src/premura/engine/
@@ -217,3 +217,4 @@ Validation:
 
 - 2026-05-30T14:57:49Z – claude:opus:implementer:implementer – shell_pid=73259 – Started implementation via action command
 - 2026-05-30T15:13:34Z – claude:opus:implementer:implementer – shell_pid=73259 – Ready for review: deterministic Spearman lagged-association correlate tool (midrank ties, N_eff autocorrelation+imputation band via Fisher z, raw<20 / N_eff<12 refusals, confound checklist, forbidden-output guards). Registered + reachable via dispatch + exported. 84/84 mission tests, 541/541 full suite pass.
+- 2026-05-30T15:14:11Z – claude:opus:reviewer:reviewer – shell_pid=87896 – Started review via action command
