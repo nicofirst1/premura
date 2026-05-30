@@ -18,7 +18,8 @@ subtasks:
 - T003
 - T004
 - T005
-shell_pid: '45555'
+shell_pid: "45555"
+agent: "claude:opus:implementer:implementer"
 history:
 - 2026-05-30T14:27:30Z tasks generated for correlate lagged association mission
 authoritative_surface: src/premura/engine/
@@ -182,3 +183,7 @@ Validation:
   candidate, not a built-in catalog.
 - Reviewers should confirm new vocabulary is closed and tested, not ad-hoc
   strings in the tool body.
+
+## Activity Log
+
+- 2026-05-30T14:33:03Z – claude:opus:implementer:implementer – shell_pid=45555 – Assigned agent via action command
