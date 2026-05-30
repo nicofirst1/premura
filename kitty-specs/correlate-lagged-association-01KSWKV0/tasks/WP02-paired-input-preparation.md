@@ -20,6 +20,8 @@ subtasks:
 - T008
 - T009
 - T010
+agent: "claude:opus:implementer:implementer"
+shell_pid: "59706"
 history:
 - 2026-05-30T14:27:30Z tasks generated for correlate lagged association mission
 authoritative_surface: src/premura/engine/
@@ -179,3 +181,7 @@ Validation:
 - Avoid duplicating statistical logic here; preparation is about admissible pairs,
   not association estimates.
 - Confirm the old `overlap_*` semantics still work for single-series tools.
+
+## Activity Log
+
+- 2026-05-30T14:45:00Z – claude:opus:implementer:implementer – shell_pid=59706 – Started implementation via action command
