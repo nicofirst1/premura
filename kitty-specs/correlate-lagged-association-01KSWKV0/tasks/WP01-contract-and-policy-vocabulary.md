@@ -18,8 +18,8 @@ subtasks:
 - T003
 - T004
 - T005
-shell_pid: "45555"
-agent: "claude:opus:implementer:implementer"
+shell_pid: "56900"
+agent: "claude:opus:reviewer:reviewer"
 history:
 - 2026-05-30T14:27:30Z tasks generated for correlate lagged association mission
 authoritative_surface: src/premura/engine/
@@ -188,3 +188,4 @@ Validation:
 
 - 2026-05-30T14:33:03Z – claude:opus:implementer:implementer – shell_pid=45555 – Assigned agent via action command
 - 2026-05-30T14:42:07Z – claude:opus:implementer:implementer – shell_pid=45555 – Ready for review: closed lagged_association AnalyticalQuestionType + policy QuestionType, common_cause_plausible ConfoundKey, analytical->policy mapping wired, distinct paired-sample-floor sufficiency (min 20) on all recent-run families; 490 passed
+- 2026-05-30T14:42:53Z – claude:opus:reviewer:reviewer – shell_pid=56900 – Started review via action command
