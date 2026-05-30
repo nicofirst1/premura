@@ -1,0 +1,10 @@
+{
+  "created_at": "2026-05-30T14:15:35.799097+00:00",
+  "friendly_name": "correlate lagged association",
+  "mission_id": "01KSWKV0W5C8DP8WCRMWD0G92Y",
+  "mission_number": null,
+  "mission_slug": "correlate-lagged-association-01KSWKV0",
+  "mission_type": "software-dev",
+  "slug": "correlate-lagged-association-01KSWKV0",
+  "target_branch": "master"
+}
