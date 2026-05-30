@@ -18,12 +18,12 @@
 | T008 | Implement paired input preparation over two usable series with narrowed overlap metadata. | WP02 | No | [D] |
 | T009 | Implement paired-preparation refusal behavior for invalid lag, missing hypothesis, inadmissible input, no overlap, and weak paired support. | WP02 | No | [D] |
 | T010 | Add imputed-pair percentage and paired-source provenance to the paired input output. | WP02 | No | [D] |
-| T011 | Add failing engine tool tests for available correlate output and core refusal classes. | WP03 | No |
-| T012 | Implement deterministic Spearman rho and rank handling for paired observations. | WP03 | No |
-| T013 | Implement effective sample size and association-band calculation with deterministic truncation. | WP03 | No |
-| T014 | Implement correlate result envelope, direction alignment, confounds, caveats, and refusal outcomes. | WP03 | No |
-| T015 | Register `correlate` as a built-in analytical tool and export the public engine surface. | WP03 | No |
-| T016 | Add forbidden-output tests for p-values, significance, causal language, diagnosis, and lag scanning. | WP03 | No |
+| T011 | Add failing engine tool tests for available correlate output and core refusal classes. | WP03 | No | [D] |
+| T012 | Implement deterministic Spearman rho and rank handling for paired observations. | WP03 | No | [D] |
+| T013 | Implement effective sample size and association-band calculation with deterministic truncation. | WP03 | No | [D] |
+| T014 | Implement correlate result envelope, direction alignment, confounds, caveats, and refusal outcomes. | WP03 | No | [D] |
+| T015 | Register `correlate` as a built-in analytical tool and export the public engine surface. | WP03 | No | [D] |
+| T016 | Add forbidden-output tests for p-values, significance, causal language, diagnosis, and lag scanning. | WP03 | No | [D] |
 | T017 | Add failing default-surface tests for the agent-facing `correlate` wrapper. | WP04 | No |
 | T018 | Implement the thin MCP wrapper that delegates all behavior to the engine analytical path. | WP04 | No |
 | T019 | Validate wrapper serialization for available and refused outcomes. | WP04 | No |
@@ -112,12 +112,12 @@ Risks:
 
 Included subtasks:
 
-- [ ] T011 Add failing engine tool tests for available correlate output and core refusal classes. (WP03)
-- [ ] T012 Implement deterministic Spearman rho and rank handling for paired observations. (WP03)
-- [ ] T013 Implement effective sample size and association-band calculation with deterministic truncation. (WP03)
-- [ ] T014 Implement correlate result envelope, direction alignment, confounds, caveats, and refusal outcomes. (WP03)
-- [ ] T015 Register `correlate` as a built-in analytical tool and export the public engine surface. (WP03)
-- [ ] T016 Add forbidden-output tests for p-values, significance, causal language, diagnosis, and lag scanning. (WP03)
+- [x] T011 Add failing engine tool tests for available correlate output and core refusal classes. (WP03)
+- [x] T012 Implement deterministic Spearman rho and rank handling for paired observations. (WP03)
+- [x] T013 Implement effective sample size and association-band calculation with deterministic truncation. (WP03)
+- [x] T014 Implement correlate result envelope, direction alignment, confounds, caveats, and refusal outcomes. (WP03)
+- [x] T015 Register `correlate` as a built-in analytical tool and export the public engine surface. (WP03)
+- [x] T016 Add forbidden-output tests for p-values, significance, causal language, diagnosis, and lag scanning. (WP03)
 
 Implementation sketch:
 
