@@ -3,7 +3,7 @@
 > Status: live reference. Snapshot of what is true and shipped today.
 >
 > Companion to [SPEC.md](../product/SPEC.md), [../history/architecture/ARCHITECTURE_HISTORY.md](../history/architecture/ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](../product/USERJOURNEY.md), [ROADMAP.md](../product/ROADMAP.md).
-> Snapshot date: **2026-05-28**.
+> Snapshot date: **2026-05-30**.
 
 ## TL;DR
 
@@ -34,8 +34,8 @@ These are descriptive/comparative only — no reference ranges, no diagnosis, no
 
 **Stage 3 — two entrypoints, clean boundary.** `src/premura/mcp/` ships two entrypoints:
 
-- **Default agent surface (`premura-mcp`)** — ten tools: two validity-gated catalog/summary helpers (`list_metrics`, `metric_summary`) that delegate entirely to the Stage 2 engine, the six signal-backed tools listed above, and two agent-mediated profile-capture tools (`profile_context_supported_fields`, `profile_context_record`). No tool on this surface reads `hp.*` directly; catalog/signal access goes through the engine and profile capture goes through the bounded `record_profile_context` store boundary. This is the fully validity-gated / bounded default path.
-- **Operator surface (`premura-mcp-operator`)** — all ten default tools plus `query_warehouse` (raw SQL escape hatch). Lower-guarantee: `query_warehouse` returns raw rows without Stage 2 validity, freshness, or imputation guarantees. Agent use requires explicit user approval, enforced by surface separation plus an explicit launch acknowledgment (`--ack` / `PREMURA_OPERATOR_ACK`) the operator entrypoint demands before exposing the raw-SQL tool.
+- **Default agent surface (`premura-mcp`)** — twelve tools: two validity-gated catalog/summary helpers (`list_metrics`, `metric_summary`) that delegate entirely to the Stage 2 engine, the six signal-backed tools listed above, two agent-mediated profile-capture tools (`profile_context_supported_fields`, `profile_context_record`), and the two Stage 3 analytical proof tools (`change_point`, `smoothed_average` — see "Stage 3 analytical tools" below). No tool on this surface reads `hp.*` directly; catalog/signal access goes through the engine and profile capture goes through the bounded `record_profile_context` store boundary. This is the fully validity-gated / bounded default path.
+- **Operator surface (`premura-mcp-operator`)** — all twelve default tools plus `query_warehouse` (raw SQL escape hatch). Lower-guarantee: `query_warehouse` returns raw rows without Stage 2 validity, freshness, or imputation guarantees. Agent use requires explicit user approval, enforced by surface separation plus an explicit launch acknowledgment (`--ack` / `PREMURA_OPERATOR_ACK`) the operator entrypoint demands before exposing the raw-SQL tool.
 
 The signal-backed tools return a structured payload whose `status` is `available` / `missing_input` / `stale_input` / `insufficient_data`. When an answer is unavailable the payload's `message` carries the signal's authored missing-input guidance, and `missing_input` / `stale_input` responses attach a structured `missing_input` report (`required_inputs` / `missing_inputs` / `stale_inputs`) a caller can branch on.
 
@@ -51,6 +51,71 @@ The `implement-profile-and-intake-storage-01KSMWV1` mission gave the profile/int
 
 - **No built-in nutrition/supplement importer.** The intake tables and load path exist, but adapting a *specific* source (a meal-logging app export, a supplement log) into them is parser/plugin work, exactly like the wearable sources. There is no built-in MyFitnessPal-style importer.
 - **Age-adjusted interpretation remains deferred.** `age` stays derived from `birth_date` at evaluation time, never stored. BMI is no longer in the deferred set — it now ships as the first cross-domain Stage 2 proof consumer using the input-resolution seam (see "Stage 2 / Stage 3 baseline" above). Issue `#6`'s "profile-dependent signals" framing is **partially** satisfied by BMI; the remaining deferred items under that thread are age-adjusted interpretation and any further profile-dependent signal that requires a new declared dependency type.
+
+## Evidence-admissibility foundation (shipped 2026-05-29)
+
+The `stage-2-evidence-admissibility-foundation-01KSSR40` mission turned the
+research note's central finding — *the dangerous failure is using the wrong
+evidence for the question, especially old evidence presented as if it described
+the present* — into a deterministic policy layer that decides which evidence is
+admissible **before** any later tool uses it:
+
+- **Closed question-type vocabulary.** `premura.engine.policies.QuestionType`
+  classifies a request before evidence selection. The descriptive members
+  (`current_status`, `recent_trend`, `long_term_control`, `historical_baseline`)
+  ship alongside the two first-class analytical members added by the analytical
+  mission (`level_shift_detection`, `smoothed_pattern` — see below).
+- **Metric-family policies declare what each family can honestly support.**
+  Freshness windows and per-question-type sufficiency rules live in
+  `src/premura/engine/policies/` (`_model.py`, `_defaults.py`), declared per
+  family rather than hardcoded per metric.
+- **Admissibility is a deterministic decision, not a vibe.** `evaluate_evidence`
+  decides admissible / rejected / insufficient for the question, preserves
+  provenance, timestamps, caveats, and rejection reasons, and **refuses clearly**
+  when no admissible evidence remains. `resting_hr_status` is wired through this
+  path as the proof integration (`StatusResult` shape preserved).
+
+## Stage 3 analytical tools (shipped 2026-05-30)
+
+The `stage-3-analytical-tools-01KST48C` mission landed the first slice of
+**Phase 3 (`v2.2 analytical depth`)**: a bounded analytical contract plus two
+deterministic proof tools on top of the admissibility foundation.
+`src/premura/engine/analytical_contract.py`, `analytical_inputs.py`, and
+`analytical_tools.py` define the surface; `docs/history/research/STAGE3_ANALYTICAL_TOOLS_RESEARCH.md`
+records the design.
+
+- **Two deterministic proof tools, on the default MCP surface.** `change_point`
+  (level-shift detection — "did this metric step to a new level, and when?") and
+  `smoothed_average` (conservative trailing smoothed pattern). Both are exposed
+  through `premura-mcp` (the default validity-gated surface, now **twelve** tools),
+  delegate entirely to the engine, perform no statistics in the MCP layer, and
+  **name no cause** — no causation, diagnosis, or treatment claims.
+- **Analytical question types are first-class.** Each tool routes to its own
+  `QuestionType` (`change_point` → `level_shift_detection`,
+  `smoothed_average` → `smoothed_pattern`) with analytical `QuestionRules`
+  declared on the recent-run family policies. They are **not** collapsed onto
+  `recent_trend` — the research note (D4) rejected that, and the mission-review
+  fix (`42b0880`) made the separation real and lock-tested.
+- **Admissibility gate before computation.** `prepare_input_series` builds an
+  `AnalyticalInputSeries` whose window/overlap metadata is enforced non-null and
+  ordered for any non-refusal series; inadmissible / stale / insufficient /
+  out-of-bounds inputs flow straight through as a first-class **refusal** with no
+  estimate.
+- **Mandatory result envelope with validity, not just point estimates.** A
+  non-refusal `available` result must carry the estimate **plus** required
+  validity metadata and a **confound checklist** drawn from a closed,
+  runtime-owned vocabulary (`ConfoundKey`: `high_imputation`, `low_sample_size`,
+  `short_overlap_window`, `parameter_at_limit`, `vendor_estimate_input`,
+  `temporal_autocorrelation`, `life_event_sensitive`,
+  `method_uncertainty_unavailable`). Agents cannot mint their own quality labels;
+  keys outside the set are rejected at registration. This directly addresses the
+  surfacing half of risk `R7` — confounds ship *alongside* the estimate.
+
+**Explicitly not shipped (still Phase 3 follow-on):** the broader deterministic
+stats (`correlate`, `paired_t_test`, `rolling_mean`), PubMed grounding, and
+reproducible research traces. `change_point` / `smoothed_average` are the proof
+tools that retire the contract risk; the rest are future missions over this
+now-stable contract.
 
 ## What's working end-to-end
 
@@ -68,7 +133,7 @@ The `implement-profile-and-intake-storage-01KSMWV1` mission gave the profile/int
 | Export artifact encryption | ✅ | Live round-trip verified 2026-05-21 against `~/.config/premura/age.key`; decrypted snapshot byte-identical to `data/duck/health.duckdb` (`diff` empty). Per-test keypair regression in `tests/test_encrypt_roundtrip.py`. |
 | Drive upload (now OPT-IN, not auto) | ⚠️ Code complete, not live | `hpipe upload` only runs on explicit invocation. `run-monthly` no longer pushes to Drive — it stops after the encrypted artifact lands locally. |
 | Launchd plist | ✅ | Bootstrapped 2026-05-21 (`com.nbrandizzi.premura.monthly`). `kickstart` fired the macOS notification, `run-monthly` reached the `_wait_for_ready` loop without ingesting (no `.ready`), exited cleanly on SIGTERM. Plist render covered by `tests/test_launchd_plist.py` (incl. `plutil -lint`). |
-| Tests | ✅ | 294/294 pytest pass, incl. a real-data HC regression that round-trips ~900k rows, the FR-6 `age` round-trip suite, FR-8 plist render + `plutil -lint`, full Stage 2 engine + Stage 3 signal-tool coverage (all six signal-backed tools end-to-end), the profile/intake contract harness, profile capture append/supersede + allowlist enforcement, idempotent intake-batch loading, and the Stage 2 input-resolution seam + BMI proof-consumer coverage. |
+| Tests | ✅ | 470/470 pytest pass, incl. a real-data HC regression that round-trips ~900k rows, the FR-6 `age` round-trip suite, FR-8 plist render + `plutil -lint`, full Stage 2 engine + Stage 3 signal-tool coverage (all six signal-backed tools end-to-end), the profile/intake contract harness, profile capture append/supersede + allowlist enforcement, idempotent intake-batch loading, the Stage 2 input-resolution seam + BMI proof-consumer coverage, the evidence-admissibility policy layer, and the Stage 3 analytical contract + `change_point`/`smoothed_average` end-to-end (admissibility gate, result envelope, closed confound vocabulary, first-class analytical question types). |
 
 ## Warehouse contents (current snapshot)
 
