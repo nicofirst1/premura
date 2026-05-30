@@ -7,7 +7,7 @@ requirement_refs:
 - FR-018
 planning_base_branch: master
 merge_target_branch: master
-branch_strategy: 'Current branch at task generation: master. Planning/base branch: master. Completed changes merge into master. Implementation worktrees are allocated later per computed lane from lanes.json.'
+branch_strategy: Planning artifacts for this feature were generated on master. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into master unless the human explicitly redirects the landing branch.
 subtasks:
 - T021
 - T022
