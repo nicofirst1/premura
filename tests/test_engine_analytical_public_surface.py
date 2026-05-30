@@ -92,7 +92,11 @@ def _recent_trend_policy() -> MetricFamilyPolicy:
         metric_family=FAMILY,
         policy_shape=PolicyShape.ROLLING_RECENT_PATTERN,
         temporal_meaning=TemporalMeaning.ROLLING_RECENT_PATTERN,
-        question_rules={QuestionType.RECENT_TREND: rule},
+        question_rules={
+            QuestionType.RECENT_TREND: rule,
+            QuestionType.LEVEL_SHIFT_DETECTION: rule,
+            QuestionType.SMOOTHED_PATTERN: rule,
+        },
         applies_to_metrics=(METRIC,),
     )
 

@@ -178,6 +178,20 @@ def _serial_average_short_run(
     serial_caveat = (
         "Read this as a short-run average of several readings, not as one isolated value.",
     )
+    # A recent run of readings is the honest unit for trend and for the Stage 3
+    # analytical tools (level-shift / smoothed pattern), so the analytical
+    # questions reuse the recent-run admissibility rule. The tools layer adds its
+    # own method-level sufficiency (e.g. observations on both sides of a split).
+    recent_run_rule = QuestionRule(
+        admissibility=Admissibility.ADMISSIBLE,
+        freshness=FreshnessRule(mode=FreshnessMode.PREFERRED_WINDOW, preferred_age=current_max_age),
+        sufficiency=SufficiencyRule(
+            min_observations=min_readings,
+            missing_data_behavior=MissingDataBehavior.REJECT,
+        ),
+        required_context=("observed_at",),
+        caveats=serial_caveat,
+    )
     return MetricFamilyPolicy(
         policy_id=policy_id,
         version=1,
@@ -198,18 +212,9 @@ def _serial_average_short_run(
                 required_context=("observed_at",),
                 caveats=serial_caveat,
             ),
-            QuestionType.RECENT_TREND: QuestionRule(
-                admissibility=Admissibility.ADMISSIBLE,
-                freshness=FreshnessRule(
-                    mode=FreshnessMode.PREFERRED_WINDOW, preferred_age=current_max_age
-                ),
-                sufficiency=SufficiencyRule(
-                    min_observations=min_readings,
-                    missing_data_behavior=MissingDataBehavior.REJECT,
-                ),
-                required_context=("observed_at",),
-                caveats=serial_caveat,
-            ),
+            QuestionType.RECENT_TREND: recent_run_rule,
+            QuestionType.LEVEL_SHIFT_DETECTION: recent_run_rule,
+            QuestionType.SMOOTHED_PATTERN: recent_run_rule,
         },
         examples=(
             PolicyExample(
@@ -246,6 +251,19 @@ def _rolling_recent_pattern(
         "skew it, so read it as a pattern, not a single fact.",
         *extra_caveats,
     )
+    # The recent windowed pattern is also the admissible substrate for the
+    # Stage 3 analytical tools (level-shift / smoothed pattern); they reuse the
+    # recent-trend rule and add their own method-level sufficiency on top.
+    recent_pattern_rule = QuestionRule(
+        admissibility=Admissibility.ADMISSIBLE,
+        freshness=FreshnessRule(mode=FreshnessMode.PREFERRED_WINDOW, preferred_age=current_max_age),
+        sufficiency=SufficiencyRule(
+            min_coverage_pct=min_coverage_pct,
+            missing_data_behavior=MissingDataBehavior.REJECT,
+        ),
+        required_context=("observed_at",),
+        caveats=coverage_caveat,
+    )
     return MetricFamilyPolicy(
         policy_id=policy_id,
         version=1,
@@ -266,18 +284,9 @@ def _rolling_recent_pattern(
                 required_context=("observed_at",),
                 caveats=coverage_caveat,
             ),
-            QuestionType.RECENT_TREND: QuestionRule(
-                admissibility=Admissibility.ADMISSIBLE,
-                freshness=FreshnessRule(
-                    mode=FreshnessMode.PREFERRED_WINDOW, preferred_age=current_max_age
-                ),
-                sufficiency=SufficiencyRule(
-                    min_coverage_pct=min_coverage_pct,
-                    missing_data_behavior=MissingDataBehavior.REJECT,
-                ),
-                required_context=("observed_at",),
-                caveats=coverage_caveat,
-            ),
+            QuestionType.RECENT_TREND: recent_pattern_rule,
+            QuestionType.LEVEL_SHIFT_DETECTION: recent_pattern_rule,
+            QuestionType.SMOOTHED_PATTERN: recent_pattern_rule,
         },
         examples=(
             PolicyExample(
@@ -399,6 +408,12 @@ def _baseline_relative(
         question_rules={
             QuestionType.CURRENT_STATUS: current_rule,
             QuestionType.RECENT_TREND: relative_rule,
+            # Baseline-relative recent physiology is the admissible substrate for
+            # the Stage 3 analytical tools too; they reuse the deviation-from-
+            # baseline rule (with its standing caveats) and add method-level
+            # sufficiency on top.
+            QuestionType.LEVEL_SHIFT_DETECTION: relative_rule,
+            QuestionType.SMOOTHED_PATTERN: relative_rule,
             QuestionType.HISTORICAL_BASELINE: QuestionRule(
                 admissibility=Admissibility.LIMITED,
                 freshness=FreshnessRule(mode=FreshnessMode.CAVEAT_ONLY),
@@ -436,6 +451,12 @@ def _slow_trajectory_method_sensitive(
     carries caveats (enforced by the model) and treats the slow trajectory, not
     a single reading, as the real signal.
     """
+    trajectory_rule = QuestionRule(
+        admissibility=Admissibility.ADMISSIBLE,
+        freshness=FreshnessRule(mode=FreshnessMode.PREFERRED_WINDOW, preferred_age=current_max_age),
+        required_context=("observed_at",),
+        refusal_mode=RefusalMode.OFFER_WITH_CAVEATS,
+    )
     return MetricFamilyPolicy(
         policy_id=policy_id,
         version=1,
@@ -457,14 +478,12 @@ def _slow_trajectory_method_sensitive(
                     "trajectory is the more honest signal.",
                 ),
             ),
-            QuestionType.RECENT_TREND: QuestionRule(
-                admissibility=Admissibility.ADMISSIBLE,
-                freshness=FreshnessRule(
-                    mode=FreshnessMode.PREFERRED_WINDOW, preferred_age=current_max_age
-                ),
-                required_context=("observed_at",),
-                refusal_mode=RefusalMode.OFFER_WITH_CAVEATS,
-            ),
+            QuestionType.RECENT_TREND: trajectory_rule,
+            # The slow trajectory is the admissible substrate for the Stage 3
+            # analytical tools too; they reuse the trend rule (with its
+            # method-sensitivity caveats) and add method-level sufficiency.
+            QuestionType.LEVEL_SHIFT_DETECTION: trajectory_rule,
+            QuestionType.SMOOTHED_PATTERN: trajectory_rule,
             QuestionType.HISTORICAL_BASELINE: QuestionRule(
                 admissibility=Admissibility.ADMISSIBLE,
                 freshness=FreshnessRule(mode=FreshnessMode.CAVEAT_ONLY),
@@ -504,6 +523,20 @@ def _sparse_lab_analyte_specific(
         "Interpretation depends on the specific analyte and the collection "
         "context; read this as analyte-specific, not a general status.",
     )
+    # Sparse labs need enough repeats before a trend or analytical tool runs; the
+    # same density-checked rule gates recent-trend and the Stage 3 analytical
+    # tools (which add their own method-level minimums on top).
+    repeats_required_rule = QuestionRule(
+        admissibility=Admissibility.REQUIRES_EVIDENCE_CHECK,
+        freshness=FreshnessRule(mode=FreshnessMode.CAVEAT_ONLY),
+        sufficiency=SufficiencyRule(
+            min_observations=min_observations,
+            missing_data_behavior=MissingDataBehavior.REJECT,
+        ),
+        required_context=("observed_at",),
+        refusal_mode=RefusalMode.OFFER_WITH_CAVEATS,
+        caveats=analyte_caveat,
+    )
     return MetricFamilyPolicy(
         policy_id=policy_id,
         version=1,
@@ -522,17 +555,9 @@ def _sparse_lab_analyte_specific(
                 refusal_mode=RefusalMode.OFFER_WITH_CAVEATS,
                 caveats=analyte_caveat,
             ),
-            QuestionType.RECENT_TREND: QuestionRule(
-                admissibility=Admissibility.REQUIRES_EVIDENCE_CHECK,
-                freshness=FreshnessRule(mode=FreshnessMode.CAVEAT_ONLY),
-                sufficiency=SufficiencyRule(
-                    min_observations=min_observations,
-                    missing_data_behavior=MissingDataBehavior.REJECT,
-                ),
-                required_context=("observed_at",),
-                refusal_mode=RefusalMode.OFFER_WITH_CAVEATS,
-                caveats=analyte_caveat,
-            ),
+            QuestionType.RECENT_TREND: repeats_required_rule,
+            QuestionType.LEVEL_SHIFT_DETECTION: repeats_required_rule,
+            QuestionType.SMOOTHED_PATTERN: repeats_required_rule,
         },
         examples=(
             PolicyExample(

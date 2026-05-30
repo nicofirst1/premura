@@ -377,3 +377,38 @@ def test_home_bp_single_reading_insufficient() -> None:
     )
     assert result.insufficient_evidence
     assert RejectionReason.TOO_SPARSE in result.insufficient_evidence[0].rejection_reasons
+
+
+# ---------------------------------------------------------------------------
+# DRIFT-1 lock: analytical question types are declared per family, not bridged
+# onto a descriptive shape (research note D4).
+# ---------------------------------------------------------------------------
+
+
+def test_analytical_question_rules_are_declared_on_recent_run_families() -> None:
+    """Every built-in family that supports recent-trend also declares the two
+    Stage 3 analytical question types, reusing its recent-run rule; families
+    that have no recent-trend rule declare neither analytical question.
+
+    This locks the DRIFT-1 fix at the policy layer: the analytical tools gate on
+    first-class analytical QuestionTypes, so a future edit that drops one of the
+    analytical rules (re-stranding the proof tools) or that adds an analytical
+    rule to a long-term-control/profile/acute family (re-introducing an
+    inadmissible substrate) is caught here.
+    """
+    analytical = (QuestionType.LEVEL_SHIFT_DETECTION, QuestionType.SMOOTHED_PATTERN)
+    saw_recent_run = False
+    for policy in BUILTIN_POLICIES:
+        rules = policy.question_rules
+        if QuestionType.RECENT_TREND in rules:
+            saw_recent_run = True
+            for q in analytical:
+                assert q in rules, f"{policy.metric_family} missing {q.value}"
+                # The analytical questions reuse the recent-run admissibility rule.
+                assert rules[q] is rules[QuestionType.RECENT_TREND], policy.metric_family
+        else:
+            for q in analytical:
+                assert q not in rules, (
+                    f"{policy.metric_family} declares {q.value} without a recent-run rule"
+                )
+    assert saw_recent_run  # guard against the loop asserting nothing

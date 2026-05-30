@@ -20,7 +20,7 @@ import pytest
 
 from premura.engine.analytical_contract import AnalyticalQuestionType, RefusalOutcome
 from premura.engine.analytical_inputs import (
-    ANALYTICAL_TO_DESCRIPTIVE_QUESTION,
+    ANALYTICAL_TO_POLICY_QUESTION,
     AnalyticalInputSeries,
     InputRefusalReason,
     PreparedPoint,
@@ -59,7 +59,12 @@ def _recent_trend_policy(
     min_observations: int | None = None,
     default_rejection_reasons: tuple[RejectionReason, ...] = (),
 ) -> MetricFamilyPolicy:
-    """A minimal single-question (recent_trend) family policy for the tests."""
+    """A family policy that declares the analytical question types for the tests.
+
+    The analytical questions are first-class :class:`QuestionType` values (research
+    note D4), so this fixture registers the rule under the analytical question
+    types the proof tools actually request — not under ``recent_trend``.
+    """
     rule = QuestionRule(
         admissibility=admissibility,
         freshness=FreshnessRule(mode=FreshnessMode.STRICT_WINDOW, max_age=max_age),
@@ -79,7 +84,11 @@ def _recent_trend_policy(
         metric_family=FAMILY,
         policy_shape=PolicyShape.ROLLING_RECENT_PATTERN,
         temporal_meaning=TemporalMeaning.ROLLING_RECENT_PATTERN,
-        question_rules={QuestionType.RECENT_TREND: rule},
+        question_rules={
+            QuestionType.RECENT_TREND: rule,
+            QuestionType.LEVEL_SHIFT_DETECTION: rule,
+            QuestionType.SMOOTHED_PATTERN: rule,
+        },
         applies_to_metrics=(METRIC,),
     )
 
@@ -319,6 +328,41 @@ def test_unsupported_question_when_no_policy_for_family() -> None:
     assert series.refusal.reason == InputRefusalReason.UNSUPPORTED_QUESTION.value
 
 
+def test_recent_trend_rule_does_not_serve_analytical_questions() -> None:
+    # Behavioral lock for the DRIFT-1 fix: a SAME-family policy that declares
+    # only a recent_trend rule must REFUSE an analytical question. This proves
+    # the analytical questions are no longer collapsed onto recent_trend — if a
+    # future edit re-pointed ANALYTICAL_TO_POLICY_QUESTION back at RECENT_TREND,
+    # this admissible-looking evidence would wrongly become usable and the test
+    # would fail. (Distinct from the different-family case above.)
+    recent_trend_only = MetricFamilyPolicy(
+        policy_id="recent_trend_only@1",
+        version=1,
+        metric_family=FAMILY,
+        policy_shape=PolicyShape.ROLLING_RECENT_PATTERN,
+        temporal_meaning=TemporalMeaning.ROLLING_RECENT_PATTERN,
+        question_rules={
+            QuestionType.RECENT_TREND: QuestionRule(admissibility=Admissibility.ADMISSIBLE)
+        },
+        applies_to_metrics=(METRIC,),
+    )
+    for analytical in (
+        AnalyticalQuestionType.LEVEL_SHIFT_DETECTION,
+        AnalyticalQuestionType.SMOOTHED_PATTERN,
+    ):
+        series = prepare_input_series(
+            METRIC,
+            analytical,
+            candidate=_candidate(observed_at=REFERENCE, point_count=10),
+            policies=recent_trend_only,
+            points=_points(10),
+            reference_time=REFERENCE,
+        )
+        assert not series.is_usable, analytical
+        assert series.refusal is not None
+        assert series.refusal.reason == InputRefusalReason.UNSUPPORTED_QUESTION.value
+
+
 # ---------------------------------------------------------------------------
 # T012: no computation for refused input (observable via public behavior)
 # ---------------------------------------------------------------------------
@@ -359,11 +403,28 @@ def test_points_for_computation_refuses_to_hand_back_refused_input() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_question_types_are_closed_and_wired_to_descriptive() -> None:
-    # Every reviewed analytical question type maps to a descriptive
-    # admissibility question; nothing else is accepted.
-    assert set(ANALYTICAL_TO_DESCRIPTIVE_QUESTION) == set(AnalyticalQuestionType)
-    assert all(isinstance(v, QuestionType) for v in ANALYTICAL_TO_DESCRIPTIVE_QUESTION.values())
+def test_analytical_questions_map_to_their_own_first_class_question_type() -> None:
+    # Research note D4: each analytical question is a first-class QuestionType
+    # gated on its OWN rule, never collapsed onto a descriptive shape like
+    # recent_trend. The map is closed (exactly the AnalyticalQuestionType set)
+    # and is an identity-by-name onto the policy QuestionType vocabulary.
+    assert set(ANALYTICAL_TO_POLICY_QUESTION) == set(AnalyticalQuestionType)
+    assert all(isinstance(v, QuestionType) for v in ANALYTICAL_TO_POLICY_QUESTION.values())
+    assert ANALYTICAL_TO_POLICY_QUESTION == {
+        AnalyticalQuestionType.LEVEL_SHIFT_DETECTION: QuestionType.LEVEL_SHIFT_DETECTION,
+        AnalyticalQuestionType.SMOOTHED_PATTERN: QuestionType.SMOOTHED_PATTERN,
+    }
+    # No analytical question is routed onto a descriptive question shape.
+    descriptive = {
+        QuestionType.CURRENT_STATUS,
+        QuestionType.RECENT_TREND,
+        QuestionType.LONG_TERM_CONTROL,
+        QuestionType.HISTORICAL_BASELINE,
+    }
+    assert not (set(ANALYTICAL_TO_POLICY_QUESTION.values()) & descriptive)
+    # Each analytical question type shares the string value of its policy twin.
+    for analytical, policy in ANALYTICAL_TO_POLICY_QUESTION.items():
+        assert analytical.value == policy.value
 
 
 def test_refused_series_rejects_carrying_points() -> None:
@@ -385,6 +446,50 @@ def test_unordered_points_rejected_at_construction() -> None:
             metric_id=METRIC,
             question_type=AnalyticalQuestionType.SMOOTHED_PATTERN,
             points=(PreparedPoint(ts=later, value=1.0), PreparedPoint(ts=earlier, value=2.0)),
+            sample_size=2,
+            overlap_sample_size=2,
+            window_start=earlier,
+            window_end=later,
+            overlap_start=earlier,
+            overlap_end=later,
+        )
+
+
+def test_usable_series_requires_window_and_overlap_metadata() -> None:
+    # RISK-1 lock: a non-refusal series must carry full window/overlap metadata.
+    # A direct dataclass construction with null timestamps cannot bypass the
+    # input-series contract (the builder always populates these; this guards the
+    # public type itself, which is the shape future multi-input tools inherit).
+    pts = (
+        PreparedPoint(ts=REFERENCE - timedelta(days=1), value=1.0),
+        PreparedPoint(ts=REFERENCE, value=2.0),
+    )
+    with pytest.raises(ValueError, match="window/overlap metadata"):
+        AnalyticalInputSeries(
+            metric_id=METRIC,
+            question_type=AnalyticalQuestionType.LEVEL_SHIFT_DETECTION,
+            points=pts,
+            sample_size=2,
+            overlap_sample_size=2,
+            # window_start / window_end / overlap_start / overlap_end left None
+        )
+
+
+def test_overlap_window_must_fall_within_usable_window() -> None:
+    # The overlap window is the admissible overlap *inside* the usable window;
+    # an overlap that starts before the window is an incoherent series.
+    start = REFERENCE - timedelta(days=2)
+    end = REFERENCE
+    pts = (PreparedPoint(ts=start, value=1.0), PreparedPoint(ts=end, value=2.0))
+    with pytest.raises(ValueError, match="overlap window must fall within"):
+        AnalyticalInputSeries(
+            metric_id=METRIC,
+            question_type=AnalyticalQuestionType.SMOOTHED_PATTERN,
+            points=pts,
+            window_start=start,
+            window_end=end,
+            overlap_start=start - timedelta(days=1),
+            overlap_end=end,
             sample_size=2,
             overlap_sample_size=2,
         )

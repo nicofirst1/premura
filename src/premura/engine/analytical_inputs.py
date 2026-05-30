@@ -60,7 +60,7 @@ __all__ = [
     "InputRefusalReason",
     "PreparedPoint",
     "AnalyticalInputSeries",
-    "ANALYTICAL_TO_DESCRIPTIVE_QUESTION",
+    "ANALYTICAL_TO_POLICY_QUESTION",
     "prepare_input_series",
     "points_for_computation",
 ]
@@ -101,28 +101,29 @@ class InputRefusalReason(StrEnum):
     """No admissibility policy/rule covers this analytical question."""
 
 
-# The closed mapping from a reviewed *analytical* question type to the
-# *descriptive* admissibility question type whose policy rule gates it. This is
-# the wiring required by T011: the analytical enum is the public input, and the
-# evaluator only ever sees a descriptive ``QuestionType`` — never an ad-hoc
-# string. Adding an analytical question type is a reviewed change here, the same
-# way confound keys and analytical question types are reviewed additions to
-# their closed vocabularies.
-ANALYTICAL_TO_DESCRIPTIVE_QUESTION: Mapping[AnalyticalQuestionType, QuestionType] = (
-    MappingProxyType(
-        {
-            AnalyticalQuestionType.LEVEL_SHIFT_DETECTION: QuestionType.RECENT_TREND,
-            AnalyticalQuestionType.SMOOTHED_PATTERN: QuestionType.RECENT_TREND,
-        }
-    )
+# The closed mapping from the contract-facing :class:`AnalyticalQuestionType`
+# to the first-class policy :class:`QuestionType` of the same name. This is the
+# wiring required by T011: the analytical enum is the public input, and the
+# evaluator only ever sees a closed ``QuestionType`` — never an ad-hoc string.
+# Per research note D4 each analytical question gates on its OWN question type
+# (with its own freshness/sufficiency declared in the metric-family policy), not
+# on a descriptive shape like ``recent_trend``. Adding an analytical question
+# type is a reviewed change here, the same way confound keys are.
+ANALYTICAL_TO_POLICY_QUESTION: Mapping[AnalyticalQuestionType, QuestionType] = MappingProxyType(
+    {
+        AnalyticalQuestionType.LEVEL_SHIFT_DETECTION: QuestionType.LEVEL_SHIFT_DETECTION,
+        AnalyticalQuestionType.SMOOTHED_PATTERN: QuestionType.SMOOTHED_PATTERN,
+    }
 )
-"""Closed analytical→descriptive question map used to drive the evaluator.
+"""Closed analytical→policy question map used to drive the evaluator.
 
-A level shift and a smoothed pattern are both questions about a *recent run of
-points*, so both gate on the descriptive ``RECENT_TREND`` admissibility rule.
-Keeping the map closed (a ``MappingProxyType``) prevents callers from smuggling
-an arbitrary descriptive question past the evaluator and keeps the analytical
-vocabulary the single public input."""
+Each reviewed analytical question maps to the first-class policy
+:class:`QuestionType` of the same name, so admissibility is gated on the
+analytical question's own declared rule — never collapsed onto a descriptive
+shape (research note D4 rejected reusing ``recent_trend``). Keeping the map
+closed (a ``MappingProxyType``) prevents callers from smuggling an arbitrary
+question past the evaluator and keeps the analytical vocabulary the single
+public input."""
 
 
 # How a descriptive rejection reason collapses into an analytical input-refusal
@@ -229,6 +230,39 @@ class AnalyticalInputSeries:
         # caller narrows it.
         if self.overlap_sample_size > self.sample_size:
             raise ValueError("AnalyticalInputSeries.overlap_sample_size cannot exceed sample_size")
+        # Usable inputs must carry their full window/overlap metadata. The
+        # data-model contract (and this class's docstring) require every
+        # window/overlap field populated for a non-refusal series; enforce it
+        # here so a directly constructed series cannot bypass the input-series
+        # metadata contract with null timestamps.
+        if (
+            self.window_start is None
+            or self.window_end is None
+            or self.overlap_start is None
+            or self.overlap_end is None
+        ):
+            missing = [
+                name
+                for name, value in (
+                    ("window_start", self.window_start),
+                    ("window_end", self.window_end),
+                    ("overlap_start", self.overlap_start),
+                    ("overlap_end", self.overlap_end),
+                )
+                if value is None
+            ]
+            raise ValueError(
+                "a usable AnalyticalInputSeries must populate its window/overlap "
+                f"metadata; missing: {', '.join(missing)}"
+            )
+        if self.window_start > self.window_end:
+            raise ValueError("AnalyticalInputSeries.window_start must not be after window_end")
+        if self.overlap_start > self.overlap_end:
+            raise ValueError("AnalyticalInputSeries.overlap_start must not be after overlap_end")
+        if self.overlap_start < self.window_start or self.overlap_end > self.window_end:
+            raise ValueError(
+                "AnalyticalInputSeries overlap window must fall within the usable analysis window"
+            )
 
     @property
     def is_usable(self) -> bool:
@@ -321,12 +355,13 @@ def prepare_input_series(
     This is the single entry point WP04 proof tools call to obtain a usable
     series. It:
 
-    1. Maps the reviewed :class:`AnalyticalQuestionType` onto the descriptive
-       admissibility :class:`~premura.engine.policies.QuestionType` through the
-       closed :data:`ANALYTICAL_TO_DESCRIPTIVE_QUESTION` table, then runs the
-       **existing** policy evaluator (:func:`evaluate_evidence`) over the
-       supplied ``candidate``/``policies``. No ad-hoc string ever reaches the
-       evaluator.
+    1. Maps the reviewed :class:`AnalyticalQuestionType` onto the first-class
+       analytical :class:`~premura.engine.policies.QuestionType` of the same
+       name through the closed :data:`ANALYTICAL_TO_POLICY_QUESTION` table, then
+       runs the **existing** policy evaluator (:func:`evaluate_evidence`) over
+       the supplied ``candidate``/``policies``. The evaluator gates on the
+       analytical question's own declared rule; no ad-hoc string ever reaches
+       it, and the question is never collapsed onto a descriptive shape.
     2. Refuses — returning a series carrying a :class:`RefusalOutcome` and no
        computation points — when evidence is missing, the evaluator finds it
        inadmissible/stale/insufficient, the question is unsupported, or a
@@ -369,9 +404,9 @@ def prepare_input_series(
     # admissibility comes first: a missing/stale/inadmissible input is refused
     # for *that* reason, not silently reclassified as a parameter problem.
 
-    # 1. Map the analytical question onto the descriptive admissibility question.
-    descriptive_question = ANALYTICAL_TO_DESCRIPTIVE_QUESTION.get(question_type)
-    if descriptive_question is None:
+    # 1. Map the analytical question onto its first-class policy question type.
+    policy_question = ANALYTICAL_TO_POLICY_QUESTION.get(question_type)
+    if policy_question is None:
         return _refused_series(
             metric_id,
             question_type,
@@ -402,7 +437,7 @@ def prepare_input_series(
 
     # 2. Run the EXISTING evaluator pattern over the supplied evidence.
     result = evaluate_evidence(
-        descriptive_question,
+        policy_question,
         (candidate,),
         policies,
         reference_time=reference_time,

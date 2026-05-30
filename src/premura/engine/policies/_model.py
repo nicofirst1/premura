@@ -71,8 +71,12 @@ def _require_tuple_of_enum(
 # ---------------------------------------------------------------------------
 # Closed vocabularies
 # ---------------------------------------------------------------------------
-# These are closed by design. Adding a value changes the Stage 2 authoring
-# contract and belongs to a future mission (see evidence-policy-contract.md).
+# These are closed by design. Adding a value changes the Stage 2/3 authoring
+# contract and is a reviewed change (see evidence-policy-contract.md). The first
+# four are the Stage 2 descriptive question shapes; the last two are the reviewed
+# Stage 3 *analytical* question types added by the analytical-tools mission
+# (research note D4) so analytical admissibility is declared as a first-class
+# question type rather than smuggled onto a descriptive shape.
 
 
 class QuestionType(StrEnum):
@@ -82,6 +86,11 @@ class QuestionType(StrEnum):
     RECENT_TREND = "recent_trend"
     LONG_TERM_CONTROL = "long_term_control"
     HISTORICAL_BASELINE = "historical_baseline"
+    # Stage 3 analytical question types (research note D4). A metric family opts
+    # into analytical tools by declaring a QuestionRule for these, with its own
+    # freshness/sufficiency — never by reusing a descriptive rule implicitly.
+    LEVEL_SHIFT_DETECTION = "level_shift_detection"
+    SMOOTHED_PATTERN = "smoothed_pattern"
 
 
 class EvidenceStatus(StrEnum):

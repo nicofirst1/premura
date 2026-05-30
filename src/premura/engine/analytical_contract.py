@@ -48,10 +48,15 @@ class AnalyticalQuestionType(StrEnum):
     """The closed set of reviewed analytical question types (research note D4).
 
     These are runtime vocabulary entries, **not** prose suggestions and **not**
-    user-facing labels. They are distinct from the Stage 2 descriptive
-    :class:`premura.engine.policies.QuestionType` values on purpose: forcing the
-    analytical questions onto the descriptive shapes would distort the
-    admissibility check and hide the analytical sufficiency requirements.
+    user-facing labels. Each value mirrors a first-class analytical
+    :class:`premura.engine.policies.QuestionType` member of the same name: the
+    admissibility evaluator gates these questions on their *own* question type
+    (with their own freshness/sufficiency), never by collapsing them onto a
+    descriptive shape such as ``recent_trend`` — that collapse was the design
+    research note D4 explicitly rejected because it hides the analytical
+    sufficiency requirements. This enum is the contract-facing vocabulary tool
+    authors declare against; the input-preparation layer converts it to the
+    matching policy ``QuestionType`` before evaluation.
 
     Adding a value here is a reviewed change to the closed vocabulary, the same
     way confound keys are added.
