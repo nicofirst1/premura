@@ -24,10 +24,10 @@
 | T014 | Implement correlate result envelope, direction alignment, confounds, caveats, and refusal outcomes. | WP03 | No | [D] |
 | T015 | Register `correlate` as a built-in analytical tool and export the public engine surface. | WP03 | No | [D] |
 | T016 | Add forbidden-output tests for p-values, significance, causal language, diagnosis, and lag scanning. | WP03 | No | [D] |
-| T017 | Add failing default-surface tests for the agent-facing `correlate` wrapper. | WP04 | No |
-| T018 | Implement the thin MCP wrapper that delegates all behavior to the engine analytical path. | WP04 | No |
-| T019 | Validate wrapper serialization for available and refused outcomes. | WP04 | No |
-| T020 | Verify the MCP layer performs no statistical computation, no raw fact-table analysis, and no network/PubMed work. | WP04 | No |
+| T017 | Add failing default-surface tests for the agent-facing `correlate` wrapper. | WP04 | No | [D] |
+| T018 | Implement the thin MCP wrapper that delegates all behavior to the engine analytical path. | WP04 | No | [D] |
+| T019 | Validate wrapper serialization for available and refused outcomes. | WP04 | No | [D] |
+| T020 | Verify the MCP layer performs no statistical computation, no raw fact-table analysis, and no network/PubMed work. | WP04 | No | [D] |
 | T021 | Update engine and analytical contributor docs for lag, association, paired inputs, and confound rules. | WP05 | No |
 | T022 | Update product/status roadmap docs to show `correlate` shipped and ledger/PubMed still deferred. | WP05 | No |
 | T023 | Add the ADR-0008 back-pointer that `common_cause_plausible` was resolved by the research note. | WP05 | No |
@@ -146,10 +146,10 @@ Risks:
 
 Included subtasks:
 
-- [ ] T017 Add failing default-surface tests for the agent-facing `correlate` wrapper. (WP04)
-- [ ] T018 Implement the thin MCP wrapper that delegates all behavior to the engine analytical path. (WP04)
-- [ ] T019 Validate wrapper serialization for available and refused outcomes. (WP04)
-- [ ] T020 Verify the MCP layer performs no statistical computation, no raw fact-table analysis, and no network/PubMed work. (WP04)
+- [x] T017 Add failing default-surface tests for the agent-facing `correlate` wrapper. (WP04)
+- [x] T018 Implement the thin MCP wrapper that delegates all behavior to the engine analytical path. (WP04)
+- [x] T019 Validate wrapper serialization for available and refused outcomes. (WP04)
+- [x] T020 Verify the MCP layer performs no statistical computation, no raw fact-table analysis, and no network/PubMed work. (WP04)
 
 Implementation sketch:
 
