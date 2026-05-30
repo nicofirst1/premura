@@ -216,3 +216,4 @@ Validation:
 ## Activity Log
 
 - 2026-05-30T14:57:49Z – claude:opus:implementer:implementer – shell_pid=73259 – Started implementation via action command
+- 2026-05-30T15:13:34Z – claude:opus:implementer:implementer – shell_pid=73259 – Ready for review: deterministic Spearman lagged-association correlate tool (midrank ties, N_eff autocorrelation+imputation band via Fisher z, raw<20 / N_eff<12 refusals, confound checklist, forbidden-output guards). Registered + reachable via dispatch + exported. 84/84 mission tests, 541/541 full suite pass.
