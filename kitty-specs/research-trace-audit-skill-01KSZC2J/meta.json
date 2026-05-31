@@ -1,10 +1,12 @@
 {
   "created_at": "2026-05-31T15:57:37.482763+00:00",
-  "friendly_name": "research trace audit skill",
+  "friendly_name": "Research Trace Audit Skill",
   "mission_id": "01KSZC2J8N2EE41AV1DT5R9HBY",
   "mission_number": null,
   "mission_slug": "research-trace-audit-skill-01KSZC2J",
   "mission_type": "software-dev",
+  "source_description": "Build a Premura-specific audit skill over the shipped session research trace, starting with WP0 research on general agent skill writing, installation/distribution patterns, and how those findings should shape this skill.",
   "slug": "research-trace-audit-skill-01KSZC2J",
-  "target_branch": "master"
+  "target_branch": "master",
+  "vcs": "git"
 }
