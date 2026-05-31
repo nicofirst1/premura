@@ -51,7 +51,7 @@ Premura has already shipped:
 
 So `engine` and `mcp` are no longer empty stubs: Stage 2 and part of Stage 3 are real for six approved question shapes, and the profile/intake domains now have real storage plus an agent-mediated capture path rather than only a meaning contract. What is still missing is the rest of the v2 payoff:
 
-- the remaining deterministic Stage 3 statistics tools (`paired_t_test`, `rolling_mean`), PubMed integration, the signal selector, and the follow-on **audit skill** (the interpretation layer over the session research trace) — `change_point`, `smoothed_average`, `correlate`, and the session research trace / multiplicity disclosure have since shipped on the default surface over the bounded analytical contract; the rest this first grounded slice did not build
+- the remaining deterministic Stage 3 statistics tools (`paired_t_test`, `rolling_mean`), PubMed integration, and the signal selector — `change_point`, `smoothed_average`, `correlate`, the session research trace / multiplicity disclosure, and the follow-on **research trace audit skill** (the interpretation layer over the session research trace) have since shipped on the default surface over the bounded analytical contract; the rest this first grounded slice did not build
 - broader Stage 2 coverage beyond the seven now-shipped grounded answers (the six descriptive/comparative signals plus BMI, the first cross-domain proof consumer); the seven are non-diagnostic and carry no significance or causation claims. **BMI now ships** as the first cross-domain Stage 2 answer using the input-resolution seam (declared height from profile context plus weight from observation history); age-adjusted interpretation and any further profile-aware signals remain deferred — but now as implementation missions over the shipped resolution seam, not as storage or boundary questions
 - **parser/plugin source adaptation for nutrition and supplements** — the intake tables and load path exist, but turning a specific meal-logging or supplement export into a normalized `IntakeBatch` is unbuilt federated-parser work; there is no built-in importer
 - a first new source class beyond the original wearable/app quartet
@@ -173,10 +173,15 @@ The lab proposal is the first place where Premura becomes more than a wearable d
 > `research_trace_mark_surfaced`, `research_trace_disclosure`) over the pure
 > `premura.trace` service and `trace.*` tables, with the analytical engine kept
 > stateless; see design decision note
-> [0009](../adr/0009-session-research-trace-and-multiplicity-disclosure.md).
-> **Remaining (deferred):** `rolling_mean`, `paired_t_test`, PubMed grounding, and
-> the follow-on **audit skill** (the interpretation layer that reads the trace's
-> audit-consumer contract) — each a following mission, none shipped yet.
+> [0009](../adr/0009-session-research-trace-and-multiplicity-disclosure.md). The
+> follow-on **research trace audit skill** (the interpretation layer that reads
+> the trace's audit-consumer contract, read-only) **has since shipped too** as a
+> Premura-specific agent skill at `src/premura/skills/research-trace-audit/`,
+> installed via the existing `hpipe install-skills` to `.claude/skills/` (the
+> same home Claude Code and OpenCode both read — a separate OpenCode installer
+> target was evaluated and deliberately rejected); it changed no trace counts or
+> schema. **Remaining (deferred):** `rolling_mean`, `paired_t_test`, and PubMed
+> grounding — each a following mission, none shipped yet.
 
 #### Goal
 
@@ -187,7 +192,7 @@ Turn the first MCP surface into an actually useful analytical surface.
 - Add deterministic stats tools from `ROADMAP.md` (`correlate`, `paired_t_test`, `rolling_mean`, `change_point`, …) — `change_point`, `smoothed_average`, and `correlate` shipped; `paired_t_test` and `rolling_mean` deferred
 - Add PubMed search/fetch integration (deferred)
 - Add the personal-data bridge from literature to warehouse queries (deferred)
-- Add reproducible research trace output — **shipped** as the session research trace / measured multiplicity disclosure (the follow-on audit skill that interprets it stays deferred)
+- Add reproducible research trace output — **shipped** as the session research trace / measured multiplicity disclosure, and the follow-on **research trace audit skill** that interprets it has **also shipped** (a Premura-specific agent skill reading the audit-consumer contract read-only; it changed no trace counts or schema)
 
 #### Why this phase exists
 
@@ -205,7 +210,7 @@ Phase 1 proved that MCP can safely access the warehouse and answer six grounded 
 #### Exit criteria
 
 - the app can answer at least a small set of concrete analytical questions through deterministic tools (met: `change_point`, `smoothed_average`, `correlate`)
-- analytical output is reproducible enough to be inspected later (met: the session research trace records each analytical call and derives a measured multiplicity disclosure a later audit skill can read; the audit skill itself stays deferred)
+- analytical output is reproducible enough to be inspected later (met: the session research trace records each analytical call and derives a measured multiplicity disclosure, and the research trace audit skill that reads it has now shipped)
 - PubMed use is tool-grounded rather than prompt-grounded (deferred — PubMed not yet built)
 - tool outputs include validity/confound metadata, not just point estimates (met: mandatory result envelope with validity metadata + closed confound checklist)
 

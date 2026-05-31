@@ -146,11 +146,11 @@ statistical choices are settled in
   than show a confident-looking spurious association.
 
 **Explicitly not shipped (still Phase 3 follow-on):** the remaining deterministic
-stats (`paired_t_test`, `rolling_mean`), PubMed grounding, and the **audit skill**
-(the follow-on interpretation work that would read the trace's audit-consumer
-contract and judge whether a final answer disclosed its search effort). The
-session research trace / multiplicity disclosure itself **has now shipped** — see
-"Session research trace" below. `change_point`, `smoothed_average`, and
+stats (`paired_t_test`, `rolling_mean`) and PubMed grounding. The **research
+trace audit skill** — the interpretation work that reads the trace's
+audit-consumer contract — **has now shipped**; see "Research trace audit skill"
+below. The session research trace / multiplicity disclosure itself **has now
+shipped** — see "Session research trace" below. `change_point`, `smoothed_average`, and
 `correlate` are the shipped analytical tools over the now-stable analytical
 contract; the rest are future missions.
 
@@ -192,13 +192,44 @@ stateless** — recording happens *around* dispatch, never inside it.
 - **Provenance, not health facts.** The trace stores only call/result references,
   hashes, and a bounded validity-metadata summary — never raw `hp.*` health rows.
   The audit-consumer contract (`kitty-specs/session-research-trace-01KSYT4A/contracts/audit-consumer-contract.md`)
-  is the stable structured surface a later audit skill will read.
+  is the stable structured surface the research trace audit skill reads (now
+  shipped — see below).
 
-**Audit skill deferred.** The follow-on **audit skill** — the interpretation
-work that would read the audit-consumer contract and decide whether a final
-answer disclosed its search effort, hid refused calls, or overclaimed — is **not
-shipped**; it remains a following mission. This mission ships the measured trace
-and the stable contract the audit skill will consume, not the judgment itself.
+## Research trace audit skill (shipped 2026-05-31)
+
+The `research-trace-audit-skill-01KSZC2J` mission landed the **research trace
+audit skill**: a Premura-specific agent skill that consumes the audit-consumer
+contract (read-only) to judge one final analytical answer against its session
+research trace disclosure. It is **not** a generic answer-audit product — it
+applies only to an answer built from a Premura Session Disclosure object, and it
+issues no network call at runtime.
+
+- **Folder + prose `SKILL.md`.** The skill ships at
+  `src/premura/skills/research-trace-audit/` as a conformant Agent Skill: a prose
+  `SKILL.md` (when-to-invoke, the two required inputs — the structured Session
+  Disclosure object plus the final answer text — the review procedure, and the
+  `pass` / `needs_revision` / `blocked` output shape with evidence refs) beside a
+  bounded `AUDIT_RUBRIC.md`.
+- **Bounded rubric, not a banned-phrase list.** `AUDIT_RUBRIC.md` is a registry
+  of criteria under **four closed categories** (search-effort disclosure,
+  refused/unavailable handling, contradiction handling, overclaim boundary) plus
+  the **rule for adding a criterion** — per DOCTRINE (guide, don't enumerate), it
+  defines the rule for growing the list rather than freezing a word list.
+- **Five synthetic fixtures.** `fixtures/` holds five calibration examples —
+  `pass`, `omitted-search-effort`, `hidden-refusal`, `surfaced-unavailable`, and
+  `overclaim` — each a synthetic Session Disclosure + answer + expected verdict,
+  with no real `hp.*` rows or PHI.
+- **Installs via the existing installer.** The skill is installed by the existing
+  `hpipe install-skills` to `.claude/skills/`, the same project skill home both
+  Claude Code and OpenCode discover. A separate OpenCode-style installer target
+  was **evaluated and deliberately rejected**: live OpenCode docs confirm it scans
+  the same `.claude/skills/` path, so one home serves both clients and a second
+  writer would only create redundant on-disk copies. This kept the mission purely
+  additive — one new skill directory, **no** change to `install_skills()`.
+- **Reads the trace; changes nothing in it.** The skill consumes the
+  audit-consumer contract read-only. It changed **no** trace counts, no trace
+  schema, and no analytical tool math; the trace remains measurement, and the
+  skill supplies the separate interpretation step.
 
 ## What's working end-to-end
 
