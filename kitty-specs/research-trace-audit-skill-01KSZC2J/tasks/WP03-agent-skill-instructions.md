@@ -17,6 +17,8 @@ subtasks:
 - T010
 - T011
 - T012
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "36103"
 history:
 - timestamp: '2026-05-31T16:16:44Z'
   agent: openai:gpt-5.5
@@ -184,3 +186,7 @@ If those answers are not obvious, revise the top of the file.
 ## Reviewer Guidance
 
 Reject if `SKILL.md` is generic, if it hides the required inputs, if it duplicates the full rubric instead of linking it, or if it suggests changing trace counts.
+
+## Activity Log
+
+- 2026-05-31T16:47:28Z – claude:opus:python-implementer:implementer – shell_pid=36103 – Started implementation via action command
