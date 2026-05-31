@@ -211,3 +211,4 @@ Reviewers should inspect boundary placement. MCP may orchestrate trace recording
 ## Activity Log
 
 - 2026-05-31T11:30:56Z – claude:opus:python-implementer:implementer – shell_pid=8220 – Started implementation via action command
+- 2026-05-31T11:44:00Z – claude:opus:python-implementer:implementer – shell_pid=8220 – Ready for review: MCP trace tools (open/mark/disclosure) on default surface + opt-in analytical recording on change_point/smoothed_average/correlate + engine-purity regression, all green
