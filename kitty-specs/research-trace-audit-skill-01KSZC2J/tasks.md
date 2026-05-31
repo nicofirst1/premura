@@ -9,10 +9,10 @@
 
 | ID | Description | WP | Parallel |
 |---|---|---|---|
-| T001 | Research general agent skill authoring standards and current external guidance. | WP01 | No |
-| T002 | Research local skill discovery and installation patterns for Claude-style and OpenCode-style homes. | WP01 | No |
-| T003 | Evaluate write-once packaging or installer approaches and give adopt/defer/reject recommendation. | WP01 | No |
-| T004 | Translate findings into Premura-specific skill-authoring and installation rules. | WP01 | No |
+| T001 | Research general agent skill authoring standards and current external guidance. | WP01 | No | [D] |
+| T002 | Research local skill discovery and installation patterns for Claude-style and OpenCode-style homes. | WP01 | No | [D] |
+| T003 | Evaluate write-once packaging or installer approaches and give adopt/defer/reject recommendation. | WP01 | No | [D] |
+| T004 | Translate findings into Premura-specific skill-authoring and installation rules. | WP01 | No | [D] |
 | T005 | Author five synthetic audit fixtures with expected verdicts before rubric prose. | WP02 | No |
 | T006 | Write `AUDIT_RUBRIC.md` as a bounded criteria registry, not a banned-phrase list. | WP02 | No |
 | T007 | Cross-check rubric criteria against the audit-consumer contract and fixture expectations. | WP02 | No |
@@ -48,10 +48,10 @@
 
 **Included subtasks**:
 
-- [ ] T001 Research general agent skill authoring standards and current external guidance. (WP01)
-- [ ] T002 Research local skill discovery and installation patterns for Claude-style and OpenCode-style homes. (WP01)
-- [ ] T003 Evaluate write-once packaging or installer approaches and give adopt/defer/reject recommendation. (WP01)
-- [ ] T004 Translate findings into Premura-specific skill-authoring and installation rules. (WP01)
+- [x] T001 Research general agent skill authoring standards and current external guidance. (WP01)
+- [x] T002 Research local skill discovery and installation patterns for Claude-style and OpenCode-style homes. (WP01)
+- [x] T003 Evaluate write-once packaging or installer approaches and give adopt/defer/reject recommendation. (WP01)
+- [x] T004 Translate findings into Premura-specific skill-authoring and installation rules. (WP01)
 
 **Implementation sketch**:
 
