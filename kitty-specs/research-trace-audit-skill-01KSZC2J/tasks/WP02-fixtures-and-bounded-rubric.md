@@ -215,3 +215,4 @@ Reject if the rubric becomes a banned-word list, if the fixtures rely on prose `
 - 2026-05-31T16:37:40Z – claude:opus:python-reviewer:reviewer – shell_pid=21852 – Started review via action command
 - 2026-05-31T16:42:04Z – claude:opus:python-reviewer:reviewer – shell_pid=21852 – Review cycle 1: calls_truncated=false inconsistent with subset calls list in 4/5 fixtures
 - 2026-05-31T16:42:47Z – claude:opus:python-implementer:implementer – shell_pid=29187 – Started implementation via action command
+- 2026-05-31T16:45:30Z – claude:opus:python-implementer:implementer – shell_pid=29187 – Fixed: calls_truncated now consistent with inlined calls subset (cycle 1)
