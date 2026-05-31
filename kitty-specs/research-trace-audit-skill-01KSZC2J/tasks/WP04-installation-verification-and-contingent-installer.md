@@ -15,8 +15,8 @@ subtasks:
 - T014
 - T015
 - T016
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "42555"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "49168"
 history:
 - timestamp: '2026-05-31T16:16:44Z'
   agent: openai:gpt-5.5
@@ -186,3 +186,4 @@ Reject if the WP implements a target WP01 did not recommend adopting, if tests i
 
 - 2026-05-31T16:55:54Z – claude:opus:python-implementer:implementer – shell_pid=42555 – Started implementation via action command
 - 2026-05-31T17:03:06Z – claude:opus:python-implementer:implementer – shell_pid=42555 – Ready for review: verify-only per WP01 (OpenCode/multi-home installer rejected); existing single-home install_skills() bundles SKILL.md + AUDIT_RUBRIC.md + fixtures/*.json recursively with sha256 idempotency; regression test added; full suite 637 passed
+- 2026-05-31T17:04:05Z – claude:opus:python-reviewer:reviewer – shell_pid=49168 – Started review via action command
