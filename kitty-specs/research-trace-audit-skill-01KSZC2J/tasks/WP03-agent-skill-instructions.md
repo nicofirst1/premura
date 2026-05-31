@@ -17,8 +17,8 @@ subtasks:
 - T010
 - T011
 - T012
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "36103"
+agent: "claude:opus:docs-reviewer:reviewer"
+shell_pid: "39703"
 history:
 - timestamp: '2026-05-31T16:16:44Z'
   agent: openai:gpt-5.5
@@ -191,3 +191,4 @@ Reject if `SKILL.md` is generic, if it hides the required inputs, if it duplicat
 
 - 2026-05-31T16:47:28Z – claude:opus:python-implementer:implementer – shell_pid=36103 – Started implementation via action command
 - 2026-05-31T16:51:27Z – claude:opus:python-implementer:implementer – shell_pid=36103 – Ready for review: SKILL.md agent-facing wrapper
+- 2026-05-31T16:52:16Z – claude:opus:docs-reviewer:reviewer – shell_pid=39703 – Started review via action command
