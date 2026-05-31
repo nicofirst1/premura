@@ -13,13 +13,13 @@
 | T003 | Add schema-ownership tests proving trace writes cannot create health facts | WP01 |  | [D] |
 | T004 | Add append-only enforcement tests for trace rows at the storage boundary | WP01 |  | [D] |
 | T005 | Document migration assumptions in the WP handoff and keep schema compact | WP01 |  | [D] |
-| T006 | Add `premura.trace` public dataclasses/result shapes for sessions, calls, marks, and disclosures | WP02 |  |
-| T007 | Implement explicit session opening with warehouse fingerprint/schema-version capture | WP02 |  |
-| T008 | Implement deterministic request/result hashing and normalized hypothesis identity declarations | WP02 |  |
-| T009 | Implement call/result recording APIs with refusal and error terminal states | WP02 |  |
-| T010 | Implement surfaced-mark APIs with same-session validation | WP02 |  |
-| T011 | Implement disclosure computation and generated JSON/Markdown export shapes | WP02 |  |
-| T012 | Add trace-service tests for deduplication, refusals, surfaced fallback, consistency, and 500-call performance | WP02 |  |
+| T006 | Add `premura.trace` public dataclasses/result shapes for sessions, calls, marks, and disclosures | WP02 |  | [D] |
+| T007 | Implement explicit session opening with warehouse fingerprint/schema-version capture | WP02 |  | [D] |
+| T008 | Implement deterministic request/result hashing and normalized hypothesis identity declarations | WP02 |  | [D] |
+| T009 | Implement call/result recording APIs with refusal and error terminal states | WP02 |  | [D] |
+| T010 | Implement surfaced-mark APIs with same-session validation | WP02 |  | [D] |
+| T011 | Implement disclosure computation and generated JSON/Markdown export shapes | WP02 |  | [D] |
+| T012 | Add trace-service tests for deduplication, refusals, surfaced fallback, consistency, and 500-call performance | WP02 |  | [D] |
 | T013 | Add MCP trace tools for opening sessions, marking surfaced calls, and reading disclosure | WP03 |  |
 | T014 | Wire analytical wrappers to record calls before/after dispatch when a `session_id` is supplied | WP03 |  |
 | T015 | Preserve existing analytical behavior when no trace session is supplied | WP03 |  |
@@ -78,13 +78,13 @@ Risks:
 
 Included subtasks:
 
-- [ ] T006 Add `premura.trace` public dataclasses/result shapes for sessions, calls, marks, and disclosures (WP02)
-- [ ] T007 Implement explicit session opening with warehouse fingerprint/schema-version capture (WP02)
-- [ ] T008 Implement deterministic request/result hashing and normalized hypothesis identity declarations (WP02)
-- [ ] T009 Implement call/result recording APIs with refusal and error terminal states (WP02)
-- [ ] T010 Implement surfaced-mark APIs with same-session validation (WP02)
-- [ ] T011 Implement disclosure computation and generated JSON/Markdown export shapes (WP02)
-- [ ] T012 Add trace-service tests for deduplication, refusals, surfaced fallback, consistency, and 500-call performance (WP02)
+- [x] T006 Add `premura.trace` public dataclasses/result shapes for sessions, calls, marks, and disclosures (WP02)
+- [x] T007 Implement explicit session opening with warehouse fingerprint/schema-version capture (WP02)
+- [x] T008 Implement deterministic request/result hashing and normalized hypothesis identity declarations (WP02)
+- [x] T009 Implement call/result recording APIs with refusal and error terminal states (WP02)
+- [x] T010 Implement surfaced-mark APIs with same-session validation (WP02)
+- [x] T011 Implement disclosure computation and generated JSON/Markdown export shapes (WP02)
+- [x] T012 Add trace-service tests for deduplication, refusals, surfaced fallback, consistency, and 500-call performance (WP02)
 
 Implementation sketch:
 
