@@ -1,16 +1,16 @@
 {
-  "event_count": 33,
-  "last_event_id": "01KSYJ23ZYH50ZVVMV5ER3J2VQ",
-  "materialized_at": "2026-05-31T08:22:59.326143+00:00",
+  "event_count": 34,
+  "last_event_id": "01KSYJ253YD0QZ1QRNZ18X5PDE",
+  "materialized_at": "2026-05-31T08:23:00.478109+00:00",
   "mission_number": "11",
   "mission_slug": "correlate-lagged-association-01KSWKV0",
   "mission_type": "software-dev",
   "summary": {
-    "approved": 2,
+    "approved": 1,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
-    "done": 3,
+    "done": 4,
     "for_review": 0,
     "in_progress": 0,
     "in_review": 0,
@@ -40,10 +40,10 @@
     },
     "WP04": {
       "actor": "user",
-      "force_count": 1,
-      "lane": "approved",
-      "last_event_id": "01KSWRM4PX7GTG2KPYQHS9W5DF",
-      "last_transition_at": "2026-05-30T15:39:12.477480+00:00"
+      "force_count": 2,
+      "lane": "done",
+      "last_event_id": "01KSYJ253YD0QZ1QRNZ18X5PDE",
+      "last_transition_at": "2026-05-31T08:23:00.478109+00:00"
     },
     "WP05": {
       "actor": "user",
