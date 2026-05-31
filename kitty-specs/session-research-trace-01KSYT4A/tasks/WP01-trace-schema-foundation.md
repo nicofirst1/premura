@@ -18,8 +18,8 @@ subtasks:
 - T003
 - T004
 - T005
-shell_pid: "86708"
-agent: "claude:opus:python-implementer:implementer"
+shell_pid: "94846"
+agent: "claude:opus:python-reviewer:reviewer"
 history:
 - timestamp: '2026-05-31T10:54:25Z'
   agent: opencode
@@ -230,3 +230,4 @@ Reviewers should focus on schema meaning and future compatibility. The exact col
 
 - 2026-05-31T11:08:31Z – claude:opus:python-implementer:implementer – shell_pid=86708 – Assigned agent via action command
 - 2026-05-31T11:16:32Z – claude:opus:python-implementer:implementer – shell_pid=86708 – Ready for review: trace.* schema migration + ownership/idempotence/append-only-shape tests, all green (10 trace + 6 schema/store = 16 passed)
+- 2026-05-31T11:16:59Z – claude:opus:python-reviewer:reviewer – shell_pid=94846 – Started review via action command
