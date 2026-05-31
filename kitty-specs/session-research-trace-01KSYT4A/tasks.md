@@ -20,13 +20,13 @@
 | T010 | Implement surfaced-mark APIs with same-session validation | WP02 |  | [D] |
 | T011 | Implement disclosure computation and generated JSON/Markdown export shapes | WP02 |  | [D] |
 | T012 | Add trace-service tests for deduplication, refusals, surfaced fallback, consistency, and 500-call performance | WP02 |  | [D] |
-| T013 | Add MCP trace tools for opening sessions, marking surfaced calls, and reading disclosure | WP03 |  |
-| T014 | Wire analytical wrappers to record calls before/after dispatch when a `session_id` is supplied | WP03 |  |
-| T015 | Preserve existing analytical behavior when no trace session is supplied | WP03 |  |
-| T016 | Return stable recorded-call references without changing engine result envelopes | WP03 |  |
-| T017 | Add MCP tests for trace tools, analytical recording, refusals, retries, and non-analytical exclusions | WP03 |  |
-| T018 | Add engine-purity regression tests proving traced and untraced envelopes are byte-identical | WP03 |  |
-| T019 | Verify operator surface inherits trace behavior without exposing new raw-health semantics | WP03 |  |
+| T013 | Add MCP trace tools for opening sessions, marking surfaced calls, and reading disclosure | WP03 |  | [D] |
+| T014 | Wire analytical wrappers to record calls before/after dispatch when a `session_id` is supplied | WP03 |  | [D] |
+| T015 | Preserve existing analytical behavior when no trace session is supplied | WP03 |  | [D] |
+| T016 | Return stable recorded-call references without changing engine result envelopes | WP03 |  | [D] |
+| T017 | Add MCP tests for trace tools, analytical recording, refusals, retries, and non-analytical exclusions | WP03 |  | [D] |
+| T018 | Add engine-purity regression tests proving traced and untraced envelopes are byte-identical | WP03 |  | [D] |
+| T019 | Verify operator surface inherits trace behavior without exposing new raw-health semantics | WP03 |  | [D] |
 | T020 | Sync live docs for shipped trace surface and deferred audit skill | WP04 | [P] |
 | T021 | Update mission contracts/quickstart if implementation names or response fields differ from planning names | WP04 | [P] |
 | T022 | Add final validation notes covering requirement coverage and quality gates | WP04 |  |
@@ -115,13 +115,13 @@ Risks:
 
 Included subtasks:
 
-- [ ] T013 Add MCP trace tools for opening sessions, marking surfaced calls, and reading disclosure (WP03)
-- [ ] T014 Wire analytical wrappers to record calls before/after dispatch when a `session_id` is supplied (WP03)
-- [ ] T015 Preserve existing analytical behavior when no trace session is supplied (WP03)
-- [ ] T016 Return stable recorded-call references without changing engine result envelopes (WP03)
-- [ ] T017 Add MCP tests for trace tools, analytical recording, refusals, retries, and non-analytical exclusions (WP03)
-- [ ] T018 Add engine-purity regression tests proving traced and untraced envelopes are byte-identical (WP03)
-- [ ] T019 Verify operator surface inherits trace behavior without exposing new raw-health semantics (WP03)
+- [x] T013 Add MCP trace tools for opening sessions, marking surfaced calls, and reading disclosure (WP03)
+- [x] T014 Wire analytical wrappers to record calls before/after dispatch when a `session_id` is supplied (WP03)
+- [x] T015 Preserve existing analytical behavior when no trace session is supplied (WP03)
+- [x] T016 Return stable recorded-call references without changing engine result envelopes (WP03)
+- [x] T017 Add MCP tests for trace tools, analytical recording, refusals, retries, and non-analytical exclusions (WP03)
+- [x] T018 Add engine-purity regression tests proving traced and untraced envelopes are byte-identical (WP03)
+- [x] T019 Verify operator surface inherits trace behavior without exposing new raw-health semantics (WP03)
 
 Implementation sketch:
 
