@@ -1,16 +1,16 @@
 {
-  "event_count": 37,
-  "last_event_id": "01KSZGF1M4XG3GAHJH97GPKTQ6",
-  "materialized_at": "2026-05-31T17:14:20.164563+00:00",
+  "event_count": 38,
+  "last_event_id": "01KSZGF2RT7M9BG6QB74M87CTG",
+  "materialized_at": "2026-05-31T17:14:21.338593+00:00",
   "mission_number": "13",
   "mission_slug": "research-trace-audit-skill-01KSZC2J",
   "mission_type": "software-dev",
   "summary": {
-    "approved": 3,
+    "approved": 2,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
-    "done": 2,
+    "done": 3,
     "for_review": 0,
     "in_progress": 0,
     "in_review": 0,
@@ -33,10 +33,10 @@
     },
     "WP03": {
       "actor": "user",
-      "force_count": 1,
-      "lane": "approved",
-      "last_event_id": "01KSZFCJ96SAM64B79ZEQH09N0",
-      "last_transition_at": "2026-05-31T16:55:30.342105+00:00"
+      "force_count": 2,
+      "lane": "done",
+      "last_event_id": "01KSZGF2RT7M9BG6QB74M87CTG",
+      "last_transition_at": "2026-05-31T17:14:21.338593+00:00"
     },
     "WP04": {
       "actor": "user",
