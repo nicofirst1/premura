@@ -9,7 +9,7 @@ requirement_refs:
 - FR-016
 planning_base_branch: master
 merge_target_branch: master
-branch_strategy: Planning artifacts were generated on master; completed changes must merge back into master. Execution worktrees are allocated per computed lane from lanes.json after finalize-tasks.
+branch_strategy: Planning artifacts for this feature were generated on master. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into master unless the human explicitly redirects the landing branch.
 subtasks:
 - T020
 - T021
@@ -122,6 +122,78 @@ uv run pytest -q
 ```
 
 If any failure is pre-existing or unrelated, call it out explicitly. Do not silently skip a gate. If a gate is too slow or unavailable in the environment, explain that in the handoff.
+
+## Live Doc Sync Checklist
+
+Use this checklist while editing docs:
+
+- `STATUS.md` should say what is true today after the mission, including exact MCP surface counts if trace tools changed them.
+- `STAGES.md` should describe the trace as MCP-boundary provenance and should not imply the engine became stateful.
+- `ROADMAP.md` should move reproducible trace/multiplicity disclosure out of the deferred bucket only if WP03 actually shipped it.
+- `FULL_APP_DEVELOPMENT_PLAN.md` should keep Phase 3 coherent: trace shipped, audit skill deferred, PubMed and remaining deterministic tools still separate unless other missions changed them.
+- Mission contracts should match implementation names and fields.
+- Quickstart should be runnable in spirit by an implementer/reviewer, even if MCP test harness details differ.
+
+## Required Wording Rules
+
+Use these terms consistently:
+
+- `research trace` or `session research trace` for the ledger.
+- `user-facing findings` for surfaced results.
+- `unique hypotheses examined` for `N`.
+- `raw analytical calls` for the separate raw count.
+- `surfaced unavailable` when no marks exist.
+- `audit skill deferred` for the follow-on interpretation work.
+
+Avoid these claims:
+
+- Do not say `significant results`.
+- Do not say Premura computes multiplicity-corrected statistics.
+- Do not say the audit skill shipped.
+- Do not imply trace data is health facts.
+- Do not imply Markdown is the canonical record.
+
+## Known Drift Risks
+
+This repo recently had stale spots where one live doc updated and another did not. Explicitly check:
+
+- STAGES §3 tool enumeration and future-work wording.
+- STATUS MCP surface counts and test/metric counts if touched by implementation.
+- ROADMAP Phase 3 deferred/open list.
+- FULL_APP current-starting-point language, not only the Phase 3 block.
+
+If code adds three trace tools to both default and operator surfaces, docs and tests should reflect the new counts. If implementation uses fewer or differently named tools, docs should reflect the actual surface, not the planning examples.
+
+## Validation Notes Format
+
+At handoff, include a concise validation block. Example:
+
+```text
+Validation:
+- uv run ruff check .: passed
+- uv run ruff format --check .: passed
+- uv run mypy src/premura: passed
+- uv run pytest -q: passed
+```
+
+If something fails:
+
+```text
+Validation:
+- uv run pytest -q: failed in unrelated pre-existing test X; trace-specific tests passed with ...
+```
+
+Do not hide failures. The charter allows calling out pre-existing failures; it does not allow silent skips.
+
+## Acceptance Coverage
+
+This WP contributes to:
+
+- FR-013 by keeping the audit-consumer contract synchronized.
+- FR-014 by keeping generated export semantics clear.
+- FR-016 by updating live reference docs.
+
+It also protects review quality by making sure the shipped state can be understood without spelunking through code.
 
 ## Test Strategy
 

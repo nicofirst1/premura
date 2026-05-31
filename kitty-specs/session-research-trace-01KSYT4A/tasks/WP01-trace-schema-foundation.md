@@ -8,7 +8,7 @@ requirement_refs:
 - FR-004
 planning_base_branch: master
 merge_target_branch: master
-branch_strategy: Planning artifacts were generated on master; completed changes must merge back into master. Execution worktrees are allocated per computed lane from lanes.json after finalize-tasks.
+branch_strategy: Planning artifacts for this feature were generated on master. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into master unless the human explicitly redirects the landing branch.
 subtasks:
 - T001
 - T002
@@ -125,6 +125,75 @@ When finishing this WP, note any deliberate schema choices for downstream implem
 - Whether compact result summaries are allowed in `trace.tool_result` or only hashes.
 
 Do not edit docs in this WP. Put handoff notes in the WP completion summary.
+
+## Schema Design Guidance
+
+Prefer the smallest schema that can support the later trace service without forcing a rewrite. The tables should support three questions efficiently:
+
+1. What happened in this research session?
+2. How many unique hypotheses were examined after deduplicating exact retries?
+3. Which recorded calls were explicitly marked as surfaced?
+
+Suggested table responsibilities:
+
+- Session table: groups calls and carries warehouse context.
+- Call table: stores the measured analytical attempt and the normalized identity used for `N`.
+- Result table: stores a compact reference for available calls.
+- Surfaced mark table: stores presentation-layer marks.
+
+Keep disclosure as a derived query. Do not add a mutable `trace.disclosure` table in this WP because it can drift from the canonical rows and would create a second source of truth.
+
+## Column-Level Notes
+
+Use types that match the existing migration style. Likely choices:
+
+- Identifiers as `VARCHAR`.
+- Timestamps as `TIMESTAMP` or the timestamp type used elsewhere in the warehouse.
+- Hashes as `VARCHAR`.
+- Normalized identity as canonical JSON text or a stable text key.
+- Optional compact summaries as JSON text only if DuckDB support and project style make that straightforward.
+
+Do not store raw analytical input series, raw paired observations, or raw health rows. The trace is provenance over tool use; it should reference requests/results compactly rather than duplicating personal data.
+
+## Idempotence Expectations
+
+Follow the existing migration pattern. The migration should be safe when warehouse initialization is called multiple times.
+
+Tests should catch:
+
+- Re-running migrations does not fail.
+- Re-running migrations does not duplicate schema objects in a way that changes queries.
+- Existing `hp.*` tables remain available.
+
+If DuckDB lacks `CREATE SCHEMA IF NOT EXISTS` or a specific DDL feature in the project-supported version, copy the approach used by nearby migrations rather than inventing a separate migration runner.
+
+## Append-Only Interpretation
+
+This WP does not need to solve every append-only rule with SQL triggers. It should set the schema up so the public service in WP02 can enforce normal-operation append-only behavior.
+
+Acceptable in this WP:
+
+- A call row may have nullable terminal fields if WP02 decides to insert before dispatch and finish after dispatch.
+- Primary keys prevent accidental duplicate identities for the same row.
+- Foreign keys keep marks/results attached to recorded calls.
+
+Not acceptable:
+
+- A mutable aggregate table that stores current counts.
+- A design where surfaced status overwrites the call row instead of appending a mark.
+- Any `hp.*` table that exists solely for trace/audit provenance.
+
+## Acceptance Coverage
+
+This WP contributes to:
+
+- FR-001 by providing durable session storage.
+- FR-002 by providing durable call storage.
+- FR-004 by providing durable result/refusal storage homes.
+- NFR-002 by proving `trace.*` is separate from `hp.*`.
+- NFR-003 by shaping storage toward append-only operation.
+
+It does not complete the functional user-facing trace by itself. WP02 and WP03 complete that behavior.
 
 ## Test Strategy
 
