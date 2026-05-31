@@ -33,6 +33,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
+from .. import trace
 from . import server as warehouse_server
 
 JsonScalar = str | int | float | bool | None
@@ -41,6 +42,129 @@ JsonScalar = str | int | float | bool | None
 #: lower-guarantee operator mode instead of passing ``--ack`` on the CLI.
 _OPERATOR_ACK_ENV = "PREMURA_OPERATOR_ACK"
 _TRUTHY = frozenset({"1", "true", "yes", "on"})
+
+
+def _refusal_reason_of(payload: dict[str, Any]) -> str:
+    """Pull the engine's machine-readable refusal reason out of an analytical payload.
+
+    The analytical wrappers return ``{"status": ..., "result": <engine envelope>}``;
+    a refusal carries ``result.refusal.reason``. Falls back to a generic marker so a
+    refused call is always recorded with *some* reason (a refused trace row must
+    carry a reason — see :func:`premura.trace.finish_recorded_call`).
+    """
+    result = payload.get("result")
+    if isinstance(result, dict):
+        refusal = result.get("refusal")
+        if isinstance(refusal, dict):
+            reason = refusal.get("reason")
+            if isinstance(reason, str) and reason.strip():
+                return reason
+    return "refused"
+
+
+def _trace_meta_of(value: object) -> dict[str, Any] | None:
+    """Render a trace start/finish outcome into a JSON-safe wrapper ``trace`` object.
+
+    Returns the wrapper-layer trace metadata (``session_id``/``call_id``/
+    ``result_id`` on success, or a structured error) — NEVER injected into the
+    engine envelope. ``None`` means "no metadata to attach" (no session supplied).
+    """
+    if value is None:
+        return None
+    if isinstance(value, trace.TraceError):
+        return {
+            "status": value.status,
+            "message": value.message,
+            **({"field": value.field} if value.field else {}),
+        }
+    if isinstance(value, trace.PendingCall):
+        return {"session_id": value.session_id, "call_id": value.call_id}
+    if isinstance(value, trace.RecordedCall):
+        meta: dict[str, Any] = {
+            "session_id": value.session_id,
+            "call_id": value.call_id,
+            "terminal_status": value.terminal_status,
+        }
+        if value.result_ref is not None:
+            meta["result_id"] = value.result_ref.result_id
+        return meta
+    return None
+
+
+def _dispatch_analytical_with_trace(
+    *,
+    warehouse_path: Path | None,
+    tool_name: str,
+    session_id: str | None,
+    request: dict[str, Any],
+    dispatch: Any,
+) -> dict[str, Any]:
+    """Dispatch an analytical wrapper, mechanically recording it iff a session is given.
+
+    Opt-in by explicit session association (FR-002, FR-015 / NFR-001):
+
+    * **No ``session_id``** — behavior is exactly as today: call ``dispatch()`` and
+      return the engine envelope verbatim. No trace row is written and the response
+      shape is byte-identical to the untraced path.
+    * **With ``session_id``** — record the call BEFORE dispatch
+      (:func:`premura.trace.start_recorded_call`), dispatch UNCHANGED, then finalize
+      AFTER dispatch with the engine's own ``available``/``refused`` verdict (an
+      uncaught dispatch error finalizes as ``error`` and re-raises). The engine
+      envelope is returned untouched; the recorded-call references are attached only
+      at the WRAPPER layer under a top-level ``trace`` key, so the envelope stays
+      byte-identical with tracing on vs off (T016 / NFR-001).
+
+    ``request`` is the analytical request kwargs as the wrapper received them; the
+    per-tool identity registry in ``premura.trace`` normalizes them, so the wrapper
+    passes them straight through (exact retries collapse to one hypothesis there).
+    """
+    if not session_id:
+        # Untraced fast path — identical to pre-WP03 behavior, no trace key added.
+        return dispatch()
+
+    # Record BEFORE dispatch, but do NOT hold the trace's writable connection open
+    # across the dispatch: the analytical wrapper opens its OWN read-only DuckDB
+    # connection to the same warehouse file, and DuckDB refuses concurrent
+    # read-only + read-write handles to one file in a single process. So the two
+    # short-lived writable trace connections (start, then finish) bracket the
+    # dispatch without ever overlapping its read-only handle. The logical order
+    # (record → dispatch → finalize) is preserved.
+    with warehouse_server._open_warehouse_writable(warehouse_path) as conn:
+        pending = trace.start_recorded_call(conn, session_id, tool_name, request)
+    if isinstance(pending, trace.TraceError):
+        # Could not start recording (e.g. unknown session). Do NOT swallow the
+        # analytical answer: dispatch anyway and surface the trace problem beside
+        # the untouched envelope.
+        payload = dispatch()
+        payload["trace"] = _trace_meta_of(pending)
+        return payload
+
+    try:
+        payload = dispatch()
+    except Exception:
+        with warehouse_server._open_warehouse_writable(warehouse_path) as conn:
+            trace.finish_recorded_call(
+                conn, pending, terminal_status=trace.STATUS_ERROR, error_kind="dispatch_error"
+            )
+        raise
+
+    with warehouse_server._open_warehouse_writable(warehouse_path) as conn:
+        if payload.get("status") == "refused":
+            recorded = trace.finish_recorded_call(
+                conn,
+                pending,
+                terminal_status=trace.STATUS_REFUSED,
+                refusal_reason=_refusal_reason_of(payload),
+            )
+        else:
+            recorded = trace.finish_recorded_call(
+                conn,
+                pending,
+                terminal_status=trace.STATUS_AVAILABLE,
+                result=payload.get("result"),
+            )
+    payload["trace"] = _trace_meta_of(recorded)
+    return payload
 
 
 def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> None:
@@ -150,7 +274,11 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
     # request returns a structured refusal with a distinct reason and no estimate.
 
     @mcp.tool()
-    def change_point(metric_id: str, min_side_observations: int | None = None) -> dict[str, Any]:
+    def change_point(
+        metric_id: str,
+        min_side_observations: int | None = None,
+        session_id: str | None = None,
+    ) -> dict[str, Any]:
         """Detect whether and when one metric shifted to a new level.
 
         Reports the most prominent single level shift in the metric's recent
@@ -159,11 +287,21 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
         p-value or significance claim. Stale, inadmissible, insufficient, or
         out-of-bounds requests return a structured refusal with a distinct
         reason and no estimate.
+
+        Pass the optional ``session_id`` from ``research_trace_open`` to record
+        this call in a research session's multiplicity trace; without it the tool
+        behaves exactly as before and writes no trace row.
         """
-        return warehouse_server.change_point(
-            metric_id,
-            min_side_observations=min_side_observations,
+        return _dispatch_analytical_with_trace(
             warehouse_path=warehouse_path,
+            tool_name="change_point",
+            session_id=session_id,
+            request={"metric_id": metric_id, "min_side_observations": min_side_observations},
+            dispatch=lambda: warehouse_server.change_point(
+                metric_id,
+                min_side_observations=min_side_observations,
+                warehouse_path=warehouse_path,
+            ),
         )
 
     @mcp.tool()
@@ -171,6 +309,7 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
         metric_id: str,
         window: int | None = None,
         min_coverage: float | None = None,
+        session_id: str | None = None,
     ) -> dict[str, Any]:
         """Summarize one metric's recent pattern with a conservative trailing average.
 
@@ -180,12 +319,22 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
         observations, not a forecast, and implies no statistical significance.
         Stale, inadmissible, insufficient, or out-of-bounds requests return a
         structured refusal with a distinct reason and no estimate.
+
+        Pass the optional ``session_id`` from ``research_trace_open`` to record
+        this call in a research session's multiplicity trace; without it the tool
+        behaves exactly as before and writes no trace row.
         """
-        return warehouse_server.smoothed_average(
-            metric_id,
-            window=window,
-            min_coverage=min_coverage,
+        return _dispatch_analytical_with_trace(
             warehouse_path=warehouse_path,
+            tool_name="smoothed_average",
+            session_id=session_id,
+            request={"metric_id": metric_id, "window": window, "min_coverage": min_coverage},
+            dispatch=lambda: warehouse_server.smoothed_average(
+                metric_id,
+                window=window,
+                min_coverage=min_coverage,
+                warehouse_path=warehouse_path,
+            ),
         )
 
     # --- Stage 3 pre-registered lagged association (WP04) ---------------- #
@@ -206,6 +355,7 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
         expected_direction: str,
         lag_justification: str | None = None,
         common_cause_candidates: list[str] | None = None,
+        session_id: str | None = None,
     ) -> dict[str, Any]:
         """Report a pre-registered lagged association between two daily metrics.
 
@@ -225,15 +375,32 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
         best pair, or a cause. Inadmissible, no-overlap, weak-support, or
         unsupported-lag requests return a structured refusal with a distinct
         reason and no estimate.
+
+        Pass the optional ``session_id`` from ``research_trace_open`` to record
+        this pre-registered hypothesis in a research session's multiplicity trace;
+        without it the tool behaves exactly as before and writes no trace row.
         """
-        return warehouse_server.correlate(
-            left_metric_id,
-            right_metric_id,
-            lag_days=lag_days,
-            expected_direction=expected_direction,
-            lag_justification=lag_justification,
-            common_cause_candidates=common_cause_candidates,
+        return _dispatch_analytical_with_trace(
             warehouse_path=warehouse_path,
+            tool_name="correlate",
+            session_id=session_id,
+            request={
+                "left_metric_id": left_metric_id,
+                "right_metric_id": right_metric_id,
+                "lag_days": lag_days,
+                "expected_direction": expected_direction,
+                "lag_justification": lag_justification,
+                "common_cause_candidates": common_cause_candidates,
+            },
+            dispatch=lambda: warehouse_server.correlate(
+                left_metric_id,
+                right_metric_id,
+                lag_days=lag_days,
+                expected_direction=expected_direction,
+                lag_justification=lag_justification,
+                common_cause_candidates=common_cause_candidates,
+                warehouse_path=warehouse_path,
+            ),
         )
 
     # --- Agent-mediated profile capture (WP03) --------------------------- #
@@ -279,6 +446,79 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
             notes=notes,
             warehouse_path=warehouse_path,
         )
+
+    # --- Session research trace (WP03, mission session-research-trace) --------- #
+    # These three tools expose the multiplicity-disclosure trace as the SUPPORTED
+    # agent workflow, so they live on the DEFAULT agent-safe surface (the operator
+    # surface inherits them by registering this same default set). They orchestrate
+    # the pure ``premura.trace`` service over a writable warehouse connection; they
+    # compute no statistics and read no raw ``hp.*`` health rows. The disclosure
+    # tool returns derived counts only — it never reaches for ``query_warehouse``.
+
+    @mcp.tool()
+    def research_trace_open(client_label: str | None = None) -> dict[str, Any]:
+        """Open an explicit research session and return a stable ``session_id``.
+
+        Pass the returned ``session_id`` to ``change_point`` / ``smoothed_average``
+        / ``correlate`` to record each analytical call, then to
+        ``research_trace_mark_surfaced`` and ``research_trace_disclosure``. The
+        optional ``client_label`` is a short label for the operating agent/client.
+        Returns the session id plus the warehouse fingerprint and schema version the
+        disclosure will be computed against.
+        """
+        with warehouse_server._open_warehouse_writable(warehouse_path) as conn:
+            session = trace.open_research_session(conn, client_label=client_label)
+            return session.to_dict()
+
+    @mcp.tool()
+    def research_trace_mark_surfaced(
+        session_id: str,
+        call_id: str,
+        role: str,
+        rationale: str,
+    ) -> dict[str, Any]:
+        """Mark a recorded analytical call as used in the user-facing answer.
+
+        ``role`` describes how the result was used (e.g. ``claim``, ``summary``,
+        ``recommendation``, ``next_step``, ``caveat``) and ``rationale`` is a short
+        explanation. "Surfaced" is an explicit agent presentation mark — never a
+        significance judgment. An unknown session/call returns ``not_found``; a
+        ``call_id`` from a different session returns ``invalid_reference``; an empty
+        ``role``/``rationale`` returns a validation error.
+        """
+        with warehouse_server._open_warehouse_writable(warehouse_path) as conn:
+            outcome = trace.mark_surfaced(conn, session_id, call_id, role, rationale)
+            if isinstance(outcome, trace.TraceError):
+                return outcome.to_dict()
+            return {**outcome.to_dict(), "status": outcome.status, "session_id": session_id}
+
+    @mcp.tool()
+    def research_trace_disclosure(
+        session_id: str,
+        format: str = "json",
+        include_calls: bool = True,
+    ) -> dict[str, Any]:
+        """Read/export a research session's measured multiplicity disclosure.
+
+        Reports the raw analytical-call count and the unique-hypothesis count (N)
+        derived from the recorded rows (exact retries collapse; refusals still
+        count toward N), the surfaced (K) summary, the refusal breakdown, and a
+        bounded list of stable call/result references — framed as "K user-facing
+        findings among N unique hypotheses examined", never "significant results".
+        ``format="markdown"`` returns a generated human-readable export beside the
+        structured counts. An unknown session returns an explicit ``not_found``,
+        not an empty successful disclosure.
+        """
+        with warehouse_server._open_warehouse_writable(warehouse_path) as conn:
+            disclosure = trace.get_research_disclosure(
+                conn, session_id, include_calls=include_calls
+            )
+            if isinstance(disclosure, trace.TraceError):
+                return disclosure.to_dict()
+            payload = disclosure.to_dict()
+            if format == "markdown":
+                payload["disclosure_markdown"] = trace.disclosure_to_markdown(disclosure)
+            return payload
 
 
 def build_server(*, warehouse_path: Path | None = None) -> FastMCP:

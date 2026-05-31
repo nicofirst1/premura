@@ -34,8 +34,8 @@ These are descriptive/comparative only — no reference ranges, no diagnosis, no
 
 **Stage 3 — two entrypoints, clean boundary.** `src/premura/mcp/` ships two entrypoints:
 
-- **Default agent surface (`premura-mcp`)** — thirteen tools: two validity-gated catalog/summary helpers (`list_metrics`, `metric_summary`) that delegate entirely to the Stage 2 engine, the six signal-backed tools listed above, two agent-mediated profile-capture tools (`profile_context_supported_fields`, `profile_context_record`), and the three Stage 3 analytical tools (`change_point`, `smoothed_average`, `correlate` — see "Stage 3 analytical tools" below). No tool on this surface reads `hp.*` directly; catalog/signal access goes through the engine and profile capture goes through the bounded `record_profile_context` store boundary. This is the fully validity-gated / bounded default path.
-- **Operator surface (`premura-mcp-operator`)** — all thirteen default tools plus `query_warehouse` (raw SQL escape hatch). Lower-guarantee: `query_warehouse` returns raw rows without Stage 2 validity, freshness, or imputation guarantees. Agent use requires explicit user approval, enforced by surface separation plus an explicit launch acknowledgment (`--ack` / `PREMURA_OPERATOR_ACK`) the operator entrypoint demands before exposing the raw-SQL tool.
+- **Default agent surface (`premura-mcp`)** — sixteen tools: two validity-gated catalog/summary helpers (`list_metrics`, `metric_summary`) that delegate entirely to the Stage 2 engine, the six signal-backed tools listed above, two agent-mediated profile-capture tools (`profile_context_supported_fields`, `profile_context_record`), the three Stage 3 analytical tools (`change_point`, `smoothed_average`, `correlate` — see "Stage 3 analytical tools" below), and the three session research trace tools (`research_trace_open`, `research_trace_mark_surfaced`, `research_trace_disclosure` — see "Session research trace" below). No tool on this surface reads `hp.*` directly; catalog/signal access goes through the engine, profile capture goes through the bounded `record_profile_context` store boundary, and the trace tools read only derived `trace.*` rows. This is the fully validity-gated / bounded default path.
+- **Operator surface (`premura-mcp-operator`)** — all sixteen default tools plus `query_warehouse` (raw SQL escape hatch), for seventeen total. Lower-guarantee: `query_warehouse` returns raw rows without Stage 2 validity, freshness, or imputation guarantees. Agent use requires explicit user approval, enforced by surface separation plus an explicit launch acknowledgment (`--ack` / `PREMURA_OPERATOR_ACK`) the operator entrypoint demands before exposing the raw-SQL tool.
 
 The signal-backed tools return a structured payload whose `status` is `available` / `missing_input` / `stale_input` / `insufficient_data`. When an answer is unavailable the payload's `message` carries the signal's authored missing-input guidance, and `missing_input` / `stale_input` responses attach a structured `missing_input` report (`required_inputs` / `missing_inputs` / `stale_inputs`) a caller can branch on.
 
@@ -89,7 +89,8 @@ records the design.
   `smoothed_average` (conservative trailing smoothed pattern), and `correlate`
   (the pre-registered, lagged *association* tool — see "Correlation as a
   pre-registered lagged association" below). All three are exposed through
-  `premura-mcp` (the default validity-gated surface, now **thirteen** tools),
+  `premura-mcp` (the default validity-gated surface — **sixteen** tools once the
+  three session research trace tools landed),
   delegate entirely to the engine, perform no statistics in the MCP layer, and
   **name no cause** — no causation, diagnosis, or treatment claims.
 - **Analytical question types are first-class.** Each tool routes to its own
@@ -145,11 +146,59 @@ statistical choices are settled in
   than show a confident-looking spurious association.
 
 **Explicitly not shipped (still Phase 3 follow-on):** the remaining deterministic
-stats (`paired_t_test`, `rolling_mean`), PubMed grounding, and the session-scoped
-reproducible research trace / multiplicity audit (the per-session test ledger
-that design decision note `0008` pushes to a *following* mission). `change_point`,
-`smoothed_average`, and `correlate` are the shipped tools over the now-stable
-analytical contract; the rest are future missions.
+stats (`paired_t_test`, `rolling_mean`), PubMed grounding, and the **audit skill**
+(the follow-on interpretation work that would read the trace's audit-consumer
+contract and judge whether a final answer disclosed its search effort). The
+session research trace / multiplicity disclosure itself **has now shipped** — see
+"Session research trace" below. `change_point`, `smoothed_average`, and
+`correlate` are the shipped analytical tools over the now-stable analytical
+contract; the rest are future missions.
+
+## Session research trace and multiplicity disclosure (shipped 2026-05-31)
+
+The `session-research-trace-01KSYT4A` mission landed the **session research
+trace**: an explicit, append-only ledger at the MCP boundary that records the
+analytical calls an agent dispatches in a research session and derives a
+*measured* multiplicity disclosure. Its locked architecture is design decision
+note [`0009`](../adr/0009-session-research-trace-and-multiplicity-disclosure.md).
+The stateful trace lives in `src/premura/trace.py` (a pure, MCP-agnostic,
+engine-agnostic service) over `trace.*` tables added by migration
+`005_trace_audit.sql`; the analytical **engine stayed pure and
+stateless** — recording happens *around* dispatch, never inside it.
+
+- **Explicit session lifecycle.** `research_trace_open(client_label=None)` opens
+  a session and returns a stable `session_id` plus the warehouse fingerprint and
+  schema version the disclosure is computed against. The three trace tools live
+  on the **default** agent-safe surface because the trace IS the supported agent
+  workflow.
+- **Opt-in, byte-identical recording.** Each analytical tool (`change_point`,
+  `smoothed_average`, `correlate`) gained an optional `session_id`. Passing it
+  records the call and attaches a top-level `trace` object **beside** the
+  unchanged engine envelope; omitting it writes no trace row and returns a
+  byte-identical envelope. Trace metadata never enters the engine output.
+- **Measured multiplicity disclosure.** `research_trace_disclosure(session_id,
+  format="json", include_calls=True)` derives the raw analytical-call count and
+  the **unique hypotheses examined** (N) from the recorded rows — exact retries
+  collapse to one hypothesis, refusals still count toward N. The framing is
+  "K user-facing findings among N unique hypotheses examined"; it never says
+  "significant results" and Premura computes **no** multiplicity-corrected
+  statistics. JSON is the default; a `markdown` export is generated on demand and
+  is **not** the canonical record.
+- **Surfaced is an explicit agent mark.** `research_trace_mark_surfaced(session_id,
+  call_id, role, rationale)` records which recorded calls the agent actually used
+  in the user-facing answer. When a session has calls but no marks, the surfaced
+  count is reported **surfaced unavailable** with an explicit message, never a
+  guessed `0`.
+- **Provenance, not health facts.** The trace stores only call/result references,
+  hashes, and a bounded validity-metadata summary — never raw `hp.*` health rows.
+  The audit-consumer contract (`kitty-specs/session-research-trace-01KSYT4A/contracts/audit-consumer-contract.md`)
+  is the stable structured surface a later audit skill will read.
+
+**Audit skill deferred.** The follow-on **audit skill** — the interpretation
+work that would read the audit-consumer contract and decide whether a final
+answer disclosed its search effort, hid refused calls, or overclaimed — is **not
+shipped**; it remains a following mission. This mission ships the measured trace
+and the stable contract the audit skill will consume, not the judgment itself.
 
 ## What's working end-to-end
 
@@ -167,7 +216,7 @@ analytical contract; the rest are future missions.
 | Export artifact encryption | ✅ | Live round-trip verified 2026-05-21 against `~/.config/premura/age.key`; decrypted snapshot byte-identical to `data/duck/health.duckdb` (`diff` empty). Per-test keypair regression in `tests/test_encrypt_roundtrip.py`. |
 | Drive upload (now OPT-IN, not auto) | ⚠️ Code complete, not live | `hpipe upload` only runs on explicit invocation. `run-monthly` no longer pushes to Drive — it stops after the encrypted artifact lands locally. |
 | Launchd plist | ✅ | Bootstrapped 2026-05-21 (`com.nbrandizzi.premura.monthly`). `kickstart` fired the macOS notification, `run-monthly` reached the `_wait_for_ready` loop without ingesting (no `.ready`), exited cleanly on SIGTERM. Plist render covered by `tests/test_launchd_plist.py` (incl. `plutil -lint`). |
-| Tests | ✅ | 573/573 pytest pass, incl. a real-data HC regression that round-trips ~900k rows, the FR-6 `age` round-trip suite, FR-8 plist render + `plutil -lint`, full Stage 2 engine + Stage 3 signal-tool coverage (all six signal-backed tools end-to-end), the profile/intake contract harness, profile capture append/supersede + allowlist enforcement, idempotent intake-batch loading, the Stage 2 input-resolution seam + BMI proof-consumer coverage, the evidence-admissibility policy layer, the Stage 3 analytical contract + `change_point`/`smoothed_average` end-to-end (admissibility gate, result envelope, closed confound vocabulary, first-class analytical question types), and the `correlate` lagged-association tool end-to-end (paired-input preparation, same-day-after-lag pairing, Spearman + `N_eff` band, paired-sample floor refusals, forbidden-parameter refusals, `common_cause_plausible`, and the thin MCP wrapper). |
+| Tests | ✅ | 631/631 pytest pass, incl. a real-data HC regression that round-trips ~900k rows, the FR-6 `age` round-trip suite, FR-8 plist render + `plutil -lint`, full Stage 2 engine + Stage 3 signal-tool coverage (all six signal-backed tools end-to-end), the profile/intake contract harness, profile capture append/supersede + allowlist enforcement, idempotent intake-batch loading, the Stage 2 input-resolution seam + BMI proof-consumer coverage, the evidence-admissibility policy layer, the Stage 3 analytical contract + `change_point`/`smoothed_average` end-to-end (admissibility gate, result envelope, closed confound vocabulary, first-class analytical question types), the `correlate` lagged-association tool end-to-end (paired-input preparation, same-day-after-lag pairing, Spearman + `N_eff` band, paired-sample floor refusals, forbidden-parameter refusals, `common_cause_plausible`, and the thin MCP wrapper), and the session research trace end-to-end (the `005_trace_audit.sql` migration + `trace.*` ownership, the pure `premura.trace` service — raw-vs-N counting, exact-retry collapse, refusal breakdown, surfaced-unavailable fallback, engine-purity byte-identical envelopes — and the three trace MCP tools on the default/operator surfaces). |
 
 ## Warehouse contents (current snapshot)
 

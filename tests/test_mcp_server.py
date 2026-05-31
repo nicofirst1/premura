@@ -173,6 +173,8 @@ def test_metric_summary_rejects_blank_metric_id(tmp_path: Path) -> None:
 # the same default surface.
 # WP04 (correlate mission): the pre-registered lagged-association tool
 # ``correlate`` joins the same default surface (twelve -> thirteen tools).
+# session-research-trace WP03: the three trace tools join the same default
+# surface (the trace IS the supported agent workflow), thirteen -> sixteen.
 _DEFAULT_TOOLS = sorted(
     [
         "list_metrics",
@@ -188,6 +190,9 @@ _DEFAULT_TOOLS = sorted(
         "change_point",
         "smoothed_average",
         "correlate",
+        "research_trace_open",
+        "research_trace_mark_surfaced",
+        "research_trace_disclosure",
     ]
 )
 

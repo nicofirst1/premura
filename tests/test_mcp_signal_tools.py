@@ -31,6 +31,8 @@ from premura.store import duck
 # the same default surface.
 # The correlate mission's WP04 adds ``correlate`` (now thirteen default tools;
 # the ``_EIGHT_`` name predates the later additions and is kept stable).
+# session-research-trace WP03 adds the three trace tools to the same surface
+# (the ``_EIGHT_`` name predates every later addition and is kept stable).
 _EIGHT_DEFAULT_TOOLS = sorted(
     [
         "list_metrics",
@@ -46,6 +48,9 @@ _EIGHT_DEFAULT_TOOLS = sorted(
         "change_point",
         "smoothed_average",
         "correlate",
+        "research_trace_open",
+        "research_trace_mark_surfaced",
+        "research_trace_disclosure",
     ]
 )
 
