@@ -229,3 +229,4 @@ Reviewers should focus on schema meaning and future compatibility. The exact col
 ## Activity Log
 
 - 2026-05-31T11:08:31Z – claude:opus:python-implementer:implementer – shell_pid=86708 – Assigned agent via action command
+- 2026-05-31T11:16:32Z – claude:opus:python-implementer:implementer – shell_pid=86708 – Ready for review: trace.* schema migration + ownership/idempotence/append-only-shape tests, all green (10 trace + 6 schema/store = 16 passed)
