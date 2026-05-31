@@ -18,7 +18,8 @@ subtasks:
 - T003
 - T004
 - T005
-shell_pid: '86708'
+shell_pid: "86708"
+agent: "claude:opus:python-implementer:implementer"
 history:
 - timestamp: '2026-05-31T10:54:25Z'
   agent: opencode
@@ -224,3 +225,7 @@ uv run pytest tests/test_schema_regression.py tests/test_store.py tests/test_tra
 ## Reviewer Guidance
 
 Reviewers should focus on schema meaning and future compatibility. The exact column types can be pragmatic, but the boundary cannot drift: tool-use provenance is not health data.
+
+## Activity Log
+
+- 2026-05-31T11:08:31Z – claude:opus:python-implementer:implementer – shell_pid=86708 – Assigned agent via action command
