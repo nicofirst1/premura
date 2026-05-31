@@ -1,0 +1,140 @@
+# Implement-Review Drift Audit — Methodology
+
+> Status: live reference. A reusable method for auditing a completed
+> spec-kitty implement-review session to find **why** drift or risk reached the
+> merged record — not just that it did.
+>
+> Companion to the post-merge `spec-kitty-mission-review` (which finds *what*
+> drifted). This doc finds the *cause* and the *missing control*. Read
+> [`docs/product/DOCTRINE.md`](../product/DOCTRINE.md) first — this methodology
+> is itself written a level above (a bounded dimension registry with a rule for
+> adding to it, not a fixed checklist).
+
+## Why this exists (agent-first)
+
+Premura is operated and extended by AI agents through the spec-kitty
+implement→review→merge loop. When a mission-review later finds a drift (a
+fictional identifier, stale metadata, an unmet measurable requirement), the
+useful question is not "fix it" but **"which control in the pipeline should have
+caught this, and why didn't it?"** Answering that turns a one-off fix into a
+durable improvement to the prompts, contracts, and review scope every future
+mission inherits.
+
+The recurring lesson behind every drift found so far: **per-WP review verifies
+local correctness and data-contract consistency, but the pipeline has no step
+that verifies cross-*system* fidelity, reconciles frozen metadata after a gating
+decision, or owns a mission-level measurable requirement that no single WP
+owns.** Drift survives precisely in the gaps *between* WP scopes and *between* a
+WP and the production system.
+
+## When to run
+
+- After a `spec-kitty-mission-review` returns **PASS WITH NOTES** (or worse) —
+  audit each note to its cause.
+- Periodically across several merged missions, to find a *class* of drift the
+  prompts/contracts keep re-admitting.
+- Any time a reviewer accepts a "justified deviation" — a deviation that is
+  correct but unreconciled is a drift signal, not a closed item.
+
+## Inputs
+
+For the mission(s) under audit, gather:
+
+- `kitty-specs/<mission>/spec.md`, `plan.md`, `quickstart.md`, `contracts/`,
+  `data-model.md`, `lanes.json`, `tasks.md`.
+- Every `tasks/WP*.md` (frontmatter `requirement_refs` / `owned_files` and body).
+- Every `tasks/WP*/review-cycle-*.md` and `status.events.jsonl`.
+- The merge commit and the per-WP diffs (`git show`, `git log --oneline`).
+- The **production surfaces** the artifacts claim to describe (e.g. the live MCP
+  tool registry in `src/premura/mcp/entrypoint.py`, store boundaries, migrations).
+
+## The audit procedure — trace every finding to its missing control
+
+For each drift/risk from the mission-review (or each you discover), produce a
+finding by tracing it through five questions. Do not stop at the symptom.
+
+1. **Introduction** — Where and when did it enter? (Which WP, which commit.) Did
+   the WP *prompt/contract create the gap* (no authoritative source named) or did
+   the implementer deviate despite guidance? Quote the prompt/contract lines.
+2. **Controls that should have fired** — Walk the pipeline the artifact passed
+   through: WP prompt validation block → contract constraints → per-WP review
+   checklist → fix-cycle re-review → merge gate. Name each control it passed.
+3. **Why each missed** — For every control in step 2, state the specific reason
+   it did not catch the drift (out of scope, no enum/registry pin, frozen
+   artifact, no owning WP, qualitative-not-measurable check).
+4. **The missing control** — Name the single check that would have caught it and
+   the *exact* place it should fire (a named prompt section, a contract field
+   constraint, a review dimension, or a new reconciliation/acceptance gate).
+5. **Generalizable lesson** — State the *class* of drift, so the fix generalizes
+   beyond this instance. Map it to a dimension in the registry below (or add one).
+
+Ground every claim with `file:line` + commit hashes. A finding with no evidence
+index is not done.
+
+## Drift-dimension registry (bounded — extend by the rule, don't enumerate)
+
+Each dimension is a *lens* on where drift hides between scopes. Seeded from real
+findings; **add a dimension via the rule at the end** rather than treating this
+list as closed.
+
+### D1 — Cross-system identifier fidelity
+- **Checks:** every identifier in test data / fixtures / examples that names a
+  *real-system* thing (tool name, metric id, route, CLI verb, schema key,
+  config flag) resolves to the production source that actually emits it.
+- **Originates:** synthetic test data authored against a *data contract* that
+  types the field as a bare `string` with no registry pin.
+- **Catching control:** a review step (or test) asserting `identifier ∈ live
+  registry`. Trace the field to the production code, not just to a schema.
+
+### D2 — Frozen-metadata reconciliation after a gating WP
+- **Checks:** a contingent/gated WP's `owned_files` / `write_scope` /
+  `requirement_refs` still match reality after the gating WP's
+  adopt/defer/reject outcome changed the downstream scope.
+- **Originates:** task artifacts are frozen at `tasks-finalize`, written
+  optimistically; a later gating WP invalidates a dependent's pre-written scope
+  and nothing regenerates it.
+- **Catching control:** a reconciliation gate at the boundary *after the gating
+  WP is approved and before its dependents dispatch* that re-validates the
+  dependents' metadata against the gate outcome. Treat a reviewer's "justified
+  deviation" as a *metadata-correction trigger*, not a wave-through.
+
+### D3 — Measurable NFR/SC ownership and evidence
+- **Checks:** every measurable non-functional requirement / success criterion
+  appears in some WP's `requirement_refs` **and** names a *committed* evidence
+  artifact in that WP's Definition of Done.
+- **Originates:** a measurable claim phrased as contract prose, an "independent
+  test," or a quickstart manual step — owned by no WP, self-executed by nothing.
+- **Catching control:** a decomposition gate at `/spec-kitty.tasks` mapping each
+  measurable NFR/SC to an owning WP + artifact; and a mission-acceptance gate
+  that demands the artifact before PASS, not qualitative satisfaction.
+
+### Rule for adding a dimension
+
+A new dimension is admissible iff it: (1) names a gap that lives **between** WP
+scopes, or **between** a WP and a production system, or **between** a WP and a
+mission-level requirement — i.e. somewhere no single per-WP review owns; (2)
+states where the drift *originates* and the *one control* that would catch it
+and where it fires; (3) is backed by at least one real finding (existing or new)
+that the dimension would have caught. A dimension that merely restates a
+per-WP local-correctness check (the thing review already does well) is **not**
+admissible — those are not where drift hides.
+
+## Output contract — what the results file must contain
+
+Write results to a dated file under `docs/history/audits/` (one per audited
+session or batch). It must contain:
+
+- The audited mission(s), merge commit, and the mission-review verdict.
+- One finding per drift, each with: drift, root cause(s), controls passed, why
+  each missed, the missing control + where it fires, the mapped/created
+  dimension, and an evidence index (`file:line` + commits).
+- The unifying root cause across findings (the between-the-scopes theme).
+- Remediation status per finding (fixed + commit, or open + owner).
+
+## Relationship to `spec-kitty-mission-review`
+
+Mission-review is the *detector* (spec→code fidelity, drift, risk, security on
+the merged result). This methodology is the *post-mortem*: it consumes
+mission-review's findings and asks why the loop admitted them, then proposes the
+control — usually a change to a WP prompt's validation block, a contract field
+constraint, or an added pipeline gate — so the next mission cannot repeat it.
