@@ -1,0 +1,10 @@
+{
+  "created_at": "2026-05-31T15:57:37.482763+00:00",
+  "friendly_name": "research trace audit skill",
+  "mission_id": "01KSZC2J8N2EE41AV1DT5R9HBY",
+  "mission_number": null,
+  "mission_slug": "research-trace-audit-skill-01KSZC2J",
+  "mission_type": "software-dev",
+  "slug": "research-trace-audit-skill-01KSZC2J",
+  "target_branch": "master"
+}
