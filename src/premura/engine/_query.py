@@ -21,7 +21,11 @@ Design rules honored here:
 * No schema changes. ``aggregate``/``instantaneous`` metrics are read from
   ``hp.fact_measurement``; ``interval`` metrics from ``hp.fact_interval``.
 * All warehouse timestamps are timezone-naive UTC (DuckDB ``TIMESTAMP``), so we
-  compare against a naive-UTC "now" consistently.
+  compare against a naive-UTC "now" consistently. Freshness and window/bucket
+  math stay naive-UTC throughout. Each row's ``local_tz`` descriptor is now
+  carried alongside ``ts`` (without altering any UTC math) so a downstream
+  consumer such as ``correlate`` can resolve the *local* calendar day for
+  same-local-day pairing; see :mod:`premura.engine._localtime`.
 
 This module imports nothing from MCP and persists nothing.
 """
@@ -72,10 +76,16 @@ class MetricPolicy:
 
 @dataclass(frozen=True)
 class Observation:
-    """One observed warehouse point, normalized across the two fact tables."""
+    """One observed warehouse point, normalized across the two fact tables.
+
+    ``local_tz`` is the row's stored local-timezone descriptor (an offset string,
+    an IANA zone name, or ``None``); it is carried verbatim for local-calendar-day
+    resolution downstream and never used in this module's naive-UTC math.
+    """
 
     ts: datetime
     value: float
+    local_tz: str | None = None
 
 
 @dataclass(frozen=True)
@@ -139,7 +149,7 @@ def fetch_observations(
     ts_column = "end_utc" if policy.is_interval else "ts_utc"
     table = "hp.fact_interval" if policy.is_interval else "hp.fact_measurement"
     sql = (
-        f"SELECT {ts_column} AS ts, value_num AS value "  # noqa: S608 - column/table are fixed literals
+        f"SELECT {ts_column} AS ts, value_num AS value, local_tz "  # noqa: S608 - column/table are fixed literals
         f"FROM {table} "
         f"WHERE metric_id = ? AND value_num IS NOT NULL"
     )
@@ -149,7 +159,14 @@ def fetch_observations(
         params.append(since)
     sql += " ORDER BY ts"
     rows = conn.execute(sql, params).fetchall()
-    return [Observation(ts=row[0], value=float(row[1])) for row in rows]
+    return [
+        Observation(
+            ts=row[0],
+            value=float(row[1]),
+            local_tz=None if row[2] is None else str(row[2]),
+        )
+        for row in rows
+    ]
 
 
 def latest_usable_value(
@@ -192,11 +209,16 @@ class WindowPoint:
 
     ``is_imputed`` is True only for carried-forward points produced under a LOCF
     metric policy. Observed points are always ``is_imputed=False``.
+
+    ``local_tz`` is carried from the source observation (for a carried-forward
+    point, from the observation being carried) so a downstream consumer can
+    resolve the local calendar day; it never affects this module's UTC math.
     """
 
     ts: datetime
     value: float
     is_imputed: bool
+    local_tz: str | None = None
 
 
 @dataclass(frozen=True)
@@ -276,7 +298,14 @@ def ordered_window(
         bucket_ts = window_start + (idx * bucket)
         obs = by_bucket.get(idx)
         if obs is not None:
-            points.append(WindowPoint(ts=obs.ts, value=obs.value, is_imputed=False))
+            points.append(
+                WindowPoint(
+                    ts=obs.ts,
+                    value=obs.value,
+                    is_imputed=False,
+                    local_tz=obs.local_tz,
+                )
+            )
             observed_count += 1
             carried = obs
             continue
@@ -288,7 +317,12 @@ def ordered_window(
             and (window is None or bucket_ts - carried.ts <= window)
         ):
             points.append(
-                WindowPoint(ts=bucket_ts, value=carried.value, is_imputed=True)
+                WindowPoint(
+                    ts=bucket_ts,
+                    value=carried.value,
+                    is_imputed=True,
+                    local_tz=carried.local_tz,
+                )
             )
             imputed_count += 1
         else:

@@ -666,7 +666,10 @@ def _prepare_analytical_series(
     window = engine_query.ordered_window(
         conn, policy, span=_ANALYTICAL_WINDOW_SPAN, now=reference_time
     )
-    points = [PreparedPoint(ts=p.ts, value=p.value, is_imputed=p.is_imputed) for p in window.points]
+    points = [
+        PreparedPoint(ts=p.ts, value=p.value, is_imputed=p.is_imputed, local_tz=p.local_tz)
+        for p in window.points
+    ]
     observed_at = points[-1].ts if points else None
     candidate = EvidenceCandidate(
         metric_id=metric_id,

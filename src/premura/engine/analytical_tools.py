@@ -1073,13 +1073,24 @@ def correlate(
             )
         )
 
-    caveats = (
+    caveats = [
         "This is an association between the operator's own two series at the "
         "declared lag, read from their history. It is not evidence that one metric "
         "produces the other.",
         "The association band is a plausible range given how much independent "
         "information the paired days carry; it is not a probability statement.",
-    )
+    ]
+    # DRIFT-1: pairing is by LOCAL calendar day. When a paired day could not
+    # resolve a local day (the source recorded no parseable local timezone) it
+    # fell back to the UTC day, which may be off by one calendar day. Surface that
+    # honestly through the existing caveat mechanism rather than a new confound key.
+    utc_fallback_paired_days = paired.source_summary.get("utc_fallback_paired_days", 0)
+    if isinstance(utc_fallback_paired_days, int) and utc_fallback_paired_days > 0:
+        caveats.append(
+            f"{utc_fallback_paired_days} of {raw_n} paired days fell back to UTC "
+            "because the source did not record a local timezone; pairing for those "
+            "days may be off by one calendar day."
+        )
 
     return AnalyticalResultEnvelope(
         tool_name=CORRELATE_TOOL,
@@ -1103,7 +1114,7 @@ def correlate(
         is_imputed_pct=_round(paired.is_imputed_pct),
         sample_size=raw_n,
         confound_checklist=tuple(confounds),
-        caveats=caveats,
+        caveats=tuple(caveats),
     ).validate()
 
 

@@ -16,7 +16,7 @@ eventual Spearman implementation — WP02 stops at a validated paired bundle.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 import pytest
 
@@ -495,3 +495,148 @@ def test_prepared_pairs_match_fixture_dates_exactly() -> None:
     assert [p.paired_day for p in paired.pairs] == [pt.ts.date() for pt in left_pts]
     assert [p.left_value for p in paired.pairs] == [pt.value for pt in left_pts]
     assert [p.right_value for p in paired.pairs] == [pt.value for pt in right_pts]
+
+
+# ===========================================================================
+# DRIFT-1: pairing keys on the LOCAL calendar day, not the UTC day
+# ===========================================================================
+
+
+def _tz_points(
+    n: int,
+    *,
+    start: datetime,
+    local_tz: str | None,
+    base: float = 50.0,
+) -> list[PreparedPoint]:
+    """``n`` daily points, each carrying ``local_tz``, one per calendar day."""
+    return [
+        PreparedPoint(ts=start + timedelta(days=i), value=base + i, local_tz=local_tz)
+        for i in range(n)
+    ]
+
+
+def test_pairs_on_same_local_day_across_different_utc_days() -> None:
+    # Left rows are late-evening UTC (23:30) carrying a -05:00 offset, so their
+    # LOCAL day is the SAME calendar day as their UTC day minus ~0.5h -> still day
+    # D. Right rows are early-morning UTC (02:00) the NEXT UTC day, also at -05:00,
+    # so 02:00 UTC on D+1 is 21:00 LOCAL on day D. Under the OLD (UTC-day) keying
+    # these would NOT pair (UTC days D vs D+1); under local-day keying they pair on
+    # day D. Lag 0.
+    n = 25
+    # Left: 18:30 UTC on days D0..D24 -> -05:00 => 13:30 local same day D.
+    left_start = datetime(2026, 5, 1, 18, 30)
+    left_pts = _tz_points(n, start=left_start, local_tz="-05:00", base=10.0)
+    # Right: 02:00 UTC on days D1..D25 -> -05:00 => 21:00 local on day D0..D24.
+    right_start = datetime(2026, 5, 2, 2, 0)
+    right_pts = _tz_points(n, start=right_start, local_tz="-05:00", base=100.0)
+
+    left = _series(LEFT_METRIC, LEFT_FAMILY, left_pts)
+    right = _series(RIGHT_METRIC, RIGHT_FAMILY, right_pts)
+    paired = prepare_paired_input(left, right, _hypothesis(lag_days=0))
+
+    assert paired.is_usable
+    # All 25 pair on the shared LOCAL day even though every right row is on the
+    # NEXT UTC calendar day.
+    assert len(paired.pairs) == n
+    # paired_day is the LOCAL day (day D), and the right_ts provenance is the
+    # next-UTC-day instant it came from.
+    first = paired.pairs[0]
+    assert first.paired_day == date(2026, 5, 1)
+    assert first.left_ts == datetime(2026, 5, 1, 18, 30)
+    assert first.right_ts == datetime(2026, 5, 2, 2, 0)
+    # No UTC fallback occurred — every row had a parseable offset.
+    assert paired.source_summary["utc_fallback_paired_days"] == 0
+
+
+def test_local_day_pairing_differs_from_old_utc_day_pairing() -> None:
+    # Same construction as above; prove the LOCAL-day pairing is genuinely
+    # different from the old UTC-day pairing — otherwise the fix would be a no-op.
+    # Right rows are on the NEXT UTC calendar day from the left rows they share a
+    # LOCAL day with, so UTC-day keying mis-aligns the pairs by one day.
+    n = 25
+    left_pts = _tz_points(n, start=datetime(2026, 5, 1, 18, 30), local_tz="-05:00", base=10.0)
+    right_pts = _tz_points(n, start=datetime(2026, 5, 2, 2, 0), local_tz="-05:00", base=100.0)
+    left = _series(LEFT_METRIC, LEFT_FAMILY, left_pts)
+    right = _series(RIGHT_METRIC, RIGHT_FAMILY, right_pts)
+    paired = prepare_paired_input(left, right, _hypothesis(lag_days=0))
+
+    # Reconstruct what OLD UTC-day keying would have produced: key both series by
+    # ts.date() and intersect. The right value attached to a shared UTC day would
+    # differ from the right value attached under local-day keying.
+    left_by_utc = {p.ts.date(): p.value for p in left_pts}
+    right_by_utc = {p.ts.date(): p.value for p in right_pts}
+    utc_shared = sorted(set(left_by_utc) & set(right_by_utc))
+    utc_pairs = {d: (left_by_utc[d], right_by_utc[d]) for d in utc_shared}
+
+    local_pairs = {p.paired_day: (p.left_value, p.right_value) for p in paired.pairs}
+    # The two pairings disagree: local keying matches more days AND attaches a
+    # different right value on the days they nominally share.
+    assert len(local_pairs) == n
+    assert len(utc_pairs) == n - 1  # one fewer because UTC days are offset by a day
+    overlap_days = set(local_pairs) & set(utc_pairs)
+    assert overlap_days  # they share some calendar-day keys
+    assert any(local_pairs[d] != utc_pairs[d] for d in overlap_days)
+
+
+def test_lag_works_in_local_day_space() -> None:
+    # With a +02:00 offset and a declared lag of 1, the right series (built one
+    # local day later) re-aligns onto the left local day. Prove pairing still
+    # works in LOCAL-day space, not UTC-day space.
+    n = 25
+    # Left local days D0..D24 (UTC 23:30 + 02:00 => next-day local).
+    left_pts = _tz_points(n, start=datetime(2026, 5, 1, 23, 30), local_tz="+02:00", base=10.0)
+    # Right built one local day later so lag=1 re-aligns it onto the left local day.
+    right_pts = _tz_points(n, start=datetime(2026, 5, 2, 23, 30), local_tz="+02:00", base=100.0)
+    left = _series(LEFT_METRIC, LEFT_FAMILY, left_pts)
+    right = _series(RIGHT_METRIC, RIGHT_FAMILY, right_pts)
+
+    paired = prepare_paired_input(left, right, _hypothesis(lag_days=1))
+    assert paired.is_usable
+    assert len(paired.pairs) == n
+    # Left local day of the first left row: 23:30 UTC + 02:00 = 01:30 on May 2.
+    first = paired.pairs[0]
+    assert first.paired_day == date(2026, 5, 2)
+    assert paired.source_summary["utc_fallback_paired_days"] == 0
+
+
+def test_none_local_tz_uses_utc_day_pairing_and_flags_fallback() -> None:
+    # With local_tz=None on every row, behavior is the OLD UTC-day pairing (rows
+    # share the same UTC calendar day) PLUS the fallback is recorded for every
+    # paired day.
+    n = 25
+    start = REFERENCE - timedelta(days=n - 1)
+    left_pts = _tz_points(n, start=start, local_tz=None, base=10.0)
+    right_pts = _tz_points(n, start=start, local_tz=None, base=100.0)
+    left = _series(LEFT_METRIC, LEFT_FAMILY, left_pts)
+    right = _series(RIGHT_METRIC, RIGHT_FAMILY, right_pts)
+
+    paired = prepare_paired_input(left, right, _hypothesis(lag_days=0))
+    assert paired.is_usable
+    # Old UTC-day behavior: pairs on the shared UTC calendar days.
+    assert [p.paired_day for p in paired.pairs] == [pt.ts.date() for pt in left_pts]
+    # Every paired day used the UTC fallback because no local_tz was recorded.
+    assert paired.source_summary["utc_fallback_paired_days"] == n
+
+
+def test_partial_fallback_counts_only_affected_paired_days() -> None:
+    # Left has a real offset on all rows; right has local_tz on only the first 10
+    # of 25. The 15 paired days whose right side lacks a tz count as fallback.
+    n = 25
+    start = REFERENCE - timedelta(days=n - 1)
+    left_pts = _tz_points(n, start=start, local_tz="+00:00", base=10.0)
+    right_pts = [
+        PreparedPoint(
+            ts=start + timedelta(days=i),
+            value=100.0 + i,
+            local_tz="+00:00" if i < 10 else None,
+        )
+        for i in range(n)
+    ]
+    left = _series(LEFT_METRIC, LEFT_FAMILY, left_pts)
+    right = _series(RIGHT_METRIC, RIGHT_FAMILY, right_pts)
+
+    paired = prepare_paired_input(left, right, _hypothesis(lag_days=0))
+    assert paired.is_usable
+    assert len(paired.pairs) == n
+    assert paired.source_summary["utc_fallback_paired_days"] == 15
