@@ -16,6 +16,8 @@ subtasks:
 - T002
 - T003
 - T004
+agent: "claude:opus:planning-researcher:implementer"
+shell_pid: "10688"
 history:
 - timestamp: '2026-05-31T16:16:44Z'
   agent: openai:gpt-5.5
@@ -199,3 +201,7 @@ If blocked, still write the research artifact with the blocker and a conservativ
 ## Reviewer Guidance
 
 Reviewers should reject this WP if it merely repeats `research.md`, if it does not use current external sources, or if it makes an installer recommendation without a local verification check.
+
+## Activity Log
+
+- 2026-05-31T16:25:42Z – claude:opus:planning-researcher:implementer – shell_pid=10688 – Assigned agent via action command
