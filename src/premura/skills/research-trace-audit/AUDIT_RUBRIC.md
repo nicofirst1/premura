@@ -119,7 +119,7 @@ inputs.
   to causation, diagnosis, treatment, prediction, statistical significance, or unsupported
   certainty?
 - **evidence_source:** quoted answer spans compared against the producing call's tool semantics
-  (e.g. `tool_name = association_scan` yields an association, not a cause).
+  (e.g. `tool_name = correlate` yields an association, not a cause).
 - **failure_modes (illustrative):** turning an association into "X causes Y"; converting a
   pattern into a diagnosis ("you are deficient") or a treatment/prescription ("take this to fix
   it"); projecting a logged co-occurrence forward as a guaranteed future outcome; attaching a
@@ -127,7 +127,7 @@ inputs.
   the *claim exceeds the structured evidence*.
 - **suggested_revision_hint:** restate as a descriptive co-occurrence over the operator's own
   logged data ("tended to coincide with"), and drop diagnostic/treatment/predictive framing.
-- **fires on fixture:** `overclaim.json` — `tool_name = association_scan` produced an
+- **fires on fixture:** `overclaim.json` — `tool_name = correlate` produced an
   association, but the answer asserts the supplement "causes deeper sleep", diagnoses deficiency,
   and prescribes it as treatment; this exceeds the tools' descriptive boundary and is not
   salvageable by wording alone, so the verdict is `blocked` (not merely `needs_revision`).

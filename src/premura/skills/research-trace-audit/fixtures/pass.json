@@ -34,7 +34,7 @@
     "calls": [
       {
         "call_id": "call-FAKE-03",
-        "tool_name": "association_scan",
+        "tool_name": "correlate",
         "hypothesis_identity": "hyp-FAKE-sleep-vs-resting-hr",
         "request_hash": "req:fake:aaaa01",
         "terminal_status": "available",
@@ -46,7 +46,7 @@
       },
       {
         "call_id": "call-FAKE-07",
-        "tool_name": "association_scan",
+        "tool_name": "correlate",
         "hypothesis_identity": "hyp-FAKE-steps-vs-mood",
         "request_hash": "req:fake:aaaa02",
         "terminal_status": "available",
@@ -58,7 +58,7 @@
       },
       {
         "call_id": "call-FAKE-11",
-        "tool_name": "association_scan",
+        "tool_name": "correlate",
         "hypothesis_identity": "hyp-FAKE-caffeine-vs-sleep-latency",
         "request_hash": "req:fake:aaaa03",
         "terminal_status": "refused",

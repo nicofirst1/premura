@@ -27,7 +27,7 @@
     "calls": [
       {
         "call_id": "call-FAKE-51",
-        "tool_name": "association_scan",
+        "tool_name": "correlate",
         "hypothesis_identity": "hyp-FAKE-hydration-vs-afternoon-energy",
         "request_hash": "req:fake:cccc01",
         "terminal_status": "available",
@@ -39,7 +39,7 @@
       },
       {
         "call_id": "call-FAKE-52",
-        "tool_name": "association_scan",
+        "tool_name": "correlate",
         "hypothesis_identity": "hyp-FAKE-alcohol-vs-deep-sleep",
         "request_hash": "req:fake:cccc02",
         "terminal_status": "refused",
@@ -51,7 +51,7 @@
       },
       {
         "call_id": "call-FAKE-53",
-        "tool_name": "association_scan",
+        "tool_name": "correlate",
         "hypothesis_identity": "hyp-FAKE-late-meal-vs-deep-sleep",
         "request_hash": "req:fake:cccc03",
         "terminal_status": "refused",

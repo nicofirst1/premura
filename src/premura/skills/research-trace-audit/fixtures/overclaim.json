@@ -25,7 +25,7 @@
     "calls": [
       {
         "call_id": "call-FAKE-71",
-        "tool_name": "association_scan",
+        "tool_name": "correlate",
         "hypothesis_identity": "hyp-FAKE-magnesium-supplement-vs-deep-sleep",
         "request_hash": "req:fake:eeee01",
         "terminal_status": "available",

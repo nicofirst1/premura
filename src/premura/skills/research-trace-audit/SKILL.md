@@ -88,7 +88,7 @@ disagrees with this skill on criteria detail, `AUDIT_RUBRIC.md` wins.
    the answer as a confident "nothing notable".
 5. **Compare the final answer's claims against tool boundaries** — quote spans
    where the answer exceeds what the producing tool supports (e.g. an
-   `association_scan` yields an association, not a cause).
+   `correlate` yields an association, not a cause).
 6. **Apply each of the four rubric categories** and **emit a verdict**:
    `pass`, `needs_revision`, or `blocked`.
 7. **Attach concrete evidence to every non-`pass` result** — each reason carries

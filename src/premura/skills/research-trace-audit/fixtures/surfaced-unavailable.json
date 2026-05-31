@@ -17,7 +17,7 @@
     "calls": [
       {
         "call_id": "call-FAKE-61",
-        "tool_name": "association_scan",
+        "tool_name": "correlate",
         "hypothesis_identity": "hyp-FAKE-bedtime-consistency-vs-resting-hr",
         "request_hash": "req:fake:dddd01",
         "terminal_status": "available",
@@ -29,7 +29,7 @@
       },
       {
         "call_id": "call-FAKE-62",
-        "tool_name": "association_scan",
+        "tool_name": "correlate",
         "hypothesis_identity": "hyp-FAKE-workout-vs-next-day-mood",
         "request_hash": "req:fake:dddd02",
         "terminal_status": "available",
