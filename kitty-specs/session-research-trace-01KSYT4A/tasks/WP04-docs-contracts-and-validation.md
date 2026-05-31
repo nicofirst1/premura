@@ -15,6 +15,8 @@ subtasks:
 - T021
 - T022
 - T023
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "21664"
 history:
 - timestamp: '2026-05-31T10:54:25Z'
   agent: opencode
@@ -210,3 +212,7 @@ This WP is documentation/validation focused. It should not add new tests unless 
 ## Reviewer Guidance
 
 Reviewers should compare docs against actual code behavior. The main failure mode is stale or overclaiming docs, especially implying that the audit skill, PubMed grounding, `rolling_mean`, or `paired_t_test` shipped.
+
+## Activity Log
+
+- 2026-05-31T11:48:00Z – claude:opus:python-implementer:implementer – shell_pid=21664 – Started implementation via action command
