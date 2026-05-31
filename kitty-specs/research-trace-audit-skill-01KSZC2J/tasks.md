@@ -21,10 +21,10 @@
 | T010 | Write the skill workflow for required inputs, review sequence, and audit output. | WP03 | No | [D] |
 | T011 | Link the skill to `AUDIT_RUBRIC.md`, fixtures, and authoritative Premura contracts. | WP03 | No | [D] |
 | T012 | Validate first-time-reader clarity and offline runtime behavior. | WP03 | No | [D] |
-| T013 | Verify existing Claude-style install path discovers the new skill. | WP04 | No |
-| T014 | If WP01 recommends adopt, extend installer support for the selected additional local home. | WP04 | No |
-| T015 | Add public-interface tests for any installer extension. | WP04 | No |
-| T016 | Document install verification outcomes for supported, deferred, or rejected homes. | WP04 | No |
+| T013 | Verify existing Claude-style install path discovers the new skill. | WP04 | No | [D] |
+| T014 | If WP01 recommends adopt, extend installer support for the selected additional local home. | WP04 | No | [D] |
+| T015 | Add public-interface tests for any installer extension. | WP04 | No | [D] |
+| T016 | Document install verification outcomes for supported, deferred, or rejected homes. | WP04 | No | [D] |
 | T017 | Update live status and roadmap docs to mark the audit skill shipped after implementation. | WP05 | No |
 | T018 | Update phase-plan wording so remaining deferred work stays accurate. | WP05 | No |
 | T019 | Run doc consistency checks against code and mission artifacts. | WP05 | No |
@@ -144,10 +144,10 @@
 
 **Included subtasks**:
 
-- [ ] T013 Verify existing Claude-style install path discovers the new skill. (WP04)
-- [ ] T014 If WP01 recommends adopt, extend installer support for the selected additional local home. (WP04)
-- [ ] T015 Add public-interface tests for any installer extension. (WP04)
-- [ ] T016 Document install verification outcomes for supported, deferred, or rejected homes. (WP04)
+- [x] T013 Verify existing Claude-style install path discovers the new skill. (WP04)
+- [x] T014 If WP01 recommends adopt, extend installer support for the selected additional local home. (WP04)
+- [x] T015 Add public-interface tests for any installer extension. (WP04)
+- [x] T016 Document install verification outcomes for supported, deferred, or rejected homes. (WP04)
 
 **Implementation sketch**:
 
