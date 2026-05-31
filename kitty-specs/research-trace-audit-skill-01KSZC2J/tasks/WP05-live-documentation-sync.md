@@ -5,7 +5,8 @@ dependencies:
 - WP02
 - WP03
 - WP04
-requirement_refs: []
+requirement_refs:
+- FR-012
 planning_base_branch: master
 merge_target_branch: master
 branch_strategy: Planning artifacts were generated on master; completed changes must merge back into master. Execution worktrees are allocated per computed lane from lanes.json after finalize-tasks.
@@ -128,6 +129,47 @@ uv run ruff format --check src/premura/skills
 ```
 
 If no Python files changed in this WP, note that full Python lint/test checks are not necessary for docs-only changes, unless required by reviewer.
+
+## Documentation Wording Guidance
+
+Use restrained, exact language. Prefer:
+
+- "Premura now ships a research trace audit skill that consumes the audit-consumer contract."
+- "The skill reviews final answers for search-effort disclosure, hidden refusals or unavailable surfaced marks, and overclaims."
+- "The skill does not change trace counts or analytical tool math."
+
+Avoid:
+
+- "Premura audits all agent answers."
+- "The audit skill guarantees correctness."
+- "The audit skill detects significance problems" if that wording implies significance exists.
+- "The trace now judges answers" because the trace remains measurement, not interpretation.
+
+## Files And Likely Edits
+
+`STATUS.md` should move the audit skill from deferred to shipped in the section that already describes session research trace and multiplicity disclosure.
+
+`ROADMAP.md` should remove the audit skill from the immediate deferred list, while leaving other deferred work alone.
+
+`FULL_APP_DEVELOPMENT_PLAN.md` should update Phase 3 status and exit-criteria wording. It may still mention that deterministic stats and PubMed remain future work.
+
+Do not update archived history docs unless they are actively wrong about current state and are not meant to be historical.
+
+## Consistency Checklist
+
+Before handoff, answer these checks in your notes:
+
+- Does any live doc still say the audit skill is deferred?
+- Does any live doc imply a generic audit product shipped?
+- Does any live doc imply trace counts changed?
+- Does any live doc imply PubMed, `rolling_mean`, `paired_t_test`, or intake resolvers shipped?
+- Does install-target wording match WP04's actual outcome?
+
+If any answer is unclear, fix the docs or explicitly note why the wording is historical and left unchanged.
+
+## Review Scope
+
+This WP is documentation-only. It should not fix code, add fixtures, or adjust skill content. If you notice a code bug while syncing docs, record it in handoff and stop rather than expanding this WP.
 
 ## Definition of Done
 
