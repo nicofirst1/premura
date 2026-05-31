@@ -25,10 +25,10 @@
 | T014 | If WP01 recommends adopt, extend installer support for the selected additional local home. | WP04 | No | [D] |
 | T015 | Add public-interface tests for any installer extension. | WP04 | No | [D] |
 | T016 | Document install verification outcomes for supported, deferred, or rejected homes. | WP04 | No | [D] |
-| T017 | Update live status and roadmap docs to mark the audit skill shipped after implementation. | WP05 | No |
-| T018 | Update phase-plan wording so remaining deferred work stays accurate. | WP05 | No |
-| T019 | Run doc consistency checks against code and mission artifacts. | WP05 | No |
-| T020 | Record final validation notes for reviewer handoff. | WP05 | No |
+| T017 | Update live status and roadmap docs to mark the audit skill shipped after implementation. | WP05 | No | [D] |
+| T018 | Update phase-plan wording so remaining deferred work stays accurate. | WP05 | No | [D] |
+| T019 | Run doc consistency checks against code and mission artifacts. | WP05 | No | [D] |
+| T020 | Record final validation notes for reviewer handoff. | WP05 | No | [D] |
 
 ## Work Package Overview
 
@@ -176,10 +176,10 @@
 
 **Included subtasks**:
 
-- [ ] T017 Update live status and roadmap docs to mark the audit skill shipped after implementation. (WP05)
-- [ ] T018 Update phase-plan wording so remaining deferred work stays accurate. (WP05)
-- [ ] T019 Run doc consistency checks against code and mission artifacts. (WP05)
-- [ ] T020 Record final validation notes for reviewer handoff. (WP05)
+- [x] T017 Update live status and roadmap docs to mark the audit skill shipped after implementation. (WP05)
+- [x] T018 Update phase-plan wording so remaining deferred work stays accurate. (WP05)
+- [x] T019 Run doc consistency checks against code and mission artifacts. (WP05)
+- [x] T020 Record final validation notes for reviewer handoff. (WP05)
 
 **Implementation sketch**:
 
