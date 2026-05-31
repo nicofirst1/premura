@@ -20,8 +20,8 @@ subtasks:
 - T006
 - T007
 - T008
-shell_pid: "17596"
-agent: "claude:opus:python-implementer:implementer"
+shell_pid: "21852"
+agent: "claude:opus:python-reviewer:reviewer"
 history:
 - timestamp: '2026-05-31T16:16:44Z'
   agent: openai:gpt-5.5
@@ -212,3 +212,4 @@ Reject if the rubric becomes a banned-word list, if the fixtures rely on prose `
 
 - 2026-05-31T16:31:21Z – claude:opus:python-implementer:implementer – shell_pid=17596 – Assigned agent via action command
 - 2026-05-31T16:37:11Z – claude:opus:python-implementer:implementer – shell_pid=17596 – Ready for review: 5 synthetic fixtures + bounded rubric
+- 2026-05-31T16:37:40Z – claude:opus:python-reviewer:reviewer – shell_pid=21852 – Started review via action command
