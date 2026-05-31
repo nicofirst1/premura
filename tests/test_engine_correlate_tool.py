@@ -289,6 +289,73 @@ def test_ties_use_midranks_deterministically() -> None:
 
 
 # ===========================================================================
+# DRIFT-1 — UTC-fallback caveat is surfaced honestly in the correlate envelope
+# ===========================================================================
+
+
+def _series_with_tz(
+    metric: str,
+    family: str,
+    values: list[float],
+    *,
+    start: datetime,
+    local_tz: str | None,
+) -> AnalyticalInputSeries:
+    points = [
+        PreparedPoint(ts=start + timedelta(days=i), value=v, local_tz=local_tz)
+        for i, v in enumerate(values)
+    ]
+    return prepare_input_series(
+        metric,
+        AnalyticalQuestionType.LAGGED_ASSOCIATION,
+        candidate=_candidate(metric, family, point_count=len(points)),
+        policies=_policy(family, metric),
+        points=points,
+        reference_time=REFERENCE,
+    )
+
+
+def test_utc_fallback_caveat_emitted_when_local_tz_missing() -> None:
+    # Both series lack a local_tz -> every paired day falls back to the UTC day,
+    # and correlate must surface that honestly as a caveat (not a new confound key).
+    left, right = _negative_monotone(30)
+    start = REFERENCE - timedelta(days=29)
+    left_series = _series_with_tz(LEFT_METRIC, LEFT_FAMILY, left, start=start, local_tz=None)
+    right_series = _series_with_tz(RIGHT_METRIC, RIGHT_FAMILY, right, start=start, local_tz=None)
+    paired = prepare_paired_input(
+        left_series, right_series, _hypothesis(expected_direction=ExpectedDirection.NEGATIVE)
+    )
+    assert paired.source_summary["utc_fallback_paired_days"] == 30
+
+    env = correlate(paired, _hypothesis(expected_direction=ExpectedDirection.NEGATIVE))
+    assert env.status is AnalyticalStatus.AVAILABLE
+    caveats = env.to_dict()["caveats"]
+    assert any("fell back to UTC" in c and "30 of 30" in c for c in caveats)
+    # The fallback is a caveat, NOT a confound-checklist key.
+    keys = {c["key"] for c in env.to_dict()["confound_checklist"]}
+    assert all("utc" not in k.lower() for k in keys)
+
+
+def test_no_utc_fallback_caveat_when_local_tz_present() -> None:
+    # Real offsets on both series -> no fallback, so the fallback caveat is absent.
+    left, right = _negative_monotone(30)
+    start = REFERENCE - timedelta(days=29)
+    left_series = _series_with_tz(LEFT_METRIC, LEFT_FAMILY, left, start=start, local_tz="+02:00")
+    right_series = _series_with_tz(
+        RIGHT_METRIC, RIGHT_FAMILY, right, start=start, local_tz="+02:00"
+    )
+    paired = prepare_paired_input(
+        left_series, right_series, _hypothesis(expected_direction=ExpectedDirection.NEGATIVE)
+    )
+    assert paired.source_summary["utc_fallback_paired_days"] == 0
+
+    env = correlate(paired, _hypothesis(expected_direction=ExpectedDirection.NEGATIVE))
+    assert env.status is AnalyticalStatus.AVAILABLE
+    caveats = env.to_dict()["caveats"]
+    assert not any("fell back to UTC" in c for c in caveats)
+
+
+# ===========================================================================
 # T011 — core refusal classes (refusals carry no estimate)
 # ===========================================================================
 
@@ -313,24 +380,50 @@ def test_refuses_below_twenty_raw_pairs() -> None:
     _assert_refusal(env)
 
 
+def _near_random_walk_pair(n: int, *, seed: int = 42) -> tuple[list[float], list[float]]:
+    """A deterministic strongly-autocorrelated near-random-walk pair.
+
+    Each side is a cumulative sum of small bounded steps, so consecutive days are
+    highly serially correlated (rank autocorrelation stays high) while the two
+    sides are NOT constant — exactly the regime where the raw paired count is fine
+    (N >= 20) but the *independent* information is scarce (N_eff < 12). Built from
+    a fixed seed so the fixture is byte-stable across runs.
+    """
+    import random
+
+    rng = random.Random(seed)
+    left: list[float] = []
+    right: list[float] = []
+    lv = 0.0
+    rv = 0.0
+    for _ in range(n):
+        lv += rng.uniform(-1.0, 1.0)
+        rv += rng.uniform(-1.0, 1.0)
+        left.append(lv)
+        right.append(rv)
+    return left, right
+
+
 def test_refuses_below_effective_sample_floor() -> None:
-    # 20 raw pairs but a highly autocorrelated rank structure drives N_eff below
-    # 12 -> refuse with no estimate even though the raw floor is met.
-    # A long smooth ramp on both sides is maximally autocorrelated.
-    n = 24
-    left = [float(i) for i in range(n)]
-    right = [float(i) for i in range(n)]
+    # RISK-1: lock FR-010. A strongly autocorrelated near-random-walk pair has
+    # raw N = 30 (>= 20, clearing the raw floor and reaching the tool) but drives
+    # the effective sample size below 12. The tool MUST refuse with the
+    # effective-sample-floor reason and carry no estimate. This test fails if the
+    # refusal is removed (it does not accept an available-with-confound fallback).
+    n = 30
+    left, right = _near_random_walk_pair(n)
     paired = _paired_from_values(left, right)
-    assert paired.is_usable  # passes the raw floor
+    assert paired.is_usable  # raw paired floor (>= 20) is met -> reaches the tool
+
     env = correlate(paired, _hypothesis())
-    # Either it refuses for low N_eff, or — if N_eff clears 12 — it emits the
-    # temporal_autocorrelation confound. Assert the refusal path is reachable
-    # for a strongly autocorrelated short series.
-    if env.status is AnalyticalStatus.REFUSED:
-        _assert_refusal(env, reason="insufficient_effective_sample")
-    else:
-        keys = {c["key"] for c in env.to_dict()["confound_checklist"]}
-        assert ConfoundKey.TEMPORAL_AUTOCORRELATION.value in keys
+    assert env.status is AnalyticalStatus.REFUSED
+    _assert_refusal(env, reason="insufficient_effective_sample")
+    # The refusal carries no estimate and the effective sample really is < 12.
+    data = env.to_dict()
+    assert data["estimate"] is None
+    # Sanity: the raw paired count cleared the floor, so this is genuinely an
+    # N_eff refusal and not the raw-floor path.
+    assert paired.overlap_sample_size >= 20
 
 
 def test_refuses_constant_series() -> None:

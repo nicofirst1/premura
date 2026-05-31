@@ -49,6 +49,7 @@ from math import isfinite
 from types import MappingProxyType
 from typing import Any
 
+from premura.engine._localtime import local_calendar_day
 from premura.engine.analytical_contract import AnalyticalQuestionType, RefusalOutcome
 from premura.engine.policies._evaluator import PolicyInput, evaluate_evidence
 from premura.engine.policies._model import (
@@ -168,11 +169,17 @@ class PreparedPoint:
     extraction produced under a LOCF metric policy — the analytical layer never
     invents points, it only carries the ``is_imputed`` flag through so the
     imputation percentage and confound checklist stay honest.
+
+    ``local_tz`` is the row's stored local-timezone descriptor (offset string,
+    IANA name, or ``None``), carried so the paired preparer can resolve the
+    *local* calendar day. It defaults to ``None`` (a backward-compatible end-of-
+    record field) and is ignored by single-series tools.
     """
 
     ts: datetime
     value: float
     is_imputed: bool = False
+    local_tz: str | None = None
 
 
 @dataclass(frozen=True)
@@ -967,31 +974,46 @@ def prepare_paired_input(
                 right_metric_id=right_metric,
             )
 
-    # 3. Same-day pairing after the caller-declared lag. The right (responding)
-    #    series is shifted earlier by lag_days so its day D+lag aligns onto the
-    #    left day D; pairs are keyed to the left day.
+    # 3. Same-LOCAL-day pairing after the caller-declared lag. Each point's local
+    #    calendar day is resolved from its naive-UTC ts plus its stored local_tz
+    #    (DRIFT-1: keying on the UTC day shifted near-midnight observations onto
+    #    the wrong day for non-UTC operators). The right (responding) series is
+    #    shifted earlier by lag_days so its local day D+lag aligns onto the left
+    #    local day D; pairs are keyed to the left local day. ``left_ts``/
+    #    ``right_ts`` stay the UTC instants for provenance. Iteration is
+    #    time-ordered and last-write-wins per local day, so a repeated day stays
+    #    deterministic. We track which points used a UTC fallback (missing or
+    #    unparseable local_tz) so the count can be surfaced honestly downstream.
     lag = hypothesis.lag_days
-    left_by_day: dict[date, PreparedPoint] = {}
+    left_by_day: dict[date, tuple[PreparedPoint, bool]] = {}
     for point in left_series.points:
-        # Last-write-wins per calendar day keeps determinism if a day repeats.
-        left_by_day[point.ts.date()] = point
-    right_by_aligned_day: dict[date, PreparedPoint] = {}
+        local_day, used_fallback = local_calendar_day(point.ts, point.local_tz)
+        left_by_day[local_day] = (point, used_fallback)
+    right_by_aligned_day: dict[date, tuple[PreparedPoint, bool]] = {}
     for point in right_series.points:
-        aligned = point.ts.date() - timedelta(days=lag)
-        right_by_aligned_day[aligned] = point
+        local_day, used_fallback = local_calendar_day(point.ts, point.local_tz)
+        aligned = local_day - timedelta(days=lag)
+        right_by_aligned_day[aligned] = (point, used_fallback)
 
     shared_days = sorted(set(left_by_day) & set(right_by_aligned_day))
     pairs = tuple(
         PairedObservation(
             paired_day=day,
-            left_ts=left_by_day[day].ts,
-            right_ts=right_by_aligned_day[day].ts,
-            left_value=left_by_day[day].value,
-            right_value=right_by_aligned_day[day].value,
-            left_is_imputed=left_by_day[day].is_imputed,
-            right_is_imputed=right_by_aligned_day[day].is_imputed,
+            left_ts=left_by_day[day][0].ts,
+            right_ts=right_by_aligned_day[day][0].ts,
+            left_value=left_by_day[day][0].value,
+            right_value=right_by_aligned_day[day][0].value,
+            left_is_imputed=left_by_day[day][0].is_imputed,
+            right_is_imputed=right_by_aligned_day[day][0].is_imputed,
         )
         for day in shared_days
+    )
+    # A paired day "used the UTC fallback" when EITHER contributing side could not
+    # resolve its local day from local_tz; its calendar-day key may be off by one.
+    utc_fallback_paired_days = sum(
+        1
+        for day in shared_days
+        if left_by_day[day][1] or right_by_aligned_day[day][1]
     )
 
     # 4. No-overlap and weak-support refusals (before any computation).
@@ -1043,6 +1065,11 @@ def prepare_paired_input(
         "expected_direction": hypothesis.expected_direction.value,
         "lag_justification": hypothesis.lag_justification,
         "common_cause_candidates": list(hypothesis.common_cause_candidates),
+        # Paired days that fell back to the UTC calendar day because at least one
+        # contributing observation lacked a parseable local_tz. The WP03 correlate
+        # tool reads this to emit an honest caveat (those days may be off by one
+        # calendar day); 0 means every paired day resolved a real local day.
+        "utc_fallback_paired_days": utc_fallback_paired_days,
         "left": _series_source_summary(left_series),
         "right": _series_source_summary(right_series),
     }
