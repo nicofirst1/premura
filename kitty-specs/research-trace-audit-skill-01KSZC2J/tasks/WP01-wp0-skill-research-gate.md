@@ -16,8 +16,8 @@ subtasks:
 - T002
 - T003
 - T004
-agent: "claude:opus:planning-researcher:implementer"
-shell_pid: "10688"
+agent: "claude:opus:docs-reviewer:reviewer"
+shell_pid: "14963"
 history:
 - timestamp: '2026-05-31T16:16:44Z'
   agent: openai:gpt-5.5
@@ -206,3 +206,4 @@ Reviewers should reject this WP if it merely repeats `research.md`, if it does n
 
 - 2026-05-31T16:25:42Z – claude:opus:planning-researcher:implementer – shell_pid=10688 – Assigned agent via action command
 - 2026-05-31T16:28:56Z – claude:opus:planning-researcher:implementer – shell_pid=10688 – Ready for review: WP0 research deliverable with adopt/defer/reject + per-target verification
+- 2026-05-31T16:29:20Z – claude:opus:docs-reviewer:reviewer – shell_pid=14963 – Started review via action command
