@@ -17,10 +17,10 @@
 | T006 | Write `AUDIT_RUBRIC.md` as a bounded criteria registry, not a banned-phrase list. | WP02 | No | [D] |
 | T007 | Cross-check rubric criteria against the audit-consumer contract and fixture expectations. | WP02 | No | [D] |
 | T008 | Verify fixture hygiene: synthetic only, no PHI, no redefined trace counts. | WP02 | No | [D] |
-| T009 | Author `SKILL.md` frontmatter for discoverability and correct invocation. | WP03 | No |
-| T010 | Write the skill workflow for required inputs, review sequence, and audit output. | WP03 | No |
-| T011 | Link the skill to `AUDIT_RUBRIC.md`, fixtures, and authoritative Premura contracts. | WP03 | No |
-| T012 | Validate first-time-reader clarity and offline runtime behavior. | WP03 | No |
+| T009 | Author `SKILL.md` frontmatter for discoverability and correct invocation. | WP03 | No | [D] |
+| T010 | Write the skill workflow for required inputs, review sequence, and audit output. | WP03 | No | [D] |
+| T011 | Link the skill to `AUDIT_RUBRIC.md`, fixtures, and authoritative Premura contracts. | WP03 | No | [D] |
+| T012 | Validate first-time-reader clarity and offline runtime behavior. | WP03 | No | [D] |
 | T013 | Verify existing Claude-style install path discovers the new skill. | WP04 | No |
 | T014 | If WP01 recommends adopt, extend installer support for the selected additional local home. | WP04 | No |
 | T015 | Add public-interface tests for any installer extension. | WP04 | No |
@@ -112,10 +112,10 @@
 
 **Included subtasks**:
 
-- [ ] T009 Author `SKILL.md` frontmatter for discoverability and correct invocation. (WP03)
-- [ ] T010 Write the skill workflow for required inputs, review sequence, and audit output. (WP03)
-- [ ] T011 Link the skill to `AUDIT_RUBRIC.md`, fixtures, and authoritative Premura contracts. (WP03)
-- [ ] T012 Validate first-time-reader clarity and offline runtime behavior. (WP03)
+- [x] T009 Author `SKILL.md` frontmatter for discoverability and correct invocation. (WP03)
+- [x] T010 Write the skill workflow for required inputs, review sequence, and audit output. (WP03)
+- [x] T011 Link the skill to `AUDIT_RUBRIC.md`, fixtures, and authoritative Premura contracts. (WP03)
+- [x] T012 Validate first-time-reader clarity and offline runtime behavior. (WP03)
 
 **Implementation sketch**:
 
