@@ -226,3 +226,4 @@ Review for semantic honesty. The biggest risks are counting retries incorrectly,
 - 2026-05-31T11:28:04Z – claude:opus:python-implementer:implementer – shell_pid=98344 – Ready for review: pure trace service + disclosure, all tests green
 - 2026-05-31T11:28:38Z – claude:opus:python-reviewer:reviewer – shell_pid=5118 – Started review via action command
 - 2026-05-31T11:30:24Z – claude:opus:python-reviewer:reviewer – shell_pid=5118 – Review passed: 37 tests green (test_trace_store + test_trace_migration). Pure MCP-independent service; registry-based hypothesis identity (no per-tool switch); N dedup, refusal breakdown, surfaced UNAVAILABLE fallback, raw>=N>=K invariant, not_found vs empty, whitelisted result summary (no hp.* reads), bounded/capped disclosure — all verified against the audit-consumer contract.
+- 2026-05-31T12:16:27Z – claude:opus:python-reviewer:reviewer – shell_pid=5118 – Done override: Mission merged to master (commit b0e86be)
