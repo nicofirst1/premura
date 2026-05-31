@@ -8,11 +8,11 @@
 
 | ID | Description | Work Package | Parallel |
 |---|---|---|---|
-| T001 | Add migration `005_trace_audit.sql` with `trace.*` tables and indexes | WP01 |  |
-| T002 | Add migration tests proving `trace.*` exists outside `hp.*` and is idempotent | WP01 |  |
-| T003 | Add schema-ownership tests proving trace writes cannot create health facts | WP01 |  |
-| T004 | Add append-only enforcement tests for trace rows at the storage boundary | WP01 |  |
-| T005 | Document migration assumptions in the WP handoff and keep schema compact | WP01 |  |
+| T001 | Add migration `005_trace_audit.sql` with `trace.*` tables and indexes | WP01 |  | [D] |
+| T002 | Add migration tests proving `trace.*` exists outside `hp.*` and is idempotent | WP01 |  | [D] |
+| T003 | Add schema-ownership tests proving trace writes cannot create health facts | WP01 |  | [D] |
+| T004 | Add append-only enforcement tests for trace rows at the storage boundary | WP01 |  | [D] |
+| T005 | Document migration assumptions in the WP handoff and keep schema compact | WP01 |  | [D] |
 | T006 | Add `premura.trace` public dataclasses/result shapes for sessions, calls, marks, and disclosures | WP02 |  |
 | T007 | Implement explicit session opening with warehouse fingerprint/schema-version capture | WP02 |  |
 | T008 | Implement deterministic request/result hashing and normalized hypothesis identity declarations | WP02 |  |
@@ -45,11 +45,11 @@
 
 Included subtasks:
 
-- [ ] T001 Add migration `005_trace_audit.sql` with `trace.*` tables and indexes (WP01)
-- [ ] T002 Add migration tests proving `trace.*` exists outside `hp.*` and is idempotent (WP01)
-- [ ] T003 Add schema-ownership tests proving trace writes cannot create health facts (WP01)
-- [ ] T004 Add append-only enforcement tests for trace rows at the storage boundary (WP01)
-- [ ] T005 Document migration assumptions in the WP handoff and keep schema compact (WP01)
+- [x] T001 Add migration `005_trace_audit.sql` with `trace.*` tables and indexes (WP01)
+- [x] T002 Add migration tests proving `trace.*` exists outside `hp.*` and is idempotent (WP01)
+- [x] T003 Add schema-ownership tests proving trace writes cannot create health facts (WP01)
+- [x] T004 Add append-only enforcement tests for trace rows at the storage boundary (WP01)
+- [x] T005 Document migration assumptions in the WP handoff and keep schema compact (WP01)
 
 Implementation sketch:
 
