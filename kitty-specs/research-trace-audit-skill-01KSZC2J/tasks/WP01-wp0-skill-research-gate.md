@@ -205,3 +205,4 @@ Reviewers should reject this WP if it merely repeats `research.md`, if it does n
 ## Activity Log
 
 - 2026-05-31T16:25:42Z – claude:opus:planning-researcher:implementer – shell_pid=10688 – Assigned agent via action command
+- 2026-05-31T16:28:56Z – claude:opus:planning-researcher:implementer – shell_pid=10688 – Ready for review: WP0 research deliverable with adopt/defer/reject + per-target verification
