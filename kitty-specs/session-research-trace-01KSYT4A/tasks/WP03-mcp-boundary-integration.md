@@ -24,6 +24,8 @@ subtasks:
 - T017
 - T018
 - T019
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "8220"
 history:
 - timestamp: '2026-05-31T10:54:25Z'
   agent: opencode
@@ -205,3 +207,7 @@ uv run pytest tests/test_mcp_server.py tests/test_mcp_signal_tools.py tests/test
 ## Reviewer Guidance
 
 Reviewers should inspect boundary placement. MCP may orchestrate trace recording; it must not compute statistics, inspect raw `hp.*` rows directly for analysis, or mutate engine result envelopes.
+
+## Activity Log
+
+- 2026-05-31T11:30:56Z – claude:opus:python-implementer:implementer – shell_pid=8220 – Started implementation via action command
