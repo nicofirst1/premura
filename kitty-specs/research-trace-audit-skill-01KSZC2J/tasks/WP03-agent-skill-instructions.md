@@ -190,3 +190,4 @@ Reject if `SKILL.md` is generic, if it hides the required inputs, if it duplicat
 ## Activity Log
 
 - 2026-05-31T16:47:28Z – claude:opus:python-implementer:implementer – shell_pid=36103 – Started implementation via action command
+- 2026-05-31T16:51:27Z – claude:opus:python-implementer:implementer – shell_pid=36103 – Ready for review: SKILL.md agent-facing wrapper
