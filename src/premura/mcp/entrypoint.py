@@ -3,10 +3,15 @@
 Two entrypoints are provided:
 
 * **Default surface** (``premura-mcp``, :func:`build_server`) — the agent-safe
-  surface.  Exposes catalog, summary, all six approved Stage 2 signal tools, and
-  the two Stage 3 analytical tools (``change_point`` / ``smoothed_average``).
-  ``query_warehouse`` is intentionally absent; agents should use the
-  signal-backed tools, the analytical tools, and the catalog helpers instead.
+  surface.  Exposes the catalog/summary helpers, all six approved Stage 2 signal
+  tools, the three Stage 3 analytical tools (``change_point`` /
+  ``smoothed_average`` / ``correlate``), the bounded agent-mediated profile
+  capture tools, and the three session research-trace tools
+  (``research_trace_open`` / ``research_trace_mark_surfaced`` /
+  ``research_trace_disclosure``) — 16 tools in total.  ``query_warehouse`` is
+  intentionally absent; agents should use the signal-backed tools, the analytical
+  tools, the trace tools, and the catalog helpers instead.  The authoritative
+  tool list is asserted in ``tests/test_mcp_server.py`` (``_DEFAULT_TOOLS``).
 
 * **Operator surface** (``premura-mcp-operator``, :func:`build_operator_server``)
   — lower-guarantee expert mode intended for operator/developer use only,
@@ -91,6 +96,27 @@ def _trace_meta_of(value: object) -> dict[str, Any] | None:
     return None
 
 
+def _trace_session_error_envelope(tool_name: str, err: trace.TraceError) -> dict[str, Any]:
+    """Refusal envelope for an analytical call naming a non-recordable session.
+
+    When an analytical tool is given an explicit ``session_id`` that cannot be
+    recorded against (unknown / typo'd session), the wrapper refuses instead of
+    dispatching, so the agent never receives an unmeasured-but-trusted result.
+    The engine is NOT invoked; there is no result and no recorded row. The trace
+    problem is carried both at the top level and under the ``trace`` key.
+    """
+    envelope: dict[str, Any] = {
+        "tool_name": tool_name,
+        "status": err.status,  # e.g. "not_found"
+        "message": err.message,
+        "result": None,
+        "trace": _trace_meta_of(err),
+    }
+    if err.field:
+        envelope["field"] = err.field
+    return envelope
+
+
 def _dispatch_analytical_with_trace(
     *,
     warehouse_path: Path | None,
@@ -132,16 +158,28 @@ def _dispatch_analytical_with_trace(
     with warehouse_server._open_warehouse_writable(warehouse_path) as conn:
         pending = trace.start_recorded_call(conn, session_id, tool_name, request)
     if isinstance(pending, trace.TraceError):
-        # Could not start recording (e.g. unknown session). Do NOT swallow the
-        # analytical answer: dispatch anyway and surface the trace problem beside
-        # the untouched envelope.
-        payload = dispatch()
-        payload["trace"] = _trace_meta_of(pending)
-        return payload
+        # An explicit session_id was supplied but the call cannot be recorded
+        # against it (e.g. an unknown / typo'd / expired session). REFUSE rather
+        # than dispatch: returning an unmeasured result that the agent would trust
+        # as part of a measured session silently defeats the "measured, not
+        # self-reported" guarantee. The analytical engine is never invoked.
+        return _trace_session_error_envelope(tool_name, pending)
 
     try:
         payload = dispatch()
+    except ValueError:
+        # Pre-question parameter validation failure (empty metric id, invalid
+        # enum, unsupported lag — the warehouse server raises ValueError BEFORE
+        # the request becomes an analytical question). FR-008 / AS-3: such calls
+        # MUST NOT be recorded or counted, so discard the eagerly-started row.
+        with warehouse_server._open_warehouse_writable(warehouse_path) as conn:
+            trace.discard_recorded_call(conn, pending)
+        raise
     except Exception:
+        # A genuine fault AFTER a valid analytical question (the spec's
+        # recorded-before-dispatch / engine-raises-mid-dispatch edge case):
+        # finalize the attempt's terminal status so the disclosure stays
+        # internally consistent (the look at the data still happened).
         with warehouse_server._open_warehouse_writable(warehouse_path) as conn:
             trace.finish_recorded_call(
                 conn, pending, terminal_status=trace.STATUS_ERROR, error_kind="dispatch_error"

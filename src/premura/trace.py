@@ -651,12 +651,36 @@ def finish_recorded_call(
             message="A refused call requires a machine-readable refusal_reason.",
             field="refusal_reason",
         )
+    # Append-only enforcement (NFR-003): a recorded call is finalized exactly
+    # once. The insert-then-finish shape (WP01) leaves ``terminal_status`` NULL
+    # until this call; a SECOND finalize would *mutate* a completed row (changing
+    # its terminal status / metadata and appending another result), so reject it
+    # rather than overwrite. Immutability is verified through the public surface.
+    current = conn.execute(
+        "SELECT terminal_status FROM trace.tool_call WHERE call_id = ? LIMIT 1",
+        [pending.call_id],
+    ).fetchone()
+    if current is None:
+        return TraceError(
+            status="not_found",
+            message=f"No such recorded call: {pending.call_id!r}.",
+            field="call_id",
+        )
+    if current[0] is not None:
+        return TraceError(
+            status="already_finalized",
+            message=(
+                f"Call {pending.call_id!r} is already finalized ({current[0]!r}); "
+                "the trace is append-only and a recorded call is finalized once."
+            ),
+            field="call_id",
+        )
     finished_at = _now_iso()
     conn.execute(
         """
         UPDATE trace.tool_call
         SET finished_at_utc = ?, terminal_status = ?, refusal_reason = ?, error_kind = ?
-        WHERE call_id = ?
+        WHERE call_id = ? AND terminal_status IS NULL
         """,
         [
             finished_at,
@@ -681,6 +705,28 @@ def finish_recorded_call(
         refusal_reason=refusal_reason if terminal_status == STATUS_REFUSED else None,
         error_kind=error_kind if terminal_status == STATUS_ERROR else None,
         result_ref=result_ref,
+    )
+
+
+def discard_recorded_call(
+    conn: duckdb.DuckDBPyConnection,
+    pending: PendingCall,
+) -> None:
+    """Remove an eagerly-started call row that never became an analytical question.
+
+    The MCP boundary records BEFORE dispatch, but a request that fails
+    *pre-question* parameter validation (empty metric id, invalid enum,
+    unsupported lag) is explicitly NOT a recorded analytical call and MUST NOT
+    count toward N or the raw analytical-call count (FR-008 / AS-3). This removes
+    only the not-yet-finalized row for ``pending`` — it is bookkeeping for a row
+    that should not have existed, not a delete of a *finalized* recorded call
+    (append-only / NFR-003 governs finalized rows, which :func:`finish_recorded_call`
+    refuses to mutate). A genuine engine fault *after* a valid question is instead
+    finalized as ``error`` by the caller, so it stays counted and consistent.
+    """
+    conn.execute(
+        "DELETE FROM trace.tool_call WHERE call_id = ? AND terminal_status IS NULL",
+        [pending.call_id],
     )
 
 
@@ -800,6 +846,23 @@ def mark_surfaced(
         return TraceError(
             status="invalid_reference",
             message=(f"Call {call_id!r} belongs to session {row[0]!r}, not {session_id!r}."),
+            field="call_id",
+        )
+    # K counts distinct surfaced *calls* (FR-010), not mark rows. A second mark on
+    # the same call would let K exceed N and break the disclosure invariant
+    # raw >= N >= K (NFR-006), so surfaced marks are one-per-call: re-marking a
+    # call is rejected rather than appended.
+    existing_mark = conn.execute(
+        "SELECT mark_id FROM trace.surfaced_mark WHERE session_id = ? AND call_id = ? LIMIT 1",
+        [session_id, call_id],
+    ).fetchone()
+    if existing_mark is not None:
+        return TraceError(
+            status="already_marked",
+            message=(
+                f"Call {call_id!r} is already marked surfaced in session {session_id!r}; "
+                "surfaced marks are one-per-call so K counts distinct user-facing findings."
+            ),
             field="call_id",
         )
     mark_id = _mint_id("mark")
@@ -961,9 +1024,13 @@ def _surfaced_summary(
         )
         for r in mark_rows
     )
+    # K = count of distinct surfaced *calls* (FR-010), not mark rows. mark_surfaced
+    # enforces one mark per call, but count distinct call_ids defensively so K can
+    # never exceed N (NFR-006) even if legacy rows carried duplicates.
+    surfaced_call_ids = {m.call_id for m in marks}
     return SurfacedSummary(
         status="available",
-        count=len(marks),
+        count=len(surfaced_call_ids),
         message=None,
         marks=marks,
     )

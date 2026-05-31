@@ -201,6 +201,52 @@ def test_analytical_call_without_session_writes_no_trace_row(tmp_path: Path) -> 
 
 
 # --------------------------------------------------------------------------- #
+# DRIFT-1 regression — a pre-question parameter validation failure (empty
+# metric_id) in a traced call MUST NOT create a counted trace row (FR-008 / AS-3).
+# --------------------------------------------------------------------------- #
+def test_pre_question_validation_failure_is_not_recorded(tmp_path: Path) -> None:
+    server = build_server(
+        warehouse_path=_warehouse_with_series(tmp_path, [60, 61, 60, 59, 80, 81, 79, 80])
+    )
+    session_id = _call(server, "research_trace_open", {})["session_id"]
+
+    # An empty metric_id never becomes an analytical question — the server raises
+    # before any analysis. The malformed call surfaces an error to the agent; what
+    # matters here is that it leaves NO trace row to inflate N / raw.
+    async def attempt() -> None:
+        try:
+            await server.call_tool("change_point", {"metric_id": "  ", "session_id": session_id})
+        except Exception:
+            return
+
+    asyncio.run(attempt())
+
+    d = _disclosure(server, session_id)
+    assert d["raw_analytical_call_count"] == 0
+    assert d["unique_hypothesis_count"] == 0
+
+
+# --------------------------------------------------------------------------- #
+# RISK-1 regression — an analytical call naming an unknown session is REFUSED;
+# the engine is not dispatched and no unmeasured result is returned.
+# --------------------------------------------------------------------------- #
+def test_unknown_session_refuses_without_dispatch(tmp_path: Path) -> None:
+    server = build_server(
+        warehouse_path=_warehouse_with_series(tmp_path, [60, 61, 60, 59, 80, 81, 79, 80])
+    )
+
+    payload = _call(
+        server, "change_point", {"metric_id": _METRIC, "session_id": "sess_does_not_exist"}
+    )
+
+    # Refusal, not an analytical answer: no engine envelope/result is produced.
+    assert payload["status"] == "not_found"
+    assert payload["field"] == "session_id"
+    assert payload["result"] is None
+    assert payload["trace"]["status"] == "not_found"
+
+
+# --------------------------------------------------------------------------- #
 # T018 — engine-purity regression: traced and untraced engine envelopes are
 # byte-identical (enforces NFR-001). Trace metadata stays at the wrapper layer.
 # --------------------------------------------------------------------------- #

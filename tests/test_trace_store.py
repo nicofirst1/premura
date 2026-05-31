@@ -373,6 +373,77 @@ def test_mark_validation_paths(empty_warehouse) -> None:
 
 
 # --------------------------------------------------------------------------- #
+# DRIFT-2 regression — duplicate surfaced marks cannot make K exceed N.
+# A call marked surfaced twice must not inflate K (NFR-006: raw >= N >= K).
+# --------------------------------------------------------------------------- #
+def test_duplicate_surfaced_mark_rejected_and_k_counts_distinct_calls(empty_warehouse) -> None:
+    conn = empty_warehouse
+    s = trace.open_research_session(conn)
+    call = _record(
+        conn,
+        s.session_id,
+        "change_point",
+        {"metric_id": "hr"},
+        result={"tool_name": "change_point"},
+    )
+
+    first = trace.mark_surfaced(conn, s.session_id, call.call_id, "claim", "main finding")
+    assert isinstance(first, trace.SurfacedMark)
+
+    # Re-marking the SAME call (even with a different role/rationale) is rejected.
+    dup = trace.mark_surfaced(conn, s.session_id, call.call_id, "recommendation", "also this")
+    assert isinstance(dup, trace.TraceError)
+    assert dup.status == "already_marked"
+    assert dup.field == "call_id"
+
+    # The disclosure invariant holds: one unique hypothesis, one surfaced call.
+    disc = trace.get_research_disclosure(conn, s.session_id)
+    assert disc.unique_hypothesis_count == 1
+    assert disc.surfaced.status == "available"
+    assert disc.surfaced.count == 1
+    assert disc.raw_analytical_call_count >= disc.unique_hypothesis_count >= disc.surfaced.count
+
+
+# --------------------------------------------------------------------------- #
+# DRIFT-3 regression — a finalized call is immutable through the public surface.
+# A second finish_recorded_call must be rejected, not silently overwrite the row
+# (NFR-003 append-only).
+# --------------------------------------------------------------------------- #
+def test_double_finalize_is_rejected_and_row_is_immutable(empty_warehouse) -> None:
+    conn = empty_warehouse
+    s = trace.open_research_session(conn)
+    pending = trace.start_recorded_call(conn, s.session_id, "change_point", {"metric_id": "hr"})
+    assert isinstance(pending, trace.PendingCall)
+
+    first = trace.finish_recorded_call(
+        conn, pending, terminal_status="refused", refusal_reason="weak_support"
+    )
+    assert isinstance(first, trace.RecordedCall)
+    assert first.terminal_status == "refused"
+
+    # A second finalize (e.g. trying to flip it to available) must be rejected.
+    second = trace.finish_recorded_call(
+        conn, pending, terminal_status="available", result={"tool_name": "change_point"}
+    )
+    assert isinstance(second, trace.TraceError)
+    assert second.status == "already_finalized"
+    assert second.field == "call_id"
+
+    # The persisted row is unchanged: still refused, no result row appended.
+    row = conn.execute(
+        "SELECT terminal_status, refusal_reason FROM trace.tool_call WHERE call_id = ?",
+        [pending.call_id],
+    ).fetchone()
+    assert row[0] == "refused"
+    assert row[1] == "weak_support"
+    n_results = conn.execute(
+        "SELECT COUNT(*) FROM trace.tool_result WHERE call_id = ?",
+        [pending.call_id],
+    ).fetchone()[0]
+    assert n_results == 0
+
+
+# --------------------------------------------------------------------------- #
 # T012 — unknown session disclosure returns not_found (FR-015).
 # --------------------------------------------------------------------------- #
 def test_unknown_session_disclosure_not_found(empty_warehouse) -> None:
