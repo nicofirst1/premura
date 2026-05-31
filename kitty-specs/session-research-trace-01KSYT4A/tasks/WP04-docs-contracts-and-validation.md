@@ -15,8 +15,8 @@ subtasks:
 - T021
 - T022
 - T023
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "21664"
+agent: "claude:opus:docs-reviewer:reviewer"
+shell_pid: "37548"
 history:
 - timestamp: '2026-05-31T10:54:25Z'
   agent: opencode
@@ -217,3 +217,4 @@ Reviewers should compare docs against actual code behavior. The main failure mod
 
 - 2026-05-31T11:48:00Z – claude:opus:python-implementer:implementer – shell_pid=21664 – Started implementation via action command
 - 2026-05-31T12:06:20Z – claude:opus:python-implementer:implementer – shell_pid=21664 – Ready for review: live docs + contracts synced to shipped trace surface; ruff-format gap on mission code files fixed; gates recorded
+- 2026-05-31T12:06:34Z – claude:opus:docs-reviewer:reviewer – shell_pid=37548 – Started review via action command
