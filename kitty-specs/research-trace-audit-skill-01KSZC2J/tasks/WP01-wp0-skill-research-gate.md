@@ -10,7 +10,7 @@ requirement_refs:
 - FR-005
 planning_base_branch: master
 merge_target_branch: master
-branch_strategy: Planning artifacts were generated on master; completed changes must merge back into master. Execution worktrees are allocated per computed lane from lanes.json after finalize-tasks.
+branch_strategy: Planning artifacts for this feature were generated on master. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into master unless the human explicitly redirects the landing branch.
 subtasks:
 - T001
 - T002
@@ -144,6 +144,51 @@ Keep the main body to no more than 1,500 words excluding citations and appendice
 - It gives a clear adopt/defer/reject recommendation.
 - It names a locally-verifiable check for every supported install target.
 - It explicitly says ordinary audit execution must remain offline.
+
+## Research Quality Bar
+
+This WP is successful only if the output changes what later agents can safely do. A list of links is not enough. Each cited source should be converted into a planning consequence.
+
+For every important source, ask:
+
+- What does this source say a skill must contain?
+- What does this source say a client discovers automatically?
+- What is specific to one client versus portable across skill-compatible agents?
+- What would break if Premura assumed this behavior incorrectly?
+- How can a reviewer verify the finding locally?
+
+Use plain English. The maintainer is technical but does not want tool-ecosystem jargon without a short explanation.
+
+## Expected Decision Granularity
+
+The final recommendation should be specific enough for WP04 to act without another research pass.
+
+Good examples:
+
+- `adopt`: "Add target X because client docs say repo-local skills live at Y; verification is command Z or file inspection Q."
+- `defer`: "The standard supports write-once content, but client X's local path is not stable enough; keep skill content portable and revisit installer later."
+- `reject`: "Client X does not load local skills in a way Premura can verify; adding installer code would create dead files."
+
+Bad examples:
+
+- "Maybe support OpenCode later."
+- "There are many ways to install skills."
+- "Use the standard" without naming what that means for files in this repo.
+
+## Integration Points For Later WPs
+
+WP02 needs to know whether fixtures and rubric should follow a standard resource layout. WP03 needs to know what frontmatter and description style improves skill discovery. WP04 needs the exact installation decision. If your output does not answer all three, it is incomplete.
+
+## Stop Conditions
+
+Stop and surface a blocker if:
+
+- current internet sources contradict the planning assumption that Agent Skills are folder-based with `SKILL.md`
+- no authoritative source can confirm an OpenCode-style local skill home
+- a target requires network-backed installation or a package registry, because this mission needs local-first behavior
+- a suggested packaging library would own more scope than this mission can review safely
+
+If blocked, still write the research artifact with the blocker and a conservative recommendation.
 
 ## Definition of Done
 

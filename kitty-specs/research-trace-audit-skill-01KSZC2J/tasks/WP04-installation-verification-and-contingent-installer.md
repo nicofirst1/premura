@@ -9,7 +9,7 @@ requirement_refs:
 - FR-004
 planning_base_branch: master
 merge_target_branch: master
-branch_strategy: Planning artifacts were generated on master; completed changes must merge back into master. Execution worktrees are allocated per computed lane from lanes.json after finalize-tasks.
+branch_strategy: Planning artifacts for this feature were generated on master. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into master unless the human explicitly redirects the landing branch.
 subtasks:
 - T013
 - T014
@@ -118,6 +118,56 @@ uv run ruff format --check src/premura/skills tests/test_install_skills_multi_ho
 ```
 
 If no new test file is needed, run the existing installer tests that prove the behavior.
+
+## Decision Matrix
+
+Use WP01's recommendation exactly:
+
+### If WP01 says `adopt`
+
+Implement the additional target described in WP01. Keep it additive. Existing callers of `install_skills(target_root)` should still get the Claude-style install behavior.
+
+If a function signature change is needed, prefer a backward-compatible optional parameter only if tests prove current CLI behavior still works. Do not add configuration files or new CLI flags unless WP01 explicitly justifies them.
+
+### If WP01 says `defer`
+
+Do not implement additional target support. Add only tests or validation needed to prove the new skill is installed through the existing path. The handoff should explain why the extra home is deferred.
+
+### If WP01 says `reject`
+
+Do not implement additional target support. Keep the skill content portable by standard format, but do not write files to unsupported homes. The handoff should explain what evidence led to rejection.
+
+## Installer Behavior To Preserve
+
+Existing behavior matters more than new target support. Preserve:
+
+- discovering bundled skill directories by `SKILL.md`
+- copying sibling resource files and directories
+- idempotent second runs
+- sha256 skip behavior where currently present
+- CLI command `hpipe install-skills`
+- writing the existing parser-generator skill as before
+
+If changing `install_skills()` makes any existing install test fail, fix the regression rather than updating tests to weaker expectations.
+
+## Public Test Examples
+
+Tests should create a temporary target root, call `install_skills(tmp_path)`, and inspect output files. Avoid relying on private helper names.
+
+Useful assertions:
+
+- `tmp_path/.claude/skills/research-trace-audit/SKILL.md` exists
+- `AUDIT_RUBRIC.md` and `fixtures/` are copied if the installer copies resources recursively
+- second run returns no duplicate writes or preserves idempotent behavior
+- adopted additional home contains the same skill content if WP01 said adopt
+
+If the current installer does not copy non-`SKILL.md` sibling resources, stop and assess whether that is a blocker for this skill. The skill requires `AUDIT_RUBRIC.md` and fixtures to be bundled resources.
+
+## Coordination With WP03
+
+This WP depends on `SKILL.md` existing. If WP03 has not landed, do not fake an install target. The installer discovers directories by `SKILL.md`; without it, verification is meaningless.
+
+Do not edit `SKILL.md` here. If installation reveals packaging requirements that require changing `SKILL.md`, coordinate with the owner of WP03 rather than silently crossing ownership.
 
 ## Definition of Done
 

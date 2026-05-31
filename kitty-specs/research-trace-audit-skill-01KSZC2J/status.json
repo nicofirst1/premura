@@ -1,0 +1,56 @@
+{
+  "event_count": 5,
+  "last_event_id": "01KSZDECV908VX9Q6KN4ST7CQQ",
+  "materialized_at": "2026-05-31T16:21:33.161333+00:00",
+  "mission_number": "",
+  "mission_slug": "research-trace-audit-skill-01KSZC2J",
+  "mission_type": "software-dev",
+  "summary": {
+    "approved": 0,
+    "blocked": 0,
+    "canceled": 0,
+    "claimed": 0,
+    "done": 0,
+    "for_review": 0,
+    "in_progress": 0,
+    "in_review": 0,
+    "planned": 5
+  },
+  "work_packages": {
+    "WP01": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KSZDECR8PHQ9QXM3B1R2KBQJ",
+      "last_transition_at": "2026-05-31T16:21:33.064555+00:00"
+    },
+    "WP02": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KSZDECV3TGSRH58WG53WYB8D",
+      "last_transition_at": "2026-05-31T16:21:33.155401+00:00"
+    },
+    "WP03": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KSZDECV55MXAB5GX0D07K3K5",
+      "last_transition_at": "2026-05-31T16:21:33.157573+00:00"
+    },
+    "WP04": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KSZDECV7X23WKCQG3H127A4F",
+      "last_transition_at": "2026-05-31T16:21:33.159526+00:00"
+    },
+    "WP05": {
+      "actor": "finalize-tasks",
+      "force_count": 1,
+      "lane": "planned",
+      "last_event_id": "01KSZDECV908VX9Q6KN4ST7CQQ",
+      "last_transition_at": "2026-05-31T16:21:33.161333+00:00"
+    }
+  }
+}

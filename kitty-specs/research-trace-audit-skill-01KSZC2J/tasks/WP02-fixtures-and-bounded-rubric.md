@@ -11,7 +11,7 @@ requirement_refs:
 - FR-011
 planning_base_branch: master
 merge_target_branch: master
-branch_strategy: Planning artifacts were generated on master; completed changes must merge back into master. Execution worktrees are allocated per computed lane from lanes.json after finalize-tasks.
+branch_strategy: Planning artifacts for this feature were generated on master. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into master unless the human explicitly redirects the landing branch.
 subtasks:
 - T005
 - T006
@@ -147,6 +147,50 @@ Check that:
 - Compare fixture fields against the audit-consumer contract.
 - Read `AUDIT_RUBRIC.md` against `rubric-criterion-contract.md`.
 - Run formatting/lint checks relevant to changed files; if only Markdown/JSON changed, at minimum ensure files are parseable and consistently formatted.
+
+## Fixture Design Notes
+
+The fixtures are the test-first surface for a prose skill. Treat expected verdicts as the red tests and the rubric as the artifact that turns them green.
+
+Each fixture should be small enough for a reviewer agent to read in one pass, but complete enough to exercise the relevant contract fields. Do not add sprawling call histories when one or two representative calls prove the point.
+
+Recommended fixture intent:
+
+- `pass.json`: includes search-effort disclosure, available surfaced marks, no hidden refusals, and cautious wording.
+- `omitted-search-effort.json`: final answer presents a finding but omits the denominator or search-effort framing.
+- `hidden-refusal.json`: trace includes a refused call relevant to the answer, and prose hides it.
+- `surfaced-unavailable.json`: trace has calls but no surfaced marks; answer behaves as if surfaced count were known.
+- `overclaim.json`: answer turns association or change into cause, diagnosis, treatment, prediction, or unsupported certainty.
+
+## Rubric Design Notes
+
+`AUDIT_RUBRIC.md` should be useful to an agent, not just acceptable to a reviewer. Prefer criterion questions that force the agent to look at structured evidence.
+
+Good criterion style:
+
+- "Does the answer disclose `unique_hypothesis_count` or equivalent search effort when it presents selected findings?"
+- "If `surfaced.status = unavailable`, does the answer avoid implying a known surfaced count?"
+- "Does the answer frame association as association rather than cause?"
+
+Bad criterion style:
+
+- "Flag the word significant."
+- "Never say caused."
+- "Check if the answer sounds honest."
+
+The issue is not one word; it is whether a claim exceeds the structured evidence.
+
+## Contract Boundaries To Preserve
+
+The audit skill consumes the trace; it does not repair the trace. Do not add fixture fields that imply the skill can set `surfaced` marks or recompute `unique_hypothesis_count`.
+
+The trace's rendered `disclosure_text` may appear as a convenience field, but fixture expectations must be grounded in structured fields. If you include `disclosure_text`, add a comment-like field or README note explaining it is not authoritative for counts.
+
+The rubric may suggest opening an issue or revising prose, but it must not suggest changing trace storage as the ordinary fix for an answer problem.
+
+## Stop Conditions
+
+Stop and ask for review if the audit-consumer contract lacks a field you need for the rubric. Do not invent a new required disclosure field in fixtures without explicit approval, because that would silently change the upstream trace contract.
 
 ## Definition of Done
 

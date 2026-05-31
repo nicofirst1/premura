@@ -11,7 +11,7 @@ requirement_refs:
 - FR-012
 planning_base_branch: master
 merge_target_branch: master
-branch_strategy: Planning artifacts were generated on master; completed changes must merge back into master. Execution worktrees are allocated per computed lane from lanes.json after finalize-tasks.
+branch_strategy: Planning artifacts for this feature were generated on master. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into master unless the human explicitly redirects the landing branch.
 subtasks:
 - T009
 - T010
@@ -120,6 +120,59 @@ Confirm:
 - Read the workflow against the five fixtures.
 - Confirm the file can be installed as a standard skill resource by WP04.
 - Confirm there is no duplicate rubric table that can drift from `AUDIT_RUBRIC.md`.
+
+## Suggested `SKILL.md` Shape
+
+Use the final WP01 research recommendation if it differs, but the expected shape is:
+
+- frontmatter with `name` and `description`
+- one paragraph stating what the skill does
+- `When to invoke this skill`
+- `Required inputs`
+- `Workflow`
+- `Audit result shape`
+- `Authoritative references`
+- `Do not`
+
+The `description` should include concrete trigger language such as research trace, multiplicity disclosure, audit-consumer contract, final analytical answer, hidden refusals, and overclaiming. Keep it short enough for discovery metadata.
+
+## Required Input Wording
+
+Be explicit that the skill cannot issue a real audit without both inputs. If the structured disclosure is missing, the correct result is `blocked` or a request for the disclosure, not a best-effort prose critique.
+
+The skill should accept the disclosure as JSON-like structured data or a faithful pasted object. It should not tell the agent to query raw `hp.*` tables, inspect DuckDB directly, or reconstruct a session by searching logs.
+
+## Audit Result Guidance
+
+The skill should instruct the agent to emit an audit result in the shape defined by `audit-result-contract.md`:
+
+- `verdict`
+- `reasons`
+- `suggested_revisions`
+- optional `next_steps`
+
+For non-pass results, require at least one evidence reference. The evidence reference can be a structured field such as `unique_hypothesis_count = 7` or a quoted answer span such as "training load caused your HRV drop".
+
+## Common Failure Modes To Avoid
+
+Do not write the skill as a general moral critique of agent answers. It is specifically about Premura's analytical session trace and the answer built from it.
+
+Do not tell the agent to "be transparent" without naming what transparency means here: search effort, surfaced availability, refusals/errors, contradictory calls, and claim boundaries.
+
+Do not import installation instructions into the audit workflow. Installation outcomes belong to WP04 and live docs; this skill should focus on runtime use.
+
+Do not embed every fixture in `SKILL.md`. Mention fixtures as examples and keep full examples in bundled resources.
+
+## Manual Clarity Check
+
+Before handoff, ask a fresh agent or reviewer to read only the first screen of `SKILL.md` and answer:
+
+- What two inputs are required?
+- What verdict values can the skill emit?
+- Where is the detailed rubric?
+- Is the skill generic or Premura-specific?
+
+If those answers are not obvious, revise the top of the file.
 
 ## Definition of Done
 
