@@ -15,8 +15,8 @@ subtasks:
 - T018
 - T019
 - T020
-agent: "claude:opus:docs-implementer:implementer"
-shell_pid: "51416"
+agent: "claude:opus:docs-reviewer:reviewer"
+shell_pid: "56254"
 history:
 - timestamp: '2026-05-31T16:16:44Z'
   agent: openai:gpt-5.5
@@ -188,3 +188,4 @@ Reject if docs overclaim, if they mark contingent installer support as shipped i
 
 - 2026-05-31T17:08:05Z – claude:opus:docs-implementer:implementer – shell_pid=51416 – Started implementation via action command
 - 2026-05-31T17:10:57Z – claude:opus:docs-implementer:implementer – shell_pid=51416 – Ready for review: live docs synced to shipped audit skill
+- 2026-05-31T17:11:28Z – claude:opus:docs-reviewer:reviewer – shell_pid=56254 – Started review via action command
