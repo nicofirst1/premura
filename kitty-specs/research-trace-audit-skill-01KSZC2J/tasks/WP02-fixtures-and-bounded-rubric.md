@@ -20,7 +20,8 @@ subtasks:
 - T006
 - T007
 - T008
-shell_pid: '17596'
+shell_pid: "17596"
+agent: "claude:opus:python-implementer:implementer"
 history:
 - timestamp: '2026-05-31T16:16:44Z'
   agent: openai:gpt-5.5
@@ -206,3 +207,7 @@ Stop and ask for review if the audit-consumer contract lacks a field you need fo
 ## Reviewer Guidance
 
 Reject if the rubric becomes a banned-word list, if the fixtures rely on prose `disclosure_text` for counts, or if any fixture contains real operator data.
+
+## Activity Log
+
+- 2026-05-31T16:31:21Z – claude:opus:python-implementer:implementer – shell_pid=17596 – Assigned agent via action command
