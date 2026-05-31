@@ -1,7 +1,7 @@
 {
-  "event_count": 30,
-  "last_event_id": "01KSZG2Q7N9KKP8CJP2Z720EER",
-  "materialized_at": "2026-05-31T17:07:36.309762+00:00",
+  "event_count": 32,
+  "last_event_id": "01KSZG3KDV8WT7V53ED3HNZHGM",
+  "materialized_at": "2026-05-31T17:08:05.179928+00:00",
   "mission_number": "",
   "mission_slug": "research-trace-audit-skill-01KSZC2J",
   "mission_type": "software-dev",
@@ -12,9 +12,9 @@
     "claimed": 0,
     "done": 0,
     "for_review": 0,
-    "in_progress": 0,
+    "in_progress": 1,
     "in_review": 0,
-    "planned": 1
+    "planned": 0
   },
   "work_packages": {
     "WP01": {
@@ -46,11 +46,11 @@
       "last_transition_at": "2026-05-31T17:07:36.309762+00:00"
     },
     "WP05": {
-      "actor": "finalize-tasks",
+      "actor": "claude:opus:docs-implementer:implementer",
       "force_count": 1,
-      "lane": "planned",
-      "last_event_id": "01KSZDECV908VX9Q6KN4ST7CQQ",
-      "last_transition_at": "2026-05-31T16:21:33.161333+00:00"
+      "lane": "in_progress",
+      "last_event_id": "01KSZG3KDV8WT7V53ED3HNZHGM",
+      "last_transition_at": "2026-05-31T17:08:05.179928+00:00"
     }
   }
 }

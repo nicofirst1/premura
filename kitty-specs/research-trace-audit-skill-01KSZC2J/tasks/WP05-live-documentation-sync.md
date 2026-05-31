@@ -15,6 +15,8 @@ subtasks:
 - T018
 - T019
 - T020
+agent: "claude:opus:docs-implementer:implementer"
+shell_pid: "51416"
 history:
 - timestamp: '2026-05-31T16:16:44Z'
   agent: openai:gpt-5.5
@@ -181,3 +183,7 @@ This WP is documentation-only. It should not fix code, add fixtures, or adjust s
 ## Reviewer Guidance
 
 Reject if docs overclaim, if they mark contingent installer support as shipped incorrectly, or if they edit historical specs instead of live reference docs.
+
+## Activity Log
+
+- 2026-05-31T17:08:05Z – claude:opus:docs-implementer:implementer – shell_pid=51416 – Started implementation via action command
