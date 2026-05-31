@@ -15,6 +15,8 @@ subtasks:
 - T014
 - T015
 - T016
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "42555"
 history:
 - timestamp: '2026-05-31T16:16:44Z'
   agent: openai:gpt-5.5
@@ -179,3 +181,7 @@ Do not edit `SKILL.md` here. If installation reveals packaging requirements that
 ## Reviewer Guidance
 
 Reject if the WP implements a target WP01 did not recommend adopting, if tests inspect internals instead of output files, or if existing `.claude/skills/` behavior regresses.
+
+## Activity Log
+
+- 2026-05-31T16:55:54Z – claude:opus:python-implementer:implementer – shell_pid=42555 – Started implementation via action command
