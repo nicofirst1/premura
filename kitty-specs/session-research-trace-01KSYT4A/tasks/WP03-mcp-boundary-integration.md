@@ -24,8 +24,8 @@ subtasks:
 - T017
 - T018
 - T019
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "8220"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "18747"
 history:
 - timestamp: '2026-05-31T10:54:25Z'
   agent: opencode
@@ -212,3 +212,4 @@ Reviewers should inspect boundary placement. MCP may orchestrate trace recording
 
 - 2026-05-31T11:30:56Z – claude:opus:python-implementer:implementer – shell_pid=8220 – Started implementation via action command
 - 2026-05-31T11:44:00Z – claude:opus:python-implementer:implementer – shell_pid=8220 – Ready for review: MCP trace tools (open/mark/disclosure) on default surface + opt-in analytical recording on change_point/smoothed_average/correlate + engine-purity regression, all green
+- 2026-05-31T11:44:38Z – claude:opus:python-reviewer:reviewer – shell_pid=18747 – Started review via action command
