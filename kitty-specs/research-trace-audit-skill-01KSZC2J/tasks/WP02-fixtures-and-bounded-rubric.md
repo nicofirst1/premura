@@ -218,3 +218,4 @@ Reject if the rubric becomes a banned-word list, if the fixtures rely on prose `
 - 2026-05-31T16:45:30Z – claude:opus:python-implementer:implementer – shell_pid=29187 – Fixed: calls_truncated now consistent with inlined calls subset (cycle 1)
 - 2026-05-31T16:45:57Z – claude:opus:python-reviewer:reviewer – shell_pid=34319 – Started review via action command
 - 2026-05-31T16:47:09Z – claude:opus:python-reviewer:reviewer – shell_pid=34319 – Review passed (cycle 1 fix verified): calls_truncated now consistent; verdicts unchanged
+- 2026-05-31T17:14:20Z – claude:opus:python-reviewer:reviewer – shell_pid=34319 – Done override: Mission merged to master (52ca5d8)
