@@ -13,10 +13,10 @@
 | T002 | Research local skill discovery and installation patterns for Claude-style and OpenCode-style homes. | WP01 | No | [D] |
 | T003 | Evaluate write-once packaging or installer approaches and give adopt/defer/reject recommendation. | WP01 | No | [D] |
 | T004 | Translate findings into Premura-specific skill-authoring and installation rules. | WP01 | No | [D] |
-| T005 | Author five synthetic audit fixtures with expected verdicts before rubric prose. | WP02 | No |
-| T006 | Write `AUDIT_RUBRIC.md` as a bounded criteria registry, not a banned-phrase list. | WP02 | No |
-| T007 | Cross-check rubric criteria against the audit-consumer contract and fixture expectations. | WP02 | No |
-| T008 | Verify fixture hygiene: synthetic only, no PHI, no redefined trace counts. | WP02 | No |
+| T005 | Author five synthetic audit fixtures with expected verdicts before rubric prose. | WP02 | No | [D] |
+| T006 | Write `AUDIT_RUBRIC.md` as a bounded criteria registry, not a banned-phrase list. | WP02 | No | [D] |
+| T007 | Cross-check rubric criteria against the audit-consumer contract and fixture expectations. | WP02 | No | [D] |
+| T008 | Verify fixture hygiene: synthetic only, no PHI, no redefined trace counts. | WP02 | No | [D] |
 | T009 | Author `SKILL.md` frontmatter for discoverability and correct invocation. | WP03 | No |
 | T010 | Write the skill workflow for required inputs, review sequence, and audit output. | WP03 | No |
 | T011 | Link the skill to `AUDIT_RUBRIC.md`, fixtures, and authoritative Premura contracts. | WP03 | No |
@@ -80,10 +80,10 @@
 
 **Included subtasks**:
 
-- [ ] T005 Author five synthetic audit fixtures with expected verdicts before rubric prose. (WP02)
-- [ ] T006 Write `AUDIT_RUBRIC.md` as a bounded criteria registry, not a banned-phrase list. (WP02)
-- [ ] T007 Cross-check rubric criteria against the audit-consumer contract and fixture expectations. (WP02)
-- [ ] T008 Verify fixture hygiene: synthetic only, no PHI, no redefined trace counts. (WP02)
+- [x] T005 Author five synthetic audit fixtures with expected verdicts before rubric prose. (WP02)
+- [x] T006 Write `AUDIT_RUBRIC.md` as a bounded criteria registry, not a banned-phrase list. (WP02)
+- [x] T007 Cross-check rubric criteria against the audit-consumer contract and fixture expectations. (WP02)
+- [x] T008 Verify fixture hygiene: synthetic only, no PHI, no redefined trace counts. (WP02)
 
 **Implementation sketch**:
 
