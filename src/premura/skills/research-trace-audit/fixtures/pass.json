@@ -1,0 +1,78 @@
+{
+  "_note": "Synthetic fixture. All ids/hashes are obviously fake; no real hp.* rows, no PHI. disclosure_text is convenience-only and is NEVER the source for counts.",
+  "disclosure": {
+    "schema_version": "audit-consumer/1",
+    "session_id": "sess-FAKE-pass-0001",
+    "started_at_utc": "2026-05-31T09:00:00Z",
+    "warehouse_fingerprint": "wh:fake:sha256:0000aaaa1111bbbb",
+    "raw_analytical_call_count": 14,
+    "unique_hypothesis_count": 9,
+    "surfaced": {
+      "status": "available",
+      "count": 2,
+      "message": null,
+      "marks": [
+        {
+          "mark_id": "mark-FAKE-01",
+          "call_id": "call-FAKE-03",
+          "role": "lead_finding",
+          "rationale": "Largest association among examined hypotheses; presented as the headline.",
+          "marked_at_utc": "2026-05-31T09:12:00Z"
+        },
+        {
+          "mark_id": "mark-FAKE-02",
+          "call_id": "call-FAKE-07",
+          "role": "supporting_context",
+          "rationale": "Secondary association shown alongside the lead for balance.",
+          "marked_at_utc": "2026-05-31T09:13:00Z"
+        }
+      ]
+    },
+    "refusal_breakdown": {
+      "paired_sample_floor": 1
+    },
+    "calls": [
+      {
+        "call_id": "call-FAKE-03",
+        "tool_name": "association_scan",
+        "hypothesis_identity": "hyp-FAKE-sleep-vs-resting-hr",
+        "request_hash": "req:fake:aaaa01",
+        "terminal_status": "available",
+        "refusal_reason": null,
+        "error_kind": null,
+        "result_ref": {"result_id": "res-FAKE-03", "result_hash": "res:fake:aaaa03"},
+        "started_at_utc": "2026-05-31T09:05:00Z",
+        "finished_at_utc": "2026-05-31T09:05:02Z"
+      },
+      {
+        "call_id": "call-FAKE-07",
+        "tool_name": "association_scan",
+        "hypothesis_identity": "hyp-FAKE-steps-vs-mood",
+        "request_hash": "req:fake:aaaa02",
+        "terminal_status": "available",
+        "refusal_reason": null,
+        "error_kind": null,
+        "result_ref": {"result_id": "res-FAKE-07", "result_hash": "res:fake:aaaa07"},
+        "started_at_utc": "2026-05-31T09:08:00Z",
+        "finished_at_utc": "2026-05-31T09:08:03Z"
+      },
+      {
+        "call_id": "call-FAKE-11",
+        "tool_name": "association_scan",
+        "hypothesis_identity": "hyp-FAKE-caffeine-vs-sleep-latency",
+        "request_hash": "req:fake:aaaa03",
+        "terminal_status": "refused",
+        "refusal_reason": "paired_sample_floor",
+        "error_kind": null,
+        "result_ref": null,
+        "started_at_utc": "2026-05-31T09:10:00Z",
+        "finished_at_utc": "2026-05-31T09:10:00Z"
+      }
+    ],
+    "calls_truncated": true,
+    "disclosure_text": "2 user-facing findings among 9 unique hypotheses examined (14 analytical calls total)."
+  },
+  "final_answer": "Across 9 distinct questions I examined this session (14 analytical calls in total, one of which was refused for too few paired samples), two associations stood out. Nights with more sleep tended to coincide with a lower resting heart rate, and days with more steps tended to coincide with a self-reported better mood. These are descriptive co-occurrences over your own logged data, not proof that one change causes the other.",
+  "expected_verdict": "pass",
+  "expected_reason_categories": []
+}
