@@ -17,6 +17,7 @@ Response fields:
 - `started_at_utc`: ISO timestamp.
 - `warehouse_fingerprint`: string reference to the warehouse context.
 - `schema_version`: integer or string schema version.
+- `client_label`: the supplied label (or null when none was given).
 
 Errors:
 
@@ -26,16 +27,20 @@ Errors:
 
 When an analytical call is dispatched with tracing active, the boundary records it before/after dispatch.
 
-Tracing association:
+Tracing association (as implemented):
 
-- Preferred: analytical tools accept or are invoked with a `session_id` through the MCP boundary context.
-- If no `session_id` is supplied, the analytical tool still works normally but is not associated with a trace session unless implementation deliberately supports an explicit default session.
+- Each analytical tool (`change_point`, `smoothed_average`, `correlate`) takes an optional `session_id` parameter. Pass the `session_id` returned by `research_trace_open` to record the call in that research session's trace.
+- If no `session_id` is supplied, the analytical tool behaves exactly as before, writes no trace row, and returns a byte-identical engine envelope (no `trace` key is added).
 
 Recording guarantees:
 
 - Every dispatched analytical call in an open session yields exactly one recorded call row.
 - Refusals are recorded with machine-readable refusal reasons.
-- Engine result envelopes are unchanged by tracing.
+- Engine result envelopes are unchanged by tracing (NFR-001).
+
+Wrapper-layer `trace` metadata:
+
+- When a `session_id` is supplied, the response carries a top-level `trace` object **beside** the unchanged engine envelope — the engine envelope itself is never mutated. On success `trace` holds `session_id`, `call_id`, `terminal_status`, and (for an available call) `result_id`; if recording could not start (e.g. an unknown session) the analytical answer is still returned with a structured `trace` error (`status`/`message`/`field`).
 
 ## Tool: `research_trace_mark_surfaced`
 
@@ -55,6 +60,7 @@ Response fields:
 - `session_id`.
 - `call_id`.
 - `role`.
+- `rationale`.
 - `marked_at_utc`.
 
 Errors:
@@ -77,13 +83,19 @@ Request fields:
 Response fields for JSON:
 
 - `status`: `available` or `not_found`.
+- `schema_version`: audit-consumer contract version string.
 - `session_id`.
-- `raw_analytical_call_count`.
-- `unique_hypothesis_count`.
-- `surfaced`: object with `status`, `count`, `message`, and marked call references.
+- `started_at_utc`: ISO timestamp the session opened at.
+- `warehouse_fingerprint`: warehouse context reference the disclosure was computed against.
+- `raw_analytical_call_count`: count of all recorded raw analytical calls in the session.
+- `unique_hypothesis_count`: `N`, the count of unique hypotheses examined.
+- `surfaced`: object with `status`, `count`, `message`, and `marks` (the marked call references). When no marks exist, `status` is `surfaced unavailable` (`unavailable`), `count` is null, and `message` explains the absence — never a guessed `0`.
 - `refusal_breakdown`: object keyed by refusal reason.
 - `disclosure_text`: string framed as `K user-facing findings among N unique hypotheses examined` when surfaced is available.
-- `call_references`: bounded list of call/result references for audit consumers.
+- `calls`: bounded list of call/result references for audit consumers (omitted when `include_calls` is false).
+- `calls_truncated`: boolean flag set when the bounded call list was capped.
+
+When `format="markdown"`, a generated `disclosure_markdown` export string is added beside the structured counts. The Markdown export is generated on demand from the structured disclosure and is never the canonical record.
 
 Required framing:
 

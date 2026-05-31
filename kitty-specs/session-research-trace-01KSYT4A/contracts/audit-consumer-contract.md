@@ -16,6 +16,8 @@ Required fields:
 - `refusal_breakdown`: counts by refusal reason.
 - `calls`: bounded list of stable call records or references.
 
+Additional fields the implemented disclosure also carries (additive, not required by a consumer): `disclosure_text` (the framed `K user-facing findings among N unique hypotheses examined` sentence, with the raw analytical-call count shown separately) and `calls_truncated` (set when the bounded call list was capped). The `disclosure_text` is a convenience rendering; a consumer must derive its own counts from the structured fields above, never by parsing the prose.
+
 ## Contract Object: Surfaced Summary
 
 Required fields:
@@ -39,7 +41,8 @@ Required fields:
 - `hypothesis_identity`.
 - `request_hash`.
 - `terminal_status`: `available`, `refused`, or `error`.
-- `refusal_reason`: nullable.
+- `refusal_reason`: nullable (populated only for a `refused` call).
+- `error_kind`: nullable (populated only for an `error` call — a dispatch failure recorded as a first-class call).
 - `result_ref`: nullable object with `result_id` and `result_hash`.
 - `started_at_utc`.
 - `finished_at_utc`.
