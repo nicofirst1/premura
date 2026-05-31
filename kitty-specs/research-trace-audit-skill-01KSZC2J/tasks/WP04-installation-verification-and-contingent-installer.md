@@ -185,3 +185,4 @@ Reject if the WP implements a target WP01 did not recommend adopting, if tests i
 ## Activity Log
 
 - 2026-05-31T16:55:54Z – claude:opus:python-implementer:implementer – shell_pid=42555 – Started implementation via action command
+- 2026-05-31T17:03:06Z – claude:opus:python-implementer:implementer – shell_pid=42555 – Ready for review: verify-only per WP01 (OpenCode/multi-home installer rejected); existing single-home install_skills() bundles SKILL.md + AUDIT_RUBRIC.md + fixtures/*.json recursively with sha256 idempotency; regression test added; full suite 637 passed
