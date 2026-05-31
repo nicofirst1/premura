@@ -27,10 +27,10 @@
 | T017 | Add MCP tests for trace tools, analytical recording, refusals, retries, and non-analytical exclusions | WP03 |  | [D] |
 | T018 | Add engine-purity regression tests proving traced and untraced envelopes are byte-identical | WP03 |  | [D] |
 | T019 | Verify operator surface inherits trace behavior without exposing new raw-health semantics | WP03 |  | [D] |
-| T020 | Sync live docs for shipped trace surface and deferred audit skill | WP04 | [P] |
-| T021 | Update mission contracts/quickstart if implementation names or response fields differ from planning names | WP04 | [P] |
-| T022 | Add final validation notes covering requirement coverage and quality gates | WP04 |  |
-| T023 | Run and record final validation commands or explicit pre-existing failures | WP04 |  |
+| T020 | Sync live docs for shipped trace surface and deferred audit skill | WP04 | [D] |
+| T021 | Update mission contracts/quickstart if implementation names or response fields differ from planning names | WP04 | [D] |
+| T022 | Add final validation notes covering requirement coverage and quality gates | WP04 |  | [D] |
+| T023 | Run and record final validation commands or explicit pre-existing failures | WP04 |  | [D] |
 
 ## Work Packages
 
@@ -152,10 +152,10 @@ Risks:
 
 Included subtasks:
 
-- [ ] T020 Sync live docs for shipped trace surface and deferred audit skill (WP04)
-- [ ] T021 Update mission contracts/quickstart if implementation names or response fields differ from planning names (WP04)
-- [ ] T022 Add final validation notes covering requirement coverage and quality gates (WP04)
-- [ ] T023 Run and record final validation commands or explicit pre-existing failures (WP04)
+- [x] T020 Sync live docs for shipped trace surface and deferred audit skill (WP04)
+- [x] T021 Update mission contracts/quickstart if implementation names or response fields differ from planning names (WP04)
+- [x] T022 Add final validation notes covering requirement coverage and quality gates (WP04)
+- [x] T023 Run and record final validation commands or explicit pre-existing failures (WP04)
 
 Implementation sketch:
 
