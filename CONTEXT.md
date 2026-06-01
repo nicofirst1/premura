@@ -59,6 +59,10 @@ _Avoid_: profile row, current value (a profile fact is a lineage of assertions, 
 The supported way baseline profile facts get recorded: the agent records one allowlisted attribute at a time through the profile-capture tools, stamped with provenance `agent_profile_capture`. The allowlist is closed (`premura.profile_fields`); a derived key such as `age` is rejected, not stored. This is the default — there is no human-filled profile form.
 _Avoid_: onboarding form, profile wizard, manual entry (as the default).
 
+**Lifestyle context**:
+User-declared habits, routines, constraints, or life circumstances that may help interpret health data later but are not stable baseline profile facts. Lifestyle context needs its own explicit capture rules and should not be silently stored through the baseline profile context path.
+_Avoid_: profile context, free-form profile note, hidden memory.
+
 **Nutrition intake / supplement intake**:
 What the operator ate, drank, or supplemented — consumption, not a body measurement. A meal's energy is a nutrition quantity on an intake event; a wearable's expended kcal stays an observation. These land in their own `hp.nutrition_intake_*` / `hp.supplement_intake_*` tables. *Storing* them exists today; *adapting a specific source* into them is follow-on parser/plugin work, not a built-in importer.
 _Avoid_: food log table, calorie tracker, built-in MyFitnessPal import.
@@ -132,6 +136,34 @@ _Avoid_: ADR, architecture decision record (in prose; the folder name `adr/` is 
 **First sort**:
 The initial classification of an incoming issue — what it is, whether it's real, who picks it up. Drives the move from the `needs-triage` label to one of the other labels (`needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`).
 _Avoid_: triage (in prose; the label string `needs-triage` is fixed).
+
+**Bootstrap agent**:
+A setup-time agent that prepares a freshly cloned Premura repository for use by reading the project instructions, checking that installation can proceed, and surfacing any required agent-session reload. It does not operate on health data or route health questions.
+_Avoid_: orchestrator, operator, runtime agent.
+
+**Orchestrator**:
+The runtime dispatcher that routes a human's health-data goal to the right operating role and records how the roles interacted. It assumes Premura is already installed and ready to operate.
+_Avoid_: bootstrap agent, setup agent, installer, operator.
+
+**Operating role**:
+A runtime agent responsibility that handles one kind of work during a human's health-data task, such as ingesting source artifacts, analyzing warehouse signals, or explaining results back to the human. Operating roles may keep task context, but cross-role handoffs are mediated by the orchestrator so the interaction remains traceable.
+_Avoid_: persona, profile, operator.
+
+**Improvement candidate**:
+A concrete gap discovered while operating Premura for a human, such as an unsupported source artifact, a missing analysis capability, or a weak explanation path. It is offered back to the human as an issue or draft-PR opportunity, never filed with private health data by default.
+_Avoid_: backlog item, ticket idea, automatic issue.
+
+**Improvement queue**:
+A private global list of improvement candidates remembered across Premura sessions for one user. It stores sanitized summaries, suggested actions, trace references, and status, but never raw health data; deduplication is an agent behavior rather than a storage guarantee.
+_Avoid_: database queue, project backlog, issue tracker mirror.
+
+**Sanitized source summary**:
+A shareable description of a source artifact that preserves useful structure without exposing the human's health data. For public GitHub surfaces, it may include source name, file type, column names, units, error class, and synthetic examples, but never real measurements or private excerpts.
+_Avoid_: sample data, anonymized export, harmless excerpt.
+
+**Share packet**:
+The exact issue or pull-request content an agent proposes to send outside the local machine, shown to the human before posting. A share packet states its privacy level and must not include real health excerpts for public GitHub surfaces; those use structural summaries and synthetic examples instead.
+_Avoid_: draft issue, auto-post body, redacted dump.
 
 #### Concepts to describe in plain English rather than name
 
