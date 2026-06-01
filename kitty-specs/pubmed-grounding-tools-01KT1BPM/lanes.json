@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "mission_slug": "pubmed-grounding-tools-01KT1BPM",
+  "mission_id": "01KT1BPMRQ2WK6SNJAG6JNGNFX",
+  "mission_branch": "kitty/mission-pubmed-grounding-tools-01KT1BPM",
+  "target_branch": "master",
+  "lanes": [
+    {
+      "lane_id": "lane-a",
+      "wp_ids": [
+        "WP02",
+        "WP03",
+        "WP04"
+      ],
+      "write_scope": [
+        "docs/architecture/STAGES.md",
+        "docs/operations/STATUS.md",
+        "docs/product/FULL_APP_DEVELOPMENT_PLAN.md",
+        "docs/product/ROADMAP.md",
+        "pyproject.toml",
+        "src/premura/mcp/entrypoint.py",
+        "src/premura/mcp/pubmed.py",
+        "src/premura/mcp/server.py",
+        "tests/test_mcp_pubmed.py",
+        "tests/test_mcp_server.py",
+        "uv.lock"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "artifact-rendering",
+        "tests",
+        "tracker-integration",
+        "workspace"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    },
+    {
+      "lane_id": "lane-planning",
+      "wp_ids": [
+        "WP01"
+      ],
+      "write_scope": [
+        "kitty-specs/pubmed-grounding-tools-01KT1BPM/contracts/pubmed-grounding-contract.md",
+        "kitty-specs/pubmed-grounding-tools-01KT1BPM/data-model.md",
+        "kitty-specs/pubmed-grounding-tools-01KT1BPM/quickstart.md",
+        "kitty-specs/pubmed-grounding-tools-01KT1BPM/research.md"
+      ],
+      "predicted_surfaces": [
+        "planning"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    }
+  ],
+  "computed_at": "2026-06-01T10:41:49.553436+00:00",
+  "computed_from": "dependency_graph+ownership",
+  "planning_artifact_wps": [
+    "WP01"
+  ],
+  "collapse_report": {
+    "events": [
+      {
+        "wp_a": "WP03",
+        "wp_b": "WP02",
+        "rule": "dependency",
+        "evidence": "WP03 depends on WP02"
+      },
+      {
+        "wp_a": "WP04",
+        "wp_b": "WP03",
+        "rule": "dependency",
+        "evidence": "WP04 depends on WP03"
+      }
+    ],
+    "total_merges": 2,
+    "independent_wps_collapsed": 0,
+    "by_rule": {
+      "dependency": 2
+    }
+  }
+}
