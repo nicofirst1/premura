@@ -1,16 +1,16 @@
 {
-  "event_count": 41,
-  "last_event_id": "01KT17DY1ZEMH6EJYB739R72XR",
-  "materialized_at": "2026-06-01T09:14:55.423748+00:00",
+  "event_count": 42,
+  "last_event_id": "01KT17DZB7CPX8Q9GE1XDHK727",
+  "materialized_at": "2026-06-01T09:14:56.743835+00:00",
   "mission_number": "14",
   "mission_slug": "finish-analytical-tool-set-01KT0Y95",
   "mission_type": "software-dev",
   "summary": {
-    "approved": 1,
+    "approved": 0,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
-    "done": 5,
+    "done": 6,
     "for_review": 0,
     "in_progress": 0,
     "in_review": 0,
@@ -54,10 +54,10 @@
     },
     "WP06": {
       "actor": "user",
-      "force_count": 1,
-      "lane": "approved",
-      "last_event_id": "01KT16ZWPM1YHWE408M3N71C99",
-      "last_transition_at": "2026-06-01T09:07:15.284272+00:00"
+      "force_count": 2,
+      "lane": "done",
+      "last_event_id": "01KT17DZB7CPX8Q9GE1XDHK727",
+      "last_transition_at": "2026-06-01T09:14:56.743835+00:00"
     }
   }
 }
