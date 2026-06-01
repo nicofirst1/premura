@@ -12,6 +12,8 @@ subtasks:
 - T001
 - T002
 - T003
+agent: "claude:opus:implementer:implementer"
+shell_pid: "5909"
 history:
 - timestamp: '2026-06-01T10:38:21Z'
   agent: opencode
@@ -141,3 +143,7 @@ Validation:
 - The WP may overvalue rich third-party feature sets. Review against Premura's two-tool first slice.
 - The WP may leave the decision ambiguous. Require one chosen path.
 - The WP may accidentally expand scope into full text or concept mapping. Reject that drift.
+
+## Activity Log
+
+- 2026-06-01T10:43:10Z – claude:opus:implementer:implementer – shell_pid=5909 – Started implementation via action command
