@@ -1,7 +1,7 @@
 {
-  "event_count": 33,
-  "last_event_id": "01KT15SZ8WCXCNYYJH48GK6YQ5",
-  "materialized_at": "2026-06-01T08:46:32.732376+00:00",
+  "event_count": 34,
+  "last_event_id": "01KT16G5N8R6E10VMP8NSJQMGH",
+  "materialized_at": "2026-06-01T08:58:40.168217+00:00",
   "mission_number": "",
   "mission_slug": "finish-analytical-tool-set-01KT0Y95",
   "mission_type": "software-dev",
@@ -11,8 +11,8 @@
     "canceled": 0,
     "claimed": 0,
     "done": 0,
-    "for_review": 0,
-    "in_progress": 1,
+    "for_review": 1,
+    "in_progress": 0,
     "in_review": 0,
     "planned": 0
   },
@@ -53,11 +53,11 @@
       "last_transition_at": "2026-06-01T08:45:57.434437+00:00"
     },
     "WP06": {
-      "actor": "claude:opus:python-implementer:implementer",
+      "actor": "user",
       "force_count": 1,
-      "lane": "in_progress",
-      "last_event_id": "01KT15SZ8WCXCNYYJH48GK6YQ5",
-      "last_transition_at": "2026-06-01T08:46:32.732376+00:00"
+      "lane": "for_review",
+      "last_event_id": "01KT16G5N8R6E10VMP8NSJQMGH",
+      "last_transition_at": "2026-06-01T08:58:40.168217+00:00"
     }
   }
 }
