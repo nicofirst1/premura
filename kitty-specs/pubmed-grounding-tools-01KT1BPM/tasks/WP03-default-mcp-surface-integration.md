@@ -16,6 +16,8 @@ subtasks:
 - T009
 - T010
 - T011
+agent: "claude:opus:implementer:implementer"
+shell_pid: "23402"
 history:
 - timestamp: '2026-06-01T10:38:21Z'
   agent: opencode
@@ -141,3 +143,7 @@ Validation:
 - Watch for tool descriptions that imply search results are citeable.
 - Watch for accidental health warehouse reads in PubMed wrappers.
 - Watch for mismatched tool counts between docs/comments/tests.
+
+## Activity Log
+
+- 2026-06-01T10:56:50Z – claude:opus:implementer:implementer – shell_pid=23402 – Started implementation via action command
