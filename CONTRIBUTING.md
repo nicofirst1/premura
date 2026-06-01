@@ -17,6 +17,7 @@ human working locally or an agent editing the repo.
 ```bash
 bash ops/bootstrap.sh
 uv sync --extra dev
+uv run pre-commit install
 uv run hpipe doctor
 ```
 
@@ -28,6 +29,7 @@ uv run python -m pytest -q --lf --tb=short
 uv run python -m pytest -q -m regression    # explicit real-export regressions
 uv run ruff check .
 uv run ruff format --check .
+uv run pre-commit run --files <changed-python-files>
 uv run mypy <changed-paths>
 ```
 
@@ -40,6 +42,11 @@ the slow tests before merging more work.
 Before review handoff, the relevant `ruff`, `mypy`, and `pytest` checks must be
 green for the changed scope. Run `-m regression` explicitly when changing parser
 schemas, real-export handling, or release validation.
+
+The pre-commit hook runs the fast linting phase (`ruff check` and
+`ruff format --check`) on staged Python files before each commit. It is a local
+guardrail, not a replacement for the changed-scope `mypy` and `pytest` checks
+above.
 
 ## Architecture boundaries
 
