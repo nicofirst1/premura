@@ -8,12 +8,12 @@
 
 | ID | Description | WP | Parallel |
 |---|---|---|---|
-| T001 | Add acceptance-first bootstrap core tests for report states and idempotent local actions. | WP01 |  |
-| T002 | Create the bootstrap report model for runs, checks, actions, skill state, and summary. | WP01 |  |
-| T003 | Implement prerequisite classification for local project environment, external blockers, and optional capabilities. | WP01 |  |
-| T004 | Implement local project dependency action orchestration with injectable command runner boundaries. | WP01 |  |
-| T005 | Implement skill setup integration through the existing skill materialization helper. | WP01 |  |
-| T006 | Implement final summary calculation and setup-only safety guards in the core service. | WP01 |  |
+| T001 | Add acceptance-first bootstrap core tests for report states and idempotent local actions. | WP01 |  | [D] |
+| T002 | Create the bootstrap report model for runs, checks, actions, skill state, and summary. | WP01 |  | [D] |
+| T003 | Implement prerequisite classification for local project environment, external blockers, and optional capabilities. | WP01 |  | [D] |
+| T004 | Implement local project dependency action orchestration with injectable command runner boundaries. | WP01 |  | [D] |
+| T005 | Implement skill setup integration through the existing skill materialization helper. | WP01 |  | [D] |
+| T006 | Implement final summary calculation and setup-only safety guards in the core service. | WP01 |  | [D] |
 | T007 | Add acceptance-first CLI tests for `hpipe bootstrap` command registration and output. | WP02 |  |
 | T008 | Register `hpipe bootstrap` on the existing Typer app. | WP02 |  |
 | T009 | Format bootstrap reports as concise terminal output with blockers, warnings, local actions, and reload guidance. | WP02 |  |
@@ -44,12 +44,12 @@
 
 ### Included Subtasks
 
-- [ ] T001 Add acceptance-first bootstrap core tests for report states and idempotent local actions. (WP01)
-- [ ] T002 Create the bootstrap report model for runs, checks, actions, skill state, and summary. (WP01)
-- [ ] T003 Implement prerequisite classification for local project environment, external blockers, and optional capabilities. (WP01)
-- [ ] T004 Implement local project dependency action orchestration with injectable command runner boundaries. (WP01)
-- [ ] T005 Implement skill setup integration through the existing skill materialization helper. (WP01)
-- [ ] T006 Implement final summary calculation and setup-only safety guards in the core service. (WP01)
+- [x] T001 Add acceptance-first bootstrap core tests for report states and idempotent local actions. (WP01)
+- [x] T002 Create the bootstrap report model for runs, checks, actions, skill state, and summary. (WP01)
+- [x] T003 Implement prerequisite classification for local project environment, external blockers, and optional capabilities. (WP01)
+- [x] T004 Implement local project dependency action orchestration with injectable command runner boundaries. (WP01)
+- [x] T005 Implement skill setup integration through the existing skill materialization helper. (WP01)
+- [x] T006 Implement final summary calculation and setup-only safety guards in the core service. (WP01)
 
 ### Implementation Sketch
 
