@@ -20,8 +20,8 @@ subtasks:
 - T018
 - T019
 - T020
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "67616"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "74988"
 history:
 - timestamp: '2026-06-01T06:44:16Z'
   agent: opencode
@@ -195,3 +195,4 @@ the output language for overclaim risk.
 
 - 2026-06-01T07:51:04Z – claude:opus:python-implementer:implementer – shell_pid=67616 – Started implementation via action command
 - 2026-06-01T07:58:21Z – claude:opus:python-implementer:implementer – shell_pid=67616 – Ready for review: paired_t_test deterministic paired-difference tool consuming WP03 before/after seam; reports mean diff + dispersion uncertainty (std/SE/descriptive interval, NO p-value/significance); 8 refusal classes incl constant-difference; direction-match metadata; registered into shared REGISTRY (not the static default loader, deferred to WP05). 30 new tests; full suite 744 green; ruff/mypy clean.
+- 2026-06-01T07:58:58Z – claude:opus:python-reviewer:reviewer – shell_pid=74988 – Started review via action command
