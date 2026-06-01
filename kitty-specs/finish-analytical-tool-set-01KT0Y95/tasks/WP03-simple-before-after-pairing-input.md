@@ -18,8 +18,8 @@ subtasks:
 - T013
 - T014
 - T015
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "47999"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "62302"
 history:
 - timestamp: '2026-06-01T06:44:16Z'
   agent: opencode
@@ -184,3 +184,4 @@ names. If condition pairing sneaks in, reject as scope creep.
 
 - 2026-06-01T07:37:04Z – claude:opus:python-implementer:implementer – shell_pid=47999 – Started implementation via action command
 - 2026-06-01T07:46:01Z – claude:opus:python-implementer:implementer – shell_pid=47999 – Ready for review: simple anchor-date before/after paired-input preparation in src/premura/engine/paired_inputs.py. Produces a prepared matched-pair set (BeforeAfterPairedInput) or a RefusalOutcome, never an estimate. Fixed deterministic rule: local-calendar-day keying, anchor day excluded, nearest-to-anchor-outward matching, min of usable sides, no invented values; difference=after-before. Refusal classes: refused/inadmissible/stale series (reason propagated from WP01 admissibility), missing/non-date anchor, out-of-bounds before/after windows (1..365), missing/unknown direction, no-valid-pairs (one side empty), too-few-pairs (floor 8, mirrors WP01 _PAIRED_DIFFERENCE_MIN_PAIRS), metric mismatch, unsupported scan/best-split keyword. Scope guardrails (FR-014/C-004): request shape carries no condition_label/anchor list/window list/pair_map -> TypeError at construction; best-split kwarg -> refusal. WP04 CONSUMPTION SEAM: paired_t_test calls prepare_before_after_paired_input(series, request) and reads pairs via before_after_pairs_for_computation(prepared) (raises on a refused input); BeforeAfterPairedInput carries raw_pair_count, before/after window spans, and is_imputed_pct so WP04 satisfies FR-006 without re-deriving pairs. Validation: ruff check + format clean, mypy clean, 714 pytest pass (680 prior + 34 new).
+- 2026-06-01T07:46:33Z – claude:opus:python-reviewer:reviewer – shell_pid=62302 – Started review via action command
