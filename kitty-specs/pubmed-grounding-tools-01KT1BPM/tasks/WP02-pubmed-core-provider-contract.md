@@ -22,8 +22,8 @@ subtasks:
 - T005
 - T006
 - T007
-shell_pid: "15687"
-agent: "claude:opus:implementer:implementer"
+shell_pid: "20280"
+agent: "claude:opus:reviewer:reviewer"
 history:
 - timestamp: '2026-06-01T10:38:21Z'
   agent: opencode
@@ -168,3 +168,4 @@ Validation:
 
 - 2026-06-01T10:50:08Z – claude:opus:implementer:implementer – shell_pid=15687 – Assigned agent via action command
 - 2026-06-01T10:54:26Z – claude:opus:implementer:implementer – shell_pid=15687 – Ready for review: native E-utilities provider, injectable seam, offline deterministic tests, citation-status rule enforced
+- 2026-06-01T10:54:53Z – claude:opus:reviewer:reviewer – shell_pid=20280 – Started review via action command
