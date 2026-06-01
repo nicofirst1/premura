@@ -22,7 +22,8 @@ subtasks:
 - T005
 - T006
 - T007
-shell_pid: '15687'
+shell_pid: "15687"
+agent: "claude:opus:implementer:implementer"
 history:
 - timestamp: '2026-06-01T10:38:21Z'
   agent: opencode
@@ -162,3 +163,7 @@ Validation:
 - Watch for third-party API response shapes leaking into the Premura contract.
 - Watch for broad features such as full text, MeSH, related articles, or deep analysis creeping in.
 - Watch for PubMed logic imported into `premura.engine` or other non-MCP stages.
+
+## Activity Log
+
+- 2026-06-01T10:50:08Z – claude:opus:implementer:implementer – shell_pid=15687 – Assigned agent via action command
