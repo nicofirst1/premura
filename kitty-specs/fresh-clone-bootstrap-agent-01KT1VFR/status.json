@@ -1,16 +1,16 @@
 {
-  "event_count": 20,
-  "last_event_id": "01KT1XSCAVQA2Y7ST510CR7J0V",
-  "materialized_at": "2026-06-01T15:45:39.163254+00:00",
+  "event_count": 21,
+  "last_event_id": "01KT1XSDC873P5Y5BCC9DYFS9R",
+  "materialized_at": "2026-06-01T15:45:40.232387+00:00",
   "mission_number": "16",
   "mission_slug": "fresh-clone-bootstrap-agent-01KT1VFR",
   "mission_type": "software-dev",
   "summary": {
-    "approved": 1,
+    "approved": 0,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
-    "done": 2,
+    "done": 3,
     "for_review": 0,
     "in_progress": 0,
     "in_review": 0,
@@ -33,10 +33,10 @@
     },
     "WP03": {
       "actor": "user",
-      "force_count": 1,
-      "lane": "approved",
-      "last_event_id": "01KT1XK28A3BBBMNP0Z4MV26HM",
-      "last_transition_at": "2026-06-01T15:42:12.234681+00:00"
+      "force_count": 2,
+      "lane": "done",
+      "last_event_id": "01KT1XSDC873P5Y5BCC9DYFS9R",
+      "last_transition_at": "2026-06-01T15:45:40.232387+00:00"
     }
   }
 }

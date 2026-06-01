@@ -214,3 +214,4 @@ uv run ruff format --check tests/test_bootstrap_docs.py
 - 2026-06-01T15:38:58Z – claude:opus:implementer:implementer – shell_pid=93370 – Ready for review
 - 2026-06-01T15:40:43Z – claude:opus:reviewer:reviewer – shell_pid=280 – Started review via action command
 - 2026-06-01T15:42:12Z – claude:opus:reviewer:reviewer – shell_pid=280 – Review passed: README/CONTRIBUTING/STATUS route fresh clone to hpipe bootstrap as setup-only (no ingest/upload/analysis), opt-in upload warning preserved, agent-first plain English; lightweight docs test guards command names+boundary words and passes; ruff check/format clean; quickstart on master matches shipped behavior incl --extra dev nuance, needs no real health data; only the 5 owned files touched.
+- 2026-06-01T15:45:40Z – claude:opus:reviewer:reviewer – shell_pid=280 – Done override: Mission merged to master (commit e2c5368)
