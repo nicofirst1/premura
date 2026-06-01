@@ -17,8 +17,8 @@ subtasks:
 - T023
 - T024
 - T025
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "88042"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "54738"
 history:
 - timestamp: '2026-06-01T06:44:16Z'
   agent: opencode
@@ -202,3 +202,4 @@ MCP or trace is a red flag.
 
 - 2026-06-01T08:05:13Z – claude:opus:python-implementer:implementer – shell_pid=88042 – Started implementation via action command
 - 2026-06-01T08:38:57Z – claude:opus:python-implementer:implementer – shell_pid=88042 – Ready for review: published rolling_mean + paired_t_test on the default surface (engine.list_analytical_tools() now returns 5), added thin delegating MCP wrappers (serialize-only, no stats), registered normalized trace identities, and wired session-trace recording. Full suite 785 passed; ruff/mypy clean. Updated 4 catalog-size tests (16->18 tools) per NFR-008.
+- 2026-06-01T08:39:42Z – claude:opus:python-reviewer:reviewer – shell_pid=54738 – Started review via action command
