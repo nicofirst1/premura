@@ -97,6 +97,22 @@ class QuestionType(StrEnum):
     # paired floor); it is never collapsed onto recent_trend or a single-series
     # analytical question, which would hide that correlation-specific floor.
     LAGGED_ASSOCIATION = "lagged_association"
+    # Stage 3 analytical questions added by the finish-analytical-tool-set
+    # mission. Each is a first-class, closed, reviewed value with its OWN rule —
+    # never an implicit reuse of a descriptive or other analytical shape.
+    #
+    #   MOVING_WINDOW_PATTERN: rolling_mean's declared trailing moving-window
+    #   summary over one ordered series. Distinct from SMOOTHED_PATTERN because it
+    #   emits a coverage-bearing *series* of window points, not a single smoothed
+    #   level, so it carries its own per-point coverage sufficiency.
+    #
+    #   PAIRED_DIFFERENCE: paired_t_test's simple anchor-date before/after paired
+    #   comparison over one operator's series. Distinct from LAGGED_ASSOCIATION
+    #   because it carries a raw *pair* floor over matched observations, not a
+    #   two-series association floor. "Simple anchor-date pairing" is the reviewed
+    #   meaning here; broader condition/event pairing is a later reviewed value.
+    MOVING_WINDOW_PATTERN = "moving_window_pattern"
+    PAIRED_DIFFERENCE = "paired_difference"
 
 
 class EvidenceStatus(StrEnum):

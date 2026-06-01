@@ -48,6 +48,8 @@ _EIGHT_DEFAULT_TOOLS = sorted(
         "change_point",
         "smoothed_average",
         "correlate",
+        "rolling_mean",
+        "paired_t_test",
         "research_trace_open",
         "research_trace_mark_surfaced",
         "research_trace_disclosure",

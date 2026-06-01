@@ -57,6 +57,45 @@ _RESEARCH = "docs/history/research/STAGE2_EVIDENCE_ADMISSIBILITY_RESEARCH.md"
 _LAGGED_ASSOCIATION_MIN_PAIRED = 20
 
 
+# Conservative default raw *pair* floor for the simple anchor-date paired
+# comparison (paired_t_test, finish-analytical-tool-set mission). This is the
+# declarative policy-layer floor on the number of usable before/after pairs:
+# below it a single mean paired difference carries essentially no information and
+# the default refuses. It is deliberately a single shared, family-based value —
+# not a per-metric grid — so the rule stays reviewable. The stricter method-level
+# refusals (e.g. constant paired differences, exact pair-count edge cases) are
+# the paired_t_test tool's job at compute time (WP04), not a density parameter.
+_PAIRED_DIFFERENCE_MIN_PAIRS = 8
+
+
+def _paired_difference_rule(*, caveats: tuple[str, ...]) -> QuestionRule:
+    """The shared, conservative default rule for the paired-difference question.
+
+    A distinct rule object — never the recent-trend rule and never the
+    lagged-association rule — so the raw *pair* floor cannot be hidden behind a
+    single-series threshold or a two-series association floor. It reuses the
+    recent-run admissibility/freshness posture (a before/after comparison is
+    still over a recent daily window) but declares its OWN paired-sample
+    sufficiency. Declarative parameters only: the evaluator owns all branching,
+    and method-specific paired refusals belong to the tool layer (WP04).
+    """
+    return QuestionRule(
+        admissibility=Admissibility.ADMISSIBLE,
+        freshness=FreshnessRule(mode=FreshnessMode.CAVEAT_ONLY),
+        sufficiency=SufficiencyRule(
+            min_observations=_PAIRED_DIFFERENCE_MIN_PAIRS,
+            missing_data_behavior=MissingDataBehavior.REJECT,
+        ),
+        required_context=("observed_at",),
+        caveats=(
+            *caveats,
+            "A paired before/after comparison describes how your own values "
+            "differed across a declared anchor date; it is not evidence that the "
+            "anchor event caused the change, and other factors could explain it.",
+        ),
+    )
+
+
 def _lagged_association_rule(*, caveats: tuple[str, ...]) -> QuestionRule:
     """The shared, conservative default rule for the lagged-association question.
 
@@ -250,7 +289,11 @@ def _serial_average_short_run(
             QuestionType.RECENT_TREND: recent_run_rule,
             QuestionType.LEVEL_SHIFT_DETECTION: recent_run_rule,
             QuestionType.SMOOTHED_PATTERN: recent_run_rule,
+            # rolling_mean reuses the recent-run admissible substrate; its own
+            # per-point coverage sufficiency is enforced at the tool layer (WP02).
+            QuestionType.MOVING_WINDOW_PATTERN: recent_run_rule,
             QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=serial_caveat),
+            QuestionType.PAIRED_DIFFERENCE: _paired_difference_rule(caveats=serial_caveat),
         },
         examples=(
             PolicyExample(
@@ -323,7 +366,11 @@ def _rolling_recent_pattern(
             QuestionType.RECENT_TREND: recent_pattern_rule,
             QuestionType.LEVEL_SHIFT_DETECTION: recent_pattern_rule,
             QuestionType.SMOOTHED_PATTERN: recent_pattern_rule,
+            # rolling_mean reuses the recent-pattern admissible substrate; its
+            # per-point coverage sufficiency is enforced at the tool layer (WP02).
+            QuestionType.MOVING_WINDOW_PATTERN: recent_pattern_rule,
             QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=coverage_caveat),
+            QuestionType.PAIRED_DIFFERENCE: _paired_difference_rule(caveats=coverage_caveat),
         },
         examples=(
             PolicyExample(
@@ -451,10 +498,14 @@ def _baseline_relative(
             # sufficiency on top.
             QuestionType.LEVEL_SHIFT_DETECTION: relative_rule,
             QuestionType.SMOOTHED_PATTERN: relative_rule,
+            # rolling_mean reuses the baseline-relative substrate; its per-point
+            # coverage sufficiency is enforced at the tool layer (WP02).
+            QuestionType.MOVING_WINDOW_PATTERN: relative_rule,
             # Standing caveats (baseline-relative weakness) attach via the
-            # evaluator; the rule adds the paired-sample floor and the
-            # association-not-causation caveat.
+            # evaluator; the lagged/paired rules add their own paired-sample
+            # floor and the association/difference-not-causation caveat.
             QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=()),
+            QuestionType.PAIRED_DIFFERENCE: _paired_difference_rule(caveats=()),
             QuestionType.HISTORICAL_BASELINE: QuestionRule(
                 admissibility=Admissibility.LIMITED,
                 freshness=FreshnessRule(mode=FreshnessMode.CAVEAT_ONLY),
@@ -525,10 +576,14 @@ def _slow_trajectory_method_sensitive(
             # method-sensitivity caveats) and add method-level sufficiency.
             QuestionType.LEVEL_SHIFT_DETECTION: trajectory_rule,
             QuestionType.SMOOTHED_PATTERN: trajectory_rule,
+            # rolling_mean reuses the slow-trajectory substrate; its per-point
+            # coverage sufficiency is enforced at the tool layer (WP02).
+            QuestionType.MOVING_WINDOW_PATTERN: trajectory_rule,
             # Method-sensitivity standing caveats attach via the evaluator; the
-            # rule adds the paired-sample floor and association-not-causation
-            # caveat.
+            # lagged/paired rules add their own paired-sample floor and the
+            # association/difference-not-causation caveat.
             QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=()),
+            QuestionType.PAIRED_DIFFERENCE: _paired_difference_rule(caveats=()),
             QuestionType.HISTORICAL_BASELINE: QuestionRule(
                 admissibility=Admissibility.ADMISSIBLE,
                 freshness=FreshnessRule(mode=FreshnessMode.CAVEAT_ONLY),
@@ -603,7 +658,11 @@ def _sparse_lab_analyte_specific(
             QuestionType.RECENT_TREND: repeats_required_rule,
             QuestionType.LEVEL_SHIFT_DETECTION: repeats_required_rule,
             QuestionType.SMOOTHED_PATTERN: repeats_required_rule,
+            # rolling_mean reuses the repeats-required substrate; its per-point
+            # coverage sufficiency is enforced at the tool layer (WP02).
+            QuestionType.MOVING_WINDOW_PATTERN: repeats_required_rule,
             QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=analyte_caveat),
+            QuestionType.PAIRED_DIFFERENCE: _paired_difference_rule(caveats=analyte_caveat),
         },
         examples=(
             PolicyExample(

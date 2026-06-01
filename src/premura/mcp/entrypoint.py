@@ -4,11 +4,11 @@ Two entrypoints are provided:
 
 * **Default surface** (``premura-mcp``, :func:`build_server`) — the agent-safe
   surface.  Exposes the catalog/summary helpers, all six approved Stage 2 signal
-  tools, the three Stage 3 analytical tools (``change_point`` /
-  ``smoothed_average`` / ``correlate``), the bounded agent-mediated profile
-  capture tools, and the three session research-trace tools
-  (``research_trace_open`` / ``research_trace_mark_surfaced`` /
-  ``research_trace_disclosure``) — 16 tools in total.  ``query_warehouse`` is
+  tools, the five Stage 3 analytical tools (``change_point`` /
+  ``smoothed_average`` / ``correlate`` / ``rolling_mean`` / ``paired_t_test``),
+  the bounded agent-mediated profile capture tools, and the three session
+  research-trace tools (``research_trace_open`` / ``research_trace_mark_surfaced``
+  / ``research_trace_disclosure``) — 18 tools in total.  ``query_warehouse`` is
   intentionally absent; agents should use the signal-backed tools, the analytical
   tools, the trace tools, and the catalog helpers instead.  The authoritative
   tool list is asserted in ``tests/test_mcp_server.py`` (``_DEFAULT_TOOLS``).
@@ -375,6 +375,42 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
             ),
         )
 
+    @mcp.tool()
+    def rolling_mean(
+        metric_id: str,
+        window: int | None = None,
+        min_coverage: float | None = None,
+        session_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Summarize how one metric's level moved over time with a trailing window.
+
+        Slides a declared trailing window across the metric's recent admissible
+        series; each emitted point averages only the observations inside its own
+        window and is left blank when non-imputed coverage falls below the declared
+        minimum, so missing data stays visible. You declare the metric and window
+        before computation; the tool never scans windows to pick the strongest. It
+        is a description of how the level moved, not a forecast, and implies no
+        statistical significance. Stale, inadmissible, insufficient, or
+        out-of-bounds requests return a structured refusal with a distinct reason
+        and no estimate.
+
+        Pass the optional ``session_id`` from ``research_trace_open`` to record this
+        call in a research session's multiplicity trace; without it the tool behaves
+        exactly as before and writes no trace row.
+        """
+        return _dispatch_analytical_with_trace(
+            warehouse_path=warehouse_path,
+            tool_name="rolling_mean",
+            session_id=session_id,
+            request={"metric_id": metric_id, "window": window, "min_coverage": min_coverage},
+            dispatch=lambda: warehouse_server.rolling_mean(
+                metric_id,
+                window=window,
+                min_coverage=min_coverage,
+                warehouse_path=warehouse_path,
+            ),
+        )
+
     # --- Stage 3 pre-registered lagged association (WP04) ---------------- #
     # correlate reports a pre-registered association between two metrics at a
     # caller-declared integer-day lag. It is a thin wrapper that delegates to the
@@ -437,6 +473,69 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
                 expected_direction=expected_direction,
                 lag_justification=lag_justification,
                 common_cause_candidates=common_cause_candidates,
+                warehouse_path=warehouse_path,
+            ),
+        )
+
+    # --- Stage 3 simple anchor-date before/after difference (WP04) ------- #
+    # paired_t_test reports a simple before/after paired difference for one metric
+    # split by a caller-declared anchor date. It is a thin wrapper that delegates
+    # to the engine analytical path (prepare_before_after_paired_input ->
+    # invoke_analytical_tool): it computes no statistics, does no pairing, and
+    # issues no raw SQL. The agent MUST pre-register the split (anchor, windows,
+    # expected direction) before seeing the result; an inadmissible input, no valid
+    # pairs, too few pairs, or a constant difference returns a structured refusal
+    # with a distinct reason and no estimate. It never emits a p-value or a
+    # significance verdict.
+
+    @mcp.tool()
+    def paired_t_test(
+        metric_id: str,
+        anchor_date: str,
+        before_days: int,
+        after_days: int,
+        expected_direction: str,
+        session_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Report a simple before/after paired difference for one daily metric.
+
+        Answers one pre-registered question: around the ``anchor_date``
+        (YYYY-MM-DD), how did ``metric_id`` differ between the ``before_days``
+        before and the ``after_days`` after, in the ``expected_direction``
+        ("increase" or "decrease") you declare up front? Observations are matched
+        nearest-to-anchor outward and the paired differences (after minus before)
+        are summarized as a mean and its dispersion (standard deviation, standard
+        error, and a descriptive difference interval), plus whether the observed
+        direction matches your declared expectation.
+
+        It is descriptive only: it never reports a p-value or a "significant"
+        verdict, the anchor only splits the windows and is not shown to be the cause
+        of any change, and it makes no causal/diagnostic/treatment/population-norm
+        claim. Inadmissible, stale, no-valid-pairs, too-few-pairs, or
+        constant-difference requests return a structured refusal with a distinct
+        reason and no estimate.
+
+        Pass the optional ``session_id`` from ``research_trace_open`` to record this
+        pre-registered hypothesis in a research session's multiplicity trace;
+        without it the tool behaves exactly as before and writes no trace row.
+        """
+        return _dispatch_analytical_with_trace(
+            warehouse_path=warehouse_path,
+            tool_name="paired_t_test",
+            session_id=session_id,
+            request={
+                "metric_id": metric_id,
+                "anchor_date": anchor_date,
+                "before_days": before_days,
+                "after_days": after_days,
+                "expected_direction": expected_direction,
+            },
+            dispatch=lambda: warehouse_server.paired_t_test(
+                metric_id,
+                anchor_date=anchor_date,
+                before_days=before_days,
+                after_days=after_days,
+                expected_direction=expected_direction,
                 warehouse_path=warehouse_path,
             ),
         )

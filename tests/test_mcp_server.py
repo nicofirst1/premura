@@ -175,6 +175,8 @@ def test_metric_summary_rejects_blank_metric_id(tmp_path: Path) -> None:
 # ``correlate`` joins the same default surface (twelve -> thirteen tools).
 # session-research-trace WP03: the three trace tools join the same default
 # surface (the trace IS the supported agent workflow), thirteen -> sixteen.
+# WP05 (finish-analytical-tool-set): rolling_mean + paired_t_test join the same
+# default surface (sixteen -> eighteen).
 _DEFAULT_TOOLS = sorted(
     [
         "list_metrics",
@@ -190,6 +192,8 @@ _DEFAULT_TOOLS = sorted(
         "change_point",
         "smoothed_average",
         "correlate",
+        "rolling_mean",
+        "paired_t_test",
         "research_trace_open",
         "research_trace_mark_surfaced",
         "research_trace_disclosure",

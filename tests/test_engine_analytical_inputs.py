@@ -414,6 +414,8 @@ def test_analytical_questions_map_to_their_own_first_class_question_type() -> No
         AnalyticalQuestionType.LEVEL_SHIFT_DETECTION: QuestionType.LEVEL_SHIFT_DETECTION,
         AnalyticalQuestionType.SMOOTHED_PATTERN: QuestionType.SMOOTHED_PATTERN,
         AnalyticalQuestionType.LAGGED_ASSOCIATION: QuestionType.LAGGED_ASSOCIATION,
+        AnalyticalQuestionType.MOVING_WINDOW_PATTERN: QuestionType.MOVING_WINDOW_PATTERN,
+        AnalyticalQuestionType.PAIRED_DIFFERENCE: QuestionType.PAIRED_DIFFERENCE,
     }
     # No analytical question is routed onto a descriptive question shape.
     descriptive = {

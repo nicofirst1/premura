@@ -334,8 +334,8 @@ def _json_safe(value: Any) -> Any:
 # the engine defaults in ``premura.engine.analytical_tools``) and returns the
 # canonical dict of fields that make two calls the "same" examined hypothesis.
 # Defaults are applied here so an omitted parameter and its explicit default
-# share an identity. Adding a future tool (e.g. ``paired_t_test``) is a new
-# entry here — never a branch in the disclosure/counting code (ADR-0009).
+# share an identity. Adding a future analytical tool is a new entry here — never a
+# branch in the disclosure/counting code (ADR-0009).
 
 # Engine defaults, duplicated as literals so this module stays engine-import-free
 # (it must not pull engine code into the MCP-agnostic trace surface). They are
@@ -343,6 +343,12 @@ def _json_safe(value: Any) -> Any:
 _DEFAULT_MIN_SIDE_OBSERVATIONS = 2
 _DEFAULT_SMOOTHING_WINDOW = 7
 _DEFAULT_MIN_COVERAGE = 0.5
+# ``rolling_mean`` engine defaults (premura.engine.rolling_mean.DEFAULT_WINDOW /
+# DEFAULT_MIN_COVERAGE), duplicated as literals to keep this module
+# engine-import-free; pinned by the trace tests so drift from the engine
+# constants is caught.
+_DEFAULT_ROLLING_WINDOW = 7
+_DEFAULT_ROLLING_MIN_COVERAGE = 0.5
 
 
 def _identity_change_point(req: Mapping[str, Any]) -> dict[str, Any]:
@@ -404,6 +410,56 @@ def _identity_correlate(req: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _identity_rolling_mean(req: Mapping[str, Any]) -> dict[str, Any]:
+    """``rolling_mean``: metric id, window, min_coverage (post-default).
+
+    Mirrors ``smoothed_average``'s shape: a declared moving-window summary over one
+    series. An omitted ``window`` / ``min_coverage`` collapses to the engine
+    default so "use the default window" and "window=7" are the same examined
+    hypothesis, while a different declared window is a distinct hypothesis. The
+    metric, window, and coverage floor are the only identity-bearing fields — the
+    tool answers one declared moving-window question, never a scan.
+    """
+    window = req.get("window")
+    if window is None:
+        window = _DEFAULT_ROLLING_WINDOW
+    min_coverage = req.get("min_coverage")
+    if min_coverage is None:
+        min_coverage = _DEFAULT_ROLLING_MIN_COVERAGE
+    return {
+        "metric_id": req.get("metric_id"),
+        "window": int(window),
+        "min_coverage": float(min_coverage),
+    }
+
+
+def _identity_paired_t_test(req: Mapping[str, Any]) -> dict[str, Any]:
+    """``paired_t_test``: a pre-registered simple before/after anchor-date split.
+
+    Identity fields (the pre-registered declaration of FR-005 + the MCP request
+    shape): metric id, anchor date, before-window days, after-window days, and the
+    declared expected direction. All five are caller-declared *before* the result
+    exists and have no MCP-side default, so every one is identity-bearing: an exact
+    retry of the same anchor/windows/direction collapses, while a different anchor
+    date, a different before/after window, or a different expected direction is a
+    distinct examined hypothesis. The anchor date is normalized to its ISO string
+    so a ``date`` and its string form share identity.
+    """
+    anchor = req.get("anchor_date")
+    isoformat = getattr(anchor, "isoformat", None)
+    if callable(isoformat):
+        anchor = isoformat()
+    before_days = req.get("before_days")
+    after_days = req.get("after_days")
+    return {
+        "metric_id": req.get("metric_id"),
+        "anchor_date": anchor,
+        "before_days": int(before_days) if before_days is not None else None,
+        "after_days": int(after_days) if after_days is not None else None,
+        "expected_direction": req.get("expected_direction"),
+    }
+
+
 # The declaration registry. Keyed by tool name; each value normalizes a request
 # to its identity dict. This is the single seam a future analytical tool plugs
 # into — disclosure/counting code never names a specific tool.
@@ -411,6 +467,8 @@ _IDENTITY_REGISTRY: dict[str, Callable[[Mapping[str, Any]], dict[str, Any]]] = {
     "change_point": _identity_change_point,
     "smoothed_average": _identity_smoothed_average,
     "correlate": _identity_correlate,
+    "rolling_mean": _identity_rolling_mean,
+    "paired_t_test": _identity_paired_t_test,
 }
 
 
@@ -420,10 +478,11 @@ def register_hypothesis_identity(
 ) -> None:
     """Declare the normalized hypothesis identity for a new analytical tool.
 
-    This is how a future tool (``paired_t_test``, ``rolling_mean``) joins the
-    trace's N-counting without anyone editing the disclosure switch: it declares
-    its identity once. ``normalizer`` maps the tool's request kwargs to the
-    canonical dict of identity-bearing fields.
+    This is how a future tool joins the trace's N-counting without anyone editing
+    the disclosure switch: it declares its identity once (the shipped built-ins —
+    ``change_point`` / ``smoothed_average`` / ``correlate`` / ``rolling_mean`` /
+    ``paired_t_test`` — register through the same seam). ``normalizer`` maps the
+    tool's request kwargs to the canonical dict of identity-bearing fields.
     """
     _IDENTITY_REGISTRY[tool_name] = normalizer
 

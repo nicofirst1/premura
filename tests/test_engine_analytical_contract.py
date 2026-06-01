@@ -216,13 +216,17 @@ def test_committed_confound_vocabulary_is_the_closed_set() -> None:
 
 
 def test_analytical_question_types_are_the_closed_set() -> None:
-    # The correlate mission (WP01) added ``lagged_association`` as its own
-    # first-class question type (ADR-0008), distinct from the single-series
-    # questions so its paired-sample sufficiency is never hidden.
+    # The correlate mission added ``lagged_association`` as its own first-class
+    # question type (ADR-0008); the finish-analytical-tool-set mission added
+    # ``moving_window_pattern`` (rolling_mean) and ``paired_difference``
+    # (paired_t_test). Each is a distinct reviewed value so its own
+    # coverage/paired-sample sufficiency is never hidden behind another shape.
     assert {qt.value for qt in AnalyticalQuestionType} == {
         "level_shift_detection",
         "smoothed_pattern",
         "lagged_association",
+        "moving_window_pattern",
+        "paired_difference",
     }
 
 

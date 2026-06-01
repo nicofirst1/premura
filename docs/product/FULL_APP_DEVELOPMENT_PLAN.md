@@ -54,14 +54,14 @@ Premura has already shipped:
 - encryption and opt-in backup flow
 - launchd automation
 - the federated parser plug-in code (`PluginParser`, `IngestBatch`, `dim_metric.yaml` ontology)
-- a real Stage 3 MCP surface — a default agent surface (`premura-mcp`) of sixteen validity-gated tools (`list_metrics`, `metric_summary`, six signal-backed tools, two agent-mediated profile-capture tools, the analytical tools `change_point` / `smoothed_average` / `correlate`, and the three session research trace tools `research_trace_open` / `research_trace_mark_surfaced` / `research_trace_disclosure`), plus a separate operator surface (`premura-mcp-operator`) of seventeen that adds the raw `query_warehouse` escape hatch
+- a real Stage 3 MCP surface — a default agent surface (`premura-mcp`) of eighteen validity-gated tools (`list_metrics`, `metric_summary`, six signal-backed tools, two agent-mediated profile-capture tools, the five analytical tools `change_point` / `smoothed_average` / `correlate` / `rolling_mean` / `paired_t_test`, and the three session research trace tools `research_trace_open` / `research_trace_mark_surfaced` / `research_trace_disclosure`), plus a separate operator surface (`premura-mcp-operator`) of nineteen that adds the raw `query_warehouse` escape hatch
 - the first real Stage 2 behavior — six grounded, freshness-aware signals (current resting HR, resting-HR trend, steps trend, weight trend, deep-sleep vs own baseline, overnight-HRV change around a date) with a contributor contract (`src/premura/engine/CONTRACT.md`); `ui` remains a stub
 - the authoritative profile/intake **meaning contract** (`docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md` plus the `docs/architecture/contracts/profile_and_intake_*.yaml` surfaces, design decision note `docs/adr/0005-profile-and-intake-contract.md`), which fixes where baseline profile context, nutrition intake, and supplement intake live and what they mean
 - the profile/intake **storage seam and first write path** (`implement-profile-and-intake-storage-01KSMWV1`, design decision note `docs/adr/0006-profile-intake-storage-and-capture.md`): concrete `hp.*` domain tables (migration `004_profile_intake.sql`), an **agent-mediated bounded profile-capture** path (the closed allowlist in `src/premura/profile_fields.py`, recorded through the default MCP tools `profile_context_supported_fields` / `profile_context_record` and the CLI verbs `hpipe profile-fields` / `hpipe profile-record`), and a normalized idempotent intake load path (`persist_intake_batch`). It ships **no** built-in importer for a specific nutrition/supplement source and **no** profile-dependent Stage 2 answer.
 
 So `engine` and `mcp` are no longer empty stubs: Stage 2 and part of Stage 3 are real for six approved question shapes, and the profile/intake domains now have real storage plus an agent-mediated capture path rather than only a meaning contract. What is still missing is the rest of the v2 payoff:
 
-- the remaining deterministic Stage 3 statistics tools (`paired_t_test`, `rolling_mean`), PubMed integration, and the signal selector — `change_point`, `smoothed_average`, `correlate`, the session research trace / multiplicity disclosure, and the follow-on **research trace audit skill** (the interpretation layer over the session research trace) have since shipped on the default surface over the bounded analytical contract; the rest this first grounded slice did not build
+- the first bounded analytical tool set is now complete — `change_point`, `smoothed_average`, `correlate`, `rolling_mean`, and `paired_t_test`, plus the session research trace / multiplicity disclosure and the follow-on **research trace audit skill** (the interpretation layer over the session research trace), have shipped on the default surface over the bounded analytical contract. PubMed integration and the signal selector are the remaining deterministic-Stage-3 work this first grounded slice did not build (`paired_t_test`'s broader condition-label pairing also stays deferred)
 - broader Stage 2 coverage beyond the seven now-shipped grounded answers (the six descriptive/comparative signals plus BMI, the first cross-domain proof consumer); the seven are non-diagnostic and carry no significance or causation claims. **BMI now ships** as the first cross-domain Stage 2 answer using the input-resolution seam (declared height from profile context plus weight from observation history); age-adjusted interpretation and any further profile-aware signals remain deferred — but now as implementation missions over the shipped resolution seam, not as storage or boundary questions
 - **parser/plugin source adaptation for nutrition and supplements** — the intake tables and load path exist, but turning a specific meal-logging or supplement export into a normalized `IntakeBatch` is unbuilt federated-parser work; there is no built-in importer
 - a first new source class beyond the original wearable/app quartet
@@ -168,14 +168,20 @@ The lab proposal is the first place where Premura becomes more than a wearable d
 
 ### Phase 3: `v0.3 analytical depth`
 
-> **Status: in progress, `correlate` landed.** The evidence-admissibility
-> foundation and the bounded analytical contract landed, and three deterministic
-> tools now sit on the default MCP surface — `change_point`, `smoothed_average`,
-> and `correlate` (the first multi-input tool: a pre-registered, caller-declared
-> whole-day-lagged Spearman *association* with an autocorrelation-corrected
-> `N_eff` band, never a p-value or "significant") — each carrying the mandatory
+> **Status: in progress — the first bounded analytical tool set is complete.** The
+> evidence-admissibility foundation and the bounded analytical contract landed, and
+> the five-tool set now sits on the default MCP surface — `change_point`,
+> `smoothed_average`, `correlate` (the first multi-input tool: a pre-registered,
+> caller-declared whole-day-lagged Spearman *association* with an
+> autocorrelation-corrected `N_eff` band, never a p-value or "significant"),
+> `rolling_mean` (a declared moving-window summary with visible coverage/imputation,
+> distinct from `smoothed_average`), and `paired_t_test` (a declared before/after
+> anchor-date paired comparison reporting a paired difference and a descriptive
+> uncertainty band — **not** a significance test, no p-value, names no cause) —
+> each carrying the mandatory
 > result envelope (estimate + validity metadata + closed confound checklist,
-> including the `common_cause_plausible` key) or a first-class refusal. See
+> including the `common_cause_plausible` key) or a first-class refusal.
+> `engine.list_analytical_tools()` returns exactly these five. See
 > [STATUS.md](../operations/STATUS.md) §"Stage 3 analytical tools" and design
 > decision note [0008](../adr/0008-correlate-pre-registered-lagged-association.md).
 > The **session research trace / measured multiplicity disclosure** has since
@@ -190,8 +196,10 @@ The lab proposal is the first place where Premura becomes more than a wearable d
 > installed via the existing `hpipe install-skills` to `.claude/skills/` (the
 > same home Claude Code and OpenCode both read — a separate OpenCode installer
 > target was evaluated and deliberately rejected); it changed no trace counts or
-> schema. **Remaining (deferred):** `rolling_mean`, `paired_t_test`, and PubMed
-> grounding — each a following mission, none shipped yet.
+> schema. **Remaining (deferred):** PubMed grounding is the next deferred depth
+> item — a following mission, not shipped yet. `paired_t_test`'s broader
+> condition-label pairing (anchor-date pairing only ships now), nutrition/supplement
+> source adaptation, and the teaching UI also remain deferred.
 
 #### Goal
 
@@ -199,7 +207,7 @@ Turn the first MCP surface into an actually useful analytical surface.
 
 #### Main work
 
-- Add deterministic stats tools from `ROADMAP.md` (`correlate`, `paired_t_test`, `rolling_mean`, `change_point`, …) — `change_point`, `smoothed_average`, and `correlate` shipped; `paired_t_test` and `rolling_mean` deferred
+- Add deterministic stats tools from `ROADMAP.md` (`correlate`, `paired_t_test`, `rolling_mean`, `change_point`, …) — the first bounded set is complete: `change_point`, `smoothed_average`, `correlate`, `rolling_mean`, and `paired_t_test` all shipped (`paired_t_test`'s broader condition-label pairing stays deferred)
 - Add PubMed search/fetch integration (deferred)
 - Add the personal-data bridge from literature to warehouse queries (deferred)
 - Add reproducible research trace output — **shipped** as the session research trace / measured multiplicity disclosure, and the follow-on **research trace audit skill** that interprets it has **also shipped** (a Premura-specific agent skill reading the audit-consumer contract read-only; it changed no trace counts or schema)
@@ -219,7 +227,7 @@ Phase 1 proved that MCP can safely access the warehouse and answer six grounded 
 
 #### Exit criteria
 
-- the app can answer at least a small set of concrete analytical questions through deterministic tools (met: `change_point`, `smoothed_average`, `correlate`)
+- the app can answer at least a small set of concrete analytical questions through deterministic tools (met: the complete first bounded set — `change_point`, `smoothed_average`, `correlate`, `rolling_mean`, `paired_t_test`)
 - analytical output is reproducible enough to be inspected later (met: the session research trace records each analytical call and derives a measured multiplicity disclosure, and the research trace audit skill that reads it has now shipped)
 - PubMed use is tool-grounded rather than prompt-grounded (deferred — PubMed not yet built)
 - tool outputs include validity/confound metadata, not just point estimates (met: mandatory result envelope with validity metadata + closed confound checklist)

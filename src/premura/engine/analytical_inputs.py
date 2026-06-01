@@ -127,6 +127,14 @@ ANALYTICAL_TO_POLICY_QUESTION: Mapping[AnalyticalQuestionType, QuestionType] = M
         AnalyticalQuestionType.LEVEL_SHIFT_DETECTION: QuestionType.LEVEL_SHIFT_DETECTION,
         AnalyticalQuestionType.SMOOTHED_PATTERN: QuestionType.SMOOTHED_PATTERN,
         AnalyticalQuestionType.LAGGED_ASSOCIATION: QuestionType.LAGGED_ASSOCIATION,
+        # finish-analytical-tool-set mission: rolling_mean and paired_t_test each
+        # gate on their OWN first-class policy question type (with its own
+        # freshness/sufficiency), never on a descriptive shape — identity-by-name
+        # like every other entry above. The closed map MUST stay total over the
+        # AnalyticalQuestionType enum, so adding the contract values without these
+        # two entries would strand the new tools at input preparation.
+        AnalyticalQuestionType.MOVING_WINDOW_PATTERN: QuestionType.MOVING_WINDOW_PATTERN,
+        AnalyticalQuestionType.PAIRED_DIFFERENCE: QuestionType.PAIRED_DIFFERENCE,
     }
 )
 """Closed analytical→policy question map used to drive the evaluator.
@@ -645,9 +653,7 @@ class PreRegisteredAssociationHypothesis:
 
     def __post_init__(self) -> None:
         # Normalise candidate tuple so the frozen shape stays hashable/JSON-safe.
-        object.__setattr__(
-            self, "common_cause_candidates", tuple(self.common_cause_candidates)
-        )
+        object.__setattr__(self, "common_cause_candidates", tuple(self.common_cause_candidates))
 
     def validate(self) -> PreRegisteredAssociationHypothesis:
         """Reject a malformed hypothesis. Returns ``self`` for fluent use.
@@ -662,13 +668,9 @@ class PreRegisteredAssociationHypothesis:
           ``lag_justification``; ``> 14`` is refused.
         """
         if not self.left_metric_id or not self.left_metric_id.strip():
-            raise ValueError(
-                "PreRegisteredAssociationHypothesis.left_metric_id must be non-empty"
-            )
+            raise ValueError("PreRegisteredAssociationHypothesis.left_metric_id must be non-empty")
         if not self.right_metric_id or not self.right_metric_id.strip():
-            raise ValueError(
-                "PreRegisteredAssociationHypothesis.right_metric_id must be non-empty"
-            )
+            raise ValueError("PreRegisteredAssociationHypothesis.right_metric_id must be non-empty")
         if not isinstance(self.expected_direction, ExpectedDirection):
             raise ValueError(
                 "PreRegisteredAssociationHypothesis.expected_direction must be an "
@@ -796,13 +798,9 @@ class PairedAnalyticalInput:
         if self.refusal is not None:
             self.refusal.validate()
             if self.pairs:
-                raise ValueError(
-                    "a refused paired analytical input must not carry pairs"
-                )
+                raise ValueError("a refused paired analytical input must not carry pairs")
             if self.overlap_sample_size:
-                raise ValueError(
-                    "a refused paired analytical input must not report a sample size"
-                )
+                raise ValueError("a refused paired analytical input must not report a sample size")
             return
 
         # Usable invariants.
@@ -1011,9 +1009,7 @@ def prepare_paired_input(
     # A paired day "used the UTC fallback" when EITHER contributing side could not
     # resolve its local day from local_tz; its calendar-day key may be off by one.
     utc_fallback_paired_days = sum(
-        1
-        for day in shared_days
-        if left_by_day[day][1] or right_by_aligned_day[day][1]
+        1 for day in shared_days if left_by_day[day][1] or right_by_aligned_day[day][1]
     )
 
     # 4. No-overlap and weak-support refusals (before any computation).
@@ -1054,11 +1050,14 @@ def prepare_paired_input(
     overlap_start = pairs[0].paired_day
     overlap_end = pairs[-1].paired_day
 
-    freshness = "; ".join(
-        f"{s.metric_id}={s.freshness_status}"
-        for s in (left_series, right_series)
-        if s.freshness_status
-    ) or None
+    freshness = (
+        "; ".join(
+            f"{s.metric_id}={s.freshness_status}"
+            for s in (left_series, right_series)
+            if s.freshness_status
+        )
+        or None
+    )
 
     source_summary: dict[str, Any] = {
         "lag_days": lag,

@@ -64,7 +64,11 @@ __all__ = [
 # :data:`premura.engine._BUILTIN_RESOLVER_MODULES`: adding a future built-in
 # analytical tool that lives in a new module means appending its dotted name
 # here — no filesystem scanning, no plugin entry points, no dispatch branch.
-_BUILTIN_ANALYTICAL_MODULES: tuple[str, ...] = ("premura.engine.analytical_tools",)
+_BUILTIN_ANALYTICAL_MODULES: tuple[str, ...] = (
+    "premura.engine.analytical_tools",
+    "premura.engine.rolling_mean",
+    "premura.engine.paired_t_test",
+)
 
 # The names the built-in modules are expected to register. Used to decide
 # whether a reload is needed and is intentionally decoupled from ``REGISTRY``
@@ -75,6 +79,8 @@ _BUILTIN_ANALYTICAL_NAMES: frozenset[str] = frozenset(
         "change_point",
         "smoothed_average",
         "correlate",
+        "rolling_mean",
+        "paired_t_test",
     }
 )
 

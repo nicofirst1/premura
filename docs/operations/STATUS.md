@@ -34,8 +34,8 @@ These are descriptive/comparative only — no reference ranges, no diagnosis, no
 
 **Stage 3 — two entrypoints, clean boundary.** `src/premura/mcp/` ships two entrypoints:
 
-- **Default agent surface (`premura-mcp`)** — sixteen tools: two validity-gated catalog/summary helpers (`list_metrics`, `metric_summary`) that delegate entirely to the Stage 2 engine, the six signal-backed tools listed above, two agent-mediated profile-capture tools (`profile_context_supported_fields`, `profile_context_record`), the three Stage 3 analytical tools (`change_point`, `smoothed_average`, `correlate` — see "Stage 3 analytical tools" below), and the three session research trace tools (`research_trace_open`, `research_trace_mark_surfaced`, `research_trace_disclosure` — see "Session research trace" below). No tool on this surface reads `hp.*` directly; catalog/signal access goes through the engine, profile capture goes through the bounded `record_profile_context` store boundary, and the trace tools read only derived `trace.*` rows. This is the fully validity-gated / bounded default path.
-- **Operator surface (`premura-mcp-operator`)** — all sixteen default tools plus `query_warehouse` (raw SQL escape hatch), for seventeen total. Lower-guarantee: `query_warehouse` returns raw rows without Stage 2 validity, freshness, or imputation guarantees. Agent use requires explicit user approval, enforced by surface separation plus an explicit launch acknowledgment (`--ack` / `PREMURA_OPERATOR_ACK`) the operator entrypoint demands before exposing the raw-SQL tool.
+- **Default agent surface (`premura-mcp`)** — eighteen tools: two validity-gated catalog/summary helpers (`list_metrics`, `metric_summary`) that delegate entirely to the Stage 2 engine, the six signal-backed tools listed above, two agent-mediated profile-capture tools (`profile_context_supported_fields`, `profile_context_record`), the five Stage 3 analytical tools (`change_point`, `smoothed_average`, `correlate`, `rolling_mean`, `paired_t_test` — see "Stage 3 analytical tools" below), and the three session research trace tools (`research_trace_open`, `research_trace_mark_surfaced`, `research_trace_disclosure` — see "Session research trace" below). No tool on this surface reads `hp.*` directly; catalog/signal access goes through the engine, profile capture goes through the bounded `record_profile_context` store boundary, and the trace tools read only derived `trace.*` rows. This is the fully validity-gated / bounded default path.
+- **Operator surface (`premura-mcp-operator`)** — all eighteen default tools plus `query_warehouse` (raw SQL escape hatch), for nineteen total. Lower-guarantee: `query_warehouse` returns raw rows without Stage 2 validity, freshness, or imputation guarantees. Agent use requires explicit user approval, enforced by surface separation plus an explicit launch acknowledgment (`--ack` / `PREMURA_OPERATOR_ACK`) the operator entrypoint demands before exposing the raw-SQL tool.
 
 The signal-backed tools return a structured payload whose `status` is `available` / `missing_input` / `stale_input` / `insufficient_data`. When an answer is unavailable the payload's `message` carries the signal's authored missing-input guidance, and `missing_input` / `stale_input` responses attach a structured `missing_input` report (`required_inputs` / `missing_inputs` / `stale_inputs`) a caller can branch on.
 
@@ -84,13 +84,17 @@ deterministic proof tools on top of the admissibility foundation.
 `analytical_tools.py` define the surface; `docs/history/research/STAGE3_ANALYTICAL_TOOLS_RESEARCH.md`
 records the design.
 
-- **Three deterministic tools, on the default MCP surface.** `change_point`
+- **Five deterministic tools, on the default MCP surface.** The first bounded
+  analytical tool set is now complete: `change_point`
   (level-shift detection — "did this metric step to a new level, and when?"),
-  `smoothed_average` (conservative trailing smoothed pattern), and `correlate`
+  `smoothed_average` (conservative trailing smoothed pattern), `correlate`
   (the pre-registered, lagged *association* tool — see "Correlation as a
-  pre-registered lagged association" below). All three are exposed through
-  `premura-mcp` (the default validity-gated surface — **sixteen** tools once the
-  three session research trace tools landed),
+  pre-registered lagged association" below), `rolling_mean` (a declared
+  moving-window summary — see "Finished analytical tool set" below), and
+  `paired_t_test` (a declared before/after anchor-date paired comparison — see
+  "Finished analytical tool set" below). `engine.list_analytical_tools()`
+  returns exactly these five. All are exposed through
+  `premura-mcp` (the default validity-gated surface — **eighteen** tools),
   delegate entirely to the engine, perform no statistics in the MCP layer, and
   **name no cause** — no causation, diagnosis, or treatment claims.
 - **Analytical question types are first-class.** Each tool routes to its own
@@ -145,14 +149,49 @@ statistical choices are settled in
   and the tool refuses below the conservative paired-sample / `N_eff` floor rather
   than show a confident-looking spurious association.
 
-**Explicitly not shipped (still Phase 3 follow-on):** the remaining deterministic
-stats (`paired_t_test`, `rolling_mean`) and PubMed grounding. The **research
+**Explicitly not shipped (still Phase 3 follow-on):** PubMed grounding remains
+the next deferred depth item — no PubMed search/fetch, literature bridge, or
+citation workflow ships in this line. Nutrition/supplement source adaptation and
+the teaching UI also remain deferred. The **research
 trace audit skill** — the interpretation work that reads the trace's
 audit-consumer contract — **has now shipped**; see "Research trace audit skill"
 below. The session research trace / multiplicity disclosure itself **has now
-shipped** — see "Session research trace" below. `change_point`, `smoothed_average`, and
-`correlate` are the shipped analytical tools over the now-stable analytical
-contract; the rest are future missions.
+shipped** — see "Session research trace" below. With `rolling_mean` and
+`paired_t_test` now shipped (see "Finished analytical tool set" below), all five
+built-in analytical tools are available over the now-stable analytical contract;
+PubMed grounding is the next future mission.
+
+### Finished analytical tool set (shipped 2026-06-01)
+
+The `finish-analytical-tool-set-01KT0Y95` mission completed the first bounded
+analytical tool set by adding the last two deterministic tools, both on the
+default MCP surface and both routed through the same admissibility gate, result
+envelope, and trace recording as the earlier three.
+
+- **`rolling_mean` — a declared moving-window summary.** It reports a moving
+  level over one admitted ordered series across a **caller-declared window**, with
+  visible per-point coverage and imputation counts. The window is fixed before the
+  result exists; the tool never scans windows or keeps the strongest-looking one.
+  It is distinct from `smoothed_average` — a moving-window summary with explicit
+  coverage/imputation metadata, not a rename of the trailing-smoothed pattern. It
+  refuses (no estimate) on a refused/stale/missing input, a zero/negative/too-large
+  window, out-of-range coverage, insufficient coverage, or any window-scan request.
+- **`paired_t_test` — a declared before/after anchor-date comparison.** It reports
+  a **paired difference** (mean of after minus before) around one caller-declared
+  anchor date, with observed vs expected direction, a descriptive **uncertainty
+  band** (dispersion of the paired differences), imputation visibility, and a
+  confound checklist. It is **not a significance test**: it computes and returns
+  **no p-value and no significance verdict**, and names no cause — the anchor date
+  is a comparison boundary, never a stated cause of any change. It refuses on a
+  refused/stale/missing input, a missing/malformed anchor date, out-of-bounds
+  before/after windows, a missing expected direction, too few valid pairs, constant
+  paired differences, or any request for condition-label pairing, arbitrary pair
+  maps, or anchor/window scanning.
+- **Scope is anchor-date pairing only.** Broader **condition-label pairing** is a
+  deliberately deferred future extension; adding it requires a new pairing
+  contract, new trace-identity fields, and new refusal rules, not a quiet widening
+  of the anchor-date request shape (see
+  [`src/premura/engine/CONTRACT.md`](../../src/premura/engine/CONTRACT.md)).
 
 ## Session research trace and multiplicity disclosure (shipped 2026-05-31)
 
@@ -247,7 +286,7 @@ issues no network call at runtime.
 | Export artifact encryption | ✅ | Live round-trip verified 2026-05-21 against `~/.config/premura/age.key`; decrypted snapshot byte-identical to `data/duck/health.duckdb` (`diff` empty). Per-test keypair regression in `tests/test_encrypt_roundtrip.py`. |
 | Drive upload (now OPT-IN, not auto) | ⚠️ Code complete, not live | `hpipe upload` only runs on explicit invocation. `run-monthly` no longer pushes to Drive — it stops after the encrypted artifact lands locally. |
 | Launchd plist | ✅ | Bootstrapped 2026-05-21 (`com.nbrandizzi.premura.monthly`). `kickstart` fired the macOS notification, `run-monthly` reached the `_wait_for_ready` loop without ingesting (no `.ready`), exited cleanly on SIGTERM. Plist render covered by `tests/test_launchd_plist.py` (incl. `plutil -lint`). |
-| Tests | ✅ | 631/631 pytest pass, incl. a real-data HC regression that round-trips ~900k rows, the FR-6 `age` round-trip suite, FR-8 plist render + `plutil -lint`, full Stage 2 engine + Stage 3 signal-tool coverage (all six signal-backed tools end-to-end), the profile/intake contract harness, profile capture append/supersede + allowlist enforcement, idempotent intake-batch loading, the Stage 2 input-resolution seam + BMI proof-consumer coverage, the evidence-admissibility policy layer, the Stage 3 analytical contract + `change_point`/`smoothed_average` end-to-end (admissibility gate, result envelope, closed confound vocabulary, first-class analytical question types), the `correlate` lagged-association tool end-to-end (paired-input preparation, same-day-after-lag pairing, Spearman + `N_eff` band, paired-sample floor refusals, forbidden-parameter refusals, `common_cause_plausible`, and the thin MCP wrapper), and the session research trace end-to-end (the `005_trace_audit.sql` migration + `trace.*` ownership, the pure `premura.trace` service — raw-vs-N counting, exact-retry collapse, refusal breakdown, surfaced-unavailable fallback, engine-purity byte-identical envelopes — and the three trace MCP tools on the default/operator surfaces). |
+| Tests | ✅ | 785/785 pytest pass, incl. a real-data HC regression that round-trips ~900k rows, the FR-6 `age` round-trip suite, FR-8 plist render + `plutil -lint`, full Stage 2 engine + Stage 3 signal-tool coverage (all six signal-backed tools end-to-end), the profile/intake contract harness, profile capture append/supersede + allowlist enforcement, idempotent intake-batch loading, the Stage 2 input-resolution seam + BMI proof-consumer coverage, the evidence-admissibility policy layer, the Stage 3 analytical contract + `change_point`/`smoothed_average` end-to-end (admissibility gate, result envelope, closed confound vocabulary, first-class analytical question types), the `correlate` lagged-association tool end-to-end (paired-input preparation, same-day-after-lag pairing, Spearman + `N_eff` band, paired-sample floor refusals, forbidden-parameter refusals, `common_cause_plausible`, and the thin MCP wrapper), the completed `rolling_mean` and `paired_t_test` tools end-to-end (declared-window moving summary with coverage/imputation metadata; before/after anchor-date paired difference with descriptive uncertainty and no significance/causation claim; their refusal classes, trace identities, and thin MCP wrappers; the exactly-five-tool public catalog), and the session research trace end-to-end (the `005_trace_audit.sql` migration + `trace.*` ownership, the pure `premura.trace` service — raw-vs-N counting, exact-retry collapse, refusal breakdown, surfaced-unavailable fallback, engine-purity byte-identical envelopes — and the three trace MCP tools on the default/operator surfaces). |
 
 ## Warehouse contents (current snapshot)
 

@@ -38,6 +38,7 @@ from premura.store import duck
 
 # WP04 adds ``correlate`` to the prior twelve default tools (WP06 left twelve).
 # session-research-trace WP03 adds the three trace tools to the same surface.
+# WP05 (finish-analytical-tool-set) adds rolling_mean + paired_t_test (-> 18).
 _DEFAULT_TOOLS_WITH_CORRELATE = sorted(
     [
         "list_metrics",
@@ -53,6 +54,8 @@ _DEFAULT_TOOLS_WITH_CORRELATE = sorted(
         "change_point",
         "smoothed_average",
         "correlate",
+        "rolling_mean",
+        "paired_t_test",
         "research_trace_open",
         "research_trace_mark_surfaced",
         "research_trace_disclosure",
@@ -132,11 +135,11 @@ def test_default_surface_includes_correlate() -> None:
     asyncio.run(run())
 
 
-def test_default_surface_lists_exactly_sixteen_tools() -> None:
+def test_default_surface_lists_exactly_the_expected_tools() -> None:
     async def run() -> None:
         names = sorted(tool.name for tool in await build_server().list_tools())
         assert names == _DEFAULT_TOOLS_WITH_CORRELATE
-        # session-research-trace WP03 added the three trace tools (thirteen -> sixteen).
+        # WP05 added rolling_mean + paired_t_test to the default surface (-> 18).
         assert len(names) == len(_DEFAULT_TOOLS_WITH_CORRELATE)
 
     asyncio.run(run())

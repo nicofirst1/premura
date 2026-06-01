@@ -75,7 +75,7 @@ Tools exposed:
 - `sleep_deep_pct_baseline` — latest deep-sleep % vs user's own baseline
 - `hrv_change_around_date` — overnight HRV before/after a user-named date
 - `profile_context_supported_fields` / `profile_context_record` — bounded agent-mediated profile capture
-- `change_point`, `smoothed_average`, `correlate` — deterministic analytical tools
+- `change_point`, `smoothed_average`, `correlate`, `rolling_mean`, `paired_t_test` — the completed bounded set of deterministic analytical tools (`paired_t_test` reports a before/after paired difference with a descriptive uncertainty band — not a significance test, no p-value, names no cause)
 - `research_trace_open`, `research_trace_mark_surfaced`, `research_trace_disclosure` — session research trace and disclosure
 
 Signal-backed and analytical tools return structured `available` / `missing_input` / `stale_input` / `insufficient_data` or first-class refusal payloads rather than free-form claims.

@@ -102,6 +102,23 @@ from .analytical_inputs import (
     prepare_paired_input,
 )
 
+# Stage 3 simple anchor-date before/after paired-input seam (WP03). These are the
+# stable names the ``paired_t_test`` MCP wrapper (WP05) constructs to declare a
+# before/after split before dispatch. Like the single-series and lagged-pair
+# preparers above, they live behind the public engine surface so the wrapper never
+# imports ``premura.engine.paired_inputs`` directly. Importing them here is
+# side-effect-free with respect to the registries (frozen dataclasses + a pure
+# preparer; no DuckDB, MCP, or network).
+from .paired_inputs import (
+    BeforeAfterDirection,
+    BeforeAfterPair,
+    BeforeAfterPairedInput,
+    BeforeAfterPairedRequest,
+    BeforeAfterPairRefusalReason,
+    before_after_pairs_for_computation,
+    prepare_before_after_paired_input,
+)
+
 # Stage 2 evidence-admissibility policy surface (WP01-WP03). These are the
 # *stable* contributor names a future policy author imports; the private
 # ``premura.engine.policies._model`` / ``._evaluator`` / ``._registry`` modules
@@ -291,6 +308,15 @@ __all__ = [
     "ExpectedDirection",
     "prepare_paired_input",
     "paired_points_for_computation",
+    # Simple anchor-date before/after paired-input seam the paired_t_test tool
+    # (and its MCP wrapper) consume (WP03/WP05):
+    "BeforeAfterDirection",
+    "BeforeAfterPair",
+    "BeforeAfterPairedInput",
+    "BeforeAfterPairedRequest",
+    "BeforeAfterPairRefusalReason",
+    "prepare_before_after_paired_input",
+    "before_after_pairs_for_computation",
 ]
 
 

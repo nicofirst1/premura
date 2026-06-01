@@ -37,6 +37,8 @@ from ..engine import (
     AnalyticalInputSeries,
     AnalyticalQuestionType,
     AnalyticalResultEnvelope,
+    BeforeAfterDirection,
+    BeforeAfterPairedRequest,
     EvidenceCandidate,
     ExpectedDirection,
     MissingInputReport,
@@ -511,6 +513,117 @@ def smoothed_average(
     )
 
 
+def rolling_mean(
+    metric_id: str,
+    *,
+    window: int | None = None,
+    min_coverage: float | None = None,
+    warehouse_path: Path | None = None,
+) -> dict[str, Any]:
+    """Return a declared moving-window summary for one metric (delegates to engine).
+
+    Validates the caller-facing parameter shape only, then delegates entirely to
+    the engine: warehouse evidence is read through the Stage 2 query layer under
+    the reviewed ``MOVING_WINDOW_PATTERN`` question type, fed to
+    ``prepare_input_series`` (admissibility gate), and dispatched through
+    ``invoke_analytical_tool``. The wrapper computes no rolling means, invents no
+    caveats, and implies no prediction or significance; under-covered windows,
+    coverage/window metadata, and any refusal come from the engine envelope
+    unchanged. Stale, inadmissible, insufficient, or out-of-bounds requests return
+    a structured refusal with a distinct reason and no estimate.
+    """
+    params: dict[str, object] = {}
+    if window is not None:
+        _ensure_positive_int("window", window)
+        params["window"] = window
+    if min_coverage is not None:
+        _ensure_unit_fraction("min_coverage", min_coverage)
+        params["min_coverage"] = min_coverage
+    return _run_analytical_tool(
+        "rolling_mean",
+        metric_id,
+        question_type=AnalyticalQuestionType.MOVING_WINDOW_PATTERN,
+        params=params,
+        warehouse_path=warehouse_path,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Stage 3 simple anchor-date before/after paired difference (WP04) — paired_t_test
+#
+# ``paired_t_test`` is the single-series paired sibling of ``correlate``. It is
+# just as THIN: it validates only the caller-facing parameter shape, reads ONE
+# admitted series' evidence through the SAME engine-owned Stage 2 query layer the
+# single-series tools use (``_prepare_analytical_series`` — no raw fact-table SQL),
+# builds the pre-registered before/after request the engine requires, then hands
+# the prepared series + request to the engine: ``prepare_before_after_paired_input``
+# applies the anchor-date pairing + admissibility, and ``invoke_analytical_tool``
+# runs the deterministic paired-difference estimate. The wrapper computes NO
+# statistics, does NO pairing, names NO confounds/caveats, and emits NO p-value or
+# significance verdict: the returned envelope (available or refusal) is the
+# engine's, serialized unchanged.
+# --------------------------------------------------------------------------- #
+
+
+def paired_t_test(
+    metric_id: str,
+    *,
+    anchor_date: str,
+    before_days: int,
+    after_days: int,
+    expected_direction: str,
+    warehouse_path: Path | None = None,
+) -> dict[str, Any]:
+    """Report a simple before/after paired difference for one metric (delegates to engine).
+
+    The caller pre-registers the metric, the anchor date, the before/after window
+    sizes, and the ``expected_direction`` ("increase"/"decrease") BEFORE seeing the
+    result — the anti-p-hacking discipline of FR-005. The anchor only splits the
+    before/after windows; it is never shown to be the cause of any change.
+
+    This wrapper validates only the caller-facing parameter shape and assembles the
+    declared request. The single series read goes through the engine's Stage 2
+    query layer; all pairing, admissibility, computation (mean paired difference and
+    its dispersion), confounds, caveats, and refusals belong to the engine. The
+    wrapper performs no statistics and emits no p-value or significance verdict; an
+    inadmissible / stale / no-valid-pairs / too-few-pairs / constant-difference
+    request flows back as a structured refusal with a distinct reason and no
+    estimate.
+    """
+    metric = _require_metric_id("metric_id", metric_id)
+    parsed_anchor = _parse_anchor_date(anchor_date)
+    _ensure_positive_int("before_days", before_days)
+    _ensure_positive_int("after_days", after_days)
+    direction = _parse_before_after_direction(expected_direction)
+
+    request = BeforeAfterPairedRequest(
+        metric_id=metric,
+        anchor_date=parsed_anchor,
+        before_days=before_days,
+        after_days=after_days,
+        expected_direction=direction,
+    )
+
+    with _open_warehouse(warehouse_path) as conn:
+        series = _prepare_analytical_series(conn, metric, AnalyticalQuestionType.PAIRED_DIFFERENCE)
+        paired = engine.prepare_before_after_paired_input(series, request)
+        envelope = engine.invoke_analytical_tool("paired_t_test", paired)
+    return _serialize_analytical_result(envelope)
+
+
+def _parse_before_after_direction(value: str) -> BeforeAfterDirection:
+    """Map the caller-facing direction string onto the closed engine vocabulary.
+
+    The closed set (``increase`` / ``decrease``) is the engine's; the wrapper does
+    not invent a third value, so an agent cannot smuggle a free-form expectation.
+    """
+    try:
+        return BeforeAfterDirection(value)
+    except ValueError as exc:
+        allowed = ", ".join(d.value for d in BeforeAfterDirection)
+        raise ValueError(f"expected_direction must be one of: {allowed}; got {value!r}") from exc
+
+
 # --------------------------------------------------------------------------- #
 # Stage 3 pre-registered lagged association (WP04) — correlate
 #
@@ -599,9 +712,7 @@ def _parse_expected_direction(value: str) -> ExpectedDirection:
         return ExpectedDirection(value)
     except ValueError as exc:
         allowed = ", ".join(d.value for d in ExpectedDirection)
-        raise ValueError(
-            f"expected_direction must be one of: {allowed}; got {value!r}"
-        ) from exc
+        raise ValueError(f"expected_direction must be one of: {allowed}; got {value!r}") from exc
 
 
 def _run_analytical_tool(
@@ -955,10 +1066,12 @@ __all__ = [
     "hrv_change_around_date",
     "list_metrics",
     "metric_summary",
+    "paired_t_test",
     "query_warehouse",
     "record_profile_context",
     "resting_hr_status",
     "resting_hr_trend",
+    "rolling_mean",
     "sleep_deep_pct_baseline",
     "smoothed_average",
     "steps_trend",

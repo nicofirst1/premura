@@ -83,6 +83,45 @@ class AnalyticalQuestionType(StrEnum):
     own freshness/sufficiency; the input-preparation layer maps this value onto
     it through the closed analytical->policy table."""
 
+    MOVING_WINDOW_PATTERN = "moving_window_pattern"
+    """For the ``rolling_mean`` tool — a declared trailing moving-window summary
+    over **one** admitted ordered series.
+
+    This is its **own** reviewed value, deliberately *not* a reuse of
+    ``smoothed_pattern``. ``smoothed_pattern`` answers "what is the current
+    smoothed level" with a single trailing average; the moving-window question
+    answers "how has the level moved over time" by emitting a *series* of
+    per-window summary points, each carrying its own coverage and imputation
+    count. That per-point coverage sufficiency is a different shape than a single
+    smoothed level, so collapsing the two would hide the moving-window coverage
+    requirement — the same mistake research note D4 rejected for the other
+    single-series tools. The matching policy
+    ``QuestionType.MOVING_WINDOW_PATTERN`` declares its own freshness/sufficiency;
+    the input-preparation layer maps this value onto it through the closed
+    analytical->policy table. (This mission's reviewed scope is the trailing
+    moving window only; a future windowing variant adds its own value rather than
+    widening this one.)"""
+
+    PAIRED_DIFFERENCE = "paired_difference"
+    """For the ``paired_t_test`` tool — a simple declared before/after
+    *paired-difference* comparison over matched observations from **one**
+    operator's series, split by one caller-declared anchor date.
+
+    This is its **own** reviewed value, deliberately *not* a reuse of
+    ``lagged_association``, ``level_shift_detection``, ``smoothed_pattern``, or a
+    descriptive shape such as ``recent_trend``. A paired before/after difference
+    carries paired-sample sufficiency (a raw *pair* floor over matched
+    observations) that two-series lagged association and every single-series
+    shape express differently or not at all; collapsing it onto any of them would
+    hide that pair-count sufficiency. The matching policy
+    ``QuestionType.PAIRED_DIFFERENCE`` declares its own freshness/sufficiency.
+
+    In this mission ``paired_difference`` means **simple anchor-date** pairing
+    only. It does not mean arbitrary condition pairing, event-label pairing, or
+    caller-supplied pair maps: any broader pairing mode is a later reviewed
+    addition that declares its own contract value and policy rules rather than
+    smuggling new behavior into this one."""
+
 
 class ConfoundKey(StrEnum):
     """The closed, committed confound vocabulary (research note D5).

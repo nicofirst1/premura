@@ -296,9 +296,12 @@ a first-class refusal carrying no estimate. The names below are re-exported from
 `premura.engine`: `AnalyticalToolSpec`, `AnalyticalResultEnvelope`,
 `AnalyticalInputSeries`, `PairedAnalyticalInput`,
 `PreRegisteredAssociationHypothesis`, `AnalyticalQuestionType`, `ConfoundKey`,
-`prepare_input_series`, `prepare_paired_input`. The shipped tools are
-`change_point`, `smoothed_average`, and `correlate`; the rules a fourth must
-follow are below.
+`prepare_input_series`, `prepare_paired_input`,
+`prepare_before_after_paired_input`. The first bounded analytical tool set is
+complete: `engine.list_analytical_tools()` returns exactly `change_point`,
+`smoothed_average`, `correlate`, `rolling_mean`, and `paired_t_test`. The rules a
+*sixth* tool must follow — and the bounded shapes the two newest tools commit to —
+are below.
 
 The same invariants from the policy layer hold here: the engine is **stateless,
 deterministic, offline** — no clock, no network, no resampling. The only "now"
@@ -352,6 +355,87 @@ Read both before changing it. The rules that govern any review or extension:
   when too much of the window is imputed it carries `high_imputation`; and the
   tool **refuses** when the raw paired sample or `N_eff` is below the floor rather
   than show a confident-looking spurious association to a non-expert.
+
+### `rolling_mean` — a declared moving-window summary, never a window scan
+
+`rolling_mean` reports a moving level over **one** admitted ordered series across
+a **caller-declared window**. The window is fixed before the result exists; the
+engine **must not scan windows** or keep the window that looks strongest — that is
+p-hacking by another name. It is a different tool from `smoothed_average`, not a
+rename: `smoothed_average` is a conservative trailing smoothed pattern, while
+`rolling_mean` is an explicit moving-window summary that surfaces per-point
+**coverage and imputation** so a narrator can see exactly how much of each window
+was real data. The rules any review or extension must hold:
+
+- **Caller-declared `window` and `min_coverage`, never inferred.** The window is a
+  positive integer; `min_coverage` is a threshold in `[0.0, 1.0]`. Each emitted
+  point summarizes only observations inside that trailing window; long gaps stay
+  visible through coverage and missingness metadata rather than being silently
+  filled.
+- **Available envelope fields.** An available result carries the tool name and
+  declared parameters, the input metric id and admitted input span, the ordered
+  rolling-mean points, the window size and minimum coverage, per-point coverage and
+  imputation counts, the emitted-point count and source sample size, validity
+  status, a closed-vocabulary confound checklist, and concise caveats with **no
+  prediction, significance, or causal claim**.
+- **Refusal classes (no estimate).** Refuse when the input series is
+  refused/stale/missing/inadmissible, when `window` is zero/negative/beyond the
+  supported maximum, when `min_coverage` is outside `[0.0, 1.0]`, when no window
+  reaches the required coverage, or when the caller asks the tool to choose or scan
+  windows.
+- **Trace identity.** The normalized hypothesis identity is `metric_id`, `window`,
+  `min_coverage`. Exact retries collapse; different windows or coverage thresholds
+  are distinct examined hypotheses.
+
+### `paired_t_test` — a declared before/after anchor-date comparison, no significance, no cause
+
+`paired_t_test` reports a **simple before/after paired comparison around one
+caller-declared anchor date** over one admitted ordered series. Its name follows
+the colloquial label, but its honesty boundary is strict and matches the rest of
+the analytical layer:
+
+- **It is not a significance test.** It computes and returns **no p-value and no
+  significance verdict**. It reports a **paired difference** — the mean of
+  *after minus before* — with a **descriptive uncertainty band** (the dispersion
+  of the paired differences), observed direction, expected direction, and a
+  direction-match flag. Present the band as *how spread out the paired differences
+  are*, never as a 95% confidence interval and never as evidence the difference is
+  "significant." Reject the forbidden quantities **before** computation, the same
+  way `correlate` does: a request for a p-value, a significance test, a tolerance
+  window, or a scan is refused with `unsupported_parameter` so a narrating model
+  cannot launder certainty the data cannot support.
+- **It names no cause.** The anchor date is a comparison boundary, never a stated
+  cause of any change. Available caveats carry no cause, diagnosis, treatment, or
+  population-norm claim.
+- **Anchor-date pairing only — condition-label pairing is a deferred extension.**
+  In this mission the only pairing rule is before/after around one declared anchor
+  date. The engine builds pairs from observations before and after the anchor by
+  one fixed documented rule and **must not** support condition labels, arbitrary
+  pair maps, or event classification, and **must not** scan anchor dates,
+  before/after windows, or pair-selection strategies. Broader **condition-label
+  pairing** is a deliberately deferred future extension: adding it requires a new
+  pairing contract, new trace-identity fields, and new refusal rules — it must
+  **not** be smuggled into the simple anchor-date request shape.
+- **Required inputs.** One admitted series, an `anchor_date` (local calendar date),
+  positive-integer `before_days` and `after_days`, and an `expected_direction`
+  (`increase` or `decrease`) declared before computation.
+- **Available envelope fields.** Tool name and declared parameters, metric id and
+  the before/after spans used, raw pair count, mean paired difference (after minus
+  before), observed direction, expected direction, direction-match metadata,
+  uncertainty metadata for the mean paired difference, imputation percentage,
+  validity status, and a closed-vocabulary confound checklist.
+- **Refusal classes (no estimate).** Refuse when the input series is
+  refused/stale/missing/inadmissible, when the anchor date is missing or malformed,
+  when `before_days`/`after_days` is outside supported bounds, when the expected
+  direction is missing or outside the closed set, when no valid before/after pairs
+  can be built, when the pair count is below the conservative floor, when the
+  paired differences are constant (the method cannot proceed), or when the caller
+  asks for condition pairing, arbitrary pair maps, anchor/window scanning,
+  p-hacking, diagnosis, causation, or treatment advice.
+- **Trace identity.** The normalized hypothesis identity is `metric_id`,
+  `anchor_date`, `before_days`, `after_days`, `expected_direction`. Exact retries
+  collapse; different anchors, windows, or expected directions are distinct
+  examined hypotheses.
 
 ### Confounds are a closed, rule-shaped vocabulary — not an enumerated list
 
