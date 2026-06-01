@@ -12,9 +12,14 @@ exactly two operations behind a Premura-owned adapter:
 
 The candidate-vs-fetched citation rule is a *Premura* invariant, not a provider
 feature, so this adapter owns it (research.md, "Final Decision"). The provider
-behind the adapter is NCBI E-utilities — ESearch to find PMIDs, ESummary to fetch
-a record by exact PMID — called over the Python standard library (``urllib``) so
-no HTTP dependency is added.
+behind the adapter is NCBI E-utilities — ESearch to find PMIDs, ESummary to read
+the structured record (and to enrich search candidates with human-readable
+titles), and EFetch to retrieve the abstract of a fetched record when one is
+available — called over the Python standard library (``urllib``) so no HTTP
+dependency is added. The candidate-title and abstract enrichments are
+best-effort: if the enriching call fails, search still returns its PMIDs and a
+fetched record still returns its structured metadata, with the missing piece
+left explicitly absent rather than fabricated.
 
 Design notes that the tests lock:
 
@@ -70,6 +75,7 @@ CITATION_RULE = (
 _EUTILS_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 _ESEARCH_ENDPOINT = f"{_EUTILS_BASE}/esearch.fcgi"
 _ESUMMARY_ENDPOINT = f"{_EUTILS_BASE}/esummary.fcgi"
+_EFETCH_ENDPOINT = f"{_EUTILS_BASE}/efetch.fcgi"
 _PUBMED_RECORD_BASE = "https://pubmed.ncbi.nlm.nih.gov"
 _HTTP_TIMEOUT_SECONDS = 15
 
@@ -223,7 +229,20 @@ def pubmed_search(
             "message": "No PubMed records matched this query.",
         }
 
-    candidates = [PubMedCandidate(pmid=pmid) for pmid in pmids[:effective_limit]]
+    selected = pmids[:effective_limit]
+    # Best-effort enrichment: ESummary gives each candidate a human-readable title
+    # (and a short journal/date snippet) so an agent can choose which PMID to fetch
+    # instead of fetching blind. If the summary call fails we still return the
+    # PMIDs — the core search contract — with titles left explicitly absent.
+    titles = _candidate_summaries(selected, send)
+    candidates = [
+        PubMedCandidate(
+            pmid=pmid,
+            title=titles.get(pmid, (None, None))[0],
+            snippet=titles.get(pmid, (None, None))[1],
+        )
+        for pmid in selected
+    ]
     return {
         "status": "available",
         "query": cleaned,
@@ -292,6 +311,12 @@ def pubmed_fetch(
             "retryable": True,
         }
 
+    # ESummary carries the structured citation metadata but not the abstract, so we
+    # make a best-effort EFetch call for the abstract text. The spec requires the
+    # abstract "when available": if EFetch fails or the record has no abstract, it
+    # stays None rather than being fabricated, and the fetch still succeeds.
+    abstract = _fetch_abstract(cleaned, send)
+
     record = PubMedFetchedRecord(
         pmid=cleaned,
         pubmed_url=_pubmed_url(cleaned),
@@ -299,7 +324,7 @@ def pubmed_fetch(
         authors=parsed.authors,
         journal=parsed.journal,
         publication_date=parsed.publication_date,
-        abstract=parsed.abstract,
+        abstract=abstract,
         fetched_at=datetime.now(UTC).isoformat(),
     )
     return {"status": "available", "record": record.to_dict()}
@@ -331,7 +356,11 @@ def _parse_esearch_ids(raw: str) -> list[str]:
 
 @dataclass(frozen=True)
 class _ParsedSummary:
-    """Internal parse result for one ESummary DocSum."""
+    """Internal parse result for one ESummary DocSum.
+
+    The abstract is intentionally absent here: ESummary does not carry it, so it is
+    sourced separately via EFetch in :func:`pubmed_fetch`.
+    """
 
     found: bool
     error: str | None = None
@@ -339,7 +368,6 @@ class _ParsedSummary:
     authors: list[str] = field(default_factory=list)
     journal: str | None = None
     publication_date: str | None = None
-    abstract: str | None = None
 
 
 def _parse_esummary(raw: str, pmid: str) -> _ParsedSummary:
@@ -370,11 +398,68 @@ def _parse_esummary(raw: str, pmid: str) -> _ParsedSummary:
         authors=authors,
         journal=journal,
         publication_date=publication_date,
-        # ESummary does not carry the abstract; it stays explicitly missing rather
-        # than being fabricated. (EFetch would be needed for abstracts; out of the
-        # first slice.)
-        abstract=None,
     )
+
+
+def _candidate_summaries(
+    pmids: list[str], send: Transport
+) -> dict[str, tuple[str | None, str | None]]:
+    """Best-effort map ``pmid -> (title, snippet)`` for search candidates.
+
+    Calls ESummary once for all selected PMIDs. Any transport/parse failure
+    degrades to an empty map so the caller falls back to PMID-only candidates;
+    titles are never fabricated for a PMID the provider did not describe.
+    """
+    if not pmids:
+        return {}
+    try:
+        raw = send(
+            _ESUMMARY_ENDPOINT,
+            {"db": "pubmed", "id": ",".join(pmids), "retmode": "xml"},
+        )
+        root = ET.fromstring(raw)
+    except (PubMedTransportError, ET.ParseError):
+        return {}
+
+    summaries: dict[str, tuple[str | None, str | None]] = {}
+    for docsum in root.findall(".//DocSum"):
+        id_el = docsum.find("Id")
+        pmid = (id_el.text or "").strip() if id_el is not None and id_el.text else ""
+        if not pmid or docsum.find("error") is not None:
+            continue
+        title = _item_text(docsum, "Title")
+        journal = _item_text(docsum, "FullJournalName") or _item_text(docsum, "Source")
+        publication_date = _item_text(docsum, "PubDate")
+        snippet_parts = [part for part in (journal, publication_date) if part]
+        snippet = ", ".join(snippet_parts) if snippet_parts else None
+        summaries[pmid] = (title, snippet)
+    return summaries
+
+
+def _fetch_abstract(pmid: str, send: Transport) -> str | None:
+    """Best-effort abstract text for one PMID via EFetch.
+
+    Returns the joined ``AbstractText`` sections (labels preserved when present),
+    or ``None`` when EFetch fails or the record carries no abstract. The abstract
+    is "when available" per the contract, so a failure here is not a fetch error.
+    """
+    try:
+        raw = send(
+            _EFETCH_ENDPOINT,
+            {"db": "pubmed", "id": pmid, "retmode": "xml", "rettype": "abstract"},
+        )
+        root = ET.fromstring(raw)
+    except (PubMedTransportError, ET.ParseError):
+        return None
+
+    parts: list[str] = []
+    for el in root.findall(".//Abstract/AbstractText"):
+        text = "".join(el.itertext()).strip()
+        if not text:
+            continue
+        label = el.get("Label")
+        parts.append(f"{label}: {text}" if label else text)
+    return "\n\n".join(parts) if parts else None
 
 
 def _item_text(docsum: ET.Element, name: str) -> str | None:

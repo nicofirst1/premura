@@ -91,6 +91,48 @@ _ESUMMARY_EMPTY = """<?xml version="1.0" ?>
 <eSummaryResult>
 </eSummaryResult>"""
 
+# A multi-record ESummary used to enrich search candidates with titles. Two of the
+# three searched PMIDs are described; the third (40000003) is intentionally absent
+# so its title must stay None (never fabricated).
+_ESUMMARY_SEARCH_ENRICH = """<?xml version="1.0" ?>
+<eSummaryResult>
+  <DocSum>
+    <Id>40000001</Id>
+    <Item Name="Title" Type="String">Sleep duration and resting heart rate</Item>
+    <Item Name="FullJournalName" Type="String">Journal of Sleep Research</Item>
+    <Item Name="PubDate" Type="Date">2024 Mar 15</Item>
+  </DocSum>
+  <DocSum>
+    <Id>40000002</Id>
+    <Item Name="Title" Type="String">HRV and training load</Item>
+  </DocSum>
+</eSummaryResult>"""
+
+# EFetch carrying an abstract (two labeled sections) for the fetch-abstract path.
+_EFETCH_WITH_ABSTRACT = """<?xml version="1.0" ?>
+<PubmedArticleSet>
+  <PubmedArticle>
+    <MedlineCitation>
+      <Article>
+        <Abstract>
+          <AbstractText Label="BACKGROUND">Sleep affects recovery.</AbstractText>
+          <AbstractText Label="RESULTS">Longer sleep lowered resting heart rate.</AbstractText>
+        </Abstract>
+      </Article>
+    </MedlineCitation>
+  </PubmedArticle>
+</PubmedArticleSet>"""
+
+# EFetch for a record with no abstract element — abstract must stay None.
+_EFETCH_NO_ABSTRACT = """<?xml version="1.0" ?>
+<PubmedArticleSet>
+  <PubmedArticle>
+    <MedlineCitation>
+      <Article/>
+    </MedlineCitation>
+  </PubmedArticle>
+</PubmedArticleSet>"""
+
 
 class FakeTransport:
     """A deterministic stand-in for the real HTTP transport seam.
@@ -101,9 +143,16 @@ class FakeTransport:
     test can assert what was requested (e.g. the clamped ``retmax``).
     """
 
-    def __init__(self, *, esearch: str | None = None, esummary: str | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        esearch: str | None = None,
+        esummary: str | None = None,
+        efetch: str | None = None,
+    ) -> None:
         self._esearch = esearch
         self._esummary = esummary
+        self._efetch = efetch
         self.calls: list[tuple[str, dict[str, str]]] = []
 
     def __call__(self, endpoint: str, params: dict[str, str]) -> str:
@@ -112,9 +161,18 @@ class FakeTransport:
             if self._esearch is None:
                 raise AssertionError("unexpected esearch call")
             return self._esearch
-        if "esummary" in endpoint or "efetch" in endpoint:
+        if "efetch" in endpoint:
+            # An EFetch fixture is preferred; fall back to the esummary doc so a
+            # test that wires only esummary still gets a parseable (abstract-free)
+            # response and the abstract stays None.
+            if self._efetch is not None:
+                return self._efetch
+            if self._esummary is not None:
+                return self._esummary
+            raise AssertionError("unexpected efetch call")
+        if "esummary" in endpoint:
             if self._esummary is None:
-                raise AssertionError("unexpected esummary/efetch call")
+                raise AssertionError("unexpected esummary call")
             return self._esummary
         raise AssertionError(f"unexpected endpoint {endpoint!r}")
 
@@ -132,7 +190,7 @@ class ExplodingTransport:
 
 
 def test_search_success_returns_candidate_only_records() -> None:
-    transport = FakeTransport(esearch=_ESEARCH_THREE_HITS)
+    transport = FakeTransport(esearch=_ESEARCH_THREE_HITS, esummary=_ESUMMARY_SEARCH_ENRICH)
     result = pubmed.pubmed_search("sleep heart rate", transport=transport)
 
     assert result["status"] == "available"
@@ -151,6 +209,39 @@ def test_search_success_returns_candidate_only_records() -> None:
     assert pmids == ["40000001", "40000002", "40000003"]
 
 
+def test_search_candidates_carry_human_readable_titles_when_available() -> None:
+    # Scenario 1: search returns candidate PMIDs AND human-readable titles when
+    # PubMed has matches. Titles come from a best-effort ESummary enrichment.
+    transport = FakeTransport(esearch=_ESEARCH_THREE_HITS, esummary=_ESUMMARY_SEARCH_ENRICH)
+    result = pubmed.pubmed_search("sleep heart rate", transport=transport)
+
+    by_pmid = {c["pmid"]: c for c in result["candidates"]}
+    assert by_pmid["40000001"]["title"] == "Sleep duration and resting heart rate"
+    assert by_pmid["40000001"]["snippet"] == "Journal of Sleep Research, 2024 Mar 15"
+    assert by_pmid["40000002"]["title"] == "HRV and training load"
+    # A PMID the provider did not describe keeps a None title — never fabricated.
+    assert by_pmid["40000003"]["title"] is None
+    # Enrichment never changes the citation status.
+    assert all(c["citation_status"] == "candidate_only" for c in result["candidates"])
+
+
+def test_search_degrades_to_pmids_when_title_enrichment_unavailable() -> None:
+    # If the ESummary enrichment call fails, search still returns its PMIDs (the
+    # core contract) with titles left explicitly absent.
+    class EsearchOnlyTransport:
+        def __call__(self, endpoint: str, params: dict[str, str]) -> str:
+            if "esearch" in endpoint:
+                return _ESEARCH_THREE_HITS
+            raise pubmed.PubMedTransportError("summary unavailable")
+
+    result = pubmed.pubmed_search("sleep heart rate", transport=EsearchOnlyTransport())
+
+    assert result["status"] == "available"
+    assert [c["pmid"] for c in result["candidates"]] == ["40000001", "40000002", "40000003"]
+    assert all(c["title"] is None for c in result["candidates"])
+    assert all(c["citation_status"] == "candidate_only" for c in result["candidates"])
+
+
 def test_search_no_results_is_structured_not_empty_success() -> None:
     transport = FakeTransport(esearch=_ESEARCH_NO_HITS)
     result = pubmed.pubmed_search("no such topic xyzzy", transport=transport)
@@ -162,7 +253,7 @@ def test_search_no_results_is_structured_not_empty_success() -> None:
 
 
 def test_search_clamps_default_limit_to_at_most_20() -> None:
-    transport = FakeTransport(esearch=_ESEARCH_THREE_HITS)
+    transport = FakeTransport(esearch=_ESEARCH_THREE_HITS, esummary=_ESUMMARY_SEARCH_ENRICH)
     pubmed.pubmed_search("anything", transport=transport)
 
     # The provider must request no more than the default cap from the provider.
@@ -172,7 +263,7 @@ def test_search_clamps_default_limit_to_at_most_20() -> None:
 
 
 def test_search_clamps_caller_supplied_oversized_limit() -> None:
-    transport = FakeTransport(esearch=_ESEARCH_THREE_HITS)
+    transport = FakeTransport(esearch=_ESEARCH_THREE_HITS, esummary=_ESUMMARY_SEARCH_ENRICH)
     pubmed.pubmed_search("anything", limit=10_000, transport=transport)
 
     _endpoint, params = transport.calls[0]
@@ -217,6 +308,48 @@ def test_fetch_success_returns_citeable_record_with_provenance() -> None:
     assert record["journal"] == "Journal of Sleep Research"
     assert record["publication_date"] == "2024 Mar 15"
     assert record["authors"] == ["Doe J", "Smith A"]
+
+
+def test_fetch_includes_abstract_when_available() -> None:
+    # FR-004 / Scenario 2: a fetched record includes abstract text when PubMed has
+    # one. Structured metadata comes from ESummary; the abstract from EFetch.
+    transport = FakeTransport(esummary=_ESUMMARY_FULL, efetch=_EFETCH_WITH_ABSTRACT)
+    result = pubmed.pubmed_fetch("40000001", transport=transport)
+
+    assert result["status"] == "available"
+    record = result["record"]
+    assert record["citation_status"] == "citeable_fetched_record"
+    assert record["abstract"] == (
+        "BACKGROUND: Sleep affects recovery.\n\nRESULTS: Longer sleep lowered resting heart rate."
+    )
+    # Structured ESummary fields are still present alongside the EFetch abstract.
+    assert record["title"] == "Sleep duration and resting heart rate"
+
+
+def test_fetch_abstract_absent_stays_none_when_efetch_has_no_abstract() -> None:
+    transport = FakeTransport(esummary=_ESUMMARY_FULL, efetch=_EFETCH_NO_ABSTRACT)
+    result = pubmed.pubmed_fetch("40000001", transport=transport)
+
+    assert result["status"] == "available"
+    # No abstract element in EFetch → explicit None, never fabricated.
+    assert result["record"]["abstract"] is None
+
+
+def test_fetch_succeeds_with_none_abstract_when_efetch_fails() -> None:
+    # The abstract is "when available": if the EFetch call fails, the fetch still
+    # returns a citeable record with the structured metadata and abstract = None.
+    class EsummaryOnlyTransport:
+        def __call__(self, endpoint: str, params: dict[str, str]) -> str:
+            if "esummary" in endpoint:
+                return _ESUMMARY_FULL
+            raise pubmed.PubMedTransportError("efetch unavailable")
+
+    result = pubmed.pubmed_fetch("40000001", transport=EsummaryOnlyTransport())
+
+    assert result["status"] == "available"
+    assert result["record"]["citation_status"] == "citeable_fetched_record"
+    assert result["record"]["title"] == "Sleep duration and resting heart rate"
+    assert result["record"]["abstract"] is None
 
 
 def test_fetch_missing_optional_metadata_is_none_not_fabricated() -> None:
