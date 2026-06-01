@@ -20,10 +20,10 @@
 | T001 | Broaden the prior-art survey beyond the three seed PubMed MCP servers and record the evaluated candidate set. | WP01 |  | [D] |
 | T002 | Make the adopt-vs-wrap-vs-build decision explicit with rationale and rejected alternatives. | WP01 |  | [D] |
 | T003 | Finalize the mission-local contract/data-model/quickstart if the research decision changes provider assumptions. | WP01 |  | [D] |
-| T004 | Add acceptance-first tests for PubMed candidate, fetched, no-results, invalid, and provider-error outcomes. | WP02 |  |
-| T005 | Create the Premura-owned PubMed provider/data contract in Stage 3 MCP code. | WP02 |  |
-| T006 | Implement the chosen provider path behind an injectable adapter seam. | WP02 |  |
-| T007 | Ensure serialization preserves missingness, provenance, bounded result size, and citation status. | WP02 |  |
+| T004 | Add acceptance-first tests for PubMed candidate, fetched, no-results, invalid, and provider-error outcomes. | WP02 |  | [D] |
+| T005 | Create the Premura-owned PubMed provider/data contract in Stage 3 MCP code. | WP02 |  | [D] |
+| T006 | Implement the chosen provider path behind an injectable adapter seam. | WP02 |  | [D] |
+| T007 | Ensure serialization preserves missingness, provenance, bounded result size, and citation status. | WP02 |  | [D] |
 | T008 | Add MCP server wrapper functions for PubMed search and fetch. | WP03 |  |
 | T009 | Register PubMed tools on the default MCP surface with citation-safe descriptions. | WP03 |  |
 | T010 | Update default/operator MCP tool catalog tests and counts. | WP03 |  |
@@ -74,10 +74,10 @@ This WP should run first. Later implementation WPs depend on its final decision.
 
 ### Included Subtasks
 
-- [ ] T004 Add acceptance-first tests for PubMed candidate, fetched, no-results, invalid, and provider-error outcomes. (WP02)
-- [ ] T005 Create the Premura-owned PubMed provider/data contract in Stage 3 MCP code. (WP02)
-- [ ] T006 Implement the chosen provider path behind an injectable adapter seam. (WP02)
-- [ ] T007 Ensure serialization preserves missingness, provenance, bounded result size, and citation status. (WP02)
+- [x] T004 Add acceptance-first tests for PubMed candidate, fetched, no-results, invalid, and provider-error outcomes. (WP02)
+- [x] T005 Create the Premura-owned PubMed provider/data contract in Stage 3 MCP code. (WP02)
+- [x] T006 Implement the chosen provider path behind an injectable adapter seam. (WP02)
+- [x] T007 Ensure serialization preserves missingness, provenance, bounded result size, and citation status. (WP02)
 
 ### Implementation Sketch
 
