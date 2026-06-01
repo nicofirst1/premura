@@ -17,7 +17,8 @@ subtasks:
 - T003
 - T004
 - T005
-shell_pid: '98304'
+shell_pid: "98304"
+agent: "claude:opus:python-implementer:implementer"
 history:
 - timestamp: '2026-06-01T06:44:16Z'
   agent: opencode
@@ -202,3 +203,7 @@ uv run python -m pytest tests/test_engine_policy_defaults.py tests/test_engine_p
 
 Review that this WP creates only the foundation. If it includes tool math, MCP
 wrappers, trace identity registration, or docs/status sync, reject as scope creep.
+
+## Activity Log
+
+- 2026-06-01T07:04:31Z – claude:opus:python-implementer:implementer – shell_pid=98304 – Assigned agent via action command
