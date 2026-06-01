@@ -24,10 +24,10 @@
 | T005 | Create the Premura-owned PubMed provider/data contract in Stage 3 MCP code. | WP02 |  | [D] |
 | T006 | Implement the chosen provider path behind an injectable adapter seam. | WP02 |  | [D] |
 | T007 | Ensure serialization preserves missingness, provenance, bounded result size, and citation status. | WP02 |  | [D] |
-| T008 | Add MCP server wrapper functions for PubMed search and fetch. | WP03 |  |
-| T009 | Register PubMed tools on the default MCP surface with citation-safe descriptions. | WP03 |  |
-| T010 | Update default/operator MCP tool catalog tests and counts. | WP03 |  |
-| T011 | Add integration tests that default surface exposure remains narrow and excludes broad third-party tools. | WP03 |  |
+| T008 | Add MCP server wrapper functions for PubMed search and fetch. | WP03 |  | [D] |
+| T009 | Register PubMed tools on the default MCP surface with citation-safe descriptions. | WP03 |  | [D] |
+| T010 | Update default/operator MCP tool catalog tests and counts. | WP03 |  | [D] |
+| T011 | Add integration tests that default surface exposure remains narrow and excludes broad third-party tools. | WP03 |  | [D] |
 | T012 | Update live status/roadmap/stage docs to reflect shipped PubMed grounding. | WP04 | [P] |
 | T013 | Document the deferred scope: personal-data bridge, concept mapping, full-text, deep analysis, and broader literature expansion. | WP04 | [P] |
 | T014 | Run changed-scope validation and record any known pre-existing failures or deferrals in the docs/review notes. | WP04 |  |
@@ -108,10 +108,10 @@ None before WP01. After WP02 lands, WP03 and WP04 can proceed in sequence with c
 
 ### Included Subtasks
 
-- [ ] T008 Add MCP server wrapper functions for PubMed search and fetch. (WP03)
-- [ ] T009 Register PubMed tools on the default MCP surface with citation-safe descriptions. (WP03)
-- [ ] T010 Update default/operator MCP tool catalog tests and counts. (WP03)
-- [ ] T011 Add integration tests that default surface exposure remains narrow and excludes broad third-party tools. (WP03)
+- [x] T008 Add MCP server wrapper functions for PubMed search and fetch. (WP03)
+- [x] T009 Register PubMed tools on the default MCP surface with citation-safe descriptions. (WP03)
+- [x] T010 Update default/operator MCP tool catalog tests and counts. (WP03)
+- [x] T011 Add integration tests that default surface exposure remains narrow and excludes broad third-party tools. (WP03)
 
 ### Implementation Sketch
 
