@@ -18,11 +18,11 @@ for new behavior touching health data and analytical claims.
 
 | ID | Description | WP | Parallel |
 |---|---|---|---|
-| T001 | Add reviewed analytical question vocabulary for moving-window and paired-comparison shapes | WP01 |  |
-| T002 | Add evidence-admissibility policy defaults for the new analytical question shapes | WP01 |  |
-| T003 | Add contract tests for vocabulary closure and forbidden ad hoc labels | WP01 |  |
-| T004 | Add policy tests proving the new question shapes are admissibility-gated independently | WP01 |  |
-| T005 | Document the contract/policy decisions in code comments without widening scope | WP01 |  |
+| T001 | Add reviewed analytical question vocabulary for moving-window and paired-comparison shapes | WP01 |  | [D] |
+| T002 | Add evidence-admissibility policy defaults for the new analytical question shapes | WP01 |  | [D] |
+| T003 | Add contract tests for vocabulary closure and forbidden ad hoc labels | WP01 |  | [D] |
+| T004 | Add policy tests proving the new question shapes are admissibility-gated independently | WP01 |  | [D] |
+| T005 | Document the contract/policy decisions in code comments without widening scope | WP01 |  | [D] |
 | T006 | Add failing rolling-mean acceptance tests for available envelopes | WP02 | [P] |
 | T007 | Add failing rolling-mean refusal tests for invalid windows, weak coverage, and refused input | WP02 | [P] |
 | T008 | Implement the deterministic `rolling_mean` tool registration and estimate payload | WP02 | [P] |
@@ -67,11 +67,11 @@ defaults exist, then pass without importing MCP, trace, or runtime network code.
 
 **Included subtasks**:
 
-- [ ] T001 Add reviewed analytical question vocabulary for moving-window and paired-comparison shapes (WP01)
-- [ ] T002 Add evidence-admissibility policy defaults for the new analytical question shapes (WP01)
-- [ ] T003 Add contract tests for vocabulary closure and forbidden ad hoc labels (WP01)
-- [ ] T004 Add policy tests proving the new question shapes are admissibility-gated independently (WP01)
-- [ ] T005 Document the contract/policy decisions in code comments without widening scope (WP01)
+- [x] T001 Add reviewed analytical question vocabulary for moving-window and paired-comparison shapes (WP01)
+- [x] T002 Add evidence-admissibility policy defaults for the new analytical question shapes (WP01)
+- [x] T003 Add contract tests for vocabulary closure and forbidden ad hoc labels (WP01)
+- [x] T004 Add policy tests proving the new question shapes are admissibility-gated independently (WP01)
+- [x] T005 Document the contract/policy decisions in code comments without widening scope (WP01)
 
 **Implementation sketch**: Add the smallest closed-vocabulary extension that lets
 `rolling_mean` and anchor-date `paired_t_test` be gated independently. Prefer
