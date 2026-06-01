@@ -14,12 +14,12 @@
 | T004 | Implement local project dependency action orchestration with injectable command runner boundaries. | WP01 |  | [D] |
 | T005 | Implement skill setup integration through the existing skill materialization helper. | WP01 |  | [D] |
 | T006 | Implement final summary calculation and setup-only safety guards in the core service. | WP01 |  | [D] |
-| T007 | Add acceptance-first CLI tests for `hpipe bootstrap` command registration and output. | WP02 |  |
-| T008 | Register `hpipe bootstrap` on the existing Typer app. | WP02 |  |
-| T009 | Format bootstrap reports as concise terminal output with blockers, warnings, local actions, and reload guidance. | WP02 |  |
-| T010 | Map bootstrap summary status to exit codes. | WP02 |  |
-| T011 | Add installed-console-script coverage for `hpipe bootstrap` invocation. | WP02 |  |
-| T012 | Verify command safety through CLI-level tests that no health-data operation is invoked. | WP02 |  |
+| T007 | Add acceptance-first CLI tests for `hpipe bootstrap` command registration and output. | WP02 |  | [D] |
+| T008 | Register `hpipe bootstrap` on the existing Typer app. | WP02 |  | [D] |
+| T009 | Format bootstrap reports as concise terminal output with blockers, warnings, local actions, and reload guidance. | WP02 |  | [D] |
+| T010 | Map bootstrap summary status to exit codes. | WP02 |  | [D] |
+| T011 | Add installed-console-script coverage for `hpipe bootstrap` invocation. | WP02 |  | [D] |
+| T012 | Verify command safety through CLI-level tests that no health-data operation is invoked. | WP02 |  | [D] |
 | T013 | Update the root README fresh-clone path to route agents and humans to `hpipe bootstrap`. | WP03 | [P] |
 | T014 | Update contributor setup guidance so development setup and bootstrap behavior stay aligned. | WP03 | [P] |
 | T015 | Update shipped-state/operations docs after the command exists. | WP03 | [P] |
@@ -79,12 +79,12 @@ WP01 is foundational. WP02 consumes the service surface produced here. While WP0
 
 ### Included Subtasks
 
-- [ ] T007 Add acceptance-first CLI tests for `hpipe bootstrap` command registration and output. (WP02)
-- [ ] T008 Register `hpipe bootstrap` on the existing Typer app. (WP02)
-- [ ] T009 Format bootstrap reports as concise terminal output with blockers, warnings, local actions, and reload guidance. (WP02)
-- [ ] T010 Map bootstrap summary status to exit codes. (WP02)
-- [ ] T011 Add installed-console-script coverage for `hpipe bootstrap` invocation. (WP02)
-- [ ] T012 Verify command safety through CLI-level tests that no health-data operation is invoked. (WP02)
+- [x] T007 Add acceptance-first CLI tests for `hpipe bootstrap` command registration and output. (WP02)
+- [x] T008 Register `hpipe bootstrap` on the existing Typer app. (WP02)
+- [x] T009 Format bootstrap reports as concise terminal output with blockers, warnings, local actions, and reload guidance. (WP02)
+- [x] T010 Map bootstrap summary status to exit codes. (WP02)
+- [x] T011 Add installed-console-script coverage for `hpipe bootstrap` invocation. (WP02)
+- [x] T012 Verify command safety through CLI-level tests that no health-data operation is invoked. (WP02)
 
 ### Implementation Sketch
 
