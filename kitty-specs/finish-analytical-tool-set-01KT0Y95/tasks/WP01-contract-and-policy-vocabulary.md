@@ -207,3 +207,4 @@ wrappers, trace identity registration, or docs/status sync, reject as scope cree
 ## Activity Log
 
 - 2026-06-01T07:04:31Z – claude:opus:python-implementer:implementer – shell_pid=98304 – Assigned agent via action command
+- 2026-06-01T07:16:26Z – claude:opus:python-implementer:implementer – shell_pid=98304 – Ready for review: Added reviewed closed analytical question types MOVING_WINDOW_PATTERN (rolling_mean) and PAIRED_DIFFERENCE (paired_t_test) to the contract enum + policy QuestionType; declared family-based admissibility defaults (moving-window reuses the recent-run substrate; paired-difference gets its own shared pair-floor rule, distinct from lagged-association); extended the live ANALYTICAL_TO_POLICY_QUESTION map and tests. No tool math/MCP/trace. Necessary out-of-scope edits: analytical_inputs.py map + two existing closed-set tests (no WP owns analytical_inputs.py). Full suite 653 passed; ruff/format/mypy(src) clean.
