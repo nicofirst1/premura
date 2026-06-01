@@ -20,11 +20,11 @@
 | T010 | Map bootstrap summary status to exit codes. | WP02 |  | [D] |
 | T011 | Add installed-console-script coverage for `hpipe bootstrap` invocation. | WP02 |  | [D] |
 | T012 | Verify command safety through CLI-level tests that no health-data operation is invoked. | WP02 |  | [D] |
-| T013 | Update the root README fresh-clone path to route agents and humans to `hpipe bootstrap`. | WP03 | [P] |
-| T014 | Update contributor setup guidance so development setup and bootstrap behavior stay aligned. | WP03 | [P] |
-| T015 | Update shipped-state/operations docs after the command exists. | WP03 | [P] |
-| T016 | Add documentation checks or lightweight assertions for the new bootstrap command references. | WP03 |  |
-| T017 | Record final validation evidence and scope boundaries in the mission quickstart/docs. | WP03 |  |
+| T013 | Update the root README fresh-clone path to route agents and humans to `hpipe bootstrap`. | WP03 | [D] |
+| T014 | Update contributor setup guidance so development setup and bootstrap behavior stay aligned. | WP03 | [D] |
+| T015 | Update shipped-state/operations docs after the command exists. | WP03 | [D] |
+| T016 | Add documentation checks or lightweight assertions for the new bootstrap command references. | WP03 |  | [D] |
+| T017 | Record final validation evidence and scope boundaries in the mission quickstart/docs. | WP03 |  | [D] |
 
 ## Work Package Overview
 
@@ -114,11 +114,11 @@ WP02 depends on WP01 for the service contract. Documentation wording in WP03 can
 
 ### Included Subtasks
 
-- [ ] T013 Update the root README fresh-clone path to route agents and humans to `hpipe bootstrap`. (WP03)
-- [ ] T014 Update contributor setup guidance so development setup and bootstrap behavior stay aligned. (WP03)
-- [ ] T015 Update shipped-state/operations docs after the command exists. (WP03)
-- [ ] T016 Add documentation checks or lightweight assertions for the new bootstrap command references. (WP03)
-- [ ] T017 Record final validation evidence and scope boundaries in the mission quickstart/docs. (WP03)
+- [x] T013 Update the root README fresh-clone path to route agents and humans to `hpipe bootstrap`. (WP03)
+- [x] T014 Update contributor setup guidance so development setup and bootstrap behavior stay aligned. (WP03)
+- [x] T015 Update shipped-state/operations docs after the command exists. (WP03)
+- [x] T016 Add documentation checks or lightweight assertions for the new bootstrap command references. (WP03)
+- [x] T017 Record final validation evidence and scope boundaries in the mission quickstart/docs. (WP03)
 
 ### Implementation Sketch
 
