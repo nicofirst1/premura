@@ -147,3 +147,4 @@ Validation:
 ## Activity Log
 
 - 2026-06-01T10:43:10Z – claude:opus:implementer:implementer – shell_pid=5909 – Started implementation via action command
+- 2026-06-01T10:47:10Z – claude:opus:implementer:implementer – shell_pid=5909 – WP01 deliverables complete and committed (f65f03d): all 4 owned planning files (research.md, data-model.md, contracts/pubmed-grounding-contract.md, quickstart.md) finalized. move-task to for_review is BLOCKED because its gate treats every file under the mission dir as WP01-owned, but plan.md, spec.md, and checklists/requirements.md are pre-existing planning-phase artifacts (timestamps predate this WP run) NOT in WP01 owned_files. Per isolation rules I must not commit non-owned files. Needs either: (a) human/orchestrator commits the planning-phase plan.md/spec.md/checklists, then retry move-task; or (b) move-task WP01 --to for_review --force.
