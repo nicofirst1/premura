@@ -28,9 +28,9 @@
 | T009 | Register PubMed tools on the default MCP surface with citation-safe descriptions. | WP03 |  | [D] |
 | T010 | Update default/operator MCP tool catalog tests and counts. | WP03 |  | [D] |
 | T011 | Add integration tests that default surface exposure remains narrow and excludes broad third-party tools. | WP03 |  | [D] |
-| T012 | Update live status/roadmap/stage docs to reflect shipped PubMed grounding. | WP04 | [P] |
-| T013 | Document the deferred scope: personal-data bridge, concept mapping, full-text, deep analysis, and broader literature expansion. | WP04 | [P] |
-| T014 | Run changed-scope validation and record any known pre-existing failures or deferrals in the docs/review notes. | WP04 |  |
+| T012 | Update live status/roadmap/stage docs to reflect shipped PubMed grounding. | WP04 | [D] |
+| T013 | Document the deferred scope: personal-data bridge, concept mapping, full-text, deep analysis, and broader literature expansion. | WP04 | [D] |
+| T014 | Run changed-scope validation and record any known pre-existing failures or deferrals in the docs/review notes. | WP04 |  | [D] |
 
 ## WP01: Research Gate And Contract Finalization
 
@@ -141,9 +141,9 @@ WP03 depends on WP02. It should not run in parallel with WP02 because it consume
 
 ### Included Subtasks
 
-- [ ] T012 Update live status/roadmap/stage docs to reflect shipped PubMed grounding. (WP04)
-- [ ] T013 Document the deferred scope: personal-data bridge, concept mapping, full-text, deep analysis, and broader literature expansion. (WP04)
-- [ ] T014 Run changed-scope validation and record any known pre-existing failures or deferrals in the docs/review notes. (WP04)
+- [x] T012 Update live status/roadmap/stage docs to reflect shipped PubMed grounding. (WP04)
+- [x] T013 Document the deferred scope: personal-data bridge, concept mapping, full-text, deep analysis, and broader literature expansion. (WP04)
+- [x] T014 Run changed-scope validation and record any known pre-existing failures or deferrals in the docs/review notes. (WP04)
 
 ### Implementation Sketch
 
