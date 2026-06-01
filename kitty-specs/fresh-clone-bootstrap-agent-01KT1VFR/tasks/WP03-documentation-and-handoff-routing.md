@@ -73,6 +73,20 @@ Make the shipped `hpipe bootstrap` path discoverable without turning root docs i
 
 Do not edit `src/premura/cli.py` or `src/premura/bootstrap.py`; code behavior belongs to WP01/WP02.
 
+## Documentation Notes
+
+This WP is about routing and shipped-state clarity. The root README should help a human or agent know what to run first; it should not become a full implementation plan. CONTRIBUTING should keep the development setup path clear. STATUS should record what now works without overselling runtime behavior.
+
+Use the repo's chosen language:
+
+- Say "agent" for the setup actor, not "orchestrator".
+- Say "fresh clone" or "local checkout" when describing setup.
+- Keep "bootstrap agent" separate from runtime operating roles.
+- Avoid implying that bootstrap handles health-data goals.
+- Avoid claiming broad platform support beyond the implementation and charter.
+
+The docs should make one thing easy: a new agent in the repo can find the setup command and understand that a reload may be required after skill installation.
+
 ## Required Subtasks
 
 ### T013: Update the root README fresh-clone path
@@ -137,6 +151,46 @@ Guidance:
 Validation:
 - Quickstart matches the shipped command behavior.
 - No real health data is required by the validation path.
+
+## Test Strategy
+
+Add lightweight docs coverage only where it protects real drift:
+
+- `test_readme_mentions_hpipe_bootstrap`: root README contains the command in the setup/quick-start area.
+- `test_contributing_mentions_bootstrap_without_dropping_dev_checks`: CONTRIBUTING names bootstrap and still includes changed-scope validation guidance.
+- `test_status_records_setup_only_boundary`: STATUS mentions the command as setup and does not describe it as ingest/upload/analysis.
+
+Do not assert entire paragraphs. Assert stable command names and boundary words. The goal is to catch accidental deletion or overclaiming, not freeze prose style.
+
+## Validation Commands
+
+Run docs tests:
+
+```bash
+uv run python -m pytest -q tests/test_bootstrap_docs.py --tb=short
+```
+
+Run markdown-aware review manually by reading the changed docs and checking these questions:
+
+- Can a fresh-clone agent find `hpipe bootstrap` quickly?
+- Does the README still distinguish setup from ingest/export/upload?
+- Does CONTRIBUTING still tell contributors how to validate code changes?
+- Does STATUS avoid claiming bootstrap runs health analysis?
+
+Run formatting/lint only if the docs test file or Python test support needs it:
+
+```bash
+uv run ruff check tests/test_bootstrap_docs.py
+uv run ruff format --check tests/test_bootstrap_docs.py
+```
+
+## Risk Checklist
+
+- Do not duplicate long setup policy in multiple docs.
+- Do not tell users bootstrap is enough to ingest or analyze their data.
+- Do not remove the existing opt-in upload warning.
+- Do not imply no reload is needed after skill installation unless the shipped command can honestly know that.
+- Do not add private health examples or real operator data to docs or tests.
 
 ## Definition of Done
 

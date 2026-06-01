@@ -68,6 +68,20 @@ Expose WP01's bootstrap service as `hpipe bootstrap`. The command should be easy
 
 Do not edit `src/premura/bootstrap.py`; WP01 owns service behavior. Do not edit root docs; WP03 owns documentation.
 
+## Implementation Notes
+
+The CLI should be a thin presentation layer over WP01's service. The key review question is whether a weaker agent can run one command and know what happened. Do not optimize for a pretty table at the expense of branchable status. If Rich tables make tests brittle, keep the output simple and stable.
+
+Recommended command behavior:
+
+- `hpipe bootstrap` runs install-and-verify by default.
+- It prints an overall result near the top and a final next step near the bottom.
+- It separates required blockers from optional warnings.
+- It always prints reload guidance.
+- It exits non-zero when required blockers remain.
+
+Avoid adding flags unless implementation discovers a concrete need. A structured-output flag is optional, not required by this WP. If you add one, keep the default human/agent-readable output concise.
+
 ## Required Subtasks
 
 ### T007: Add acceptance-first CLI tests
@@ -157,6 +171,49 @@ Guidance:
 Validation:
 - Tests fail if bootstrap invokes a health-data operation path.
 - Tests pass with an empty temporary project root.
+
+## Test Strategy
+
+Start with `tests/test_bootstrap_cli.py` and drive the command through `CliRunner`:
+
+- `test_cli_registers_bootstrap_command`: inspect `cli.app.registered_commands` or help output.
+- `test_cli_ready_summary_prints_actions_and_reload_guidance`: fake a ready `BootstrapRun` and assert exit 0 plus high-value output phrases.
+- `test_cli_blocked_summary_exits_nonzero`: fake a blocked summary and assert non-zero exit plus blocker and next action.
+- `test_cli_partial_optional_warning_can_exit_zero`: fake a partial summary with optional-only warnings and assert the output calls it out without treating it as a required blocker.
+- `test_cli_output_stays_concise`: count output lines for success path and keep below the NFR threshold.
+- `test_cli_does_not_invoke_health_operations`: monkeypatch forbidden CLI functions to raise if called.
+
+For installed-console-script coverage, follow the existing pattern in `tests/test_skeleton.py`: locate `Path(sys.executable).parent / "hpipe"`, skip if absent, and invoke the command in a temp root with the bootstrap service faked or controlled enough to avoid real dependency installation.
+
+## Validation Commands
+
+Run focused CLI tests first:
+
+```bash
+uv run python -m pytest -q tests/test_bootstrap_cli.py --tb=short
+```
+
+If you extend entry-point coverage in a way that touches existing skeleton checks, also run:
+
+```bash
+uv run python -m pytest -q tests/test_skeleton.py --tb=short
+```
+
+Run changed-scope static checks:
+
+```bash
+uv run ruff check src/premura/cli.py tests/test_bootstrap_cli.py
+uv run ruff format --check src/premura/cli.py tests/test_bootstrap_cli.py
+uv run mypy src/premura/cli.py
+```
+
+## Risk Checklist
+
+- Do not catch all exceptions and report false success.
+- Do not hide required blockers among optional warnings.
+- Do not print long subprocess logs on the success path.
+- Do not make command output depend on private health-data files existing.
+- Do not call `hpipe doctor` blindly if its optional-upload checks would make a fresh install look failed.
 
 ## Definition of Done
 

@@ -69,6 +69,19 @@ Build the bootstrap service layer that powers the later `hpipe bootstrap` CLI co
 
 Do not edit `src/premura/cli.py`; WP02 owns command registration and terminal formatting. Do not edit README/CONTRIBUTING/status docs; WP03 owns docs.
 
+## Implementation Notes
+
+The core service is the contract between setup mechanics and the CLI. Keep it boring and data-shaped: callers should get a report they can format, test, and reason about. Avoid burying decisions in printed strings. The CLI can decide how to render, but it should not need to reclassify blockers or infer reload guidance.
+
+Recommended public shape:
+
+- A single orchestration function such as `run_bootstrap(project_root: Path, ...) -> BootstrapRun`.
+- A command-runner argument or protocol for local install actions, so tests do not invoke real setup commands.
+- A skill installer argument or wrapper defaulting to `skills.install_skills`, so tests can simulate written vs unchanged skills.
+- Small status constants or enums. If you use strings, keep them centralized and covered by tests.
+
+Keep the implementation local and inspectable. Do not add background jobs, daemon behavior, a hidden cache, or a persistent setup database. The report returned from a run is enough for this mission.
+
 ## Required Subtasks
 
 ### T001: Add acceptance-first bootstrap core tests
@@ -163,6 +176,45 @@ Guidance:
 Validation:
 - Tests cover ready, partial, and blocked summaries.
 - Tests assert the core service does not call forbidden health-data operation hooks.
+
+## Test Strategy
+
+Use tests to pin the behavior at the service boundary before implementation:
+
+- `test_bootstrap_ready_when_local_actions_succeed`: fake local dependency action succeeds, skills are installed or unchanged, required checks pass, summary is ready or fixed.
+- `test_bootstrap_idempotent_when_everything_current`: fake command runner reports no change and skill installer writes nothing; summary remains ready and actions are no-change.
+- `test_bootstrap_blocks_external_prerequisite_without_mutating_system`: a required system-level prerequisite is absent; the report includes a blocker with a next action and no local action is attempted.
+- `test_optional_upload_is_warning_not_blocker`: optional upload/rclone-like capability is absent; summary is not blocked solely for that reason.
+- `test_reload_guidance_is_always_present`: every summary has explicit reload guidance.
+- `test_core_service_does_not_touch_health_data_operations`: forbidden hooks are unavailable or monkeypatched to fail, and the service still produces a setup report.
+
+Prefer observable report fields over implementation details. If a helper is private, tests should not import it.
+
+## Validation Commands
+
+Run the focused tests first:
+
+```bash
+uv run python -m pytest -q tests/test_bootstrap_core.py --tb=short
+```
+
+Then run changed-scope static checks before handoff:
+
+```bash
+uv run ruff check src/premura/bootstrap.py tests/test_bootstrap_core.py
+uv run ruff format --check src/premura/bootstrap.py tests/test_bootstrap_core.py
+uv run mypy src/premura/bootstrap.py
+```
+
+If `mypy` needs a broader package context, run the smallest broader command that includes the new module and call that out in the WP activity log.
+
+## Risk Checklist
+
+- The service must not create or initialize a health warehouse as part of setup readiness.
+- The service must not require real `data/` contents.
+- The service must not treat optional upload setup as required install readiness.
+- The service must not rely on a currently active Claude/OpenCode session seeing newly copied skill files; it must report reload guidance honestly.
+- The service must make failed local commands understandable to a weaker agent without requiring hidden logs.
 
 ## Definition of Done
 
