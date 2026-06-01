@@ -17,9 +17,9 @@
 
 | ID | Description | WP | Parallel |
 | --- | --- | --- | --- |
-| T001 | Broaden the prior-art survey beyond the three seed PubMed MCP servers and record the evaluated candidate set. | WP01 |  |
-| T002 | Make the adopt-vs-wrap-vs-build decision explicit with rationale and rejected alternatives. | WP01 |  |
-| T003 | Finalize the mission-local contract/data-model/quickstart if the research decision changes provider assumptions. | WP01 |  |
+| T001 | Broaden the prior-art survey beyond the three seed PubMed MCP servers and record the evaluated candidate set. | WP01 |  | [D] |
+| T002 | Make the adopt-vs-wrap-vs-build decision explicit with rationale and rejected alternatives. | WP01 |  | [D] |
+| T003 | Finalize the mission-local contract/data-model/quickstart if the research decision changes provider assumptions. | WP01 |  | [D] |
 | T004 | Add acceptance-first tests for PubMed candidate, fetched, no-results, invalid, and provider-error outcomes. | WP02 |  |
 | T005 | Create the Premura-owned PubMed provider/data contract in Stage 3 MCP code. | WP02 |  |
 | T006 | Implement the chosen provider path behind an injectable adapter seam. | WP02 |  |
@@ -42,9 +42,9 @@
 
 ### Included Subtasks
 
-- [ ] T001 Broaden the prior-art survey beyond the three seed PubMed MCP servers and record the evaluated candidate set. (WP01)
-- [ ] T002 Make the adopt-vs-wrap-vs-build decision explicit with rationale and rejected alternatives. (WP01)
-- [ ] T003 Finalize the mission-local contract/data-model/quickstart if the research decision changes provider assumptions. (WP01)
+- [x] T001 Broaden the prior-art survey beyond the three seed PubMed MCP servers and record the evaluated candidate set. (WP01)
+- [x] T002 Make the adopt-vs-wrap-vs-build decision explicit with rationale and rejected alternatives. (WP01)
+- [x] T003 Finalize the mission-local contract/data-model/quickstart if the research decision changes provider assumptions. (WP01)
 
 ### Implementation Sketch
 
