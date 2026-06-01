@@ -19,8 +19,8 @@ subtasks:
 - T010
 - T011
 - T012
-agent: "claude:opus:implementer:implementer"
-shell_pid: "86250"
+agent: "claude:opus:reviewer:reviewer"
+shell_pid: "90796"
 history:
 - timestamp: '2026-06-01T15:11:47Z'
   agent: opencode
@@ -235,3 +235,4 @@ uv run mypy src/premura/cli.py
 
 - 2026-06-01T15:26:56Z – claude:opus:implementer:implementer – shell_pid=86250 – Started implementation via action command
 - 2026-06-01T15:31:17Z – claude:opus:implementer:implementer – shell_pid=86250 – Ready for review
+- 2026-06-01T15:31:43Z – claude:opus:reviewer:reviewer – shell_pid=90796 – Started review via action command
