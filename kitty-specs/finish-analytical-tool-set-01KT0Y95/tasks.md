@@ -28,11 +28,11 @@ for new behavior touching health data and analytical claims.
 | T008 | Implement the deterministic `rolling_mean` tool registration and estimate payload | WP02 | [D] |
 | T009 | Add rolling-mean caveats/confounds and forbidden-language assertions | WP02 | [D] |
 | T010 | Keep rolling-mean runtime local, deterministic, and independent of MCP/trace | WP02 | [D] |
-| T011 | Add failing before/after paired-input tests for anchor-date pairing | WP03 | [P] |
-| T012 | Add failing before/after paired-input refusal tests for malformed requests and weak pairs | WP03 | [P] |
-| T013 | Implement simple before/after request, pair, and paired-input shapes | WP03 | [P] |
-| T014 | Implement deterministic anchor-date pairing semantics with visible imputation metadata | WP03 | [P] |
-| T015 | Guard against condition-label pairing, arbitrary pair maps, and anchor/window scanning | WP03 | [P] |
+| T011 | Add failing before/after paired-input tests for anchor-date pairing | WP03 | [D] |
+| T012 | Add failing before/after paired-input refusal tests for malformed requests and weak pairs | WP03 | [D] |
+| T013 | Implement simple before/after request, pair, and paired-input shapes | WP03 | [D] |
+| T014 | Implement deterministic anchor-date pairing semantics with visible imputation metadata | WP03 | [D] |
+| T015 | Guard against condition-label pairing, arbitrary pair maps, and anchor/window scanning | WP03 | [D] |
 | T016 | Add failing paired-t-test acceptance tests for available paired-difference envelopes | WP04 |  |
 | T017 | Add failing paired-t-test refusal tests for weak, malformed, and constant-difference inputs | WP04 |  |
 | T018 | Implement the deterministic `paired_t_test` tool registration and estimate payload | WP04 |  |
@@ -138,11 +138,11 @@ as out of scope.
 
 **Included subtasks**:
 
-- [ ] T011 Add failing before/after paired-input tests for anchor-date pairing (WP03)
-- [ ] T012 Add failing before/after paired-input refusal tests for malformed requests and weak pairs (WP03)
-- [ ] T013 Implement simple before/after request, pair, and paired-input shapes (WP03)
-- [ ] T014 Implement deterministic anchor-date pairing semantics with visible imputation metadata (WP03)
-- [ ] T015 Guard against condition-label pairing, arbitrary pair maps, and anchor/window scanning (WP03)
+- [x] T011 Add failing before/after paired-input tests for anchor-date pairing (WP03)
+- [x] T012 Add failing before/after paired-input refusal tests for malformed requests and weak pairs (WP03)
+- [x] T013 Implement simple before/after request, pair, and paired-input shapes (WP03)
+- [x] T014 Implement deterministic anchor-date pairing semantics with visible imputation metadata (WP03)
+- [x] T015 Guard against condition-label pairing, arbitrary pair maps, and anchor/window scanning (WP03)
 
 **Implementation sketch**: Build a narrow helper module for anchor-date pairing
 that consumes admitted ordered series and produces immutable paired input or a
