@@ -1,10 +1,12 @@
 {
   "created_at": "2026-06-01T06:35:02.995280+00:00",
-  "friendly_name": "finish analytical tool set",
+  "friendly_name": "Finish Analytical Tool Set",
   "mission_id": "01KT0Y95X8XKZCQH3G1Y8QVPDJ",
   "mission_number": null,
   "mission_slug": "finish-analytical-tool-set-01KT0Y95",
   "mission_type": "software-dev",
   "slug": "finish-analytical-tool-set-01KT0Y95",
-  "target_branch": "master"
+  "source_description": "Add both deferred deterministic analytical tools: rolling_mean and paired_t_test.",
+  "target_branch": "master",
+  "vcs": "git"
 }
