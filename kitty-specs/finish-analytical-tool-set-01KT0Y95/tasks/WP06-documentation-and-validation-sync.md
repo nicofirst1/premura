@@ -15,6 +15,8 @@ subtasks:
 - T029
 - T030
 - T031
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "60882"
 history:
 - timestamp: '2026-06-01T06:44:16Z'
   agent: opencode
@@ -188,3 +190,7 @@ This is docs/validation work. Run the commands in T029 and report results.
 
 Review for factual synchronization, not prose preference. The key question is
 whether a future agent can tell what shipped and what remains deferred.
+
+## Activity Log
+
+- 2026-06-01T08:46:32Z – claude:opus:python-implementer:implementer – shell_pid=60882 – Started implementation via action command
