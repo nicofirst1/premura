@@ -11,6 +11,17 @@ restore point for the first local-ingest pipeline, not the forward version line.
 
 ## Quick start
 
+Fresh clone? An agent (or human) in the repo runs **one setup command first**:
+
+```bash
+hpipe bootstrap                             # SETUP ONLY: prepare + verify this local checkout, report reload guidance
+```
+
+`hpipe bootstrap` prepares/verifies the local checkout (environment + bundled
+skills), tells you whether an agent-session reload is needed, and hands off the
+next safe step. It is setup-only — it never ingests data, touches the warehouse,
+or uploads anything. Then operate normally:
+
 ```bash
 bash ops/bootstrap.sh                       # one-time: brew installs, age keypair, optional rclone
 uv run hpipe doctor                         # verify environment
@@ -39,6 +50,7 @@ duckdb -readonly data/duck/health.duckdb
 ## CLI surface
 
 ```
+hpipe bootstrap                     # fresh-clone setup readiness (setup only — no ingest/upload)
 hpipe ingest [--source all|hc|garmin|saa|bmt|lab] [PATH]
 hpipe status
 hpipe export --month YYYY-MM        # snapshot + tarball staged raws, age-encrypt

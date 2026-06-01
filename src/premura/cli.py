@@ -1,7 +1,7 @@
 """`hpipe` CLI — entry point for the premura pipeline.
 
-Verbs: ingest, status, export, upload, run-monthly, doctor, gc, install-launchd,
-uninstall-launchd, install-skills.
+Verbs: bootstrap, ingest, status, export, upload, run-monthly, doctor, gc,
+install-launchd, uninstall-launchd, install-skills.
 """
 
 from __future__ import annotations
@@ -25,6 +25,12 @@ from rich.console import Console
 from rich.table import Table
 
 from . import skills
+from .bootstrap import (
+    ActionResult,
+    BootstrapRun,
+    SummaryStatus,
+    run_bootstrap,
+)
 from .config import settings
 from .mcp import server as mcp_server
 from .ops import encrypt, notify, upload
@@ -108,9 +114,7 @@ def _ingest_one(conn, source_key: str, override_path: Path | None) -> None:
     parse_dt = time.time() - t0
 
     if already_ingested(conn, batch.source_sha256):
-        console.print(
-            f"  [dim]sha256 {batch.source_sha256[:12]}… already ingested; skipping[/dim]"
-        )
+        console.print(f"  [dim]sha256 {batch.source_sha256[:12]}… already ingested; skipping[/dim]")
         return
 
     t1 = time.time()
@@ -485,9 +489,7 @@ def install_launchd() -> None:
     plist_path = plist_dir / f"{settings.launchd_label}.plist"
     settings.log_dir.mkdir(parents=True, exist_ok=True)
 
-    template_text = (
-        resources.files("premura.ops").joinpath("launchd.plist.j2").read_text()
-    )
+    template_text = resources.files("premura.ops").joinpath("launchd.plist.j2").read_text()
     program = shutil.which("uv") or "/opt/homebrew/bin/uv"
     rendered = Template(template_text).render(
         label=settings.launchd_label,
@@ -531,6 +533,108 @@ def install_skills() -> None:
         return
     for path in written:
         console.print(str(path))
+
+
+# ============================================================================
+# bootstrap (fresh-clone setup readiness — thin presenter over the service)
+# ============================================================================
+#
+# This command is a *presentation layer* over ``premura.bootstrap.run_bootstrap``
+# (WP01). It performs no setup orchestration of its own: it calls the service,
+# renders the data-shaped report for a terminal handoff, and maps the summary
+# status to an exit code so an agent can branch reliably. It is setup-only — it
+# never ingests, queries the warehouse, uploads, or runs the monthly pipeline.
+
+
+@app.command(name="bootstrap")
+def bootstrap() -> None:
+    """Prepare and verify a freshly cloned checkout for operation (setup only).
+
+    Runs install-and-verify against the current project root: prepares the local
+    environment, installs/verifies bundled skills, and reports readiness. This is
+    fresh-clone setup readiness, NOT data ingest or analysis — bootstrap never
+    touches health data, the warehouse, uploads, or the monthly pipeline.
+
+    Prints an overall status, the local actions taken, required blockers kept
+    separate from optional warnings, reload guidance, and one safe next step.
+    Exits 0 when the checkout is ready for normal operation (including a
+    ``partial`` result whose only remaining items are optional warnings), and
+    non-zero when a required prerequisite is still blocked.
+    """
+    run = run_bootstrap(Path.cwd())
+    _render_bootstrap_run(run)
+    raise typer.Exit(code=_bootstrap_exit_code(run))
+
+
+def _bootstrap_exit_code(run: BootstrapRun) -> int:
+    """Map a bootstrap summary to a shell exit code.
+
+    * ``ready``  -> 0 (checkout is ready).
+    * ``partial`` -> 0 only when operation is safe and just optional warnings /
+      visibility guidance remain (``summary.ready_for_operation``).
+    * ``blocked`` (or any state where required readiness is absent) -> 1.
+
+    The mapping keys on ``ready_for_operation`` rather than re-deriving status,
+    so the service stays the single source of truth.
+    """
+    return 0 if run.summary.ready_for_operation else 1
+
+
+_ACTION_GLYPH = {
+    ActionResult.CHANGED: "changed",
+    ActionResult.NO_CHANGE: "no change",
+    ActionResult.FAILED: "FAILED",
+    ActionResult.NOT_ATTEMPTED: "not attempted",
+}
+
+_STATUS_STYLE = {
+    SummaryStatus.READY: "green",
+    SummaryStatus.PARTIAL: "yellow",
+    SummaryStatus.BLOCKED: "red",
+}
+
+
+def _render_bootstrap_run(run: BootstrapRun) -> None:
+    """Render a BootstrapRun as a concise terminal handoff.
+
+    Output stays well under the 200-line success-path budget: a fixed header,
+    one line per local action, then the (usually short) blocker and warning
+    lists, reload guidance, and a single next step. Blockers are printed in their
+    own clearly-labeled section *before* optional warnings so they are never
+    buried among them.
+    """
+    summary = run.summary
+    style = _STATUS_STYLE.get(summary.status, "white")
+
+    # 1) Overall status near the top.
+    console.print(f"[bold]bootstrap[/bold]: [{style}]{summary.status.value.upper()}[/{style}]")
+
+    # 2) Local actions: changed vs. no-change vs. failed.
+    console.print("[bold]actions[/bold]:")
+    for action in run.actions:
+        console.print(f"  - {action.name}: {_ACTION_GLYPH[action.result]} ({action.detail})")
+
+    # 3) Required blockers — their own section, first, distinct from warnings.
+    if summary.blockers:
+        console.print("[bold red]blockers (required)[/bold red]:")
+        for blocker in summary.blockers:
+            console.print(f"  - {blocker}")
+    else:
+        console.print("[bold]blockers (required)[/bold]: none")
+
+    # 4) Optional warnings — clearly marked as non-blocking, after the blockers.
+    if summary.warnings:
+        console.print("[bold yellow]warnings (optional)[/bold yellow]:")
+        for warning in summary.warnings:
+            console.print(f"  - {warning}")
+    else:
+        console.print("[bold]warnings (optional)[/bold]: none")
+
+    # 5) Reload guidance — always printed.
+    console.print(f"[bold]reload guidance[/bold]: {summary.reload_guidance}")
+
+    # 6) One safe next step near the bottom.
+    console.print(f"[bold]next step[/bold]: {summary.next_step}")
 
 
 # ============================================================================

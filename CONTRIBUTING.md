@@ -14,6 +14,11 @@ human working locally or an agent editing the repo.
 
 ## Setup
 
+On a fresh clone, the agent-friendly path is one command — `hpipe bootstrap`
+prepares and verifies the local checkout (environment + bundled skills) and
+reports whether an agent-session reload is needed. It is setup-only. The
+underlying steps, if you prefer running them yourself:
+
 ```bash
 bash ops/bootstrap.sh
 uv sync --extra dev

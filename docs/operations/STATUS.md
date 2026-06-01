@@ -376,6 +376,16 @@ Row counts shown here are *shape illustrations* from a single operator's pipelin
 - **No FIT-file (per-activity stream) ingestion** — `docs/history/architecture/ARCHITECTURE_HISTORY.md` marks this as out of scope for v1.
 - **`fact_interval` has no `unit` column**; we carry it in memory only. Fine for now; would need a migration if downstream queries want it.
 
+## Fresh-clone setup (shipped 2026-06-01)
+
+`hpipe bootstrap` is shipped, **setup-only** behavior for a freshly cloned
+checkout on the maintainer's supported macOS local workstation. It prepares and
+verifies the local checkout (environment + bundled skills) and reports whether an
+agent-session reload is needed before normal operation. It is **not** a runtime
+health-data operation: it does not ingest source artifacts, query the warehouse,
+run analysis, or upload anything. See README "Quick start" for the fresh-clone
+entry point.
+
 ## Operations
 
 See [OPERATIONS.md](OPERATIONS.md) for the current operator command surface and
