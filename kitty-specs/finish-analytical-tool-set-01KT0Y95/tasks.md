@@ -23,11 +23,11 @@ for new behavior touching health data and analytical claims.
 | T003 | Add contract tests for vocabulary closure and forbidden ad hoc labels | WP01 |  | [D] |
 | T004 | Add policy tests proving the new question shapes are admissibility-gated independently | WP01 |  | [D] |
 | T005 | Document the contract/policy decisions in code comments without widening scope | WP01 |  | [D] |
-| T006 | Add failing rolling-mean acceptance tests for available envelopes | WP02 | [P] |
-| T007 | Add failing rolling-mean refusal tests for invalid windows, weak coverage, and refused input | WP02 | [P] |
-| T008 | Implement the deterministic `rolling_mean` tool registration and estimate payload | WP02 | [P] |
-| T009 | Add rolling-mean caveats/confounds and forbidden-language assertions | WP02 | [P] |
-| T010 | Keep rolling-mean runtime local, deterministic, and independent of MCP/trace | WP02 | [P] |
+| T006 | Add failing rolling-mean acceptance tests for available envelopes | WP02 | [D] |
+| T007 | Add failing rolling-mean refusal tests for invalid windows, weak coverage, and refused input | WP02 | [D] |
+| T008 | Implement the deterministic `rolling_mean` tool registration and estimate payload | WP02 | [D] |
+| T009 | Add rolling-mean caveats/confounds and forbidden-language assertions | WP02 | [D] |
+| T010 | Keep rolling-mean runtime local, deterministic, and independent of MCP/trace | WP02 | [D] |
 | T011 | Add failing before/after paired-input tests for anchor-date pairing | WP03 | [P] |
 | T012 | Add failing before/after paired-input refusal tests for malformed requests and weak pairs | WP03 | [P] |
 | T013 | Implement simple before/after request, pair, and paired-input shapes | WP03 | [P] |
@@ -103,11 +103,11 @@ publication.
 
 **Included subtasks**:
 
-- [ ] T006 Add failing rolling-mean acceptance tests for available envelopes (WP02)
-- [ ] T007 Add failing rolling-mean refusal tests for invalid windows, weak coverage, and refused input (WP02)
-- [ ] T008 Implement the deterministic `rolling_mean` tool registration and estimate payload (WP02)
-- [ ] T009 Add rolling-mean caveats/confounds and forbidden-language assertions (WP02)
-- [ ] T010 Keep rolling-mean runtime local, deterministic, and independent of MCP/trace (WP02)
+- [x] T006 Add failing rolling-mean acceptance tests for available envelopes (WP02)
+- [x] T007 Add failing rolling-mean refusal tests for invalid windows, weak coverage, and refused input (WP02)
+- [x] T008 Implement the deterministic `rolling_mean` tool registration and estimate payload (WP02)
+- [x] T009 Add rolling-mean caveats/confounds and forbidden-language assertions (WP02)
+- [x] T010 Keep rolling-mean runtime local, deterministic, and independent of MCP/trace (WP02)
 
 **Implementation sketch**: Create a focused built-in tool module for rolling mean,
 with tests proving descriptor registration, available envelope shape, refusal
