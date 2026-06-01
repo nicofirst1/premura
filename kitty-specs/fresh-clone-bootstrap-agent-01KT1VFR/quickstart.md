@@ -59,17 +59,40 @@ Expected result:
 
 ## 5. Suggested validation commands
 
+**Invocation nuance discovered during implementation:** the project's `pytest`,
+`ruff`, and `mypy` live in the `dev` optional-dependency group, so validation
+runs through `uv run --extra dev …` (plain `uv run python -m pytest` will not see
+them on a checkout that only synced the default groups).
+
 Run the relevant changed-scope checks before review handoff:
 
 ```bash
-uv run python -m pytest -q tests/test_bootstrap_cli.py --tb=short
-uv run ruff check src/premura tests
-uv run ruff format --check src/premura tests
-uv run mypy src/premura
+uv run --extra dev python -m pytest -q tests/test_bootstrap_core.py tests/test_bootstrap_cli.py tests/test_bootstrap_docs.py --tb=short
+uv run --extra dev ruff check src/premura tests
+uv run --extra dev ruff format --check src/premura tests
+uv run --extra dev mypy src/premura
 ```
 
 If implementation touches existing CLI or skill installer behavior, also run the existing related tests:
 
 ```bash
-uv run python -m pytest -q tests/test_skeleton.py tests/test_install_skills_research_trace_audit.py --tb=short
+uv run --extra dev python -m pytest -q tests/test_skeleton.py tests/test_install_skills_research_trace_audit.py --tb=short
 ```
+
+## 6. Setup-only boundary checks for reviewers
+
+The shipped command is `hpipe bootstrap` (the CLI app is `hpipe`). Confirm the
+setup-only boundary holds — no real health data is required for any check below:
+
+- README "Quick start" routes a fresh clone to `hpipe bootstrap` before normal
+  operation, and still distinguishes setup from ingest, encrypt, and OPT-IN
+  upload (the opt-in upload warning is preserved).
+- README "CLI surface" lists `hpipe bootstrap` as setup-only.
+- CONTRIBUTING names `hpipe bootstrap` as the fresh-clone path and still points
+  to the development checks (`pytest` / `ruff` / `mypy`).
+- `docs/operations/STATUS.md` records `hpipe bootstrap` as shipped setup-only
+  behavior, not as ingest / upload / analysis, and does not overstate platform
+  support beyond the charter (macOS local).
+- `tests/test_bootstrap_docs.py` passes — it asserts the stable command name and
+  boundary words above so the docs cannot silently drop the command or oversell
+  it.
