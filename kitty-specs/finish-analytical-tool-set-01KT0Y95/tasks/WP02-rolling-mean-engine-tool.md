@@ -19,6 +19,8 @@ subtasks:
 - T008
 - T009
 - T010
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "23594"
 history:
 - timestamp: '2026-06-01T06:44:16Z'
   agent: opencode
@@ -180,3 +182,7 @@ uv run python -m pytest tests/test_engine_policy_finish_tool_set.py -q
 
 Review the result envelope shape and refusal behavior first. Then verify the tool
 does not reach outside the engine and does not rely on default publication.
+
+## Activity Log
+
+- 2026-06-01T07:21:49Z – claude:opus:python-implementer:implementer – shell_pid=23594 – Started implementation via action command
