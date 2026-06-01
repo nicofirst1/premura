@@ -131,6 +131,37 @@ list as closed.
   dead-code/seam control, see this method's seam guidance), the **producing** WP's
   review owns the bundle's field-basis — downstream deliberately won't re-check it.
 
+### D5 — Gated-decision capability sufficiency (does the chosen approach cover every downstream FR clause?)
+- **Checks:** when a gating/research WP selects an approach (provider, library,
+  primitive, schema, vocabulary) that *other* WPs must implement against, the
+  decision enumerates how that approach satisfies **each clause of each FR the
+  downstream WPs own** — especially "X **when available**" completeness clauses
+  — not merely that one path was chosen. A positive-path acceptance fixture
+  exists for every availability clause (provider supplies X → X is returned),
+  *distinct from* the negative/missingness fixture.
+- **Originates:** the gating WP carries only its *own* `requirement_refs` (it
+  was scoped to *make the decision*, not to *deliver the feature*), so its
+  review verifies decision **clarity/singularity** but not **coverage** of the
+  downstream FRs, which live in a different WP. The implementing WP then picks
+  the *minimum* primitive that passes the clauses it bothered to test and defers
+  the rest in a code comment. The miss is doubly masked because a *missingness*
+  requirement (FR: "absent → explicit None") and an *availability* requirement
+  (FR: "present → returned") are complementary halves of the same field:
+  satisfying the missingness half with an **always-None** field looks like the
+  field is "handled," so a missingness-only test passes green while the
+  availability path is **entirely unimplemented**.
+- **Catching control:** (1) the gating WP's `Decision` section must include a
+  **clause→primitive coverage map** for every downstream FR clause (filed
+  against those FRs, not only the gate's own `requirement_refs`), and the
+  gating-WP review verifies *coverage*, not just *clarity*; (2) backstop in the
+  implementing WP's Definition of Done — a **positive-path fixture per
+  availability clause** (provider returns X ⇒ assert X surfaced), separate from
+  the missingness fixture; (3) a code comment that *defers a spec-required
+  behavior* ("EFetch deferred; out of first slice") is a **deviation requiring a
+  spec amendment or rejection**, never a review-note acceptance (this is the
+  "justified deviation = drift signal" rule, applied at the per-WP gate instead
+  of only at audit time).
+
 ### Rule for adding a dimension
 
 A new dimension is admissible iff it: (1) names a gap that lives **between** WP
