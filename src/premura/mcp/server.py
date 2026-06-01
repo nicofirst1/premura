@@ -54,6 +54,7 @@ from ..profile_fields import (
     get_profile_field,
 )
 from ..store import duck, profile_intake
+from . import pubmed
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -990,6 +991,52 @@ def _result_message(payload: dict[str, Any], status: str, hint: str | None = Non
     return "This answer is not available right now."
 
 
+# --------------------------------------------------------------------------- #
+# PubMed grounding wrappers (WP03)
+#
+# These two wrappers expose WP02's Premura-owned PubMed provider
+# (``premura.mcp.pubmed``) on the Stage 3 server helper surface. They are
+# deliberately THIN: each validates only the trivial caller-facing input shape
+# (mirroring the other server helpers) and delegates entirely to the provider's
+# public surface. There is NO health-warehouse access, NO analytical
+# computation, NO diagnosis/causal language, and NO raw SQL here — this module's
+# PubMed path reads no ``hp.*`` rows. Ordinary no-results / invalid / unavailable
+# / provider-error outcomes flow straight back as the provider's structured,
+# JSON-safe dictionaries; only an empty query / empty PMID is a caller error.
+# --------------------------------------------------------------------------- #
+
+
+def pubmed_search(
+    query: str,
+    *,
+    limit: int = pubmed.DEFAULT_SEARCH_LIMIT,
+    sort: str | None = None,
+) -> dict[str, Any]:
+    """Search PubMed for candidate records (delegates to the WP02 provider).
+
+    Candidates are discovery hints only and are never citeable; the returned
+    payload carries the provider's ``citation_rule`` and each candidate's
+    ``citation_status = candidate_only``. This wrapper computes nothing and reads
+    no warehouse data — it forwards to :func:`premura.mcp.pubmed.pubmed_search`
+    and returns its JSON-safe outcome dict (``available`` / ``no_results`` /
+    ``provider_error``) unchanged.
+    """
+    return pubmed.pubmed_search(query, limit=limit, sort=sort)
+
+
+def pubmed_fetch(pmid: str) -> dict[str, Any]:
+    """Fetch one PubMed record by exact PMID (delegates to the WP02 provider).
+
+    Only a fetched record is citeable (``citation_status =
+    citeable_fetched_record``) and carries the ``pubmed_url`` provenance an honest
+    citation needs. This wrapper computes nothing and reads no warehouse data — it
+    forwards to :func:`premura.mcp.pubmed.pubmed_fetch` and returns its JSON-safe
+    outcome dict (``available`` / ``invalid_pmid`` / ``unavailable`` /
+    ``provider_error``) unchanged.
+    """
+    return pubmed.pubmed_fetch(pmid)
+
+
 def _parse_anchor_date(anchor_date: str) -> date:
     if not isinstance(anchor_date, str) or not anchor_date.strip():
         raise ValueError("anchor_date must be a non-empty ISO-8601 date (YYYY-MM-DD)")
@@ -1067,6 +1114,8 @@ __all__ = [
     "list_metrics",
     "metric_summary",
     "paired_t_test",
+    "pubmed_fetch",
+    "pubmed_search",
     "query_warehouse",
     "record_profile_context",
     "resting_hr_status",

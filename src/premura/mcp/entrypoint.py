@@ -6,12 +6,14 @@ Two entrypoints are provided:
   surface.  Exposes the catalog/summary helpers, all six approved Stage 2 signal
   tools, the five Stage 3 analytical tools (``change_point`` /
   ``smoothed_average`` / ``correlate`` / ``rolling_mean`` / ``paired_t_test``),
-  the bounded agent-mediated profile capture tools, and the three session
+  the bounded agent-mediated profile capture tools, the three session
   research-trace tools (``research_trace_open`` / ``research_trace_mark_surfaced``
-  / ``research_trace_disclosure``) — 18 tools in total.  ``query_warehouse`` is
-  intentionally absent; agents should use the signal-backed tools, the analytical
-  tools, the trace tools, and the catalog helpers instead.  The authoritative
-  tool list is asserted in ``tests/test_mcp_server.py`` (``_DEFAULT_TOOLS``).
+  / ``research_trace_disclosure``), and the two PubMed grounding tools
+  (``pubmed_search`` / ``pubmed_fetch``) — 20 tools in total.  ``query_warehouse``
+  is intentionally absent; agents should use the signal-backed tools, the
+  analytical tools, the trace tools, the PubMed tools, and the catalog helpers
+  instead.  The authoritative tool list is asserted in
+  ``tests/test_mcp_server.py`` (``_DEFAULT_TOOLS``).
 
 * **Operator surface** (``premura-mcp-operator``, :func:`build_operator_server``)
   — lower-guarantee expert mode intended for operator/developer use only,
@@ -656,6 +658,52 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
             if format == "markdown":
                 payload["disclosure_markdown"] = trace.disclosure_to_markdown(disclosure)
             return payload
+
+    # --- PubMed grounding (WP03, pubmed-grounding-tools mission) -------------- #
+    # Exactly two tools expose Premura's own PubMed grounding behavior on the
+    # default agent-safe surface: search finds candidates, fetch-by-PMID creates
+    # citeable records. They delegate to the WP02 provider wrappers in
+    # ``premura.mcp.server`` and add NO broad third-party PubMed surface (no
+    # full-text, deep analysis, MeSH, Europe PMC, Unpaywall, or related-article
+    # tools). PubMed context is literature only: it reads no ``hp.*`` rows, runs
+    # no SQL, and never computes a claim about the user's own warehouse data.
+
+    @mcp.tool()
+    def pubmed_search(query: str, limit: int = 20, sort: str | None = None) -> dict[str, Any]:
+        """Search PubMed for CANDIDATE literature records (candidates only).
+
+        Returns discovery hints, NOT citeable evidence: every candidate carries
+        ``citation_status = candidate_only`` and the payload restates the citation
+        rule. To cite a record in a final answer you MUST first retrieve it with
+        ``pubmed_fetch`` by its exact ``pmid`` — a search candidate (even with a
+        title or snippet) is never citeable on its own.
+
+        This is literature grounding only. It does not read the user's health
+        warehouse and does not compute, confirm, or quantify any claim about the
+        user's own data; it never produces diagnosis, treatment, or causal claims.
+        Ordinary outcomes (``available`` / ``no_results`` / ``provider_error``)
+        come back as a structured dict.
+        """
+        return warehouse_server.pubmed_search(query, limit=limit, sort=sort)
+
+    @mcp.tool()
+    def pubmed_fetch(pmid: str) -> dict[str, Any]:
+        """Fetch one CITEABLE PubMed record by its exact PMID.
+
+        A successful fetch returns a record with
+        ``citation_status = citeable_fetched_record`` plus the ``pubmed_url``
+        provenance an honest citation needs. Final user-facing answers may cite
+        ONLY records obtained this way; ``pubmed_search`` candidates are discovery
+        hints and are never citeable until fetched here by exact PMID.
+
+        This is literature grounding only. It does not read the user's health
+        warehouse and does not compute, confirm, or quantify any claim about the
+        user's own data; it never produces diagnosis, treatment, or causal claims.
+        Ordinary outcomes (``available`` / ``invalid_pmid`` / ``unavailable`` /
+        ``provider_error``) come back as a structured dict; missing optional
+        metadata stays explicitly absent and is never fabricated.
+        """
+        return warehouse_server.pubmed_fetch(pmid)
 
 
 def build_server(*, warehouse_path: Path | None = None) -> FastMCP:

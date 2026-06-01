@@ -34,8 +34,8 @@ These are descriptive/comparative only — no reference ranges, no diagnosis, no
 
 **Stage 3 — two entrypoints, clean boundary.** `src/premura/mcp/` ships two entrypoints:
 
-- **Default agent surface (`premura-mcp`)** — eighteen tools: two validity-gated catalog/summary helpers (`list_metrics`, `metric_summary`) that delegate entirely to the Stage 2 engine, the six signal-backed tools listed above, two agent-mediated profile-capture tools (`profile_context_supported_fields`, `profile_context_record`), the five Stage 3 analytical tools (`change_point`, `smoothed_average`, `correlate`, `rolling_mean`, `paired_t_test` — see "Stage 3 analytical tools" below), and the three session research trace tools (`research_trace_open`, `research_trace_mark_surfaced`, `research_trace_disclosure` — see "Session research trace" below). No tool on this surface reads `hp.*` directly; catalog/signal access goes through the engine, profile capture goes through the bounded `record_profile_context` store boundary, and the trace tools read only derived `trace.*` rows. This is the fully validity-gated / bounded default path.
-- **Operator surface (`premura-mcp-operator`)** — all eighteen default tools plus `query_warehouse` (raw SQL escape hatch), for nineteen total. Lower-guarantee: `query_warehouse` returns raw rows without Stage 2 validity, freshness, or imputation guarantees. Agent use requires explicit user approval, enforced by surface separation plus an explicit launch acknowledgment (`--ack` / `PREMURA_OPERATOR_ACK`) the operator entrypoint demands before exposing the raw-SQL tool.
+- **Default agent surface (`premura-mcp`)** — twenty tools: two validity-gated catalog/summary helpers (`list_metrics`, `metric_summary`) that delegate entirely to the Stage 2 engine, the six signal-backed tools listed above, two agent-mediated profile-capture tools (`profile_context_supported_fields`, `profile_context_record`), the five Stage 3 analytical tools (`change_point`, `smoothed_average`, `correlate`, `rolling_mean`, `paired_t_test` — see "Stage 3 analytical tools" below), the three session research trace tools (`research_trace_open`, `research_trace_mark_surfaced`, `research_trace_disclosure` — see "Session research trace" below), and the two PubMed grounding tools (`pubmed_search`, `pubmed_fetch` — see "PubMed literature grounding" below). No tool on this surface reads `hp.*` directly; catalog/signal access goes through the engine, profile capture goes through the bounded `record_profile_context` store boundary, the trace tools read only derived `trace.*` rows, and the PubMed tools reach only the external literature (never `hp.*` health rows). This is the fully validity-gated / bounded default path.
+- **Operator surface (`premura-mcp-operator`)** — all twenty default tools plus `query_warehouse` (raw SQL escape hatch), for twenty-one total. Lower-guarantee: `query_warehouse` returns raw rows without Stage 2 validity, freshness, or imputation guarantees. Agent use requires explicit user approval, enforced by surface separation plus an explicit launch acknowledgment (`--ack` / `PREMURA_OPERATOR_ACK`) the operator entrypoint demands before exposing the raw-SQL tool.
 
 The signal-backed tools return a structured payload whose `status` is `available` / `missing_input` / `stale_input` / `insufficient_data`. When an answer is unavailable the payload's `message` carries the signal's authored missing-input guidance, and `missing_input` / `stale_input` responses attach a structured `missing_input` report (`required_inputs` / `missing_inputs` / `stale_inputs`) a caller can branch on.
 
@@ -94,7 +94,8 @@ records the design.
   `paired_t_test` (a declared before/after anchor-date paired comparison — see
   "Finished analytical tool set" below). `engine.list_analytical_tools()`
   returns exactly these five. All are exposed through
-  `premura-mcp` (the default validity-gated surface — **eighteen** tools),
+  `premura-mcp` (the default validity-gated surface — now **twenty** tools after
+  the PubMed grounding slice; see "PubMed literature grounding" below),
   delegate entirely to the engine, perform no statistics in the MCP layer, and
   **name no cause** — no causation, diagnosis, or treatment claims.
 - **Analytical question types are first-class.** Each tool routes to its own
@@ -149,17 +150,16 @@ statistical choices are settled in
   and the tool refuses below the conservative paired-sample / `N_eff` floor rather
   than show a confident-looking spurious association.
 
-**Explicitly not shipped (still Phase 3 follow-on):** PubMed grounding remains
-the next deferred depth item — no PubMed search/fetch, literature bridge, or
-citation workflow ships in this line. Nutrition/supplement source adaptation and
-the teaching UI also remain deferred. The **research
-trace audit skill** — the interpretation work that reads the trace's
-audit-consumer contract — **has now shipped**; see "Research trace audit skill"
-below. The session research trace / multiplicity disclosure itself **has now
-shipped** — see "Session research trace" below. With `rolling_mean` and
+**Explicitly not shipped here (Phase 3 follow-on tracked elsewhere):** the
+PubMed grounding tools shipped in a *later* mission, not in this analytical line
+— see "PubMed literature grounding" below. The literature-to-warehouse bridge,
+nutrition/supplement source adaptation, and the teaching UI all remain deferred.
+The **research trace audit skill** — the interpretation work that reads the
+trace's audit-consumer contract — **has now shipped**; see "Research trace audit
+skill" below. The session research trace / multiplicity disclosure itself **has
+now shipped** — see "Session research trace" below. With `rolling_mean` and
 `paired_t_test` now shipped (see "Finished analytical tool set" below), all five
-built-in analytical tools are available over the now-stable analytical contract;
-PubMed grounding is the next future mission.
+built-in analytical tools are available over the now-stable analytical contract.
 
 ### Finished analytical tool set (shipped 2026-06-01)
 
@@ -269,6 +269,43 @@ issues no network call at runtime.
   audit-consumer contract read-only. It changed **no** trace counts, no trace
   schema, and no analytical tool math; the trace remains measurement, and the
   skill supplies the separate interpretation step.
+
+## PubMed literature grounding (shipped 2026-06-01)
+
+The `pubmed-grounding-tools-01KT1BPM` mission landed the first **literature
+grounding** slice: two Stage 3 tools on the default MCP surface that let an agent
+find and cite published research. They take the default surface from eighteen to
+**twenty** tools. The tools live in `src/premura/mcp/pubmed.py` (a Premura-owned
+adapter) and are wrapped on the server in `src/premura/mcp/server.py`.
+
+- **`pubmed_search` returns candidates only.** A search reaches PubMed for
+  discovery hints. Every hit carries `citation_status = candidate_only`, and the
+  payload restates the citation rule: a search candidate is **never** citeable,
+  even when it includes a PMID. Search is for finding records to fetch, not for
+  citing.
+- **`pubmed_fetch` returns a citeable record.** Given one exact PMID, it returns a
+  record with `citation_status = citeable_fetched_record` plus the `pubmed_url`
+  and `provider` provenance an honest citation needs. A final answer may cite
+  **only** a fetched record obtained this way — never a search candidate.
+- **One native provider, no new dependency.** Both tools delegate to a minimal
+  Premura-owned adapter over NCBI E-utilities (provider label `ncbi-eutils`),
+  called over the Python standard library so no HTTP dependency is added. The
+  adapter owns the candidate-vs-fetched citation rule as a *Premura* invariant,
+  not a provider feature. Provider/network failures come back as a structured
+  `provider_error` outcome, never an exception; the tests are deterministic and
+  offline (a fake transport returns canned E-utilities responses).
+- **Literature, not the user's data.** These tools fetch bibliographic records
+  about the published literature. They do **not** read, diagnose over, treat,
+  name a cause from, or compute over the operator's own `hp.*` health data, and
+  they run no SQL.
+
+**Explicitly not in this first slice (still deferred):** full-text retrieval,
+deep paper analysis, expansion to other sources (Europe PMC, Unpaywall), MeSH
+lookup, related-article discovery, and citation formatting are all out of scope
+here. The **concept-to-metric mapping** and the **literature-to-warehouse
+bridge** — connecting a fetched paper to the operator's own warehouse queries —
+also remain future work. This slice grounds citations in fetched records; it does
+not yet tie literature to personal data.
 
 ## What's working end-to-end
 

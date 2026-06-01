@@ -96,7 +96,11 @@ def test_list_metrics_reports_seeded_metrics(tmp_path: Path) -> None:
     assert len(rows) == 5
     # WP02: new catalog payload carries validity fields, not raw row-counts.
     required_fields = {
-        "metric_id", "validity_status", "validity_window", "missing_data_policy", "unit"
+        "metric_id",
+        "validity_status",
+        "validity_window",
+        "missing_data_policy",
+        "unit",
     }
     assert required_fields <= set(rows[0])
     # Raw count fields must not be present in the new payload.
@@ -177,6 +181,10 @@ def test_metric_summary_rejects_blank_metric_id(tmp_path: Path) -> None:
 # surface (the trace IS the supported agent workflow), thirteen -> sixteen.
 # WP05 (finish-analytical-tool-set): rolling_mean + paired_t_test join the same
 # default surface (sixteen -> eighteen).
+# WP03 (pubmed-grounding-tools): the two PubMed grounding tools (pubmed_search +
+# pubmed_fetch) join the same default surface (eighteen -> twenty). They are the
+# ONLY PubMed tools on the surface — no full-text/MeSH/Europe-PMC/Unpaywall/
+# related-article/deep-analysis tools are exposed (see the narrow-surface test).
 _DEFAULT_TOOLS = sorted(
     [
         "list_metrics",
@@ -197,6 +205,8 @@ _DEFAULT_TOOLS = sorted(
         "research_trace_open",
         "research_trace_mark_surfaced",
         "research_trace_disclosure",
+        "pubmed_search",
+        "pubmed_fetch",
     ]
 )
 
@@ -211,6 +221,67 @@ def test_build_server_registers_expected_tools() -> None:
     async def run() -> None:
         server = build_server()
         assert sorted(tool.name for tool in await server.list_tools()) == _DEFAULT_TOOLS
+
+    asyncio.run(run())
+
+
+def test_default_surface_exposes_exactly_two_pubmed_tools() -> None:
+    """WP03: the default surface exposes exactly pubmed_search and pubmed_fetch."""
+    from premura.mcp.entrypoint import build_server
+
+    async def run() -> None:
+        server = build_server()
+        tool_names = {tool.name for tool in await server.list_tools()}
+        assert "pubmed_search" in tool_names
+        assert "pubmed_fetch" in tool_names
+        pubmed_tools = {name for name in tool_names if "pubmed" in name.lower()}
+        assert pubmed_tools == {"pubmed_search", "pubmed_fetch"}
+
+    asyncio.run(run())
+
+
+def test_default_surface_excludes_broad_pubmed_tools() -> None:
+    """WP03: guard against accidentally exposing a broad third-party PubMed surface.
+
+    Only the two contracted grounding tools may appear. Out-of-scope capabilities
+    (full-text fetch, deep paper analysis, MeSH lookup, Europe PMC search,
+    Unpaywall, related-article discovery) must be ABSENT. This inspects the MCP
+    tool catalog only and makes no assumption about the internal provider choice.
+    """
+    from premura.mcp.entrypoint import build_server
+
+    out_of_scope = {
+        "pubmed_fetch_full_text",
+        "pubmed_full_text",
+        "fetch_full_text",
+        "pubmed_analyze",
+        "analyze_paper",
+        "deep_paper_analysis",
+        "mesh_lookup",
+        "pubmed_mesh",
+        "europe_pmc_search",
+        "europepmc_search",
+        "unpaywall",
+        "unpaywall_lookup",
+        "related_articles",
+        "pubmed_related",
+        "pubmed_spell_check",
+        "pubmed_id_convert",
+    }
+
+    async def run() -> None:
+        server = build_server()
+        tool_names = {tool.name for tool in await server.list_tools()}
+        assert out_of_scope.isdisjoint(tool_names)
+        # Defensive: no surfaced tool name implies a broad third-party capability.
+        for name in tool_names:
+            lowered = name.lower()
+            assert "full_text" not in lowered
+            assert "fulltext" not in lowered
+            assert "mesh" not in lowered
+            assert "europe" not in lowered
+            assert "unpaywall" not in lowered
+            assert "related" not in lowered
 
     asyncio.run(run())
 
@@ -293,7 +364,9 @@ def test_stdio_mcp_server_exposes_tools(tmp_path: Path) -> None:
                 assert summary.structuredContent is not None
                 # WP02: new payload carries validity fields, not raw measurement_count.
                 assert summary.structuredContent["summary"]["validity_status"] in (
-                    "current", "stale", "unavailable"
+                    "current",
+                    "stale",
+                    "unavailable",
                 )
 
     asyncio.run(run())
