@@ -33,11 +33,11 @@ for new behavior touching health data and analytical claims.
 | T013 | Implement simple before/after request, pair, and paired-input shapes | WP03 | [D] |
 | T014 | Implement deterministic anchor-date pairing semantics with visible imputation metadata | WP03 | [D] |
 | T015 | Guard against condition-label pairing, arbitrary pair maps, and anchor/window scanning | WP03 | [D] |
-| T016 | Add failing paired-t-test acceptance tests for available paired-difference envelopes | WP04 |  |
-| T017 | Add failing paired-t-test refusal tests for weak, malformed, and constant-difference inputs | WP04 |  |
-| T018 | Implement the deterministic `paired_t_test` tool registration and estimate payload | WP04 |  |
-| T019 | Add paired-t-test uncertainty, direction, caveat, and confound metadata | WP04 |  |
-| T020 | Add no-causation, no-diagnosis, and no-hidden-search assertions for paired_t_test | WP04 |  |
+| T016 | Add failing paired-t-test acceptance tests for available paired-difference envelopes | WP04 |  | [D] |
+| T017 | Add failing paired-t-test refusal tests for weak, malformed, and constant-difference inputs | WP04 |  | [D] |
+| T018 | Implement the deterministic `paired_t_test` tool registration and estimate payload | WP04 |  | [D] |
+| T019 | Add paired-t-test uncertainty, direction, caveat, and confound metadata | WP04 |  | [D] |
+| T020 | Add no-causation, no-diagnosis, and no-hidden-search assertions for paired_t_test | WP04 |  | [D] |
 | T021 | Publish both tools through the analytical built-in loader and public engine surface | WP05 |  |
 | T022 | Add thin default MCP wrappers for `rolling_mean` and simple `paired_t_test` | WP05 |  |
 | T023 | Add trace normalized hypothesis identities for both new tools | WP05 |  |
@@ -171,11 +171,11 @@ refused envelopes without MCP or trace integration.
 
 **Included subtasks**:
 
-- [ ] T016 Add failing paired-t-test acceptance tests for available paired-difference envelopes (WP04)
-- [ ] T017 Add failing paired-t-test refusal tests for weak, malformed, and constant-difference inputs (WP04)
-- [ ] T018 Implement the deterministic `paired_t_test` tool registration and estimate payload (WP04)
-- [ ] T019 Add paired-t-test uncertainty, direction, caveat, and confound metadata (WP04)
-- [ ] T020 Add no-causation, no-diagnosis, and no-hidden-search assertions for paired_t_test (WP04)
+- [x] T016 Add failing paired-t-test acceptance tests for available paired-difference envelopes (WP04)
+- [x] T017 Add failing paired-t-test refusal tests for weak, malformed, and constant-difference inputs (WP04)
+- [x] T018 Implement the deterministic `paired_t_test` tool registration and estimate payload (WP04)
+- [x] T019 Add paired-t-test uncertainty, direction, caveat, and confound metadata (WP04)
+- [x] T020 Add no-causation, no-diagnosis, and no-hidden-search assertions for paired_t_test (WP04)
 
 **Implementation sketch**: Add a focused paired-test tool module that consumes
 only the WP03 paired input shape. Treat output as paired-difference analysis and
