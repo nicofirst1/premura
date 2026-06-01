@@ -13,6 +13,8 @@ subtasks:
 - T012
 - T013
 - T014
+agent: "claude:opus:implementer:implementer"
+shell_pid: "31137"
 history:
 - timestamp: '2026-06-01T10:38:21Z'
   agent: opencode
@@ -128,3 +130,7 @@ uv run ruff check src/premura/mcp tests/test_mcp_pubmed.py tests/test_mcp_server
 - Watch for docs implying search-only candidates are citeable.
 - Watch for docs adding full-text/deep-analysis claims.
 - Watch for stale default/operator tool counts.
+
+## Activity Log
+
+- 2026-06-01T11:02:28Z – claude:opus:implementer:implementer – shell_pid=31137 – Started implementation via action command
