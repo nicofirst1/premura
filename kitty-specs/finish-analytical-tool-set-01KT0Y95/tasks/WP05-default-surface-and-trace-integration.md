@@ -17,6 +17,8 @@ subtasks:
 - T023
 - T024
 - T025
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "88042"
 history:
 - timestamp: '2026-06-01T06:44:16Z'
   agent: opencode
@@ -195,3 +197,7 @@ uv run python -m pytest tests/test_mcp_trace_recording.py tests/test_mcp_analyti
 Review this WP by following one call path per tool: MCP wrapper -> engine prepare
 -> engine dispatch -> serialized envelope -> trace recording. Any computation in
 MCP or trace is a red flag.
+
+## Activity Log
+
+- 2026-06-01T08:05:13Z – claude:opus:python-implementer:implementer – shell_pid=88042 – Started implementation via action command
