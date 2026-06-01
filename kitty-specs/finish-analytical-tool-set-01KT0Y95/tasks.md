@@ -43,12 +43,12 @@ for new behavior touching health data and analytical claims.
 | T023 | Add trace normalized hypothesis identities for both new tools | WP05 |  | [D] |
 | T024 | Add MCP and trace tests for publication, recording, exact retries, refusals, and surfaced marks | WP05 |  | [D] |
 | T025 | Verify traced and untraced engine envelopes remain byte-equivalent aside from trace metadata | WP05 |  | [D] |
-| T026 | Sync live roadmap/status/stage docs to name the completed analytical tool set | WP06 | [P] |
-| T027 | Update the Stage 2/3 contributor contract with the new bounded tool shapes | WP06 | [P] |
-| T028 | Add documentation checks for deferred PubMed and condition-pairing scope | WP06 | [P] |
-| T029 | Run focused validation commands and record any pre-existing unrelated failures | WP06 |  |
-| T030 | Prepare final mission handoff notes for review and downstream task execution | WP06 |  |
-| T031 | Prepare the pre-v1 release gate: package version, release docs, and exact tag command | WP06 |  |
+| T026 | Sync live roadmap/status/stage docs to name the completed analytical tool set | WP06 | [D] |
+| T027 | Update the Stage 2/3 contributor contract with the new bounded tool shapes | WP06 | [D] |
+| T028 | Add documentation checks for deferred PubMed and condition-pairing scope | WP06 | [D] |
+| T029 | Run focused validation commands and record any pre-existing unrelated failures | WP06 |  | [D] |
+| T030 | Prepare final mission handoff notes for review and downstream task execution | WP06 |  | [D] |
+| T031 | Prepare the pre-v1 release gate: package version, release docs, and exact tag command | WP06 |  | [D] |
 
 ## Work Packages
 
@@ -237,12 +237,12 @@ grounding remains deferred, and broader condition-pairing remains out of scope.
 
 **Included subtasks**:
 
-- [ ] T026 Sync live roadmap/status/stage docs to name the completed analytical tool set (WP06)
-- [ ] T027 Update the Stage 2/3 contributor contract with the new bounded tool shapes (WP06)
-- [ ] T028 Add documentation checks for deferred PubMed and condition-pairing scope (WP06)
-- [ ] T029 Run focused validation commands and record any pre-existing unrelated failures (WP06)
-- [ ] T030 Prepare final mission handoff notes for review and downstream task execution (WP06)
-- [ ] T031 Prepare the pre-v1 release gate: package version, release docs, and exact tag command (WP06)
+- [x] T026 Sync live roadmap/status/stage docs to name the completed analytical tool set (WP06)
+- [x] T027 Update the Stage 2/3 contributor contract with the new bounded tool shapes (WP06)
+- [x] T028 Add documentation checks for deferred PubMed and condition-pairing scope (WP06)
+- [x] T029 Run focused validation commands and record any pre-existing unrelated failures (WP06)
+- [x] T030 Prepare final mission handoff notes for review and downstream task execution (WP06)
+- [x] T031 Prepare the pre-v1 release gate: package version, release docs, and exact tag command (WP06)
 
 **Implementation sketch**: Update only docs, contributor-contract text, and the
 minimal package/release metadata needed to keep live references aligned with
