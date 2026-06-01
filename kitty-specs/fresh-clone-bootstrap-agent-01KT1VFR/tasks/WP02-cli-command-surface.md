@@ -19,6 +19,8 @@ subtasks:
 - T010
 - T011
 - T012
+agent: "claude:opus:implementer:implementer"
+shell_pid: "86250"
 history:
 - timestamp: '2026-06-01T15:11:47Z'
   agent: opencode
@@ -228,3 +230,7 @@ uv run mypy src/premura/cli.py
 - Reject if blocked prerequisites exit 0.
 - Reject if output buries required blockers among optional warnings.
 - Reject if command verification ingests data, touches private warehouse rows, or attempts upload.
+
+## Activity Log
+
+- 2026-06-01T15:26:56Z – claude:opus:implementer:implementer – shell_pid=86250 – Started implementation via action command

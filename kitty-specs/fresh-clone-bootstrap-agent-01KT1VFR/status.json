@@ -1,7 +1,7 @@
 {
-  "event_count": 8,
-  "last_event_id": "01KT1WP31X0NP7TS2RJD0S10GR",
-  "materialized_at": "2026-06-01T15:26:22.781835+00:00",
+  "event_count": 10,
+  "last_event_id": "01KT1WQ3RR1D1B6M24CT0FHVX5",
+  "materialized_at": "2026-06-01T15:26:56.280506+00:00",
   "mission_number": "",
   "mission_slug": "fresh-clone-bootstrap-agent-01KT1VFR",
   "mission_type": "software-dev",
@@ -12,9 +12,9 @@
     "claimed": 0,
     "done": 0,
     "for_review": 0,
-    "in_progress": 0,
+    "in_progress": 1,
     "in_review": 0,
-    "planned": 2
+    "planned": 1
   },
   "work_packages": {
     "WP01": {
@@ -25,11 +25,11 @@
       "last_transition_at": "2026-06-01T15:26:22.781835+00:00"
     },
     "WP02": {
-      "actor": "finalize-tasks",
+      "actor": "claude:opus:implementer:implementer",
       "force_count": 1,
-      "lane": "planned",
-      "last_event_id": "01KT1W1ABNS3P5QZ8EHYGNY4GM",
-      "last_transition_at": "2026-06-01T15:15:02.133750+00:00"
+      "lane": "in_progress",
+      "last_event_id": "01KT1WQ3RR1D1B6M24CT0FHVX5",
+      "last_transition_at": "2026-06-01T15:26:56.280506+00:00"
     },
     "WP03": {
       "actor": "finalize-tasks",
