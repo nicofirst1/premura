@@ -38,11 +38,11 @@ for new behavior touching health data and analytical claims.
 | T018 | Implement the deterministic `paired_t_test` tool registration and estimate payload | WP04 |  | [D] |
 | T019 | Add paired-t-test uncertainty, direction, caveat, and confound metadata | WP04 |  | [D] |
 | T020 | Add no-causation, no-diagnosis, and no-hidden-search assertions for paired_t_test | WP04 |  | [D] |
-| T021 | Publish both tools through the analytical built-in loader and public engine surface | WP05 |  |
-| T022 | Add thin default MCP wrappers for `rolling_mean` and simple `paired_t_test` | WP05 |  |
-| T023 | Add trace normalized hypothesis identities for both new tools | WP05 |  |
-| T024 | Add MCP and trace tests for publication, recording, exact retries, refusals, and surfaced marks | WP05 |  |
-| T025 | Verify traced and untraced engine envelopes remain byte-equivalent aside from trace metadata | WP05 |  |
+| T021 | Publish both tools through the analytical built-in loader and public engine surface | WP05 |  | [D] |
+| T022 | Add thin default MCP wrappers for `rolling_mean` and simple `paired_t_test` | WP05 |  | [D] |
+| T023 | Add trace normalized hypothesis identities for both new tools | WP05 |  | [D] |
+| T024 | Add MCP and trace tests for publication, recording, exact retries, refusals, and surfaced marks | WP05 |  | [D] |
+| T025 | Verify traced and untraced engine envelopes remain byte-equivalent aside from trace metadata | WP05 |  | [D] |
 | T026 | Sync live roadmap/status/stage docs to name the completed analytical tool set | WP06 | [P] |
 | T027 | Update the Stage 2/3 contributor contract with the new bounded tool shapes | WP06 | [P] |
 | T028 | Add documentation checks for deferred PubMed and condition-pairing scope | WP06 | [P] |
@@ -203,11 +203,11 @@ tests show both new tools are callable, recorded, deduplicated, and surfaced.
 
 **Included subtasks**:
 
-- [ ] T021 Publish both tools through the analytical built-in loader and public engine surface (WP05)
-- [ ] T022 Add thin default MCP wrappers for `rolling_mean` and simple `paired_t_test` (WP05)
-- [ ] T023 Add trace normalized hypothesis identities for both new tools (WP05)
-- [ ] T024 Add MCP and trace tests for publication, recording, exact retries, refusals, and surfaced marks (WP05)
-- [ ] T025 Verify traced and untraced engine envelopes remain byte-equivalent aside from trace metadata (WP05)
+- [x] T021 Publish both tools through the analytical built-in loader and public engine surface (WP05)
+- [x] T022 Add thin default MCP wrappers for `rolling_mean` and simple `paired_t_test` (WP05)
+- [x] T023 Add trace normalized hypothesis identities for both new tools (WP05)
+- [x] T024 Add MCP and trace tests for publication, recording, exact retries, refusals, and surfaced marks (WP05)
+- [x] T025 Verify traced and untraced engine envelopes remain byte-equivalent aside from trace metadata (WP05)
 
 **Implementation sketch**: Update the static built-in analytical publication
 list, public exports, MCP entrypoint/server wrappers, and trace identity registry.
