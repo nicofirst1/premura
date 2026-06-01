@@ -57,6 +57,7 @@ select = ["E", "F", "I", "B", "UP", "N", "W"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = ["-m", "not regression"]
 markers = [
     "regression: tests that run against real on-disk exports (skipped when files absent)",
 ]

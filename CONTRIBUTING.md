@@ -23,14 +23,23 @@ uv run hpipe doctor
 ## Daily commands
 
 ```bash
-uv run python -m pytest -q
+uv run python -m pytest -q -x --tb=short
+uv run python -m pytest -q --lf --tb=short
+uv run python -m pytest -q -m regression    # explicit real-export regressions
 uv run ruff check .
 uv run ruff format --check .
 uv run mypy <changed-paths>
 ```
 
+The default pytest loop excludes tests marked `regression` so local agent
+feedback stays fast even when private real-export files exist. Objective: the
+default `uv run python -m pytest -q -x --tb=short` feedback command should stay
+under 90 seconds on the maintainer's M-series Mac; if it exceeds that, profile
+the slow tests before merging more work.
+
 Before review handoff, the relevant `ruff`, `mypy`, and `pytest` checks must be
-green for the changed scope.
+green for the changed scope. Run `-m regression` explicitly when changing parser
+schemas, real-export handling, or release validation.
 
 ## Architecture boundaries
 

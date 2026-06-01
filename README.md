@@ -91,4 +91,4 @@ uv run premura-mcp-operator --ack --warehouse-path /absolute/path/to/health.duck
 
 `query_warehouse` returns up to 200 rows by default and accepts `max_rows` up to 1000. Direct DuckDB and notebook work remain available as additional expert interfaces.
 
-Tests: `uv run python -m pytest -q`. See [STATUS.md](docs/operations/STATUS.md) for the current shipped pass count and coverage summary.
+Tests: `uv run python -m pytest -q -x --tb=short` for the fast default loop, and `uv run python -m pytest -q -m regression` for explicit real-export regressions. The default loop excludes `regression` tests and should stay under 90 seconds on the maintainer's M-series Mac. See [STATUS.md](docs/operations/STATUS.md) for the current shipped pass count and coverage summary.
