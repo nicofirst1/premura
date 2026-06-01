@@ -113,12 +113,20 @@ def _candidate(metric: str, *, point_count: int) -> EvidenceCandidate:
     )
 
 
-def _point(day: date, value: float, *, hour: int = 12, imputed: bool = False) -> PreparedPoint:
+def _point(
+    day: date,
+    value: float,
+    *,
+    hour: int = 12,
+    imputed: bool = False,
+    local_tz: str | None = None,
+) -> PreparedPoint:
     """One point at ``day`` at local noon (so local-day keying is unambiguous)."""
     return PreparedPoint(
         ts=datetime(day.year, day.month, day.day, hour, 0, 0),
         value=value,
         is_imputed=imputed,
+        local_tz=local_tz,
     )
 
 
@@ -192,6 +200,8 @@ def test_balanced_windows_build_nearest_to_anchor_pairs() -> None:
     # Pair 0 is the nearest-to-anchor pair: before day D-1, after day D+1.
     first = prepared.pairs[0]
     assert first.pair_index == 0
+    assert first.before_day == ANCHOR - timedelta(days=1)
+    assert first.after_day == ANCHOR + timedelta(days=1)
     assert first.before_ts.date() == ANCHOR - timedelta(days=1)
     assert first.after_ts.date() == ANCHOR + timedelta(days=1)
     # difference = after - before
@@ -205,6 +215,35 @@ def test_balanced_windows_build_nearest_to_anchor_pairs() -> None:
     assert prepared.after_window_start == ANCHOR + timedelta(days=1)
     assert prepared.after_window_end == ANCHOR + timedelta(days=8)
     assert prepared.is_imputed_pct == pytest.approx(0.0)
+
+
+def test_span_metadata_uses_local_days_when_utc_dates_differ() -> None:
+    """Reported spans must match the local calendar days used for pairing."""
+    points: list[PreparedPoint] = []
+    for i in range(8, 0, -1):
+        local_day = ANCHOR - timedelta(days=i)
+        utc_day = local_day + timedelta(days=1)
+        points.append(_point(utc_day, 50.0 + i, hour=2, local_tz="-05:00"))
+    for i in range(1, 9):
+        local_day = ANCHOR + timedelta(days=i)
+        utc_day = local_day + timedelta(days=1)
+        points.append(_point(utc_day, 60.0 + i, hour=2, local_tz="-05:00"))
+    series = _series(points)
+
+    prepared = prepare_before_after_paired_input(series, _request(before_days=8, after_days=8))
+
+    assert prepared.refusal is None
+    assert prepared.before_window_start == ANCHOR - timedelta(days=8)
+    assert prepared.before_window_end == ANCHOR - timedelta(days=1)
+    assert prepared.after_window_start == ANCHOR + timedelta(days=1)
+    assert prepared.after_window_end == ANCHOR + timedelta(days=8)
+    first = prepared.pairs[0]
+    assert first.before_day == ANCHOR - timedelta(days=1)
+    assert first.after_day == ANCHOR + timedelta(days=1)
+    # The raw UTC dates differ from the local days; this guards against using
+    # timestamp.date() for user-facing span metadata.
+    assert first.before_ts.date() == ANCHOR
+    assert first.after_ts.date() == ANCHOR + timedelta(days=2)
 
 
 def test_pairs_carry_imputation_flags_and_pct() -> None:
@@ -505,6 +544,8 @@ def test_direct_pair_construction_rejects_non_finite_values() -> None:
     with pytest.raises(ValueError):
         BeforeAfterPair(
             pair_index=0,
+            before_day=date(2026, 5, 13),
+            after_day=date(2026, 5, 15),
             before_ts=datetime(2026, 5, 13, 12),
             after_ts=datetime(2026, 5, 15, 12),
             before_value=float("nan"),
@@ -516,6 +557,8 @@ def test_direct_refused_input_rejects_carrying_pairs() -> None:
     # A refused BeforeAfterPairedInput must not carry computation-ready pairs.
     pair = BeforeAfterPair(
         pair_index=0,
+        before_day=date(2026, 5, 13),
+        after_day=date(2026, 5, 15),
         before_ts=datetime(2026, 5, 13, 12),
         after_ts=datetime(2026, 5, 15, 12),
         before_value=1.0,

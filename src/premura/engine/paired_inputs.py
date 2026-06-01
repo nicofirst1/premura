@@ -208,13 +208,16 @@ class BeforeAfterPair:
     """One matched before/after observation pair (data-model → BeforeAfterPair).
 
     ``pair_index`` is the deterministic rank from the anchor outward (0 = the pair
-    nearest the anchor). ``before_ts`` / ``after_ts`` are the source instants for
-    traceability; the imputation flags are carried verbatim from the upstream
+    nearest the anchor). ``before_day`` / ``after_day`` are the local calendar days
+    used for matching; ``before_ts`` / ``after_ts`` are the source instants for
+    traceability. The imputation flags are carried verbatim from the upstream
     accepted points (the layer never invents a value). ``difference`` is
     ``after_value - before_value``.
     """
 
     pair_index: int
+    before_day: date
+    after_day: date
     before_ts: datetime
     after_ts: datetime
     before_value: float
@@ -241,6 +244,8 @@ class BeforeAfterPair:
     def to_dict(self) -> dict[str, Any]:
         return {
             "pair_index": self.pair_index,
+            "before_day": self.before_day.isoformat(),
+            "after_day": self.after_day.isoformat(),
             "before_ts": self.before_ts.isoformat(),
             "after_ts": self.after_ts.isoformat(),
             "before_value": self.before_value,
@@ -591,6 +596,8 @@ def prepare_before_after_paired_input(
     pairs = tuple(
         BeforeAfterPair(
             pair_index=i,
+            before_day=before_sorted[i].day,
+            after_day=after_sorted[i].day,
             before_ts=before_sorted[i].ts,
             after_ts=after_sorted[i].ts,
             before_value=before_sorted[i].value,
@@ -604,12 +611,12 @@ def prepare_before_after_paired_input(
     # 8. Usable bundle. Window spans reflect the actual paired days used (so the
     #    admissible paired span WP04 reports under FR-006 is honest). Imputation
     #    percentage counts pairs where EITHER side is imputed.
-    used_before_days = [pairs[i].before_ts for i in range(pair_count)]
-    used_after_days = [pairs[i].after_ts for i in range(pair_count)]
-    before_window_start = min(d.date() for d in used_before_days)
-    before_window_end = max(d.date() for d in used_before_days)
-    after_window_start = min(d.date() for d in used_after_days)
-    after_window_end = max(d.date() for d in used_after_days)
+    used_before_days = [pairs[i].before_day for i in range(pair_count)]
+    used_after_days = [pairs[i].after_day for i in range(pair_count)]
+    before_window_start = min(used_before_days)
+    before_window_end = max(used_before_days)
+    after_window_start = min(used_after_days)
+    after_window_end = max(used_after_days)
 
     imputed_pairs = sum(1 for p in pairs if p.is_imputed)
     is_imputed_pct = (imputed_pairs / pair_count) * 100.0
