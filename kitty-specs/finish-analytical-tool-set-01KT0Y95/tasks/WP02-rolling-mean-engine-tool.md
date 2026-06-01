@@ -19,8 +19,8 @@ subtasks:
 - T008
 - T009
 - T010
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "23594"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "42142"
 history:
 - timestamp: '2026-06-01T06:44:16Z'
   agent: opencode
@@ -187,3 +187,4 @@ does not reach outside the engine and does not rely on default publication.
 
 - 2026-06-01T07:21:49Z – claude:opus:python-implementer:implementer – shell_pid=23594 – Started implementation via action command
 - 2026-06-01T07:31:29Z – claude:opus:python-implementer:implementer – shell_pid=23594 – Ready for review: rolling_mean deterministic moving-window tool over one admitted ordered series (MOVING_WINDOW_PATTERN, WP01 vocabulary). Emits per-point coverage+imputation series in shared envelope; 8 refusal fixtures incl. FR-014 window-scan rejection; window>=2/365 max/0.5 coverage defaults; live-registered in shared REGISTRY + dispatch. 27 new tests green, full analytical regression passes, ruff/format/mypy clean.
+- 2026-06-01T07:32:08Z – claude:opus:python-reviewer:reviewer – shell_pid=42142 – Started review via action command
