@@ -54,7 +54,8 @@ def _ensure_live_analytical_registry() -> None:
         build_operator_server = entrypoint.build_operator_server
 
 
-# WP05 adds rolling_mean + paired_t_test to the prior sixteen default tools.
+# WP05 adds rolling_mean + paired_t_test to the prior sixteen default tools;
+# pubmed-grounding-tools later adds pubmed_search + pubmed_fetch (-> 20).
 _DEFAULT_TOOLS_FINISHED = sorted(
     [
         "list_metrics",
@@ -72,6 +73,8 @@ _DEFAULT_TOOLS_FINISHED = sorted(
         "correlate",
         "rolling_mean",
         "paired_t_test",
+        "pubmed_search",
+        "pubmed_fetch",
         "research_trace_open",
         "research_trace_mark_surfaced",
         "research_trace_disclosure",
@@ -146,16 +149,16 @@ def _pin_engine_clock(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 # ---------------------------------------------------------------------------
-# 1. Both tools are on the default (and operator) surface — 16 -> 18 tools.
+# 1. Both tools are on the default (and operator) surface — now 20 tools total.
 # ---------------------------------------------------------------------------
 
 
-def test_default_surface_lists_exactly_eighteen_tools() -> None:
+def test_default_surface_lists_exactly_twenty_tools() -> None:
     async def run() -> None:
         server_ = build_server()
         names = sorted(tool.name for tool in await server_.list_tools())
         assert names == _DEFAULT_TOOLS_FINISHED
-        assert len(names) == 18
+        assert len(names) == 20
 
     asyncio.run(run())
 

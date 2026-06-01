@@ -56,6 +56,8 @@ _DEFAULT_TOOLS_WITH_CORRELATE = sorted(
         "correlate",
         "rolling_mean",
         "paired_t_test",
+        "pubmed_search",
+        "pubmed_fetch",
         "research_trace_open",
         "research_trace_mark_surfaced",
         "research_trace_disclosure",
@@ -208,11 +210,17 @@ def test_correlate_available_payload_is_json_safe_and_byte_stable(tmp_path: Path
     db_path = _warehouse_with_pair(tmp_path, base, base)
 
     a = server.correlate(
-        _LEFT_METRIC, _RIGHT_METRIC, lag_days=0, expected_direction="positive",
+        _LEFT_METRIC,
+        _RIGHT_METRIC,
+        lag_days=0,
+        expected_direction="positive",
         warehouse_path=db_path,
     )
     b = server.correlate(
-        _LEFT_METRIC, _RIGHT_METRIC, lag_days=0, expected_direction="positive",
+        _LEFT_METRIC,
+        _RIGHT_METRIC,
+        lag_days=0,
+        expected_direction="positive",
         warehouse_path=db_path,
     )
     # JSON-safe at the boundary and deterministic for identical fixtures.
@@ -288,7 +296,10 @@ def test_correlate_refuses_unsupported_lag_with_no_estimate(tmp_path: Path) -> N
 def test_correlate_rejects_empty_metric_id(tmp_path: Path) -> None:
     with pytest.raises(ValueError):
         server.correlate(
-            "  ", _RIGHT_METRIC, lag_days=0, expected_direction="positive",
+            "  ",
+            _RIGHT_METRIC,
+            lag_days=0,
+            expected_direction="positive",
             warehouse_path=_empty_warehouse(tmp_path),
         )
 
@@ -296,7 +307,10 @@ def test_correlate_rejects_empty_metric_id(tmp_path: Path) -> None:
 def test_correlate_rejects_unknown_direction(tmp_path: Path) -> None:
     with pytest.raises(ValueError):
         server.correlate(
-            _LEFT_METRIC, _RIGHT_METRIC, lag_days=0, expected_direction="up a bit",
+            _LEFT_METRIC,
+            _RIGHT_METRIC,
+            lag_days=0,
+            expected_direction="up a bit",
             warehouse_path=_empty_warehouse(tmp_path),
         )
 
@@ -332,7 +346,10 @@ def test_correlate_delegates_paired_prep_and_dispatch_to_engine(
     monkeypatch.setattr(server.engine, "invoke_analytical_tool", spy_invoke)
 
     payload = server.correlate(
-        _LEFT_METRIC, _RIGHT_METRIC, lag_days=0, expected_direction="positive",
+        _LEFT_METRIC,
+        _RIGHT_METRIC,
+        lag_days=0,
+        expected_direction="positive",
         warehouse_path=db_path,
     )
 
@@ -360,8 +377,17 @@ def test_correlate_wrapper_does_no_statistics_or_network() -> None:
             imported_modules.add(node.module.split(".")[0])
 
     forbidden_modules = {
-        "requests", "httpx", "urllib", "urllib3", "http",
-        "socket", "aiohttp", "scipy", "numpy", "statistics", "pubmed",
+        "requests",
+        "httpx",
+        "urllib",
+        "urllib3",
+        "http",
+        "socket",
+        "aiohttp",
+        "scipy",
+        "numpy",
+        "statistics",
+        "pubmed",
     }
     assert not (imported_modules & forbidden_modules), (
         "MCP server must not import statistics/network modules; "
@@ -390,16 +416,20 @@ def test_correlate_wrapper_does_no_statistics_or_network() -> None:
     # a Spearman/rank computation or PubMed/HTTP call would surface as a Name,
     # Attribute, or string literal — never only inside a comment.
     forbidden_call_names = {
-        "spearmanr", "rankdata", "pearsonr", "corrcoef", "urlopen", "get", "post",
+        "spearmanr",
+        "rankdata",
+        "pearsonr",
+        "corrcoef",
+        "urlopen",
+        "get",
+        "post",
     }
     forbidden_attr = {"spearman", "spearmanr", "rankdata", "pearsonr"}
     for node in ast.walk(tree):
         if isinstance(node, ast.Call):
             func = node.func
             if isinstance(func, ast.Name):
-                assert func.id not in forbidden_call_names, (
-                    f"MCP wrapper must not call {func.id!r}"
-                )
+                assert func.id not in forbidden_call_names, f"MCP wrapper must not call {func.id!r}"
             elif isinstance(func, ast.Attribute):
                 assert func.attr not in forbidden_attr, (
                     f"MCP wrapper must not call statistics primitive {func.attr!r}"
@@ -418,7 +448,10 @@ def test_correlate_returns_engine_envelope_verbatim(tmp_path: Path) -> None:
     db_path = _warehouse_with_pair(tmp_path, base, base)
 
     payload = server.correlate(
-        _LEFT_METRIC, _RIGHT_METRIC, lag_days=0, expected_direction="positive",
+        _LEFT_METRIC,
+        _RIGHT_METRIC,
+        lag_days=0,
+        expected_direction="positive",
         warehouse_path=db_path,
     )
     assert payload["status"] == "available"

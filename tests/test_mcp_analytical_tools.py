@@ -48,6 +48,8 @@ _DEFAULT_TOOLS_WITH_ANALYTICAL = sorted(
         "correlate",
         "rolling_mean",
         "paired_t_test",
+        "pubmed_search",
+        "pubmed_fetch",
         "research_trace_open",
         "research_trace_mark_surfaced",
         "research_trace_disclosure",

@@ -50,6 +50,8 @@ _EIGHT_DEFAULT_TOOLS = sorted(
         "correlate",
         "rolling_mean",
         "paired_t_test",
+        "pubmed_search",
+        "pubmed_fetch",
         "research_trace_open",
         "research_trace_mark_surfaced",
         "research_trace_disclosure",
@@ -431,7 +433,11 @@ def test_list_metrics_returns_validity_catalog_entries(tmp_path: Path) -> None:
     assert len(rows) == 5
     # WP02: catalog entries carry validity fields.
     expected_fields = {
-        "metric_id", "validity_status", "validity_window", "missing_data_policy", "unit"
+        "metric_id",
+        "validity_status",
+        "validity_window",
+        "missing_data_policy",
+        "unit",
     }
     assert expected_fields <= set(rows[0])
     # Raw count fields must not be present.
@@ -471,6 +477,7 @@ def test_metric_summary_returns_validity_summary_entry(tmp_path: Path) -> None:
 # --------------------------------------------------------------------------- #
 # T009 — MCP payload tests: fresh/stale/empty/unknown for catalog and summary
 # --------------------------------------------------------------------------- #
+
 
 def test_list_metrics_fresh_catalog_entry(tmp_path: Path) -> None:
     """T009: a recently-observed metric returns a current catalog entry."""
@@ -760,49 +767,65 @@ def test_all_signal_tools_reachable_through_public_entrypoint(tmp_path: Path) ->
             conn,
             [
                 (
-                    datetime.combine(anchor - timedelta(days=10), datetime.min.time()).isoformat(sep=" "),
+                    datetime.combine(anchor - timedelta(days=10), datetime.min.time()).isoformat(
+                        sep=" "
+                    ),
                     "hrv_rmssd_overnight",
                     40.0,
                     "h1",
                 ),
                 (
-                    datetime.combine(anchor - timedelta(days=8), datetime.min.time()).isoformat(sep=" "),
+                    datetime.combine(anchor - timedelta(days=8), datetime.min.time()).isoformat(
+                        sep=" "
+                    ),
                     "hrv_rmssd_overnight",
                     41.0,
                     "h2",
                 ),
                 (
-                    datetime.combine(anchor - timedelta(days=6), datetime.min.time()).isoformat(sep=" "),
+                    datetime.combine(anchor - timedelta(days=6), datetime.min.time()).isoformat(
+                        sep=" "
+                    ),
                     "hrv_rmssd_overnight",
                     42.0,
                     "h3",
                 ),
                 (
-                    datetime.combine(anchor - timedelta(days=4), datetime.min.time()).isoformat(sep=" "),
+                    datetime.combine(anchor - timedelta(days=4), datetime.min.time()).isoformat(
+                        sep=" "
+                    ),
                     "hrv_rmssd_overnight",
                     43.0,
                     "h4",
                 ),
                 (
-                    datetime.combine(anchor + timedelta(days=2), datetime.min.time()).isoformat(sep=" "),
+                    datetime.combine(anchor + timedelta(days=2), datetime.min.time()).isoformat(
+                        sep=" "
+                    ),
                     "hrv_rmssd_overnight",
                     55.0,
                     "h5",
                 ),
                 (
-                    datetime.combine(anchor + timedelta(days=4), datetime.min.time()).isoformat(sep=" "),
+                    datetime.combine(anchor + timedelta(days=4), datetime.min.time()).isoformat(
+                        sep=" "
+                    ),
                     "hrv_rmssd_overnight",
                     56.0,
                     "h6",
                 ),
                 (
-                    datetime.combine(anchor + timedelta(days=6), datetime.min.time()).isoformat(sep=" "),
+                    datetime.combine(anchor + timedelta(days=6), datetime.min.time()).isoformat(
+                        sep=" "
+                    ),
                     "hrv_rmssd_overnight",
                     57.0,
                     "h7",
                 ),
                 (
-                    datetime.combine(anchor + timedelta(days=8), datetime.min.time()).isoformat(sep=" "),
+                    datetime.combine(anchor + timedelta(days=8), datetime.min.time()).isoformat(
+                        sep=" "
+                    ),
                     "hrv_rmssd_overnight",
                     58.0,
                     "h8",
