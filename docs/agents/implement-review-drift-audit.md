@@ -108,6 +108,29 @@ list as closed.
   measurable NFR/SC to an owning WP + artifact; and a mission-acceptance gate
   that demands the artifact before PASS, not qualitative satisfaction.
 
+### D4 — Derived-representation basis fidelity (compute basis vs. report basis)
+- **Checks:** when a tool computes its result from a *derived* representation of
+  an input (a local calendar day from a UTC timestamp + tz; a canonical id from a
+  raw label; a rounded/bucketed key; a unit-converted value), every piece of
+  *reported metadata describing that result* (spans, day/key labels, group counts,
+  provenance) is derived from the **same** representation — not recomputed from the
+  raw source on a second path.
+- **Originates:** two divergent paths in (or across) the producing WP — the
+  compute path uses the derived value while the report path recomputes from raw
+  (`ts.date()` instead of `local_calendar_day(ts, tz)`). The divergence is
+  invisible because acceptance fixtures use inputs where raw ≡ derived
+  (naive-noon, tz=UTC timestamps), so the fixture distribution never crosses the
+  boundary production inputs cross.
+- **Catching control:** a *representational-divergence fixture* — at least one
+  acceptance fixture per derived representation where raw ≠ derived (e.g. a
+  `local_tz` that shifts an observation across local midnight), asserting reported
+  metadata equals the *derived* basis. Fires in the producing WP's Definition of
+  Done **and** in a contract field-spec that names each metadata field's basis
+  ("spans are local calendar days") so reviewers have a pin. Corollary: when a
+  downstream WP is told to *consume the producer's bundle without re-deriving* (a
+  dead-code/seam control, see this method's seam guidance), the **producing** WP's
+  review owns the bundle's field-basis — downstream deliberately won't re-check it.
+
 ### Rule for adding a dimension
 
 A new dimension is admissible iff it: (1) names a gap that lives **between** WP
