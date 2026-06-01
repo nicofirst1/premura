@@ -16,8 +16,8 @@ subtasks:
 - T009
 - T010
 - T011
-agent: "claude:opus:implementer:implementer"
-shell_pid: "23402"
+agent: "claude:opus:reviewer:reviewer"
+shell_pid: "28485"
 history:
 - timestamp: '2026-06-01T10:38:21Z'
   agent: opencode
@@ -148,3 +148,4 @@ Validation:
 
 - 2026-06-01T10:56:50Z – claude:opus:implementer:implementer – shell_pid=23402 – Started implementation via action command
 - 2026-06-01T11:00:02Z – claude:opus:implementer:implementer – shell_pid=23402 – Ready for review: two PubMed tools registered on default surface, citation-safe docstrings, narrow-surface tests, operator surface unchanged
+- 2026-06-01T11:00:26Z – claude:opus:reviewer:reviewer – shell_pid=28485 – Started review via action command
