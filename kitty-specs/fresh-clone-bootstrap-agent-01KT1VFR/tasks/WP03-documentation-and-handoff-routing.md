@@ -18,6 +18,8 @@ subtasks:
 - T015
 - T016
 - T017
+agent: "claude:opus:implementer:implementer"
+shell_pid: "93370"
 history:
 - timestamp: '2026-06-01T15:11:47Z'
   agent: opencode
@@ -205,3 +207,7 @@ uv run ruff format --check tests/test_bootstrap_docs.py
 - Reject if docs imply bootstrap ingests health data, uploads artifacts, or answers health questions.
 - Reject if root docs become a long duplicate of the implementation contract.
 - Verify documentation follows the repo language preference: plain English, agent-first execution, human-first purpose.
+
+## Activity Log
+
+- 2026-06-01T15:33:57Z – claude:opus:implementer:implementer – shell_pid=93370 – Started implementation via action command
