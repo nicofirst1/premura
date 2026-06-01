@@ -14,6 +14,7 @@ subtasks:
 - T028
 - T029
 - T030
+- T031
 history:
 - timestamp: '2026-06-01T06:44:16Z'
   agent: opencode
@@ -25,6 +26,8 @@ owned_files:
 - docs/architecture/STAGES.md
 - docs/product/ROADMAP.md
 - docs/product/FULL_APP_DEVELOPMENT_PLAN.md
+- README.md
+- pyproject.toml
 - src/premura/engine/CONTRACT.md
 tags: []
 ---
@@ -49,9 +52,10 @@ by the runtime for this WP.
 
 ## Objective
 
-Synchronize live docs and contributor guidance after the completed analytical
-tool set is publicly available. This WP also records validation results for the
-mission handoff. It should not change source behavior.
+Synchronize live docs, contributor guidance, and release metadata after the
+completed analytical tool set is publicly available. This WP also records
+validation results for the mission handoff. It should not change source
+behavior.
 
 ## Authoritative Inputs
 
@@ -66,6 +70,8 @@ mission handoff. It should not change source behavior.
 - `docs/architecture/STAGES.md`
 - `docs/product/ROADMAP.md`
 - `docs/product/FULL_APP_DEVELOPMENT_PLAN.md`
+- `README.md`
+- `pyproject.toml`
 - `src/premura/engine/CONTRACT.md`
 
 Do not edit implementation code, MCP wrappers, trace logic, or tests in this WP.
@@ -140,12 +146,32 @@ covering:
 - Which validation commands passed.
 - Any pre-existing unrelated failures.
 - The explicit deferred work: PubMed grounding and broader condition-pairing.
+- The exact pre-`v1` release tag expected after merge.
+
+### T031: Prepare the pre-v1 release gate
+
+Make the smallest metadata changes needed so the mission can close with a real
+restore point instead of only implementation commits.
+
+Required checks:
+
+- Confirm this mission remains on the pre-`v1` line. `v1.0.0` is reserved for a
+  coherent user-facing path across all four stages.
+- Update `pyproject.toml` to the intended `v0.x.0` package version for the
+  analytical-tool-set release, if it has not already been updated by a release
+  task.
+- Keep README and live docs aligned with the current default MCP surface.
+- In the handoff, include the exact post-merge tag command, for example
+  `git tag v0.x.0 && git status`, using the final chosen version.
+- Do not create the git tag from the implementation worktree. The tag is cut on
+  `master` after the mission merge and validation evidence are accepted.
 
 Definition of done:
 
 - Live docs accurately reflect shipped behavior.
 - Contributor contract names the bounded extension rules.
 - Focused validation results are recorded in the WP handoff.
+- Release metadata and the post-merge tag command are ready.
 
 ## Test Strategy
 

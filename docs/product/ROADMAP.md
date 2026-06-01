@@ -6,7 +6,7 @@
 >
 > For **phase-level planning**, see [FULL_APP_DEVELOPMENT_PLAN.md](FULL_APP_DEVELOPMENT_PLAN.md). For the historical record of how the first M1-M3 backlog was instantiated, see [../history/product/ROADMAP_BOOTSTRAP_PLAN.md](../history/product/ROADMAP_BOOTSTRAP_PLAN.md). This file is the short live pointer doc: what is next in broad terms, what is already settled, and which deeper doc to read.
 
-Items below are sorted by reasonable build order, not priority. Anything in v1 scope (SPEC §2) that is still ⏳ in [STATUS.md](../operations/STATUS.md) is the prerequisite for the rest.
+Items below are sorted by reasonable build order, not priority. Anything in the original SPEC scope (§2) that is still ⏳ in [STATUS.md](../operations/STATUS.md) is the prerequisite for the rest.
 
 ## Current operating policy
 
@@ -25,7 +25,7 @@ The user is actively writing more requirements; this section will grow.
 
 ## Next major phase — analytical depth
 
-> This is the current main planning thread. The phase-level source of truth is [FULL_APP_DEVELOPMENT_PLAN.md](FULL_APP_DEVELOPMENT_PLAN.md) §"Phase 3: `v2.2 analytical depth`".
+> This is the current main planning thread. The phase-level source of truth is [FULL_APP_DEVELOPMENT_PLAN.md](FULL_APP_DEVELOPMENT_PLAN.md) §"Phase 3: `v0.3 analytical depth`".
 
 1. **Analytical foundation first — shipped.** Premura now has the domain-aware input-resolution seam between Stage 2 and Stage 3, explicit honest-refusal behavior for declared-but-unresolved domains, the deterministic evidence-admissibility policy layer (`evaluate_evidence` over a closed `QuestionType` vocabulary and per-family freshness/sufficiency rules), and a machine-readable closed confound vocabulary on the analytical result envelope. The first cross-domain proof consumer (BMI) uses the resolution seam; admissibility is decided before any tool computes. Missingness and imputation reporting remain a Stage 2 *internal* concern (per-metric `missing_data_policy`, freshness windows), not the analytical foundation itself.
 2. **The first deterministic tools — `correlate` shipped.** Three conservative, reproducible tools now sit on the default MCP surface: `change_point` (level-shift detection), `smoothed_average` (trailing smoothed pattern), and `correlate` (the n-of-1 workhorse — a pre-registered, caller-declared whole-day-lagged Spearman *association* with an autocorrelation-corrected `N_eff` band, no p-value and no "significant"). Each routes to its own first-class analytical `QuestionType` and returns the mandatory result envelope (estimate + validity metadata + confound checklist, including the `common_cause_plausible` key, or a first-class refusal). The locked architecture is design decision note [0008](../adr/0008-correlate-pre-registered-lagged-association.md); the statistical choices are settled in [CORRELATE_METHODOLOGY_RESEARCH.md](../history/research/CORRELATE_METHODOLOGY_RESEARCH.md). **Still open:** `rolling_mean`, `paired_t_test`, and only later broader significance-testing coverage. The goal stays honest n-of-1 analysis, not statistical theater.
@@ -34,7 +34,7 @@ The user is actively writing more requirements; this section will grow.
 
 Read the full phase doc for the rationale, risk retirement, and exit criteria:
 
-- [FULL_APP_DEVELOPMENT_PLAN.md](FULL_APP_DEVELOPMENT_PLAN.md) §"Phase 3: `v2.2 analytical depth`"
+- [FULL_APP_DEVELOPMENT_PLAN.md](FULL_APP_DEVELOPMENT_PLAN.md) §"Phase 3: `v0.3 analytical depth`"
 - [STAGES.md](../architecture/STAGES.md) for the Stage 2 / Stage 3 boundary
 - [`src/premura/engine/CONTRACT.md`](../../src/premura/engine/CONTRACT.md) for what Stage 2 may and may not claim
 
@@ -58,7 +58,7 @@ These future signals stay **descriptive, non-diagnostic, and local-first** like 
 - extraction-quality validation tooling / UI
 - any parser corrections surfaced by real operator use
 
-See [FULL_APP_DEVELOPMENT_PLAN.md](FULL_APP_DEVELOPMENT_PLAN.md) §"Phase 2: `v2.1 labs`" for the shipped slice and [../history/research/PROPOSAL_LABS.md](../history/research/PROPOSAL_LABS.md) for the original design proposal.
+See [FULL_APP_DEVELOPMENT_PLAN.md](FULL_APP_DEVELOPMENT_PLAN.md) §"Phase 2: `v0.2 labs`" for the shipped slice and [../history/research/PROPOSAL_LABS.md](../history/research/PROPOSAL_LABS.md) for the original design proposal.
 
 ## Historical note — the earlier MCP-server framing
 

@@ -31,7 +31,7 @@ For the analytical layer specifically, the shortest trustworthy read order is:
 - `operations/STATUS.md` — what analytical behavior is already shipped
 - `architecture/STAGES.md` — where Stage 2 ends and Stage 3 begins
 - `../src/premura/engine/CONTRACT.md` — what Stage 2 signals may and may not claim
-- `product/FULL_APP_DEVELOPMENT_PLAN.md` §`v2.2 analytical depth` — the current phase-level plan
+- `product/FULL_APP_DEVELOPMENT_PLAN.md` §`v0.3 analytical depth` — the current phase-level plan
 
 ## Live reference
 

@@ -15,6 +15,16 @@ This file is not the GitHub backlog and not the first execution plan. It is the 
 - which open risks each phase retires
 - how the immediate execution plan fits into the larger trajectory
 
+## Release Line
+
+Premura is still pre-`v1`. The existing `v1.0.0` tag is a historical restore
+point for the first local-ingest pipeline, not the meaning of `v1` going forward.
+From this point on, release tags use the `v0.x.0` line until the product is
+genuinely user-facing: all four stages exist in a coherent path from source
+artifact to agent-mediated analysis to human-facing teaching/interview. `v1.0.0`
+is reserved for that user-facing threshold, not for internal architectural
+milestones.
+
 ## Inputs Used
 
 - `CONTEXT.md` (vocabulary)
@@ -72,7 +82,7 @@ Small v1 residue (real-data SAA validation, project wiki hub page) is not schedu
 
 This plan follows the conventions established in `../history/product/ROADMAP_BOOTSTRAP_PLAN.md` §"Conventions":
 
-- **Tag-cut on milestone close**: each phase ships as a milestone (`v2.0`, `v2.1`, …) and closes with a corresponding `git tag` (`v2.0.0`, `v2.1.0`, …). Tags are restore points.
+- **Tag-cut on milestone close**: each phase ships as a pre-`v1` milestone (`v0.1`, `v0.2`, …) and closes with a corresponding `git tag` (`v0.1.0`, `v0.2.0`, …). Tags are mandatory restore points, not optional bookkeeping. The already-existing `v1.0.0` tag is legacy/historical; do not continue the `v1` line until the user-facing threshold above is met.
 - **Design decision note timing**: design decision notes land *before* missions that introduce a new stage interface or a new public type; *after* missions where the decision is an implementation detail inside an already-approved direction. See `docs/adr/0001-ingest-batch-parser-seam.md` for the post-mission template (the folder `docs/adr/` is kept for filesystem stability; in prose call them "design decision notes").
 - **Mission title format**: GitHub tracking issues use `[M1]`/`[M2]`/`[M3]` prefixes. New missions in later phases follow the same convention (`[M4]`, `[M5]`, …).
 - **Multi-stage labels**: missions that genuinely span stages carry multiple `stage:*` labels (e.g. M3 carries both `stage:ingest` and `stage:engine`).
@@ -80,7 +90,7 @@ This plan follows the conventions established in `../history/product/ROADMAP_BOO
 
 ## Development Phases
 
-### Phase 1: `v2.0 analytical surface foundation`
+### Phase 1: `v0.1 analytical surface foundation`
 
 > **Status: largely shipped.** The MCP access decision is settled, the first MCP query surface (M2) landed, and a follow-on grounded-signals mission added six Stage 2 answers with six signal-backed Stage 3 tools routed through them. The stage hand-off is real for those six question shapes. Deterministic stats tooling still belongs to Phase 3.
 
@@ -116,9 +126,9 @@ This is the highest-leverage open question in the current docs. If Premura is su
 - there is a documented, accepted way for MCP tools to read the warehouse
 - the MCP layer is no longer a stub package only
 - the app can answer basic warehouse questions through a real Stage 3 surface
-- tag `v2.0.0` cut on milestone close
+- tag `v0.1.0` cut on milestone close
 
-### Phase 2: `v2.1 labs`
+### Phase 2: `v0.2 labs`
 
 > **Status: shipped in first form.** M3 is closed: lab ingest, sparse-signal rules, and first derived lab ratios landed. The remaining lab follow-ons are narrower: Stage 3 lab exposure, extraction-quality validation tooling, and any parser corrections surfaced by real operator use.
 
@@ -154,9 +164,9 @@ The lab proposal is the first place where Premura becomes more than a wearable d
 - the warehouse can ingest a representative lab corpus
 - Stage 2 has real validity and missing-data policy behavior for at least one meaningful domain
 - at least one family of derived signals exists for sparse clinical data
-- tag `v2.1.0` cut on milestone close
+- tag `v0.2.0` cut on milestone close
 
-### Phase 3: `v2.2 analytical depth`
+### Phase 3: `v0.3 analytical depth`
 
 > **Status: in progress, `correlate` landed.** The evidence-admissibility
 > foundation and the bounded analytical contract landed, and three deterministic
@@ -214,7 +224,7 @@ Phase 1 proved that MCP can safely access the warehouse and answer six grounded 
 - PubMed use is tool-grounded rather than prompt-grounded (deferred — PubMed not yet built)
 - tool outputs include validity/confound metadata, not just point estimates (met: mandatory result envelope with validity metadata + closed confound checklist)
 
-### Phase 4: `v2.3 parser ecosystem validation`
+### Phase 4: `v0.4 parser ecosystem validation`
 
 #### Goal
 
@@ -244,7 +254,7 @@ The docs already call out the parser-skill bet as risk `R2`. That risk does not 
 - either the parser ecosystem model is validated by a real example
 - or the project has evidence to scale the ambition back instead of assuming ecosystem traction
 
-### Phase 5: `v2.4 interview + teaching MVP`
+### Phase 5: `v0.5 interview + teaching MVP`
 
 #### Goal
 
@@ -274,7 +284,7 @@ The docs position teaching and interview as core differentiation, but they are a
 - a user can enter through one or two health directions and receive a guided, explainable experience
 - the project has learned whether the teaching layer is tractable in CLI-first form
 
-### Phase 6: `v2.5+ ingest and warehouse expansion`
+### Phase 6: `v0.6+ ingest and warehouse expansion`
 
 #### Goal
 
@@ -307,12 +317,12 @@ These are useful, but they are not the strongest differentiators while the app s
 
 The likely whole-app ordering is:
 
-1. `v2.0 analytical surface foundation`
-2. `v2.1 labs`
-3. `v2.2 analytical depth`
-4. `v2.3 parser ecosystem validation`
-5. `v2.4 interview + teaching MVP`
-6. `v2.5+ ingest and warehouse expansion`
+1. `v0.1 analytical surface foundation`
+2. `v0.2 labs`
+3. `v0.3 analytical depth`
+4. `v0.4 parser ecosystem validation`
+5. `v0.5 interview + teaching MVP`
+6. `v0.6+ ingest and warehouse expansion`
 
 This is not a rigid dependency chain for every sub-issue. It is the default product-development order that best matches the current docs and open risks.
 
@@ -327,15 +337,15 @@ This is not a rigid dependency chain for every sub-issue. It is the default prod
 
 ### `R2`: parser-skill bet is unproven
 
-Primary retirement phase: `v2.3 parser ecosystem validation`
+Primary retirement phase: `v0.4 parser ecosystem validation`
 
 ### `R4`: teaching-as-pillar is the worst risk
 
-Primary retirement phase: `v2.4 interview + teaching MVP`
+Primary retirement phase: `v0.5 interview + teaching MVP`
 
 ### `R7`: n=1 stats can mislead
 
-Primary retirement phase: `v2.2 analytical depth`, **partial only**.
+Primary retirement phase: `v0.3 analytical depth`, **partial only**.
 
 R7 has two halves:
 

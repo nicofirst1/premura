@@ -5,6 +5,10 @@ Local-first, agent-operable health reasoning substrate. A human supplies health-
 > Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [Doctrine](docs/product/DOCTRINE.md) · [SPEC](docs/product/SPEC.md) · [STATUS](docs/operations/STATUS.md) · [Stages](docs/architecture/STAGES.md) · [Roadmap](docs/product/ROADMAP.md) · [Full Plan](docs/product/FULL_APP_DEVELOPMENT_PLAN.md)
 > Contributor guide: [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
+Premura is still pre-`v1`: future release tags use the `v0.x.0` line until all
+four stages form a coherent user-facing path. The historical `v1.0.0` tag is a
+restore point for the first local-ingest pipeline, not the forward version line.
+
 ## Quick start
 
 ```bash
@@ -70,12 +74,15 @@ Tools exposed:
 - `weight_trend` — body-weight trend with carry-forward caveats
 - `sleep_deep_pct_baseline` — latest deep-sleep % vs user's own baseline
 - `hrv_change_around_date` — overnight HRV before/after a user-named date
+- `profile_context_supported_fields` / `profile_context_record` — bounded agent-mediated profile capture
+- `change_point`, `smoothed_average`, `correlate` — deterministic analytical tools
+- `research_trace_open`, `research_trace_mark_surfaced`, `research_trace_disclosure` — session research trace and disclosure
 
-The six signal-backed tools return structured `available` / `missing_input` / `stale_input` / `insufficient_data` payloads.
+Signal-backed and analytical tools return structured `available` / `missing_input` / `stale_input` / `insufficient_data` or first-class refusal payloads rather than free-form claims.
 
 ### Operator fallback surface (`premura-mcp-operator`)
 
-Lower-guarantee expert mode. Adds `query_warehouse` (raw SQL escape hatch) on top of all eight default tools. No Stage 2 validity guarantees apply to `query_warehouse` results — callers own all result interpretation. **Agent use requires explicit user approval**, enforced two ways: `query_warehouse` is absent from the default surface, and this entrypoint refuses to start unless you acknowledge lower-guarantee mode with `--ack` (or `PREMURA_OPERATOR_ACK=1`).
+Lower-guarantee expert mode. Adds `query_warehouse` (raw SQL escape hatch) on top of the default tools. No Stage 2 validity guarantees apply to `query_warehouse` results — callers own all result interpretation. **Agent use requires explicit user approval**, enforced two ways: `query_warehouse` is absent from the default surface, and this entrypoint refuses to start unless you acknowledge lower-guarantee mode with `--ack` (or `PREMURA_OPERATOR_ACK=1`).
 
 ```bash
 uv run premura-mcp-operator --ack

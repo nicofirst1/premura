@@ -7,7 +7,7 @@
 
 ## TL;DR
 
-**v1 closed 2026-05-21 — tagged `v1.0.0`.** The four-source ingest pipeline is **operational**. The DuckDB warehouse contains ~3.5 years of HC data plus the full set of Garmin-only metrics that [../history/architecture/ARCHITECTURE_HISTORY.md](../history/architecture/ARCHITECTURE_HISTORY.md) flagged as the original motivation: **HRV rMSSD overnight, stress, training load, training readiness, VO₂ max, skin temperature, hydration, sleep score, respiration**. Re-ingest of any source is idempotent.
+**Pre-`v1` foundation — historical tag `v1.0.0` exists, but the product line is now treated as `v0.x`.** The four-source ingest pipeline is **operational**. The DuckDB warehouse contains ~3.5 years of HC data plus the full set of Garmin-only metrics that [../history/architecture/ARCHITECTURE_HISTORY.md](../history/architecture/ARCHITECTURE_HISTORY.md) flagged as the original motivation: **HRV rMSSD overnight, stress, training load, training readiness, VO₂ max, skin temperature, hydration, sleep score, respiration**. Re-ingest of any source is idempotent. Going forward, `v1.0.0` is reserved for a coherent user-facing product across all four stages; internal milestones should tag as `v0.1.0`, `v0.2.0`, and so on.
 
 **Policy change (2026-05-20)**: as the project starts looking like a real application for others, Drive upload is now **opt-in**, not part of the automated monthly run. `hpipe run-monthly` ends with the encrypted `.age` artifact sitting in `data/exports/YYYY-MM/`; the user decides whether to `hpipe upload` (or hand the file off to another sync mechanism). The `age` private key is stored locally by default, with a password-manager recipe (Bitwarden as a reference) in [`ops/bootstrap.sh`](../../ops/bootstrap.sh).
 
@@ -78,7 +78,7 @@ admissible **before** any later tool uses it:
 ## Stage 3 analytical tools (shipped 2026-05-30)
 
 The `stage-3-analytical-tools-01KST48C` mission landed the first slice of
-**Phase 3 (`v2.2 analytical depth`)**: a bounded analytical contract plus two
+**Phase 3 (`v0.3 analytical depth`)**: a bounded analytical contract plus two
 deterministic proof tools on top of the admissibility foundation.
 `src/premura/engine/analytical_contract.py`, `analytical_inputs.py`, and
 `analytical_tools.py` define the surface; `docs/history/research/STAGE3_ANALYTICAL_TOOLS_RESEARCH.md`

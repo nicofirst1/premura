@@ -1,7 +1,7 @@
 # Correlation reports a pre-registered, lagged *association* — never significance — and pushes multiplicity accounting out to a session-layer audit trace
 
 `correlate` is the first **multi-input** Stage 3 analytical tool (Phase 3,
-`v2.2 analytical depth`). It sits on the admissibility contract from
+`v0.3 analytical depth`). It sits on the admissibility contract from
 [ADR-0007](0007-evidence-admissibility-as-a-declared-contract.md) and the
 analytical result/confound contract shipped by the stage-3-analytical-tools
 mission. Because it relates *two* metrics over time, it is the first place where

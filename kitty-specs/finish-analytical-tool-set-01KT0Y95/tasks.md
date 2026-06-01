@@ -48,6 +48,7 @@ for new behavior touching health data and analytical claims.
 | T028 | Add documentation checks for deferred PubMed and condition-pairing scope | WP06 | [P] |
 | T029 | Run focused validation commands and record any pre-existing unrelated failures | WP06 |  |
 | T030 | Prepare final mission handoff notes for review and downstream task execution | WP06 |  |
+| T031 | Prepare the pre-v1 release gate: package version, release docs, and exact tag command | WP06 |  |
 
 ## Work Packages
 
@@ -241,10 +242,13 @@ grounding remains deferred, and broader condition-pairing remains out of scope.
 - [ ] T028 Add documentation checks for deferred PubMed and condition-pairing scope (WP06)
 - [ ] T029 Run focused validation commands and record any pre-existing unrelated failures (WP06)
 - [ ] T030 Prepare final mission handoff notes for review and downstream task execution (WP06)
+- [ ] T031 Prepare the pre-v1 release gate: package version, release docs, and exact tag command (WP06)
 
-**Implementation sketch**: Update only docs and contributor-contract text needed
-to keep live references aligned with shipped behavior. Run the focused validation
-commands from quickstart and document results in the WP handoff.
+**Implementation sketch**: Update only docs, contributor-contract text, and the
+minimal package/release metadata needed to keep live references aligned with
+shipped behavior. Run the focused validation commands from quickstart, record
+results in the WP handoff, and name the exact `v0.x.0` tag command to run after
+merge. Do not cut the tag from an implementation worktree.
 
 **Parallel opportunities**: Can run after WP05 and may overlap with review of
 code WPs if docs are rebased on final public names.
@@ -272,4 +276,5 @@ contracts already exist; live docs should summarize and point to them.
 
 The smallest useful implementation slice is WP01 + WP02: it proves a new
 roadmap-named analytical tool can be added through the bounded contract without
-MCP publication. The mission is not complete until all six WPs land.
+MCP publication. The mission is not complete until all six WPs land and the
+post-merge release/tag gate is ready to execute.
