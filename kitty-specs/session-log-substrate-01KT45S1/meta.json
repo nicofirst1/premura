@@ -1,10 +1,12 @@
 {
   "created_at": "2026-06-02T12:43:45.595540+00:00",
-  "friendly_name": "session log substrate",
+  "friendly_name": "Session Log Substrate (Slice One)",
   "mission_id": "01KT45S10K9WM6X2Y2YQCTZK9S",
   "mission_number": null,
   "mission_slug": "session-log-substrate-01KT45S1",
   "mission_type": "software-dev",
   "slug": "session-log-substrate-01KT45S1",
-  "target_branch": "master"
+  "target_branch": "master",
+  "vcs": "git",
+  "source_description": "Slice one of the loggable/testable/auditable session-log substrate: a separate local session-log file, a sandbox+harness, a repeatable check and a live trial, and a deterministic grader, proven on the parser-build flow. Also carries the runtime build-and-use-now parser doctrine update. See docs/building/planning/agent-interaction-audit-substrate.md and docs/building/adr/0011-session-log-otel-shape-no-library.md."
 }
