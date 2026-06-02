@@ -168,3 +168,4 @@ spec-kitty agent action implement WP03 --agent <name>
 ## Activity Log
 
 - 2026-06-02T13:36:05Z – claude:opus:python-implementer:implementer – shell_pid=40594 – Started implementation via action command
+- 2026-06-02T13:42:07Z – claude:opus:python-implementer:implementer – shell_pid=40594 – Ready for review: sandbox (tracked-tree copy, redirected paths, guaranteed teardown) + subprocess ingest runner emitting schema-valid JSON envelope; runner never writes the session log. All gates green.
