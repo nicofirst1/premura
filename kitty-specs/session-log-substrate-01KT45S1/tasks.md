@@ -11,12 +11,12 @@ DIRECTIVE_034/036). Front-loadable (no deps): **WP01, WP02, WP04, WP08**.
 
 | ID | Description | WP | Parallel |
 | --- | --- | --- | --- |
-| T001 | session-log `schema.sql` (3 tables, own file) | WP01 | |
-| T002 | `connect()` + idempotent `init_schema()` | WP01 | |
-| T003 | `open_session` / `record_step` / `finish_session` writers | WP01 | |
-| T004 | `record_ingest_provenance` writer (two-origin + contract_pass) | WP01 | |
-| T005 | `config.session_log_path` property | WP01 | |
-| T006 | store tests (row capture, single-writer, vocab) | WP01 | |
+| T001 | session-log `schema.sql` (3 tables, own file) | WP01 | | [D] |
+| T002 | `connect()` + idempotent `init_schema()` | WP01 | | [D] |
+| T003 | `open_session` / `record_step` / `finish_session` writers | WP01 | | [D] |
+| T004 | `record_ingest_provenance` writer (two-origin + contract_pass) | WP01 | | [D] |
+| T005 | `config.session_log_path` property | WP01 | | [D] |
+| T006 | store tests (row capture, single-writer, vocab) | WP01 | | [D] |
 | T007 | `ContractCheckResult` + `check_runtime_contract` clauses 1–2 | WP02 | [P] |
 | T008 | `check_runtime_contract` clauses 3–4 | WP02 | [P] |
 | T009 | contract-check tests (each clause pass/fail) | WP02 | [P] |
@@ -57,12 +57,12 @@ query the file back, assert exact rows; assert single-writer.
 **Prompt**: [tasks/WP01-session-log-store.md](tasks/WP01-session-log-store.md) (~360 lines)
 **Dependencies**: none. **Requirements**: FR-001, FR-002, FR-003, FR-010, FR-011, FR-012, FR-013, FR-021, FR-031, FR-032, FR-070, FR-080; NFR-003, NFR-008.
 
-- [ ] T001 session-log `schema.sql` (log_session, log_step, log_ingest_provenance), own file (WP01)
-- [ ] T002 `connect()` + idempotent `init_schema()` (WP01)
-- [ ] T003 `open_session` / `record_step` / `finish_session` writers (WP01)
-- [ ] T004 `record_ingest_provenance` writer — two-origin fields + grader-only `contract_pass` (WP01)
-- [ ] T005 `config.session_log_path` property (additive) (WP01)
-- [ ] T006 store tests: row capture, single-writer, status/run_kind vocab (WP01)
+- [x] T001 session-log `schema.sql` (log_session, log_step, log_ingest_provenance), own file (WP01)
+- [x] T002 `connect()` + idempotent `init_schema()` (WP01)
+- [x] T003 `open_session` / `record_step` / `finish_session` writers (WP01)
+- [x] T004 `record_ingest_provenance` writer — two-origin fields + grader-only `contract_pass` (WP01)
+- [x] T005 `config.session_log_path` property (additive) (WP01)
+- [x] T006 store tests: row capture, single-writer, status/run_kind vocab (WP01)
 
 ### WP02 — Runtime contract checker
 
