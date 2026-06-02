@@ -12,8 +12,8 @@ subtasks:
 - T015
 - T016
 - T017
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "32127"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "37574"
 history:
 - timestamp: '2026-06-02T13:00:02Z'
   actor: tasks
@@ -156,3 +156,4 @@ spec-kitty agent action implement WP04 --agent <name>
 
 - 2026-06-02T13:28:00Z – claude:opus:python-implementer:implementer – shell_pid=32127 – Started implementation via action command
 - 2026-06-02T13:32:58Z – claude:opus:python-implementer:implementer – shell_pid=32127 – Ready for review: synthetic Fitbit-HR fixture + ground-truth manifest + good/dishonest reference parsers; all 4 self-tests + ruff check/format green
+- 2026-06-02T13:33:34Z – claude:opus:python-reviewer:reviewer – shell_pid=37574 – Started review via action command
