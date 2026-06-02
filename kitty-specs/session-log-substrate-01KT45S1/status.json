@@ -1,16 +1,16 @@
 {
-  "event_count": 59,
-  "last_event_id": "01KT4BMNQWG7K8D9R82HYRA4H3",
-  "materialized_at": "2026-06-02T14:26:13.884736+00:00",
+  "event_count": 60,
+  "last_event_id": "01KT4BMPTQP19XBRJV6YF482A1",
+  "materialized_at": "2026-06-02T14:26:14.999839+00:00",
   "mission_number": "17",
   "mission_slug": "session-log-substrate-01KT45S1",
   "mission_type": "software-dev",
   "summary": {
-    "approved": 2,
+    "approved": 1,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
-    "done": 6,
+    "done": 7,
     "for_review": 0,
     "in_progress": 0,
     "in_review": 0,
@@ -61,10 +61,10 @@
     },
     "WP07": {
       "actor": "user",
-      "force_count": 1,
-      "lane": "approved",
-      "last_event_id": "01KT4BGKY471EHT42E8ACWW62Z",
-      "last_transition_at": "2026-06-02T14:24:00.964205+00:00"
+      "force_count": 2,
+      "lane": "done",
+      "last_event_id": "01KT4BMPTQP19XBRJV6YF482A1",
+      "last_transition_at": "2026-06-02T14:26:14.999839+00:00"
     },
     "WP08": {
       "actor": "user",
