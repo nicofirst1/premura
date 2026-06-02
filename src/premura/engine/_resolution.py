@@ -33,6 +33,7 @@ Key design rules (do not relax without a new mission):
   promises one declaration surface and one resolution protocol, not one
   universal resolved payload shape.
 """
+
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -180,8 +181,7 @@ def resolve_dependency(
     domain = request.dependency.depends_on_domain
     if domain not in SEMANTIC_DOMAINS:
         raise ValueError(
-            f"unknown semantic domain {domain!r}; "
-            f"must be one of {sorted(SEMANTIC_DOMAINS)}"
+            f"unknown semantic domain {domain!r}; must be one of {sorted(SEMANTIC_DOMAINS)}"
         )
 
     fn = RESOLVERS.get(domain)

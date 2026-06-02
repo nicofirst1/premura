@@ -21,4 +21,5 @@ Future supported domains are added by:
 No filesystem scanning, no entry points, no plugin loader. Reviewers can trace
 the full set of supported domains by reading those two locations.
 """
+
 from __future__ import annotations

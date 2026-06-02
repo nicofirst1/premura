@@ -188,7 +188,7 @@ def test_bmi_success_with_declared_height_and_usable_weight(
     assert result.signal_name == "bmi"
     assert result.unit == "kg_per_m2"
     assert result.freshness_state is FreshnessState.CURRENT
-    assert result.value == pytest.approx(round(72.0 / (1.80 ** 2), 2))
+    assert result.value == pytest.approx(round(72.0 / (1.80**2), 2))
     assert any("proof consumer" in caveat.lower() for caveat in result.caveats)
 
 
@@ -197,9 +197,7 @@ def test_bmi_success_with_declared_height_and_usable_weight(
 # ---------------------------------------------------------------------------
 
 
-def test_bmi_refuses_when_declared_height_missing(
-    registered: Any, anchor_ts: datetime
-) -> None:
+def test_bmi_refuses_when_declared_height_missing(registered: Any, anchor_ts: datetime) -> None:
     """No declared standing height -> :class:`MissingInputReport`.
 
     Weight is present and fresh; BMI must still refuse because the declared
@@ -225,9 +223,7 @@ def test_bmi_refuses_when_declared_height_missing(
 # ---------------------------------------------------------------------------
 
 
-def test_bmi_refuses_when_weight_missing(
-    registered: Any, anchor_ts: datetime
-) -> None:
+def test_bmi_refuses_when_weight_missing(registered: Any, anchor_ts: datetime) -> None:
     """Declared height + no weight observation -> :class:`MissingInputReport`.
 
     The profile assertion is in place, but no weight row exists at all. The
@@ -250,9 +246,7 @@ def test_bmi_refuses_when_weight_missing(
 # ---------------------------------------------------------------------------
 
 
-def test_bmi_refuses_when_weight_stale(
-    registered: Any, anchor_ts: datetime
-) -> None:
+def test_bmi_refuses_when_weight_stale(registered: Any, anchor_ts: datetime) -> None:
     """Declared height + a 30-day-old weight (past P1W) -> stale refusal.
 
     The most-recent weight reading is outside the freshness window for the
@@ -278,9 +272,7 @@ def test_bmi_refuses_when_weight_stale(
 # ---------------------------------------------------------------------------
 
 
-def test_bmi_no_hidden_fallback_from_measured_height(
-    registered: Any, anchor_ts: datetime
-) -> None:
+def test_bmi_no_hidden_fallback_from_measured_height(registered: Any, anchor_ts: datetime) -> None:
     """A measured-height observation must not satisfy the declared dependency.
 
     A ``height`` observation row exists in the warehouse, and a fresh weight
@@ -318,9 +310,7 @@ def test_bmi_no_hidden_fallback_from_measured_height(
 # ---------------------------------------------------------------------------
 
 
-def test_bmi_refuses_when_both_missing(
-    registered: Any, anchor_ts: datetime
-) -> None:
+def test_bmi_refuses_when_both_missing(registered: Any, anchor_ts: datetime) -> None:
     """No profile, no observation -> a single combined :class:`MissingInputReport`.
 
     The caller should see both unmet prerequisites in one refusal so they can
@@ -357,9 +347,7 @@ def test_bmi_is_registered_in_engine_registry(registered: Any) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_bmi_dispatches_through_compute(
-    empty_warehouse: Any, anchor_ts: datetime
-) -> None:
+def test_bmi_dispatches_through_compute(empty_warehouse: Any, anchor_ts: datetime) -> None:
     """``compute("bmi", conn)`` returns a real :class:`StatusResult`.
 
     This is the cross-WP integration test: BMI must be reachable through the
@@ -378,7 +366,7 @@ def test_bmi_dispatches_through_compute(
 
     assert isinstance(result, StatusResult)
     assert result.metric_id == "bmi"
-    assert result.value == pytest.approx(round(72.0 / (1.80 ** 2), 2))
+    assert result.value == pytest.approx(round(72.0 / (1.80**2), 2))
 
 
 # ---------------------------------------------------------------------------
@@ -436,9 +424,7 @@ def test_bmi_uses_resolver_seam_not_direct_warehouse_reads(
 # ---------------------------------------------------------------------------
 
 
-def test_bmi_unaffected_by_unresolved_intake_domains(
-    registered: Any, anchor_ts: datetime
-) -> None:
+def test_bmi_unaffected_by_unresolved_intake_domains(registered: Any, anchor_ts: datetime) -> None:
     """Unresolved future domains do not leak into BMI's flow.
 
     Two things are proved in one targeted test:

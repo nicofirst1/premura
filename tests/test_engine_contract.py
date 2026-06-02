@@ -4,6 +4,7 @@ These lock the extension surface before signal implementation begins. They
 assert through public imports and observable behavior, not future signal
 behavior.
 """
+
 from __future__ import annotations
 
 import importlib

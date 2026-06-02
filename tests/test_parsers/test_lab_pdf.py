@@ -46,8 +46,7 @@ Transaminasi GPT | 18 | U/L | <40
     metrics = {measurement.metric_id for measurement in result.measurements}
     assert {"lab:wbc", "lab:hemoglobin", "lab:triglycerides", "lab:ast", "lab:alt"} <= metrics
     assert all(
-        measurement.ts_utc.date().isoformat() == "2026-04-12"
-        for measurement in result.measurements
+        measurement.ts_utc.date().isoformat() == "2026-04-12" for measurement in result.measurements
     )
 
 

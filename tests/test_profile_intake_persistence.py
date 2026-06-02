@@ -115,9 +115,7 @@ def test_rejected_field_writes_no_row(empty_warehouse) -> None:
         pi.record_profile_context(
             empty_warehouse, attribute_key="age", value=36, effective_start_utc=T0
         )
-    n = empty_warehouse.execute(
-        "SELECT COUNT(*) FROM hp.profile_context_assertion"
-    ).fetchone()[0]
+    n = empty_warehouse.execute("SELECT COUNT(*) FROM hp.profile_context_assertion").fetchone()[0]
     assert n == 0
 
 
@@ -226,14 +224,16 @@ def test_nutrition_event_persists_to_intake_tables_not_observation(empty_warehou
                     NutritionItemInput(
                         item_label="oats",
                         quantities=[
-                            NutritionQuantityInput(quantity_key="energy", value_num=150.0,
-                                                   unit="kcal"),
+                            NutritionQuantityInput(
+                                quantity_key="energy", value_num=150.0, unit="kcal"
+                            ),
                         ],
                     )
                 ],
                 event_quantities=[
-                    NutritionQuantityInput(quantity_key="energy", value_num=320.0, unit="kcal",
-                                           subject="event"),
+                    NutritionQuantityInput(
+                        quantity_key="energy", value_num=320.0, unit="kcal", subject="event"
+                    ),
                 ],
             )
         ],
@@ -242,19 +242,13 @@ def test_nutrition_event_persists_to_intake_tables_not_observation(empty_warehou
     assert stats.nutrition_events_inserted == 1
 
     # Lands in the nutrition tables...
-    assert empty_warehouse.execute(
-        "SELECT COUNT(*) FROM hp.nutrition_intake_event"
-    ).fetchone()[0] == 1
-    assert empty_warehouse.execute(
-        "SELECT COUNT(*) FROM hp.nutrition_quantity"
-    ).fetchone()[0] == 2
+    assert (
+        empty_warehouse.execute("SELECT COUNT(*) FROM hp.nutrition_intake_event").fetchone()[0] == 1
+    )
+    assert empty_warehouse.execute("SELECT COUNT(*) FROM hp.nutrition_quantity").fetchone()[0] == 2
     # ...and never in the observation/note homes.
-    assert empty_warehouse.execute(
-        "SELECT COUNT(*) FROM hp.fact_measurement"
-    ).fetchone()[0] == 0
-    assert empty_warehouse.execute(
-        "SELECT COUNT(*) FROM hp.fact_clinical_note"
-    ).fetchone()[0] == 0
+    assert empty_warehouse.execute("SELECT COUNT(*) FROM hp.fact_measurement").fetchone()[0] == 0
+    assert empty_warehouse.execute("SELECT COUNT(*) FROM hp.fact_clinical_note").fetchone()[0] == 0
 
 
 def test_partial_nutrition_quantity_only_event_level(empty_warehouse) -> None:
@@ -268,8 +262,9 @@ def test_partial_nutrition_quantity_only_event_level(empty_warehouse) -> None:
                 start_utc=T0,
                 dedupe_key="nut-partial",
                 event_quantities=[
-                    NutritionQuantityInput(quantity_key="energy", value_num=500.0, unit="kcal",
-                                           subject="event"),
+                    NutritionQuantityInput(
+                        quantity_key="energy", value_num=500.0, unit="kcal", subject="event"
+                    ),
                 ],
             )
         ],
@@ -299,8 +294,9 @@ def test_supplement_event_with_numeric_and_text_dose(empty_warehouse) -> None:
                         product_label="VitaCo D3",
                         form_label="capsule",
                         doses=[
-                            SupplementDoseInput(ingredient_label="vitamin_d3", amount_num=2000.0,
-                                                unit="IU"),
+                            SupplementDoseInput(
+                                ingredient_label="vitamin_d3", amount_num=2000.0, unit="IU"
+                            ),
                         ],
                     ),
                     SupplementItemInput(
@@ -313,18 +309,16 @@ def test_supplement_event_with_numeric_and_text_dose(empty_warehouse) -> None:
     )
     stats = pi.persist_intake_batch(empty_warehouse, batch)
     assert stats.supplement_events_inserted == 1
-    assert empty_warehouse.execute(
-        "SELECT COUNT(*) FROM hp.supplement_item"
-    ).fetchone()[0] == 2
+    assert empty_warehouse.execute("SELECT COUNT(*) FROM hp.supplement_item").fetchone()[0] == 2
     doses = empty_warehouse.execute(
         "SELECT amount_num, amount_text FROM hp.supplement_dose ORDER BY supplement_dose_id"
     ).fetchall()
     assert (2000.0, None) in doses
     assert (None, "one scoop") in doses
     # One-home: nothing leaked into nutrition or notes.
-    assert empty_warehouse.execute(
-        "SELECT COUNT(*) FROM hp.nutrition_intake_event"
-    ).fetchone()[0] == 0
+    assert (
+        empty_warehouse.execute("SELECT COUNT(*) FROM hp.nutrition_intake_event").fetchone()[0] == 0
+    )
 
 
 def test_supplement_item_without_product_or_ingredient_rejected(empty_warehouse) -> None:
@@ -343,9 +337,10 @@ def test_supplement_item_without_product_or_ingredient_rejected(empty_warehouse)
     with pytest.raises(ValueError):
         pi.persist_intake_batch(empty_warehouse, batch)
     # Transaction rolled back: no partial event written.
-    assert empty_warehouse.execute(
-        "SELECT COUNT(*) FROM hp.supplement_intake_event"
-    ).fetchone()[0] == 0
+    assert (
+        empty_warehouse.execute("SELECT COUNT(*) FROM hp.supplement_intake_event").fetchone()[0]
+        == 0
+    )
 
 
 def test_dose_without_any_amount_rejected(empty_warehouse) -> None:
@@ -357,8 +352,7 @@ def test_dose_without_any_amount_rejected(empty_warehouse) -> None:
                 source_kind="bmt",
                 ts_utc=T0,
                 dedupe_key="sup-bad2",
-                items=[SupplementItemInput(ingredient_label="zinc",
-                                           doses=[SupplementDoseInput()])],
+                items=[SupplementItemInput(ingredient_label="zinc", doses=[SupplementDoseInput()])],
             )
         ],
     )
@@ -391,12 +385,12 @@ def test_reloading_same_dedupe_key_is_idempotent(empty_warehouse) -> None:
     assert second.nutrition_events_inserted == 0 and second.nutrition_events_skipped_dup == 1
 
     # No duplicate rows; children not re-inserted either.
-    assert empty_warehouse.execute(
-        "SELECT COUNT(*) FROM hp.nutrition_intake_event"
-    ).fetchone()[0] == 1
-    assert empty_warehouse.execute(
-        "SELECT COUNT(*) FROM hp.nutrition_intake_item"
-    ).fetchone()[0] == 1
+    assert (
+        empty_warehouse.execute("SELECT COUNT(*) FROM hp.nutrition_intake_event").fetchone()[0] == 1
+    )
+    assert (
+        empty_warehouse.execute("SELECT COUNT(*) FROM hp.nutrition_intake_item").fetchone()[0] == 1
+    )
 
 
 def test_supplement_dedupe_is_idempotent(empty_warehouse) -> None:
@@ -422,9 +416,10 @@ def test_supplement_dedupe_is_idempotent(empty_warehouse) -> None:
     pi.persist_intake_batch(empty_warehouse, make_batch())
     second = pi.persist_intake_batch(empty_warehouse, make_batch())
     assert second.supplement_events_skipped_dup == 1
-    assert empty_warehouse.execute(
-        "SELECT COUNT(*) FROM hp.supplement_intake_event"
-    ).fetchone()[0] == 1
+    assert (
+        empty_warehouse.execute("SELECT COUNT(*) FROM hp.supplement_intake_event").fetchone()[0]
+        == 1
+    )
 
 
 def test_intake_event_upserts_dim_source(empty_warehouse) -> None:
@@ -480,19 +475,24 @@ def test_intake_event_without_a_valid_source_fk_rolls_back(empty_warehouse) -> N
     )
     # ghost gets upserted into dim_source, so this actually succeeds; assert it.
     pi.persist_intake_batch(empty_warehouse, batch)
-    assert empty_warehouse.execute(
-        "SELECT COUNT(*) FROM hp.nutrition_intake_event WHERE dedupe_key = 'nut-ghost'"
-    ).fetchone()[0] == 1
+    assert (
+        empty_warehouse.execute(
+            "SELECT COUNT(*) FROM hp.nutrition_intake_event WHERE dedupe_key = 'nut-ghost'"
+        ).fetchone()[0]
+        == 1
+    )
 
 
 def test_duplicate_dedupe_within_one_batch_is_rejected(empty_warehouse) -> None:
     batch = IntakeBatch(
         source_descriptors={"src_parser": _descriptor()},
         nutrition_events=[
-            NutritionIntakeInput(source_id="src_parser", source_kind="bmt", start_utc=T0,
-                                 dedupe_key="dup"),
-            NutritionIntakeInput(source_id="src_parser", source_kind="bmt", start_utc=T1,
-                                 dedupe_key="dup"),
+            NutritionIntakeInput(
+                source_id="src_parser", source_kind="bmt", start_utc=T0, dedupe_key="dup"
+            ),
+            NutritionIntakeInput(
+                source_id="src_parser", source_kind="bmt", start_utc=T1, dedupe_key="dup"
+            ),
         ],
     )
     with pytest.raises(ValueError, match="duplicate"):
@@ -511,8 +511,9 @@ def test_dedupe_key_unique_constraint_is_the_backstop(empty_warehouse) -> None:
         IntakeBatch(
             source_descriptors={src: _descriptor(source_id=src)},
             nutrition_events=[
-                NutritionIntakeInput(source_id=src, source_kind="bmt", start_utc=T0,
-                                     dedupe_key="raw-dup")
+                NutritionIntakeInput(
+                    source_id=src, source_kind="bmt", start_utc=T0, dedupe_key="raw-dup"
+                )
             ],
         ),
     )

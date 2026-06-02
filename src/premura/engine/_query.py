@@ -273,9 +273,7 @@ def ordered_window(
     window_start = reference - span
 
     observations = [
-        obs
-        for obs in fetch_observations(conn, policy)
-        if window_start <= obs.ts <= window_end
+        obs for obs in fetch_observations(conn, policy) if window_start <= obs.ts <= window_end
     ]
     # Latest observation per bucket (bucket keyed by integer index from start).
     by_bucket: dict[int, Observation] = {}
@@ -328,9 +326,7 @@ def ordered_window(
         else:
             gap_count += 1
 
-    latest_freshness = _window_latest_freshness(
-        observations, window=window, window_end=window_end
-    )
+    latest_freshness = _window_latest_freshness(observations, window=window, window_end=window_end)
 
     return TrendWindow(
         window_start=window_start,
@@ -376,15 +372,9 @@ def parse_iso8601_duration(value: str) -> timedelta:
     )
     if match is None or not any(match.groupdict().values()):
         raise ValueError(f"unsupported ISO-8601 duration: {value}")
-    parts = {
-        name: int(raw) if raw is not None else 0
-        for name, raw in match.groupdict().items()
-    }
+    parts = {name: int(raw) if raw is not None else 0 for name, raw in match.groupdict().items()}
     return timedelta(
-        days=(parts["years"] * 365)
-        + (parts["months"] * 30)
-        + (parts["weeks"] * 7)
-        + parts["days"],
+        days=(parts["years"] * 365) + (parts["months"] * 30) + (parts["weeks"] * 7) + parts["days"],
         seconds=(parts["hours"] * 3600) + (parts["minutes"] * 60) + parts["seconds"],
     )
 

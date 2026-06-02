@@ -27,6 +27,7 @@ Design notes
   value) a freshness state, so Stage 3 never has to guess about trust.
 * This module imports nothing from MCP and nothing from the warehouse layer.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -75,7 +76,7 @@ class ComparisonState(StrEnum):
 
 @dataclass(frozen=True)
 class StatusResult:
-    """"What is X right now?" — used by e.g. ``resting_hr_status``."""
+    """ "What is X right now?" — used by e.g. ``resting_hr_status``."""
 
     signal_name: str
     metric_id: str
@@ -128,7 +129,7 @@ class TrendPoint:
 
 @dataclass(frozen=True)
 class TrendResult:
-    """"Which way has X been going?" — used by trend signals (HR / steps / weight)."""
+    """ "Which way has X been going?" — used by trend signals (HR / steps / weight)."""
 
     signal_name: str
     metric_id: str
@@ -143,8 +144,7 @@ class TrendResult:
 
     def validate(self) -> TrendResult:
         ordered = all(
-            self.points[i].ts <= self.points[i + 1].ts
-            for i in range(len(self.points) - 1)
+            self.points[i].ts <= self.points[i + 1].ts for i in range(len(self.points) - 1)
         )
         if not ordered:
             raise ValueError("TrendResult.points must be time-ordered")
@@ -168,7 +168,7 @@ class TrendResult:
 
 @dataclass(frozen=True)
 class BaselineComparisonResult:
-    """"How does the latest X compare to my own normal?" — used by ``sleep_deep_pct_baseline``.
+    """ "How does the latest X compare to my own normal?" — used by ``sleep_deep_pct_baseline``.
 
     ``comparison_state`` describes own-baseline position ONLY, never any
     population interpretation. ``baseline_mean`` must be derived from the
@@ -193,8 +193,7 @@ class BaselineComparisonResult:
         if self.freshness_state is FreshnessState.UNAVAILABLE:
             if self.latest_value is not None:
                 raise ValueError(
-                    "BaselineComparisonResult.latest_value must be None when "
-                    "unavailable"
+                    "BaselineComparisonResult.latest_value must be None when unavailable"
                 )
         if self.comparison_state is ComparisonState.UNKNOWN:
             if self.baseline_mean is not None:
@@ -220,7 +219,7 @@ class BaselineComparisonResult:
 
 @dataclass(frozen=True)
 class ChangeAroundDateResult:
-    """"Did X change around this date?" — used by ``hrv_change_around_date``.
+    """ "Did X change around this date?" — used by ``hrv_change_around_date``.
 
     Reports before/after means around a user-supplied anchor date. Never
     includes p-values, confidence intervals, or causal interpretation; the
@@ -322,9 +321,7 @@ class MetricCatalogEntry:
     def validate(self) -> MetricCatalogEntry:
         if self.validity_status is FreshnessState.UNAVAILABLE:
             if self.latest_value is not None:
-                raise ValueError(
-                    "MetricCatalogEntry.latest_value must be None when unavailable"
-                )
+                raise ValueError("MetricCatalogEntry.latest_value must be None when unavailable")
             if self.latest_observation_at is not None:
                 raise ValueError(
                     "MetricCatalogEntry.latest_observation_at must be None when unavailable"
@@ -389,17 +386,13 @@ class MetricSummaryEntry:
     def validate(self) -> MetricSummaryEntry:
         if self.validity_status is FreshnessState.UNAVAILABLE:
             if self.latest_value is not None:
-                raise ValueError(
-                    "MetricSummaryEntry.latest_value must be None when unavailable"
-                )
+                raise ValueError("MetricSummaryEntry.latest_value must be None when unavailable")
             if self.latest_observation_at is not None:
                 raise ValueError(
                     "MetricSummaryEntry.latest_observation_at must be None when unavailable"
                 )
         if self.imputed_proportion is not None and not (0.0 <= self.imputed_proportion <= 1.0):
-            raise ValueError(
-                "MetricSummaryEntry.imputed_proportion must be in [0.0, 1.0]"
-            )
+            raise ValueError("MetricSummaryEntry.imputed_proportion must be in [0.0, 1.0]")
         return self
 
     def to_dict(self) -> dict[str, Any]:

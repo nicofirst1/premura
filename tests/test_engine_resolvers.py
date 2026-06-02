@@ -20,6 +20,7 @@ What is locked here:
 5. Resolvers register lazily — importing ``premura.engine`` does not import
    either resolver module.
 """
+
 from __future__ import annotations
 
 import sys
@@ -355,9 +356,7 @@ def test_profile_as_of_picks_the_assertion_valid_at_anchor(
     # At anchor - 45 days, assertion A was the valid row — even though
     # assertion B exists in the table and is "newer."
     earlier_anchor = anchor_ts - timedelta(days=45)
-    out_earlier = _resolve(
-        conn, _request(earlier_anchor, _profile_dep("standing_height_cm"))
-    )
+    out_earlier = _resolve(conn, _request(earlier_anchor, _profile_dep("standing_height_cm")))
     assert out_earlier.usable is True
     assert out_earlier.payload is not None
     assert out_earlier.payload["resolved_value"] == pytest.approx(170.0)
@@ -454,9 +453,7 @@ def test_observation_and_profile_domains_resolve_independently(
     )
 
     obs_out = _resolve(conn, _request(anchor_ts, _observation_dep("weight")))
-    profile_out = _resolve(
-        conn, _request(anchor_ts, _profile_dep("standing_height_cm"))
-    )
+    profile_out = _resolve(conn, _request(anchor_ts, _profile_dep("standing_height_cm")))
 
     assert obs_out.usable is True
     assert profile_out.usable is False
@@ -499,9 +496,7 @@ def test_observation_freshness_honors_anchor_ts_not_wallclock(
     # Roll the anchor back to (observed_at + 1 day); the same observation is
     # 1 day old — well within weight's P1W window.
     earlier_anchor = anchor_ts - timedelta(days=29)
-    current_out = _resolve(
-        conn, _request(earlier_anchor, _observation_dep("weight"))
-    )
+    current_out = _resolve(conn, _request(earlier_anchor, _observation_dep("weight")))
     assert current_out.usable is True
     assert current_out.payload is not None
     assert current_out.payload["freshness_state"] == _freshness().CURRENT.value

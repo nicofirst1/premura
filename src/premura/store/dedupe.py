@@ -270,9 +270,7 @@ def _plan_frame(
         ).arrow()
         table = reader.read_all()
         survivors = (
-            frame.clear()
-            if table.num_rows == 0
-            else cast(pl.DataFrame, pl.from_arrow(table))
+            frame.clear() if table.num_rows == 0 else cast(pl.DataFrame, pl.from_arrow(table))
         )
         return survivors, {
             "native_duplicate": native_duplicate,

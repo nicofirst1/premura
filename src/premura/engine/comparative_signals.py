@@ -322,10 +322,7 @@ def _compute_change_around_date(
             after.append(obs.value)
         # Observations on the anchor day itself belong to neither window.
 
-    sufficient = (
-        len(before) >= _MIN_CHANGE_OBSERVATIONS
-        and len(after) >= _MIN_CHANGE_OBSERVATIONS
-    )
+    sufficient = len(before) >= _MIN_CHANGE_OBSERVATIONS and len(after) >= _MIN_CHANGE_OBSERVATIONS
     if not sufficient:
         return _ChangeComputation(
             before_count=len(before),
@@ -400,11 +397,7 @@ def _change_around_date(
             ],
         ).validate()
 
-    resolved_anchor = (
-        anchor_date
-        if anchor_date is not None
-        else _default_anchor_date(conn, policy)
-    )
+    resolved_anchor = anchor_date if anchor_date is not None else _default_anchor_date(conn, policy)
 
     computed = _compute_change_around_date(
         conn, policy, anchor_date=resolved_anchor, span=_CHANGE_SPAN
@@ -489,13 +482,10 @@ def register_builtin_signals() -> None:
             auto_safe=False,
             revision="1",
             fn=sleep_deep_pct_baseline,
-            question=(
-                "Is my latest deep-sleep percentage below my own recent normal?"
-            ),
+            question=("Is my latest deep-sleep percentage below my own recent normal?"),
             family="baseline",
             missing_input_hint=(
-                "Connect a wearable that records nightly sleep stages to "
-                "answer this."
+                "Connect a wearable that records nightly sleep stages to answer this."
             ),
             caveat_summary=(
                 "Deep-sleep percentage is a device estimate compared only "
@@ -516,8 +506,7 @@ def register_builtin_signals() -> None:
             question="Did my overnight HRV shift after a date I name?",
             family="change",
             missing_input_hint=(
-                "Connect a wearable that records overnight HRV (rMSSD) to "
-                "answer this."
+                "Connect a wearable that records overnight HRV (rMSSD) to answer this."
             ),
             caveat_summary=(
                 "A plain before/after average of your own overnight HRV — not a "

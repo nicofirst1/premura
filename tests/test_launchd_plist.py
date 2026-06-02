@@ -1,4 +1,5 @@
 """FR-8: launchd plist renders + parses as a valid Apple plist."""
+
 from __future__ import annotations
 
 import importlib.resources as resources
@@ -13,9 +14,7 @@ from jinja2 import Template
 
 
 def _render(**overrides: str) -> str:
-    template_text = (
-        resources.files("premura.ops").joinpath("launchd.plist.j2").read_text()
-    )
+    template_text = resources.files("premura.ops").joinpath("launchd.plist.j2").read_text()
     ctx = {
         "label": "com.example.premura.monthly",
         "program_args": ["/opt/homebrew/bin/uv", "run", "hpipe", "run-monthly"],

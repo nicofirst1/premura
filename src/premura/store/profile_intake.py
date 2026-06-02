@@ -388,8 +388,13 @@ def _persist_nutrition_event(
                 (nutrition_event_id, quantity_key, value_num, unit, raw_payload)
             VALUES (?, ?, ?, ?, ?)
             """,
-            [event_id, quantity.quantity_key, quantity.value_num, quantity.unit,
-             _dumps(quantity.raw_payload)],
+            [
+                event_id,
+                quantity.quantity_key,
+                quantity.value_num,
+                quantity.unit,
+                _dumps(quantity.raw_payload),
+            ],
         )
 
     for item in event.items:
@@ -400,8 +405,13 @@ def _persist_nutrition_event(
             VALUES (?, ?, ?, ?, ?)
             RETURNING nutrition_item_id
             """,
-            [event_id, item.item_label, item.brand_label, item.serving_text,
-             _dumps(item.raw_payload)],
+            [
+                event_id,
+                item.item_label,
+                item.brand_label,
+                item.serving_text,
+                _dumps(item.raw_payload),
+            ],
         ).fetchone()
         assert item_row is not None
         item_id = int(item_row[0])
@@ -412,8 +422,13 @@ def _persist_nutrition_event(
                     (nutrition_item_id, quantity_key, value_num, unit, raw_payload)
                 VALUES (?, ?, ?, ?, ?)
                 """,
-                [item_id, quantity.quantity_key, quantity.value_num, quantity.unit,
-                 _dumps(quantity.raw_payload)],
+                [
+                    item_id,
+                    quantity.quantity_key,
+                    quantity.value_num,
+                    quantity.unit,
+                    _dumps(quantity.raw_payload),
+                ],
             )
     return True
 
@@ -456,8 +471,13 @@ def _persist_supplement_event(
             VALUES (?, ?, ?, ?, ?)
             RETURNING supplement_item_id
             """,
-            [event_id, item.product_label, item.ingredient_label, item.form_label,
-             _dumps(item.raw_payload)],
+            [
+                event_id,
+                item.product_label,
+                item.ingredient_label,
+                item.form_label,
+                _dumps(item.raw_payload),
+            ],
         ).fetchone()
         assert item_row is not None
         item_id = int(item_row[0])
@@ -469,8 +489,14 @@ def _persist_supplement_event(
                      raw_payload)
                 VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                [item_id, dose.ingredient_label, dose.amount_num, dose.amount_text, dose.unit,
-                 _dumps(dose.raw_payload)],
+                [
+                    item_id,
+                    dose.ingredient_label,
+                    dose.amount_num,
+                    dose.amount_text,
+                    dose.unit,
+                    _dumps(dose.raw_payload),
+                ],
             )
     return True
 

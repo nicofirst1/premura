@@ -13,6 +13,7 @@ authoritative interpretation of ``validity_window`` and
 :class:`ResolvedInput`; the resolver never raises for ordinary missing-data
 conditions.
 """
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -70,13 +71,10 @@ def resolve_observation(
     metric_id = request.dependency.required_key
     if not isinstance(metric_id, str) or not metric_id:
         raise ValueError(
-            f"observation_history required_key must be a non-empty metric_id; "
-            f"got {metric_id!r}"
+            f"observation_history required_key must be a non-empty metric_id; got {metric_id!r}"
         )
     if conn is None:
-        raise ValueError(
-            "observation_history resolver requires a DuckDB connection; got None"
-        )
+        raise ValueError("observation_history resolver requires a DuckDB connection; got None")
 
     anchor = request.anchor_ts
     anchor_naive = _to_naive_utc(anchor)

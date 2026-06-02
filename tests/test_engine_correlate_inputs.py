@@ -311,9 +311,7 @@ def test_invalid_lag_refuses_via_envelope_not_exception() -> None:
     right = _series(RIGHT_METRIC, RIGHT_FAMILY, _daily_points(25))
     # A >14 lag is an unsupported parameter: it must come back as a structured
     # refusal envelope, not an ad-hoc raised exception.
-    paired = prepare_paired_input(
-        left, right, _hypothesis(lag_days=20, lag_justification="x")
-    )
+    paired = prepare_paired_input(left, right, _hypothesis(lag_days=20, lag_justification="x"))
     assert not paired.is_usable
     assert paired.refusal is not None
     assert paired.refusal.reason == PairedInputRefusalReason.INVALID_LAG.value

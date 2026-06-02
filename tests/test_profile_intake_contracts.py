@@ -176,8 +176,7 @@ def test_no_catch_all_home_anywhere(entities, examples) -> None:
     """A context/misc/metadata bucket would silently absorb the undecided."""
     declared = set(entities["canonical_homes"]) | set(examples["canonical_homes"])
     assert declared.isdisjoint(FORBIDDEN_HOME_TOKENS), (
-        f"forbidden catch-all home present in canonical_homes: "
-        f"{declared & FORBIDDEN_HOME_TOKENS}"
+        f"forbidden catch-all home present in canonical_homes: {declared & FORBIDDEN_HOME_TOKENS}"
     )
 
 
@@ -200,8 +199,7 @@ def test_artifacts_share_one_vocabulary_for_homes_entities_and_keys(
     structured_entity_names = {
         e["name"]
         for e in entities["entities"]
-        if e.get("domain") in in_contract_domains
-        or e.get("also_used_by") in in_contract_domains
+        if e.get("domain") in in_contract_domains or e.get("also_used_by") in in_contract_domains
     }
     example_entities = {ex["entity"] for ex in examples["examples"]}
     # IntakeEvent/IntakeItem are backbone entities; examples reference the
@@ -466,14 +464,11 @@ def test_rules_explicitly_reject_opportunistic_fallback(dependencies) -> None:
     ]
     assert forbidden_texts, "no 'forbidden' rule present in dependency contract"
     assert any(
-        "opportunistic" in t or ("observation" in t and "substitute" in t)
-        for t in forbidden_texts
+        "opportunistic" in t or ("observation" in t and "substitute" in t) for t in forbidden_texts
     ), "no rule forbids opportunistic/observation-history reuse as a substitute for declaration"
 
     # The matching invariant must also exist so reviewers can gate on it.
-    inv_present = any(
-        "opportunistic" in str(r).lower() for r in _flatten_strings(rules)
-    )
+    inv_present = any("opportunistic" in str(r).lower() for r in _flatten_strings(rules))
     assert inv_present
 
 

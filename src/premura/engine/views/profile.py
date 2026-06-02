@@ -13,6 +13,7 @@ Key guarantees encoded here:
   dependency whose attribute key has no matching assertion returns ``missing``,
   even when a same-name observation row happens to exist.
 """
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -99,13 +100,10 @@ def resolve_profile(
     attribute_key = request.dependency.required_key
     if not isinstance(attribute_key, str) or not attribute_key:
         raise ValueError(
-            f"profile_context required_key must be a non-empty attribute_key; "
-            f"got {attribute_key!r}"
+            f"profile_context required_key must be a non-empty attribute_key; got {attribute_key!r}"
         )
     if conn is None:
-        raise ValueError(
-            "profile_context resolver requires a DuckDB connection; got None"
-        )
+        raise ValueError("profile_context resolver requires a DuckDB connection; got None")
 
     anchor = request.anchor_ts
     anchor_naive = _to_naive_utc(anchor)

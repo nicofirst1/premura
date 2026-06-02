@@ -184,7 +184,7 @@ def _measurement_from_row(
     metric_id: str,
     source_id: str,
     collection_dt: datetime,
-    ) -> tuple[Measurement | None, _RowIssue | None]:
+) -> tuple[Measurement | None, _RowIssue | None]:
     definition = metric_definition(metric_id)
     if definition is None:
         return None, _RowIssue("missing_metric_definition", f"missing ontology row: {metric_id}")

@@ -80,8 +80,9 @@ def test_valid_nutrition_input_passes_validation() -> None:
         items=[
             NutritionItemInput(
                 item_label="apple",
-                quantities=[NutritionQuantityInput(quantity_key="energy", value_num=95.0,
-                                                    unit="kcal")],
+                quantities=[
+                    NutritionQuantityInput(quantity_key="energy", value_num=95.0, unit="kcal")
+                ],
             )
         ],
     )
@@ -96,7 +97,10 @@ def test_nutrition_event_requires_dedupe_key() -> None:
 
 def test_nutrition_event_rejects_end_before_start() -> None:
     event = NutritionIntakeInput(
-        source_id="s", source_kind="v", start_utc=T0, dedupe_key="k",
+        source_id="s",
+        source_kind="v",
+        start_utc=T0,
+        dedupe_key="k",
         end_utc=datetime(2025, 1, 1),
     )
     with pytest.raises(ValueError, match="end_utc"):
@@ -110,9 +114,13 @@ def test_quantity_subject_must_be_event_or_item() -> None:
 
 def test_event_level_quantity_must_declare_event_subject() -> None:
     event = NutritionIntakeInput(
-        source_id="s", source_kind="v", start_utc=T0, dedupe_key="k",
-        event_quantities=[NutritionQuantityInput(quantity_key="energy", value_num=1.0,
-                                                  subject="item")],
+        source_id="s",
+        source_kind="v",
+        start_utc=T0,
+        dedupe_key="k",
+        event_quantities=[
+            NutritionQuantityInput(quantity_key="energy", value_num=1.0, subject="item")
+        ],
     )
     with pytest.raises(ValueError, match="event"):
         event.validate()
@@ -135,8 +143,7 @@ def test_supplement_dose_text_only_is_valid() -> None:
 
 def test_supplement_input_requires_provenance() -> None:
     with pytest.raises(ValueError):
-        SupplementIntakeInput(source_id="", source_kind="v", ts_utc=T0,
-                              dedupe_key="k").validate()
+        SupplementIntakeInput(source_id="", source_kind="v", ts_utc=T0, dedupe_key="k").validate()
 
 
 # --------------------------------------------------------------------------- #
@@ -170,7 +177,10 @@ def test_intake_batch_propagates_child_validation() -> None:
         source_descriptors={"s": SourceDescriptor(source_id="s", source_kind="v")},
         supplement_events=[
             SupplementIntakeInput(
-                source_id="s", source_kind="v", ts_utc=T0, dedupe_key="k",
+                source_id="s",
+                source_kind="v",
+                ts_utc=T0,
+                dedupe_key="k",
                 items=[SupplementItemInput(product_label="p", doses=[SupplementDoseInput()])],
             )
         ],
@@ -187,7 +197,10 @@ def test_valid_mixed_intake_batch_passes() -> None:
         ],
         supplement_events=[
             SupplementIntakeInput(
-                source_id="s", source_kind="v", ts_utc=T0, dedupe_key="s1",
+                source_id="s",
+                source_kind="v",
+                ts_utc=T0,
+                dedupe_key="s1",
                 items=[
                     SupplementItemInput(
                         ingredient_label="zinc",

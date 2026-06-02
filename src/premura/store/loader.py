@@ -212,6 +212,8 @@ def _persist_clinical_notes(
         [batch_id],
     ).fetchone()
     return int(row[0]) if row else 0
+
+
 __all__ = [
     "LoadStats",
     "already_ingested",

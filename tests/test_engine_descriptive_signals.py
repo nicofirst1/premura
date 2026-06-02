@@ -98,8 +98,13 @@ def test_resting_hr_status_current(registered) -> None:
     src = _ensure_source(conn)
     now = _now_naive()
     _add_measurement(
-        conn, metric_id="resting_hr", ts=now - timedelta(hours=2), value=54.0,
-        unit="bpm", source_id=src, key="rhr-fresh",
+        conn,
+        metric_id="resting_hr",
+        ts=now - timedelta(hours=2),
+        value=54.0,
+        unit="bpm",
+        source_id=src,
+        key="rhr-fresh",
     )
     out = engine.compute("resting_hr_status", conn).to_dict()
     assert out["freshness_state"] == FreshnessState.CURRENT.value
@@ -115,8 +120,13 @@ def test_resting_hr_status_stale_not_presented_as_current(registered) -> None:
     now = _now_naive()
     # resting_hr validity_window is P1D; 5 days old is stale.
     _add_measurement(
-        conn, metric_id="resting_hr", ts=now - timedelta(days=5), value=60.0,
-        unit="bpm", source_id=src, key="rhr-stale",
+        conn,
+        metric_id="resting_hr",
+        ts=now - timedelta(days=5),
+        value=60.0,
+        unit="bpm",
+        source_id=src,
+        key="rhr-stale",
     )
     out = engine.compute("resting_hr_status", conn).to_dict()
     assert out["freshness_state"] == FreshnessState.STALE.value
@@ -145,8 +155,13 @@ def test_resting_hr_trend_clear_direction(registered) -> None:
     for i in range(14):
         ts = now - timedelta(days=13 - i)
         _add_measurement(
-            conn, metric_id="resting_hr", ts=ts, value=50.0 + i,
-            unit="bpm", source_id=src, key=f"rhr-{i}",
+            conn,
+            metric_id="resting_hr",
+            ts=ts,
+            value=50.0 + i,
+            unit="bpm",
+            source_id=src,
+            key=f"rhr-{i}",
         )
     out = engine.compute("resting_hr_trend", conn).to_dict()
     assert out["family"] == "trend"
@@ -167,12 +182,22 @@ def test_resting_hr_trend_sparse_shows_carried_forward(registered) -> None:
     # Two readings a few days apart; LOCF fills the gap within the P1D window
     # only one day forward, so we still expect visible carried-forward + gaps.
     _add_measurement(
-        conn, metric_id="resting_hr", ts=now - timedelta(days=10), value=55.0,
-        unit="bpm", source_id=src, key="rhr-a",
+        conn,
+        metric_id="resting_hr",
+        ts=now - timedelta(days=10),
+        value=55.0,
+        unit="bpm",
+        source_id=src,
+        key="rhr-a",
     )
     _add_measurement(
-        conn, metric_id="resting_hr", ts=now - timedelta(days=1), value=56.0,
-        unit="bpm", source_id=src, key="rhr-b",
+        conn,
+        metric_id="resting_hr",
+        ts=now - timedelta(days=1),
+        value=56.0,
+        unit="bpm",
+        source_id=src,
+        key="rhr-b",
     )
     out = engine.compute("resting_hr_trend", conn).to_dict()
     # Only two observed points -> not enough to claim a direction.
@@ -190,8 +215,13 @@ def test_resting_hr_trend_insufficient_data(registered) -> None:
     src = _ensure_source(conn)
     now = _now_naive()
     _add_measurement(
-        conn, metric_id="resting_hr", ts=now - timedelta(days=1), value=58.0,
-        unit="bpm", source_id=src, key="rhr-only",
+        conn,
+        metric_id="resting_hr",
+        ts=now - timedelta(days=1),
+        value=58.0,
+        unit="bpm",
+        source_id=src,
+        key="rhr-only",
     )
     out = engine.compute("resting_hr_trend", conn).to_dict()
     assert out["trend_direction"] == TrendDirection.UNKNOWN.value
@@ -211,8 +241,13 @@ def test_steps_trend_gaps_stay_gaps(registered) -> None:
         end = now - timedelta(days=days_ago)
         start = end - timedelta(hours=23)
         _add_interval(
-            conn, metric_id="steps", start=start, end=end, value=8000.0 + i * 10,
-            source_id=src, key=f"steps-{i}",
+            conn,
+            metric_id="steps",
+            start=start,
+            end=end,
+            value=8000.0 + i * 10,
+            source_id=src,
+            key=f"steps-{i}",
         )
     out = engine.compute("steps_trend", conn).to_dict()
     assert out["family"] == "trend"
@@ -242,16 +277,31 @@ def test_weight_trend_carried_forward_flagged(registered) -> None:
     # Weekly-ish weigh-ins; weight validity_window is P1W, so in-between days
     # carry forward and are flagged. Trend down 80 -> 78.
     _add_measurement(
-        conn, metric_id="weight", ts=now - timedelta(days=14), value=80.0,
-        unit="kg", source_id=src, key="wt-a",
+        conn,
+        metric_id="weight",
+        ts=now - timedelta(days=14),
+        value=80.0,
+        unit="kg",
+        source_id=src,
+        key="wt-a",
     )
     _add_measurement(
-        conn, metric_id="weight", ts=now - timedelta(days=7), value=79.0,
-        unit="kg", source_id=src, key="wt-b",
+        conn,
+        metric_id="weight",
+        ts=now - timedelta(days=7),
+        value=79.0,
+        unit="kg",
+        source_id=src,
+        key="wt-b",
     )
     _add_measurement(
-        conn, metric_id="weight", ts=now - timedelta(days=1), value=78.0,
-        unit="kg", source_id=src, key="wt-c",
+        conn,
+        metric_id="weight",
+        ts=now - timedelta(days=1),
+        value=78.0,
+        unit="kg",
+        source_id=src,
+        key="wt-c",
     )
     out = engine.compute("weight_trend", conn).to_dict()
     assert out["family"] == "trend"
@@ -270,8 +320,13 @@ def test_weight_trend_stale_not_misreported_as_current(registered) -> None:
     # Single weigh-in well outside the P1W window -> latest point is stale and
     # must NOT be carried forward across the whole window as if current.
     _add_measurement(
-        conn, metric_id="weight", ts=now - timedelta(days=20), value=82.0,
-        unit="kg", source_id=src, key="wt-stale",
+        conn,
+        metric_id="weight",
+        ts=now - timedelta(days=20),
+        value=82.0,
+        unit="kg",
+        source_id=src,
+        key="wt-stale",
     )
     out = engine.compute("weight_trend", conn).to_dict()
     assert out["current_freshness_state"] == FreshnessState.STALE.value

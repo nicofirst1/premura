@@ -9,6 +9,7 @@ The tests do NOT import :mod:`premura.engine._resolution`,
 :mod:`premura.engine._registry`, or any ``premura.engine.views.*`` private
 module directly — that is the whole point of the seam.
 """
+
 from __future__ import annotations
 
 from collections.abc import Iterator

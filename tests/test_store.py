@@ -1,4 +1,5 @@
 """Schema + dim_metric seed sanity."""
+
 from __future__ import annotations
 
 
@@ -41,6 +42,7 @@ def test_dim_metric_seeded(empty_warehouse):
 
 def test_seed_is_idempotent(empty_warehouse):
     from premura.store import duck
+
     before = empty_warehouse.execute("SELECT COUNT(*) FROM hp.dim_metric").fetchone()[0]
     duck.seed_dim_metric(empty_warehouse)
     after = empty_warehouse.execute("SELECT COUNT(*) FROM hp.dim_metric").fetchone()[0]

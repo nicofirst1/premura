@@ -93,12 +93,22 @@ def test_sleep_deep_pct_baseline_below_own_normal(registered) -> None:
     for i in range(8):
         ts = now - timedelta(days=8 - i)
         _add_measurement(
-            conn, metric_id="sleep_deep_pct", ts=ts, value=20.0,
-            unit="pct", source_id=src, key=f"deep-{i}",
+            conn,
+            metric_id="sleep_deep_pct",
+            ts=ts,
+            value=20.0,
+            unit="pct",
+            source_id=src,
+            key=f"deep-{i}",
         )
     _add_measurement(
-        conn, metric_id="sleep_deep_pct", ts=now - timedelta(hours=6), value=12.0,
-        unit="pct", source_id=src, key="deep-latest",
+        conn,
+        metric_id="sleep_deep_pct",
+        ts=now - timedelta(hours=6),
+        value=12.0,
+        unit="pct",
+        source_id=src,
+        key="deep-latest",
     )
     # Happy path: the public function returns a result that validates cleanly
     # with real numeric values present (state not unknown/unavailable).
@@ -114,9 +124,7 @@ def test_sleep_deep_pct_baseline_below_own_normal(registered) -> None:
     assert out["freshness_state"] == FreshnessState.CURRENT.value
     # Caveat must frame this as a device estimate vs the user's OWN normal, and
     # must not imply a medical threshold.
-    assert any(
-        "device" in c.lower() and "own recent" in c.lower() for c in out["caveats"]
-    )
+    assert any("device" in c.lower() and "own recent" in c.lower() for c in out["caveats"])
     assert any("not a clinical" in c.lower() for c in out["caveats"])
 
 
@@ -127,13 +135,23 @@ def test_sleep_deep_pct_baseline_within_own_normal(registered) -> None:
     for i in range(8):
         ts = now - timedelta(days=8 - i)
         _add_measurement(
-            conn, metric_id="sleep_deep_pct", ts=ts, value=20.0,
-            unit="pct", source_id=src, key=f"deep-{i}",
+            conn,
+            metric_id="sleep_deep_pct",
+            ts=ts,
+            value=20.0,
+            unit="pct",
+            source_id=src,
+            key=f"deep-{i}",
         )
     # Latest within the relative deadband of the baseline mean.
     _add_measurement(
-        conn, metric_id="sleep_deep_pct", ts=now - timedelta(hours=6), value=20.5,
-        unit="pct", source_id=src, key="deep-latest",
+        conn,
+        metric_id="sleep_deep_pct",
+        ts=now - timedelta(hours=6),
+        value=20.5,
+        unit="pct",
+        source_id=src,
+        key="deep-latest",
     )
     out = engine.compute("sleep_deep_pct_baseline", conn).to_dict()
     assert out["comparison_state"] == ComparisonState.WITHIN.value
@@ -148,12 +166,22 @@ def test_sleep_deep_pct_baseline_insufficient_prior_nights(registered) -> None:
     now = _now_naive()
     # Only one prior night + the latest: too few to describe a baseline.
     _add_measurement(
-        conn, metric_id="sleep_deep_pct", ts=now - timedelta(days=2), value=18.0,
-        unit="pct", source_id=src, key="deep-prior",
+        conn,
+        metric_id="sleep_deep_pct",
+        ts=now - timedelta(days=2),
+        value=18.0,
+        unit="pct",
+        source_id=src,
+        key="deep-prior",
     )
     _add_measurement(
-        conn, metric_id="sleep_deep_pct", ts=now - timedelta(hours=6), value=12.0,
-        unit="pct", source_id=src, key="deep-latest",
+        conn,
+        metric_id="sleep_deep_pct",
+        ts=now - timedelta(hours=6),
+        value=12.0,
+        unit="pct",
+        source_id=src,
+        key="deep-latest",
     )
     out = engine.compute("sleep_deep_pct_baseline", conn).to_dict()
     assert out["comparison_state"] == ComparisonState.UNKNOWN.value
@@ -188,15 +216,23 @@ def test_hrv_change_around_date_sufficient(registered) -> None:
     # Five nights before the anchor around 50ms, five after around 40ms.
     for i in range(5):
         _add_measurement(
-            conn, metric_id="hrv_rmssd_overnight",
-            ts=anchor_dt - timedelta(days=i + 1), value=50.0,
-            unit="ms", source_id=src, key=f"hrv-before-{i}",
+            conn,
+            metric_id="hrv_rmssd_overnight",
+            ts=anchor_dt - timedelta(days=i + 1),
+            value=50.0,
+            unit="ms",
+            source_id=src,
+            key=f"hrv-before-{i}",
         )
     for i in range(5):
         _add_measurement(
-            conn, metric_id="hrv_rmssd_overnight",
-            ts=anchor_dt + timedelta(days=i + 1), value=40.0,
-            unit="ms", source_id=src, key=f"hrv-after-{i}",
+            conn,
+            metric_id="hrv_rmssd_overnight",
+            ts=anchor_dt + timedelta(days=i + 1),
+            value=40.0,
+            unit="ms",
+            source_id=src,
+            key=f"hrv-after-{i}",
         )
     out = comparative_signals.hrv_change_around_date(conn, anchor).to_dict()
     assert out["family"] == "change"
@@ -230,14 +266,22 @@ def test_hrv_change_around_date_insufficient(registered) -> None:
     # Plenty before, but only one reading after -> not enough to answer.
     for i in range(5):
         _add_measurement(
-            conn, metric_id="hrv_rmssd_overnight",
-            ts=anchor_dt - timedelta(days=i + 1), value=50.0,
-            unit="ms", source_id=src, key=f"hrv-before-{i}",
+            conn,
+            metric_id="hrv_rmssd_overnight",
+            ts=anchor_dt - timedelta(days=i + 1),
+            value=50.0,
+            unit="ms",
+            source_id=src,
+            key=f"hrv-before-{i}",
         )
     _add_measurement(
-        conn, metric_id="hrv_rmssd_overnight",
-        ts=anchor_dt + timedelta(days=1), value=42.0,
-        unit="ms", source_id=src, key="hrv-after-only",
+        conn,
+        metric_id="hrv_rmssd_overnight",
+        ts=anchor_dt + timedelta(days=1),
+        value=42.0,
+        unit="ms",
+        source_id=src,
+        key="hrv-after-only",
     )
     out = comparative_signals.hrv_change_around_date(conn, anchor).to_dict()
     assert out["sufficient_data"] is False
@@ -250,9 +294,7 @@ def test_hrv_change_around_date_insufficient(registered) -> None:
 
 
 def test_hrv_change_around_date_no_data(registered) -> None:
-    out = comparative_signals.hrv_change_around_date(
-        registered, date(2026, 3, 15)
-    ).to_dict()
+    out = comparative_signals.hrv_change_around_date(registered, date(2026, 3, 15)).to_dict()
     assert out["sufficient_data"] is False
     assert out["before_count"] == 0
     assert out["after_count"] == 0
@@ -266,9 +308,13 @@ def test_hrv_change_around_date_default_anchor_via_compute(registered) -> None:
     # A continuous span so the midpoint fallback anchor lands inside the data.
     for i in range(30):
         _add_measurement(
-            conn, metric_id="hrv_rmssd_overnight",
-            ts=base + timedelta(days=i), value=45.0 + (i % 3),
-            unit="ms", source_id=src, key=f"hrv-{i}",
+            conn,
+            metric_id="hrv_rmssd_overnight",
+            ts=base + timedelta(days=i),
+            value=45.0 + (i % 3),
+            unit="ms",
+            source_id=src,
+            key=f"hrv-{i}",
         )
     # Resolves through compute (no anchor channel) and returns a valid envelope.
     out = engine.compute("hrv_change_around_date", conn).to_dict()
@@ -285,12 +331,22 @@ def test_both_signals_always_carry_caveats(registered) -> None:
     now = _now_naive()
     for i in range(8):
         _add_measurement(
-            conn, metric_id="sleep_deep_pct", ts=now - timedelta(days=8 - i),
-            value=20.0, unit="pct", source_id=src, key=f"deep-{i}",
+            conn,
+            metric_id="sleep_deep_pct",
+            ts=now - timedelta(days=8 - i),
+            value=20.0,
+            unit="pct",
+            source_id=src,
+            key=f"deep-{i}",
         )
     _add_measurement(
-        conn, metric_id="sleep_deep_pct", ts=now - timedelta(hours=6), value=12.0,
-        unit="pct", source_id=src, key="deep-latest",
+        conn,
+        metric_id="sleep_deep_pct",
+        ts=now - timedelta(hours=6),
+        value=12.0,
+        unit="pct",
+        source_id=src,
+        key="deep-latest",
     )
     baseline = engine.compute("sleep_deep_pct_baseline", conn).to_dict()
     assert baseline["caveats"], "baseline result must always carry caveats"
@@ -299,14 +355,22 @@ def test_both_signals_always_carry_caveats(registered) -> None:
     anchor_dt = datetime(2026, 3, 15, 12, 0, 0)
     for i in range(5):
         _add_measurement(
-            conn, metric_id="hrv_rmssd_overnight",
-            ts=anchor_dt - timedelta(days=i + 1), value=50.0,
-            unit="ms", source_id=src, key=f"hrv-before-{i}",
+            conn,
+            metric_id="hrv_rmssd_overnight",
+            ts=anchor_dt - timedelta(days=i + 1),
+            value=50.0,
+            unit="ms",
+            source_id=src,
+            key=f"hrv-before-{i}",
         )
         _add_measurement(
-            conn, metric_id="hrv_rmssd_overnight",
-            ts=anchor_dt + timedelta(days=i + 1), value=40.0,
-            unit="ms", source_id=src, key=f"hrv-after-{i}",
+            conn,
+            metric_id="hrv_rmssd_overnight",
+            ts=anchor_dt + timedelta(days=i + 1),
+            value=40.0,
+            unit="ms",
+            source_id=src,
+            key=f"hrv-after-{i}",
         )
     change = comparative_signals.hrv_change_around_date(conn, anchor).to_dict()
     assert change["caveats"], "change result must always carry caveats"

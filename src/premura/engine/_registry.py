@@ -10,6 +10,7 @@ the signal registry shape so contributors learn one extension pattern, but the
 two registries are independent: signals answer Stage 2 questions, resolvers
 turn declared dependencies into resolved inputs for those answers.
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -219,9 +220,7 @@ def resolver(*, domain: str) -> Callable[[Resolver], Resolver]:
     from ._resolution import SEMANTIC_DOMAINS
 
     if domain not in SEMANTIC_DOMAINS:
-        raise ValueError(
-            f"resolver domain {domain!r} must be one of {sorted(SEMANTIC_DOMAINS)}"
-        )
+        raise ValueError(f"resolver domain {domain!r} must be one of {sorted(SEMANTIC_DOMAINS)}")
 
     def deco(fn: Resolver) -> Resolver:
         RESOLVERS[domain] = fn

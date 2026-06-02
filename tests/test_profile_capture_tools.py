@@ -65,9 +65,7 @@ def test_supported_fields_publishes_bounded_allowlist() -> None:
 def test_record_birth_date_stores_and_reads_back(tmp_path: Path) -> None:
     db_path = _warehouse(tmp_path)
 
-    result = server.record_profile_context(
-        "birth_date", "1990-04-15", warehouse_path=db_path
-    )
+    result = server.record_profile_context("birth_date", "1990-04-15", warehouse_path=db_path)
 
     assert result["status"] == "recorded"
     assert result["attribute_key"] == "birth_date"
@@ -101,9 +99,7 @@ def test_record_sex_enum(tmp_path: Path) -> None:
 def test_record_standing_height_quantity(tmp_path: Path) -> None:
     db_path = _warehouse(tmp_path)
 
-    result = server.record_profile_context(
-        "standing_height_cm", 178.5, warehouse_path=db_path
-    )
+    result = server.record_profile_context("standing_height_cm", 178.5, warehouse_path=db_path)
 
     assert result["status"] == "recorded"
     assert result["value_kind"] == "quantity"
@@ -136,9 +132,7 @@ def test_record_age_is_rejected_explicitly(tmp_path: Path) -> None:
 def test_record_unknown_key_is_rejected(tmp_path: Path) -> None:
     db_path = _warehouse(tmp_path)
 
-    result = server.record_profile_context(
-        "favorite_color", "blue", warehouse_path=db_path
-    )
+    result = server.record_profile_context("favorite_color", "blue", warehouse_path=db_path)
 
     assert result["status"] == "rejected"
     assert "not in the bounded allowlist" in result["reason"]
@@ -148,9 +142,7 @@ def test_record_wrong_typed_value_is_rejected(tmp_path: Path) -> None:
     db_path = _warehouse(tmp_path)
 
     # birth_date expects a date; a non-date string is a visible rejection.
-    result = server.record_profile_context(
-        "birth_date", "not-a-date", warehouse_path=db_path
-    )
+    result = server.record_profile_context("birth_date", "not-a-date", warehouse_path=db_path)
 
     assert result["status"] == "rejected"
     # And nothing landed.
@@ -175,12 +167,8 @@ def test_record_disallowed_enum_value_is_rejected(tmp_path: Path) -> None:
 def test_re_record_supersedes_prior_assertion(tmp_path: Path) -> None:
     db_path = _warehouse(tmp_path)
 
-    first = server.record_profile_context(
-        "standing_height_cm", 178.0, warehouse_path=db_path
-    )
-    second = server.record_profile_context(
-        "standing_height_cm", 179.0, warehouse_path=db_path
-    )
+    first = server.record_profile_context("standing_height_cm", 178.0, warehouse_path=db_path)
+    second = server.record_profile_context("standing_height_cm", 179.0, warehouse_path=db_path)
 
     assert first["superseded_assertion_id"] is None
     # The second write closes the first and links back to it.

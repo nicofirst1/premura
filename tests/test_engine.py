@@ -257,6 +257,7 @@ def test_parse_iso8601_duration_rejects_fractional_formats() -> None:
 # T004 — Stage 2 catalog and summary helper semantics
 # ---------------------------------------------------------------------------
 
+
 def _insert_source(conn, source_id: str, source_kind: str = "lab_pdf") -> None:
     conn.execute(
         """
@@ -377,9 +378,7 @@ def test_list_metric_catalog_distinguishes_unknown_from_empty(empty_warehouse) -
     """Unknown and empty metrics both yield unavailable but with distinct messages."""
     from premura import engine
 
-    results = engine.list_metric_catalog(
-        ["metric:does_not_exist", "resting_hr"], empty_warehouse
-    )
+    results = engine.list_metric_catalog(["metric:does_not_exist", "resting_hr"], empty_warehouse)
     unknown_entry = next(e for e in results if e.metric_id == "metric:does_not_exist")
     empty_entry = next(e for e in results if e.metric_id == "resting_hr")
 
@@ -398,8 +397,13 @@ def test_metric_summary_fresh_metric_returns_window_stats(empty_warehouse) -> No
     _insert_source(empty_warehouse, source_id, source_kind="wearable")
     # Insert 5 observations within the 30-day window.
     # Most recent is 6 hours ago (well within P1D validity_window -> current).
-    offsets = [timedelta(hours=6), timedelta(days=2), timedelta(days=5),
-               timedelta(days=10), timedelta(days=20)]
+    offsets = [
+        timedelta(hours=6),
+        timedelta(days=2),
+        timedelta(days=5),
+        timedelta(days=10),
+        timedelta(days=20),
+    ]
     for i, offset in enumerate(offsets):
         _insert_measurement(
             empty_warehouse,

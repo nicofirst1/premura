@@ -577,9 +577,7 @@ def test_common_cause_plausible_only_when_candidate_supplied() -> None:
     assert ConfoundKey.COMMON_CAUSE_PLAUSIBLE.value not in keys_without
 
     hyp = _hypothesis(common_cause_candidates=("ambient temperature",))
-    with_cc = _paired_from_values(
-        base, base, common_cause_candidates=("ambient temperature",)
-    )
+    with_cc = _paired_from_values(base, base, common_cause_candidates=("ambient temperature",))
     env_with = correlate(with_cc, hyp)
     keys_with = {c["key"] for c in env_with.to_dict()["confound_checklist"]}
     assert ConfoundKey.COMMON_CAUSE_PLAUSIBLE.value in keys_with

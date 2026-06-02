@@ -719,9 +719,7 @@ def _effective_sample_size(
     independent information), and the result is floored at ``_NEFF_FLOOR_FOR_BAND``
     so the Fisher-z band stays defined even on the refusal path.
     """
-    weighted_n = sum(
-        _IMPUTED_PAIR_WEIGHT if flag else 1.0 for flag in imputed_flags
-    )
+    weighted_n = sum(_IMPUTED_PAIR_WEIGHT if flag else 1.0 for flag in imputed_flags)
     max_lag = min(_NEFF_MAX_LAG, raw_n // 4)
     autocov_sum = 0.0
     for lag in range(1, max_lag + 1):
@@ -873,10 +871,7 @@ def correlate(
             left_metric_id=left_metric_id,
             right_metric_id=right_metric_id,
         )
-    if (
-        hypothesis.left_metric_id != left_metric_id
-        or hypothesis.right_metric_id != right_metric_id
-    ):
+    if hypothesis.left_metric_id != left_metric_id or hypothesis.right_metric_id != right_metric_id:
         return _refusal_envelope_paired(
             RefusalOutcome(
                 reason="missing_hypothesis",
@@ -1101,12 +1096,8 @@ def correlate(
             "expected_direction": expected_direction,
             "coefficient_method": "spearman_rho",
             "method_revision": _CORRELATE_METHOD_REVISION,
-            "overlap_start": (
-                paired.overlap_start.isoformat() if paired.overlap_start else None
-            ),
-            "overlap_end": (
-                paired.overlap_end.isoformat() if paired.overlap_end else None
-            ),
+            "overlap_start": (paired.overlap_start.isoformat() if paired.overlap_start else None),
+            "overlap_end": (paired.overlap_end.isoformat() if paired.overlap_end else None),
         },
         estimate=estimate,
         uncertainty=uncertainty,

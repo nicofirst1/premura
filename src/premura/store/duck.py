@@ -51,9 +51,7 @@ def seed_dim_metric(conn: duckdb.DuckDBPyConnection) -> int:
     ``aliases`` field is serialized to JSON text (DuckDB JSON column) only when
     present; otherwise NULL.
     """
-    yaml_text = (
-        resources.files("premura").joinpath(DIM_METRIC_YAML).read_text(encoding="utf-8")
-    )
+    yaml_text = resources.files("premura").joinpath(DIM_METRIC_YAML).read_text(encoding="utf-8")
     data = yaml.safe_load(yaml_text) or []
     for row in data:
         aliases = row.get("aliases")
