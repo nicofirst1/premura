@@ -14,6 +14,8 @@ subtasks:
 - T011
 - T012
 - T013
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "40594"
 history:
 - timestamp: '2026-06-02T13:00:02Z'
   actor: tasks
@@ -162,3 +164,7 @@ fixtures existing.)
 ```bash
 spec-kitty agent action implement WP03 --agent <name>
 ```
+
+## Activity Log
+
+- 2026-06-02T13:36:05Z – claude:opus:python-implementer:implementer – shell_pid=40594 – Started implementation via action command
