@@ -20,6 +20,8 @@ subtasks:
 - T019
 - T020
 - T021
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "62198"
 history:
 - timestamp: '2026-06-02T13:00:02Z'
   actor: tasks
@@ -146,3 +148,7 @@ warehouse) so the warehouse contents are real boundary truth:
 ```bash
 spec-kitty agent action implement WP05 --agent <name>
 ```
+
+## Activity Log
+
+- 2026-06-02T13:56:45Z – claude:opus:python-implementer:implementer – shell_pid=62198 – Started implementation via action command
