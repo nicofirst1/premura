@@ -39,10 +39,10 @@ DIRECTIVE_034/036). Front-loadable (no deps): **WP01, WP02, WP04, WP08**.
 | T026 | live-trial `Driver`/`Operator` protocols + `run_live_trial` | WP07 | |
 | T027 | fake-operator seam test | WP07 | |
 | T028 | NFR-005 test: live trial not in any default gate | WP07 | |
-| T029 | edit `operating-agent-roles.md` review-before-use sentence | WP08 | [P] |
-| T030 | edit ADR 0010 line + DOCTRINE.md clarifying line | WP08 | [P] |
-| T031 | live-doc sync (STATUS / ROADMAP) | WP08 | [P] |
-| T032 | SC-007 assertion test (no review-before-use sentence remains) | WP08 | [P] |
+| T029 | edit `operating-agent-roles.md` review-before-use sentence | WP08 | [D] |
+| T030 | edit ADR 0010 line + DOCTRINE.md clarifying line | WP08 | [D] |
+| T031 | live-doc sync (STATUS / ROADMAP) | WP08 | [D] |
+| T032 | SC-007 assertion test (no review-before-use sentence remains) | WP08 | [D] |
 
 ---
 
@@ -98,10 +98,10 @@ build-and-use rule is present (SC-007).
 **Prompt**: [tasks/WP08-doctrine-docs-and-sync.md](tasks/WP08-doctrine-docs-and-sync.md) (~280 lines)
 **Dependencies**: none. **Requirements**: FR-130; SC-007.
 
-- [ ] T029 replace `operating-agent-roles.md` §Dev-time-boundary review-before-use sentence (WP08)
-- [ ] T030 adjust ADR 0010 "separate from codebase extension" line + add DOCTRINE.md clarifying line (WP08)
-- [ ] T031 live-doc sync: STATUS (and ROADMAP if it tracks this mission) (WP08)
-- [ ] T032 SC-007 assertion test (WP08)
+- [x] T029 replace `operating-agent-roles.md` §Dev-time-boundary review-before-use sentence (WP08)
+- [x] T030 adjust ADR 0010 "separate from codebase extension" line + add DOCTRINE.md clarifying line (WP08)
+- [x] T031 live-doc sync: STATUS (and ROADMAP if it tracks this mission) (WP08)
+- [x] T032 SC-007 assertion test (WP08)
 
 ---
 
