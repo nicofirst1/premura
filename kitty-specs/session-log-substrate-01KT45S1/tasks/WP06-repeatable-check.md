@@ -18,8 +18,8 @@ subtasks:
 - T023
 - T024
 - T025
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "71827"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "77400"
 history:
 - timestamp: '2026-06-02T13:00:02Z'
   actor: tasks
@@ -154,3 +154,4 @@ spec-kitty agent action implement WP06 --agent <name>
 
 - 2026-06-02T14:05:15Z – claude:opus:python-implementer:implementer – shell_pid=71827 – Started implementation via action command
 - 2026-06-02T14:09:59Z – claude:opus:python-implementer:implementer – shell_pid=71827 – Ready for review
+- 2026-06-02T14:10:38Z – claude:opus:python-reviewer:reviewer – shell_pid=77400 – Started review via action command
