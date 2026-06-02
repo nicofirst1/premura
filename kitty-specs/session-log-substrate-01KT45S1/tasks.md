@@ -32,10 +32,10 @@ DIRECTIVE_034/036). Front-loadable (no deps): **WP01, WP02, WP04, WP08**.
 | T019 | `runtime_valid` rule (calls contract_check on captured evidence) | WP05 | | [D] |
 | T020 | `honest_about_gaps` reconciliation vs fixture manifest | WP05 | | [D] |
 | T021 | grader tests (PASS / FAIL+silent_drops / no-trust) | WP05 | | [D] |
-| T022 | `repeatable_check.py` orchestrator + scripted log steps | WP06 | |
-| T023 | wire good-path + dishonest-path | WP06 | |
-| T024 | end-to-end tests (full PASS + FAIL) | WP06 | |
-| T025 | determinism + offline tests (NFR-001/002) | WP06 | |
+| T022 | `repeatable_check.py` orchestrator + scripted log steps | WP06 | | [D] |
+| T023 | wire good-path + dishonest-path | WP06 | | [D] |
+| T024 | end-to-end tests (full PASS + FAIL) | WP06 | | [D] |
+| T025 | determinism + offline tests (NFR-001/002) | WP06 | | [D] |
 | T026 | live-trial `Driver`/`Operator` protocols + `run_live_trial` | WP07 | |
 | T027 | fake-operator seam test | WP07 | |
 | T028 | NFR-005 test: live trial not in any default gate | WP07 | |
@@ -149,10 +149,10 @@ re-run; runs from a clean clone offline.
 **Prompt**: [tasks/WP06-repeatable-check.md](tasks/WP06-repeatable-check.md) (~420 lines)
 **Dependencies**: WP01, WP02, WP03, WP04, WP05. **Requirements**: FR-004, FR-030; NFR-001, NFR-002; SC-001..SC-006.
 
-- [ ] T022 `repeatable_check.py` orchestrator: build sandbox, install parser, run runner, harness writes log (scripted steps), grade (WP06)
-- [ ] T023 wire good-path (PASS) and dishonest-path (FAIL) (WP06)
-- [ ] T024 end-to-end tests: full PASS + full FAIL (WP06)
-- [ ] T025 determinism (byte-identical verdict) + offline/clean-clone tests (WP06)
+- [x] T022 `repeatable_check.py` orchestrator: build sandbox, install parser, run runner, harness writes log (scripted steps), grade (WP06)
+- [x] T023 wire good-path (PASS) and dishonest-path (FAIL) (WP06)
+- [x] T024 end-to-end tests: full PASS + full FAIL (WP06)
+- [x] T025 determinism (byte-identical verdict) + offline/clean-clone tests (WP06)
 
 ### WP07 — Live-trial seam (scaffold; model deferred)
 
