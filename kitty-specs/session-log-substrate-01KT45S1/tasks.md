@@ -20,10 +20,10 @@ DIRECTIVE_034/036). Front-loadable (no deps): **WP01, WP02, WP04, WP08**.
 | T007 | `ContractCheckResult` + `check_runtime_contract` clauses 1–2 | WP02 | [D] |
 | T008 | `check_runtime_contract` clauses 3–4 | WP02 | [D] |
 | T009 | contract-check tests (each clause pass/fail) | WP02 | [D] |
-| T010 | `sandbox.py` build temp copy from tracked tree + temp paths | WP03 | |
-| T011 | sandbox teardown + `install_parser` helper | WP03 | |
-| T012 | `ingest_runner.py` subprocess → JSON outcome envelope | WP03 | |
-| T013 | sandbox/runner tests (tracked-only, envelope valid, teardown) | WP03 | |
+| T010 | `sandbox.py` build temp copy from tracked tree + temp paths | WP03 | | [D] |
+| T011 | sandbox teardown + `install_parser` helper | WP03 | | [D] |
+| T012 | `ingest_runner.py` subprocess → JSON outcome envelope | WP03 | | [D] |
+| T013 | sandbox/runner tests (tracked-only, envelope valid, teardown) | WP03 | | [D] |
 | T014 | synthetic CSV + `fixture_fields.yaml` manifest | WP04 | [D] |
 | T015 | `good_fitbit_hr` reference parser (PASS) | WP04 | [D] |
 | T016 | `dishonest_fitbit_hr` reference parser (silent drop) | WP04 | [D] |
@@ -116,10 +116,10 @@ runner emits a schema-valid envelope; teardown removes everything.
 **Prompt**: [tasks/WP03-sandbox-and-ingest-runner.md](tasks/WP03-sandbox-and-ingest-runner.md) (~400 lines)
 **Dependencies**: WP01. **Requirements**: FR-020, FR-021; NFR-004.
 
-- [ ] T010 `sandbox.py` — build temp copy from tracked tree; point warehouse + session-log paths at temp (WP03)
-- [ ] T011 teardown + `install_parser(sandbox, parser_src)` helper (WP03)
-- [ ] T012 `ingest_runner.py` — subprocess entry: parse→validate→load→emit envelope (no log write) (WP03)
-- [ ] T013 sandbox/runner tests: tracked-only copy, envelope valid, teardown, no-export (WP03)
+- [x] T010 `sandbox.py` — build temp copy from tracked tree; point warehouse + session-log paths at temp (WP03)
+- [x] T011 teardown + `install_parser(sandbox, parser_src)` helper (WP03)
+- [x] T012 `ingest_runner.py` — subprocess entry: parse→validate→load→emit envelope (no log write) (WP03)
+- [x] T013 sandbox/runner tests: tracked-only copy, envelope valid, teardown, no-export (WP03)
 
 ### WP05 — Deterministic grader
 
