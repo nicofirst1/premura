@@ -208,3 +208,4 @@ spec-kitty agent action implement WP01 --agent <name>
 ## Activity Log
 
 - 2026-06-02T13:11:46Z – claude:opus:python-implementer:implementer – shell_pid=4816 – Assigned agent via action command
+- 2026-06-02T13:19:14Z – claude:opus:python-implementer:implementer – shell_pid=4816 – Ready for review: session-log store (own file + schema + sole-writer API + additive config.session_log_path); 12 tests green, ruff/format/mypy clean
