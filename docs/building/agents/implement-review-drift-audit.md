@@ -6,7 +6,7 @@
 >
 > Companion to the post-merge `spec-kitty-mission-review` (which finds *what*
 > drifted). This doc finds the *cause* and the *missing control*. Read
-> [`docs/product/DOCTRINE.md`](../product/DOCTRINE.md) first — this methodology
+> [`docs/shared/DOCTRINE.md`](../../shared/DOCTRINE.md) first — this methodology
 > is itself written a level above (a bounded dimension registry with a rule for
 > adding to it, not a fixed checklist).
 

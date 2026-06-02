@@ -9,11 +9,11 @@
 > admissible evidence — its method shapes, its question-type and confound
 > vocabularies, and the boundaries it must not cross.
 >
-> Companions: [`DOCTRINE.md`](../../product/DOCTRINE.md),
-> [`ROADMAP.md`](../../product/ROADMAP.md) §"Next major phase — analytical depth",
-> [`FULL_APP_DEVELOPMENT_PLAN.md`](../../product/FULL_APP_DEVELOPMENT_PLAN.md)
+> Companions: [`DOCTRINE.md`](../../shared/DOCTRINE.md),
+> [`ROADMAP.md`](../../shared/ROADMAP.md) §"Next major phase — analytical depth",
+> [`FULL_APP_DEVELOPMENT_PLAN.md`](../../building/product/FULL_APP_DEVELOPMENT_PLAN.md)
 > §"Phase 3: `v2.2 analytical depth`",
-> [ADR 0007 — evidence admissibility as a declared contract](../../adr/0007-evidence-admissibility-as-a-declared-contract.md),
+> [ADR 0007 — evidence admissibility as a declared contract](../../building/adr/0007-evidence-admissibility-as-a-declared-contract.md),
 > and the prior
 > [`STAGE2_EVIDENCE_ADMISSIBILITY_RESEARCH.md`](STAGE2_EVIDENCE_ADMISSIBILITY_RESEARCH.md).
 

@@ -1,6 +1,6 @@
 # Premura Full App Development Plan
 
-> Status: authoritative. Phase-level development plan for the whole app trajectory from the current shipped state forward. Complements `../history/product/ROADMAP_BOOTSTRAP_PLAN.md`, which now serves mainly as the record of how the first concrete backlog (M1-M3) was instantiated. Product-identity questions are settled in `DOCTRINE.md`.
+> Status: authoritative. Phase-level development plan for the whole app trajectory from the current shipped state forward. Complements `../../history/product/ROADMAP_BOOTSTRAP_PLAN.md`, which now serves mainly as the record of how the first concrete backlog (M1-M3) was instantiated. Product-identity questions are settled in `DOCTRINE.md`.
 >
 > **Vocabulary note**: this doc uses the project vocabulary defined in `CONTEXT.md` §"Planning" (e.g. "ablation study" rather than "spike", "design decision note" rather than "ADR"). Live GitHub artifacts (issue titles, label values, file paths) keep their existing names — only prose follows the new vocabulary.
 
@@ -28,21 +28,21 @@ milestones.
 ## Inputs Used
 
 - `CONTEXT.md` (vocabulary)
-- `docs/product/DOCTRINE.md`
-- `docs/operations/STATUS.md`
+- `docs/shared/DOCTRINE.md`
+- `docs/shared/STATUS.md`
 - `docs/history/product/VISION.md`
-- `docs/product/ROADMAP.md`
+- `docs/shared/ROADMAP.md`
 - `docs/history/product/RISK_OPPORTUNITY.md`
 - `docs/history/product/ROADMAP_BOOTSTRAP_PLAN.md`
-- `docs/architecture/STAGES.md`
-- `docs/architecture/UPDATE_STRATEGY.md`
+- `docs/building/architecture/STAGES.md`
+- `docs/building/architecture/UPDATE_STRATEGY.md`
 - `docs/history/research/PROPOSAL_LABS.md`
 - `/tmp/premura-planning-handoff-2026-05-22.md`
 
 ## Relation To Existing Docs
 
 - `docs/history/product/VISION.md` covers the long-term pillars (extensibility, warehouse, AI tools, interview, teaching, privacy). This file is the phase-level expression of how those pillars get built in code.
-- **This file is the source of truth for phase-level planning.** `docs/product/ROADMAP.md` is now the shorter live pointer doc for near-term sequencing and deferred follow-ons; it should summarize and link rather than restate the phase detail here.
+- **This file is the source of truth for phase-level planning.** `docs/shared/ROADMAP.md` is now the shorter live pointer doc for near-term sequencing and deferred follow-ons; it should summarize and link rather than restate the phase detail here.
 - `docs/history/product/ROADMAP_BOOTSTRAP_PLAN.md` is the concrete first pass that justified the original M1-M3 issue set. It still records the rationale for Phases 1 and 2, but it is no longer the current next-action list.
 - This file sits between VISION (long-term) and BOOTSTRAP/ROADMAP (near-term execution).
 
@@ -56,8 +56,8 @@ Premura has already shipped:
 - the federated parser plug-in code (`PluginParser`, `IngestBatch`, `dim_metric.yaml` ontology)
 - a real Stage 3 MCP surface — a default agent surface (`premura-mcp`) of twenty validity-gated tools (`list_metrics`, `metric_summary`, six signal-backed tools, two agent-mediated profile-capture tools, the five analytical tools `change_point` / `smoothed_average` / `correlate` / `rolling_mean` / `paired_t_test`, the three session research trace tools `research_trace_open` / `research_trace_mark_surfaced` / `research_trace_disclosure`, and the two PubMed grounding tools `pubmed_search` / `pubmed_fetch`), plus a separate operator surface (`premura-mcp-operator`) of twenty-one that adds the raw `query_warehouse` escape hatch
 - the first real Stage 2 behavior — six grounded, freshness-aware signals (current resting HR, resting-HR trend, steps trend, weight trend, deep-sleep vs own baseline, overnight-HRV change around a date) with a contributor contract (`src/premura/engine/CONTRACT.md`); `ui` remains a stub
-- the authoritative profile/intake **meaning contract** (`docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md` plus the `docs/architecture/contracts/profile_and_intake_*.yaml` surfaces, design decision note `docs/adr/0005-profile-and-intake-contract.md`), which fixes where baseline profile context, nutrition intake, and supplement intake live and what they mean
-- the profile/intake **storage seam and first write path** (`implement-profile-and-intake-storage-01KSMWV1`, design decision note `docs/adr/0006-profile-intake-storage-and-capture.md`): concrete `hp.*` domain tables (migration `004_profile_intake.sql`), an **agent-mediated bounded profile-capture** path (the closed allowlist in `src/premura/profile_fields.py`, recorded through the default MCP tools `profile_context_supported_fields` / `profile_context_record` and the CLI verbs `hpipe profile-fields` / `hpipe profile-record`), and a normalized idempotent intake load path (`persist_intake_batch`). It ships **no** built-in importer for a specific nutrition/supplement source and **no** profile-dependent Stage 2 answer.
+- the authoritative profile/intake **meaning contract** (`docs/building/architecture/PROFILE_AND_INTAKE_CONTRACT.md` plus the `docs/building/architecture/contracts/profile_and_intake_*.yaml` surfaces, design decision note `docs/building/adr/0005-profile-and-intake-contract.md`), which fixes where baseline profile context, nutrition intake, and supplement intake live and what they mean
+- the profile/intake **storage seam and first write path** (`implement-profile-and-intake-storage-01KSMWV1`, design decision note `docs/building/adr/0006-profile-intake-storage-and-capture.md`): concrete `hp.*` domain tables (migration `004_profile_intake.sql`), an **agent-mediated bounded profile-capture** path (the closed allowlist in `src/premura/profile_fields.py`, recorded through the default MCP tools `profile_context_supported_fields` / `profile_context_record` and the CLI verbs `hpipe profile-fields` / `hpipe profile-record`), and a normalized idempotent intake load path (`persist_intake_batch`). It ships **no** built-in importer for a specific nutrition/supplement source and **no** profile-dependent Stage 2 answer.
 
 So `engine` and `mcp` are no longer empty stubs: Stage 2 and part of Stage 3 are real for six approved question shapes, and the profile/intake domains now have real storage plus an agent-mediated capture path rather than only a meaning contract. What is still missing is the rest of the v2 payoff:
 
@@ -75,15 +75,15 @@ Small v1 residue (real-data SAA validation, project wiki hub page) is not schedu
 1. Resolve architectural uncertainty before scaling surface area.
 2. Prefer one real end-to-end slice over many speculative documents.
 3. Treat Stage 2 and Stage 3 as product-critical; v2 is not just "more parsers."
-4. Use real risk retirement from `../history/product/RISK_OPPORTUNITY.md` to decide what comes next.
+4. Use real risk retirement from `../../history/product/RISK_OPPORTUNITY.md` to decide what comes next.
 5. Keep the system local-first and faithful to the stage boundaries in `STAGES.md`.
 
 ## Conventions
 
-This plan follows the conventions established in `../history/product/ROADMAP_BOOTSTRAP_PLAN.md` §"Conventions":
+This plan follows the conventions established in `../../history/product/ROADMAP_BOOTSTRAP_PLAN.md` §"Conventions":
 
 - **Tag-cut on milestone close**: each phase ships as a pre-`v1` milestone (`v0.1`, `v0.2`, …) and closes with a corresponding `git tag` (`v0.1.0`, `v0.2.0`, …). Tags are mandatory restore points, not optional bookkeeping. The already-existing `v1.0.0` tag is legacy/historical; do not continue the `v1` line until the user-facing threshold above is met.
-- **Design decision note timing**: design decision notes land *before* missions that introduce a new stage interface or a new public type; *after* missions where the decision is an implementation detail inside an already-approved direction. See `docs/adr/0001-ingest-batch-parser-seam.md` for the post-mission template (the folder `docs/adr/` is kept for filesystem stability; in prose call them "design decision notes").
+- **Design decision note timing**: design decision notes land *before* missions that introduce a new stage interface or a new public type; *after* missions where the decision is an implementation detail inside an already-approved direction. See `docs/building/adr/0001-ingest-batch-parser-seam.md` for the post-mission template (the folder `docs/building/adr/` is kept for filesystem stability; in prose call them "design decision notes").
 - **Mission title format**: GitHub tracking issues use `[M1]`/`[M2]`/`[M3]` prefixes. New missions in later phases follow the same convention (`[M4]`, `[M5]`, …).
 - **Multi-stage labels**: missions that genuinely span stages carry multiple `stage:*` labels (e.g. M3 carries both `stage:ingest` and `stage:engine`).
 - **Mission breakdown**: one GitHub tracking issue per mission. Intra-mission breakdown lives in `kitty-specs/<slug>/` as work packages. Cross-mission dependencies are encoded as "blocked by" comments on tracking issues.
@@ -182,7 +182,7 @@ The lab proposal is the first place where Premura becomes more than a wearable d
 > result envelope (estimate + validity metadata + closed confound checklist,
 > including the `common_cause_plausible` key) or a first-class refusal.
 > `engine.list_analytical_tools()` returns exactly these five. See
-> [STATUS.md](../operations/STATUS.md) §"Stage 3 analytical tools" and design
+> [STATUS.md](../../shared/STATUS.md) §"Stage 3 analytical tools" and design
 > decision note [0008](../adr/0008-correlate-pre-registered-lagged-association.md).
 > The **session research trace / measured multiplicity disclosure** has since
 > shipped too — three default-surface tools (`research_trace_open`,
@@ -200,7 +200,7 @@ The lab proposal is the first place where Premura becomes more than a wearable d
 > default-surface tools, `pubmed_search` (candidates only, never citeable) and
 > `pubmed_fetch` (a citeable record for one exact PMID, with PubMed provenance),
 > over a Premura-owned adapter on NCBI E-utilities with no new HTTP dependency;
-> the default surface is now twenty tools. See [STATUS.md](../operations/STATUS.md)
+> the default surface is now twenty tools. See [STATUS.md](../../shared/STATUS.md)
 > §"PubMed literature grounding". **Remaining (deferred):** the
 > literature-to-warehouse bridge and concept-to-metric mapping (connecting a
 > fetched paper to the operator's own warehouse data), and broader PubMed tooling
@@ -388,7 +388,7 @@ When a risk retires, its entry in the Risk Retirement Map is updated to note the
 Treat the near-term roadmap as:
 
 - First, treat Phases 1 and 2 as shipped in their initial form: M1-M3 are closed, the first grounded Stage 2/3 slice is live, and labs exist in-tree.
-- Second, treat the profile/intake **storage seam** as shipped, not just the boundary (see `docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md`, `docs/adr/0005-profile-and-intake-contract.md`, and `docs/adr/0006-profile-intake-storage-and-capture.md`), and treat the Stage 2 **input-resolution seam** as shipped on top of it. BMI now ships as the first cross-domain proof consumer of that seam (declared height from profile context plus weight from observation history, with honest refusal when prerequisites are missing or stale). The follow-on work that issue `#6` originally framed as "model baseline profile attributes" reduces to two threads built *over* the shipped seams: (a) **parser/plugin source adaptation** for nutrition/supplements (no built-in importer is planned) and the matching concrete resolvers for the intake domains once real rows exist, and (b) **additional profile-aware signals** (age-adjusted interpretation and any future health answers that need declared profile context — `age` stays derived, never stored), alongside the deterministic-stats missions. Neither thread reopens storage or the boundary.
+- Second, treat the profile/intake **storage seam** as shipped, not just the boundary (see `docs/building/architecture/PROFILE_AND_INTAKE_CONTRACT.md`, `docs/building/adr/0005-profile-and-intake-contract.md`, and `docs/building/adr/0006-profile-intake-storage-and-capture.md`), and treat the Stage 2 **input-resolution seam** as shipped on top of it. BMI now ships as the first cross-domain proof consumer of that seam (declared height from profile context plus weight from observation history, with honest refusal when prerequisites are missing or stale). The follow-on work that issue `#6` originally framed as "model baseline profile attributes" reduces to two threads built *over* the shipped seams: (a) **parser/plugin source adaptation** for nutrition/supplements (no built-in importer is planned) and the matching concrete resolvers for the intake domains once real rows exist, and (b) **additional profile-aware signals** (age-adjusted interpretation and any future health answers that need declared profile context — `age` stays derived, never stored), alongside the deterministic-stats missions. Neither thread reopens storage or the boundary.
 - Third, revisit this plan with evidence from that analytical-depth and profile/intake-consuming work before locking parser-ecosystem or teaching missions too tightly.
 
 The biggest mistake would be to plan the teaching layer, parser ecosystem, and ingest expansion in equal detail before the analytical access path and first Stage 2 rules are proven in code.

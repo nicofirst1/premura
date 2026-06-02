@@ -2,7 +2,7 @@
 
 > Status: authoritative. Source of truth for cross-stage architecture boundaries.
 >
-> Companion to [DOCTRINE.md](../product/DOCTRINE.md), [../history/product/VISION.md](../history/product/VISION.md), [SPEC.md](../product/SPEC.md), [ROADMAP.md](../product/ROADMAP.md), [../history/research/PROPOSAL_LABS.md](../history/research/PROPOSAL_LABS.md).
+> Companion to [DOCTRINE.md](../../shared/DOCTRINE.md), [../../history/product/VISION.md](../../history/product/VISION.md), [SPEC.md](../../shared/SPEC.md), [ROADMAP.md](../../shared/ROADMAP.md), [../../history/research/PROPOSAL_LABS.md](../../history/research/PROPOSAL_LABS.md).
 > Captured 2026-05-21. Complements `docs/history/product/VISION.md` — does **not** replace the pillar framing. The pillars are the *trajectory*; the stages below are the *data-flow shape*. A feature is located in pillars by intent and in stages by where it sits in the pipeline.
 
 ## The four stages
@@ -33,7 +33,7 @@ Data moves through the system in a strict order. Each stage has a different cont
 
 ### 1. Ingest
 
-Parsers turn a vendor artifact into rows in `hp.fact_measurement` / `hp.fact_interval` per the long-format star schema documented in [../history/architecture/ARCHITECTURE_HISTORY.md](../history/architecture/ARCHITECTURE_HISTORY.md).
+Parsers turn a vendor artifact into rows in `hp.fact_measurement` / `hp.fact_interval` per the long-format star schema documented in [../../history/architecture/ARCHITECTURE_HISTORY.md](../../history/architecture/ARCHITECTURE_HISTORY.md).
 
 - Today: HC `.db`, Garmin GDPR `.zip`, Sleep as Android CSV, BMT CSV, and lab files through the in-tree lab parser.
 - Coming: continuous glucose and additional wearables.
@@ -70,7 +70,7 @@ Signal processing has no external dependencies. No network, no LLM. It must be i
 
 ### 3. MCP
 
-The MCP server exposes Stage 2 signal functions as tools an LLM can call. Per [DOCTRINE.md](../product/DOCTRINE.md), this is the **primary operational interface** of the product: the human brings artifacts, goals, and approvals; the agent works mainly through this tool surface. The first bounded analytical tool set is now complete — `change_point`, `smoothed_average`, `correlate`, `rolling_mean`, `paired_t_test`, and the three session research trace tools have shipped. The first **PubMed literature-grounding slice** — `pubmed_search` and `pubmed_fetch` — has now shipped too (see below); a signal selector is the remaining future work. Today two entrypoints exist (`src/premura/mcp/server.py`, `entrypoint.py`):
+The MCP server exposes Stage 2 signal functions as tools an LLM can call. Per [DOCTRINE.md](../../shared/DOCTRINE.md), this is the **primary operational interface** of the product: the human brings artifacts, goals, and approvals; the agent works mainly through this tool surface. The first bounded analytical tool set is now complete — `change_point`, `smoothed_average`, `correlate`, `rolling_mean`, `paired_t_test`, and the three session research trace tools have shipped. The first **PubMed literature-grounding slice** — `pubmed_search` and `pubmed_fetch` — has now shipped too (see below); a signal selector is the remaining future work. Today two entrypoints exist (`src/premura/mcp/server.py`, `entrypoint.py`):
 
 **Default agent surface (`premura-mcp`) — twenty tools:**
 

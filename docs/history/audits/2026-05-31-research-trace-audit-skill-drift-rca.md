@@ -1,7 +1,7 @@
 # Drift Root-Cause Audit — `research-trace-audit-skill-01KSZC2J`
 
 > Dated audit record. Produced with the method in
-> [`docs/agents/implement-review-drift-audit.md`](../../agents/implement-review-drift-audit.md).
+> [`docs/building/agents/implement-review-drift-audit.md`](../../building/agents/implement-review-drift-audit.md).
 
 | | |
 |---|---|

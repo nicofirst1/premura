@@ -12,9 +12,9 @@ exactly the answer that quietly collapses two different meanings into one.
 
 The decision is to fix **meaning** strictly while leaving **storage** open. The
 authoritative contract lives in
-[`docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md`](../architecture/PROFILE_AND_INTAKE_CONTRACT.md)
+[`docs/building/architecture/PROFILE_AND_INTAKE_CONTRACT.md`](../architecture/PROFILE_AND_INTAKE_CONTRACT.md)
 and the machine-readable surfaces beside it
-(`docs/architecture/contracts/profile_and_intake_*.yaml`). It defines the three
+(`docs/building/architecture/contracts/profile_and_intake_*.yaml`). It defines the three
 domains, gives each normalized value exactly one canonical home
 (`profile_context`, `nutrition_intake`, `supplement_intake`,
 `observation_history`, `note_history` — with no `misc` bucket), and requires that

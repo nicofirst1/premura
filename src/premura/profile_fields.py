@@ -13,7 +13,7 @@ fails on anything it does not recognize, so the bounded character of profile
 capture lives here rather than being re-litigated in higher layers.
 
 Why ``age`` is rejected rather than supported: the profile/intake contract
-(``docs/architecture/contracts/profile_and_intake_examples.yaml``) classifies
+(``docs/building/architecture/contracts/profile_and_intake_examples.yaml``) classifies
 ``age`` as a *derived* attribute computed from ``birth_date`` and the evaluation
 date. Storing it independently would let the two drift apart, so an attempt to
 assert ``age`` is a programming error, not a new profile fact.

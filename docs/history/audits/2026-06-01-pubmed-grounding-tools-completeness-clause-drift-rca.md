@@ -1,6 +1,6 @@
 # Implement-Review Drift Audit — pubmed-grounding-tools-01KT1BPM
 
-> Method: [`docs/agents/implement-review-drift-audit.md`](../../agents/implement-review-drift-audit.md).
+> Method: [`docs/building/agents/implement-review-drift-audit.md`](../../building/agents/implement-review-drift-audit.md).
 > This audit consumes a post-merge mission-review FAIL and asks *why the
 > implement→review→merge loop admitted it*, then names the missing control so the
 > next mission cannot repeat it. The bugs are already fixed; this is the
@@ -183,7 +183,7 @@ sufficiency is exercised.
 | `pubmed_fetch` returns abstract when available (EFetch) | **FIXED** — `78188ba` (`pubmed.py:318,439`) |
 | `pubmed_search` returns human-readable titles when matches (ESummary) | **FIXED** — `78188ba` (`pubmed.py:237,404`) |
 | Positive-path fixtures for both availability clauses | **FIXED** — `78188ba` (`test_mcp_pubmed.py:212,313`) |
-| Drift dimension registry extended | **DONE** — D5 added to `docs/agents/implement-review-drift-audit.md` |
+| Drift dimension registry extended | **DONE** — D5 added to `docs/building/agents/implement-review-drift-audit.md` |
 | Systemic prevention (below) | **OPEN** — recommendations for the next missions |
 
 ## Prevention — stop the class, not just this instance

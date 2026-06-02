@@ -6,7 +6,7 @@ Use this material for context, rationale, and prior decisions. Do not treat it a
 
 For current work, start from:
 
-- `../operations/STATUS.md` — what is shipped
-- `../architecture/STAGES.md` — current boundaries
-- `../product/FULL_APP_DEVELOPMENT_PLAN.md` — current phase-level plan
-- `../product/ROADMAP.md` — short live pointer doc
+- `../shared/STATUS.md` — what is shipped
+- `../building/architecture/STAGES.md` — current boundaries
+- `../building/product/FULL_APP_DEVELOPMENT_PLAN.md` — current phase-level plan
+- `../shared/ROADMAP.md` — short live pointer doc

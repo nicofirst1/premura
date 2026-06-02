@@ -2,7 +2,7 @@
 
 > Status: live reference. Snapshot of what is true and shipped today.
 >
-> Companion to [SPEC.md](../product/SPEC.md), [../history/architecture/ARCHITECTURE_HISTORY.md](../history/architecture/ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](../product/USERJOURNEY.md), [ROADMAP.md](../product/ROADMAP.md).
+> Companion to [SPEC.md](SPEC.md), [../history/architecture/ARCHITECTURE_HISTORY.md](../history/architecture/ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](../using/USERJOURNEY.md), [ROADMAP.md](ROADMAP.md).
 > Snapshot date: **2026-06-02**.
 
 ## TL;DR
@@ -41,7 +41,7 @@ The signal-backed tools return a structured payload whose `status` is `available
 
 ## Profile and intake storage + agent-mediated capture (shipped 2026-05-27)
 
-The `implement-profile-and-intake-storage-01KSMWV1` mission gave the profile/intake **meaning contract** ([PROFILE_AND_INTAKE_CONTRACT.md](../architecture/PROFILE_AND_INTAKE_CONTRACT.md)) a concrete storage adapter and the first write path. What now works end-to-end:
+The `implement-profile-and-intake-storage-01KSMWV1` mission gave the profile/intake **meaning contract** ([PROFILE_AND_INTAKE_CONTRACT.md](../building/architecture/PROFILE_AND_INTAKE_CONTRACT.md)) a concrete storage adapter and the first write path. What now works end-to-end:
 
 - **Concrete domain tables.** Migration `src/premura/store/migrations/004_profile_intake.sql` adds dedicated `hp.*` homes: `hp.profile_capture_session` + `hp.profile_context_assertion` (profile); `hp.nutrition_intake_event` → `hp.nutrition_intake_item` → `hp.nutrition_quantity` (nutrition); `hp.supplement_intake_event` → `hp.supplement_item` → `hp.supplement_dose` (supplements). One-home separation is structural — no JSON catch-all bucket, and nothing back-fills these meanings into `fact_measurement` / `fact_interval` / note storage.
 - **Agent-mediated profile capture works.** A bounded, closed allowlist (`src/premura/profile_fields.py`: `birth_date`, `sex`, `standing_height_cm`) is written one fact at a time through `record_profile_context` (`src/premura/store/profile_intake.py`), which appends/supersedes (history kept, never overwritten) and stamps `source_kind="agent_profile_capture"`. Surfaced as the default MCP tools `profile_context_supported_fields` / `profile_context_record` and the expert CLI verbs `hpipe profile-fields` / `hpipe profile-record`. Unsupported or derived keys (e.g. `age`) are rejected at the store boundary, not stored.
@@ -127,7 +127,7 @@ records the design.
 The `correlate-lagged-association-01KSWKV0` mission landed `correlate`, the first
 **multi-input** analytical tool, on the same default MCP surface. Its locked
 architecture is design decision note
-[`0008`](../adr/0008-correlate-pre-registered-lagged-association.md) and its
+[`0008`](../building/adr/0008-correlate-pre-registered-lagged-association.md) and its
 statistical choices are settled in
 [`CORRELATE_METHODOLOGY_RESEARCH.md`](../history/research/CORRELATE_METHODOLOGY_RESEARCH.md).
 
@@ -199,7 +199,7 @@ The `session-research-trace-01KSYT4A` mission landed the **session research
 trace**: an explicit, append-only ledger at the MCP boundary that records the
 analytical calls an agent dispatches in a research session and derives a
 *measured* multiplicity disclosure. Its locked architecture is design decision
-note [`0009`](../adr/0009-session-research-trace-and-multiplicity-disclosure.md).
+note [`0009`](../building/adr/0009-session-research-trace-and-multiplicity-disclosure.md).
 The stateful trace lives in `src/premura/trace.py` (a pure, MCP-agnostic,
 engine-agnostic service) over `trace.*` tables added by migration
 `005_trace_audit.sql`; the analytical **engine stayed pure and
@@ -391,5 +391,5 @@ entry point.
 
 ## Operations
 
-See [OPERATIONS.md](OPERATIONS.md) for the current operator command surface and
+See [OPERATIONS.md](../using/OPERATIONS.md) for the current operator command surface and
 day-to-day runbook.

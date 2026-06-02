@@ -10,7 +10,7 @@
 
 Capture how the approved planning system was first turned into a concrete roadmap for Premura.
 
-This is no longer the current next-action list. Use [FULL_APP_DEVELOPMENT_PLAN.md](FULL_APP_DEVELOPMENT_PLAN.md) for phase-level planning and GitHub issues for the active mission backlog.
+This is no longer the current next-action list. Use [FULL_APP_DEVELOPMENT_PLAN.md](../../building/product/FULL_APP_DEVELOPMENT_PLAN.md) for phase-level planning and GitHub issues for the active mission backlog.
 
 This file answers:
 
@@ -22,22 +22,22 @@ This file answers:
 ## Inputs Used
 
 - `CONTEXT.md` (vocabulary)
-- `docs/operations/STATUS.md`
-- `docs/product/FULL_APP_DEVELOPMENT_PLAN.md`
-- `docs/product/ROADMAP.md`
+- `docs/shared/STATUS.md`
+- `docs/building/product/FULL_APP_DEVELOPMENT_PLAN.md`
+- `docs/shared/ROADMAP.md`
 - `docs/history/product/RISK_OPPORTUNITY.md`
 - `docs/history/research/PROPOSAL_LABS.md`
-- `docs/architecture/STAGES.md`
-- `docs/architecture/UPDATE_STRATEGY.md`
-- `docs/agents/issue-tracker.md`
-- `docs/agents/triage-labels.md`
+- `docs/building/architecture/STAGES.md`
+- `docs/building/architecture/UPDATE_STRATEGY.md`
+- `docs/building/agents/issue-tracker.md`
+- `docs/building/agents/triage-labels.md`
 - `/tmp/premura-planning-handoff-2026-05-22.md`
 
 ## Working Assumptions
 
 - The planning-system handoff was accepted in substance and used for the first application pass.
 - This file now records that first pass after execution rather than serving as a pre-execution proposal.
-- This plan is the near-term execution layer for Phases 1 and 2 in `docs/product/FULL_APP_DEVELOPMENT_PLAN.md`, not a competing phase plan.
+- This plan is the near-term execution layer for Phases 1 and 2 in `docs/building/product/FULL_APP_DEVELOPMENT_PLAN.md`, not a competing phase plan.
 - `ROADMAP.md` has been reconciled against shipped state (commit `c11fc8c`), so this plan starts from remaining open work.
 - The active backlog is **missions-only** — no tasks. SAA real-export validation and the wiki hub page are both deferred (wiki: "once we have a proper codebase"; SAA: file an issue if and when the next real export breaks something).
 
@@ -101,8 +101,8 @@ Not in this milestone:
 
 - **Milestone**: `v2.0 analytical surface`
 - **Labels**: `stage:mcp`, `type:spike` (existing label name; the work itself is an ablation study)
-- **Source docs**: `docs/history/product/RISK_OPPORTUNITY.md`, `docs/product/ROADMAP.md`
-- **Outcome**: shipped and closed as issue `#1`; the result is design decision note `docs/adr/0002-mcp-local-warehouse-boundary.md`.
+- **Source docs**: `docs/history/product/RISK_OPPORTUNITY.md`, `docs/shared/ROADMAP.md`
+- **Outcome**: shipped and closed as issue `#1`; the result is design decision note `docs/building/adr/0002-mcp-local-warehouse-boundary.md`.
 - **Tracking issue title**:
   - `[M1] Lock the MCP/warehouse boundary and keep age at export/upload` (existing GitHub title; preserved for traceability)
 - **Definition of done (1-week time budget)**:
@@ -117,7 +117,7 @@ Not in this milestone:
 
 - **Milestone**: `v2.0 analytical surface`
 - **Labels**: `stage:mcp`, `type:feature`
-- **Source docs**: `docs/product/ROADMAP.md`, `docs/architecture/STAGES.md`
+- **Source docs**: `docs/shared/ROADMAP.md`, `docs/building/architecture/STAGES.md`
 - **Outcome**: issue `#2` is closed, and the scope was later extended by a follow-on grounded-signals mission beyond the original raw-tool-only slice.
 - **Tracking issue title**:
   - `[M2] Build the first MCP analytical surface over the warehouse`
@@ -134,7 +134,7 @@ Not in this milestone:
 
 - **Milestone**: `v2.1 labs`
 - **Labels**: `stage:ingest`, `stage:engine`, `type:feature`
-- **Source docs**: `docs/history/research/PROPOSAL_LABS.md`, `docs/architecture/STAGES.md`
+- **Source docs**: `docs/history/research/PROPOSAL_LABS.md`, `docs/building/architecture/STAGES.md`
 - **Outcome**: shipped and closed as issue `#3`; lab ingest and the first sparse-signal foundations are in the codebase, with later follow-on work now tracked separately.
 - **Tracking issue title**:
   - `[M3] Add lab PDF ingest and sparse-signal foundations`
@@ -220,6 +220,6 @@ Treat this document as the record of the first application pass, not as the curr
 
 For current planning:
 
-1. Use [../../product/FULL_APP_DEVELOPMENT_PLAN.md](../../product/FULL_APP_DEVELOPMENT_PLAN.md) for phase-level sequencing.
-2. Use [../../product/ROADMAP.md](../../product/ROADMAP.md) for the short live narrative of what is next.
+1. Use [../../building/product/FULL_APP_DEVELOPMENT_PLAN.md](../../building/product/FULL_APP_DEVELOPMENT_PLAN.md) for phase-level sequencing.
+2. Use [../../shared/ROADMAP.md](../../shared/ROADMAP.md) for the short live narrative of what is next.
 3. Use GitHub issues for the active mission backlog.

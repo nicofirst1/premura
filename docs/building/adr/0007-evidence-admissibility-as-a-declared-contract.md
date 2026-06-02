@@ -3,10 +3,10 @@
 Premura is operated and extended by agents, and its core safety problem is not
 just generic model error — it is an agent using the *wrong* evidence for a
 question (stale, too sparse, or the wrong kind) and stating it with confidence
-(see [DOCTRINE.md](../product/DOCTRINE.md) and
-[`STAGE2_EVIDENCE_ADMISSIBILITY_RESEARCH.md`](../history/research/STAGE2_EVIDENCE_ADMISSIBILITY_RESEARCH.md)).
+(see [DOCTRINE.md](../../shared/DOCTRINE.md) and
+[`STAGE2_EVIDENCE_ADMISSIBILITY_RESEARCH.md`](../../history/research/STAGE2_EVIDENCE_ADMISSIBILITY_RESEARCH.md)).
 A deliberate search of the public record
-([`AGENT_OPERATED_SOFTWARE_PRIOR_ART.md`](../history/research/AGENT_OPERATED_SOFTWARE_PRIOR_ART.md))
+([`AGENT_OPERATED_SOFTWARE_PRIOR_ART.md`](../../history/research/AGENT_OPERATED_SOFTWARE_PRIOR_ART.md))
 found that the building blocks exist in pieces, but nothing off-the-shelf
 decides *whether a piece of personal-health evidence is admissible for a given
 question* in a deterministic, reviewable way. The Stage 2 Evidence Admissibility

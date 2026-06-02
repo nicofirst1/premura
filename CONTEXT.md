@@ -45,7 +45,7 @@ _Avoid_: parse result, loader payload, import blob
 
 ### Personal context and intake
 
-These three domains have a fixed meaning contract ([PROFILE_AND_INTAKE_CONTRACT.md](docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md)) and now have concrete warehouse homes (migration `004_profile_intake.sql`). They are kept strictly distinct from observation history (what a device/lab measured) and note history (un-normalizable free text).
+These three domains have a fixed meaning contract ([PROFILE_AND_INTAKE_CONTRACT.md](docs/building/architecture/PROFILE_AND_INTAKE_CONTRACT.md)) and now have concrete warehouse homes (migration `004_profile_intake.sql`). They are kept strictly distinct from observation history (what a device/lab measured) and note history (un-normalizable free text).
 
 **Baseline profile context**:
 Stable or slowly-changing personal facts the operator *states about themselves* — birth date, biological sex, a declared standing height. These are the operator's own account, not an instrument reading, and they live in `hp.profile_context_assertion`, never in the measurement tables.
@@ -130,7 +130,7 @@ Working code that demonstrates an approach is feasible end-to-end. Often the art
 _Avoid_: PoC, proof of concept.
 
 **Design decision note**:
-A short doc — one paragraph or two — capturing a design choice and the reason it won. Lives under `docs/adr/`. The folder name `adr/` is kept for filesystem stability, but in prose call them "design decision notes."
+A short doc — one paragraph or two — capturing a design choice and the reason it won. Lives under `docs/building/adr/` (these are coding-agent/maintainer docs). The folder name `adr/` is kept for filesystem stability, but in prose call them "design decision notes."
 _Avoid_: ADR, architecture decision record (in prose; the folder name `adr/` is fine).
 
 **First sort**:

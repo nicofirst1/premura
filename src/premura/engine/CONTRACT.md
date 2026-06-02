@@ -5,7 +5,7 @@
 > Authority: this file ships with the package and is the source of truth for
 > what a Stage 2 signal may do and claim. Its sibling is
 > `src/premura/parsers/CONTRACT.md` (the parser-side contract).
-> See `docs/architecture/STAGES.md` for where Stage 2 sits in the four-stage
+> See `docs/building/architecture/STAGES.md` for where Stage 2 sits in the four-stage
 > architecture.
 
 ## What Stage 2 is
@@ -91,13 +91,13 @@ Some future signals will need **baseline profile context** (e.g. a declared
 standing height), **nutrition intake** (e.g. `protein_g`), or **supplement
 intake** (e.g. a dose amount). The meaning of these domains and how they stay
 distinct from observations is fixed in
-[`docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md`](../../../docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md).
+[`docs/building/architecture/PROFILE_AND_INTAKE_CONTRACT.md`](../../../docs/building/architecture/PROFILE_AND_INTAKE_CONTRACT.md).
 None of these domains is consumed by a shipped Stage 2 signal today, and none is
 a new execution stage — they are semantic data domains later stages may read.
 
 When such a signal is eventually written, it **must declare that profile/intake
 prerequisite explicitly**, using the dependency-declaration shape in
-[`docs/architecture/contracts/profile_and_intake_dependencies.yaml`](../../../docs/architecture/contracts/profile_and_intake_dependencies.yaml).
+[`docs/building/architecture/contracts/profile_and_intake_dependencies.yaml`](../../../docs/building/architecture/contracts/profile_and_intake_dependencies.yaml).
 A declaration names:
 
 - `consumer_name` — the signal/tool that has the dependency,
@@ -312,7 +312,7 @@ admits a window; everything after is pure over the prepared inputs.
 
 `correlate` is the first **multi-input** analytical tool. Its locked
 architecture is design decision note
-[`0008`](../../../docs/adr/0008-correlate-pre-registered-lagged-association.md);
+[`0008`](../../../docs/building/adr/0008-correlate-pre-registered-lagged-association.md);
 its *statistical* choices (Spearman's rho, the effective-sample-size band, the
 paired-sample floor, the `common_cause_plausible` key, the lag ceiling) are
 settled in the research note
@@ -461,7 +461,7 @@ in the research note and caveat text. The analytical engine must **never** call
 PubMed or any network service at runtime: computation is pure over the prepared
 inputs the caller passes. PubMed grounding and a session-scoped reproducible
 research trace / multiplicity audit are **separate, deferred missions** (see
-[ROADMAP.md](../../../docs/product/ROADMAP.md) and design decision note `0008`),
+[ROADMAP.md](../../../docs/shared/ROADMAP.md) and design decision note `0008`),
 not part of this tool — per-call honesty cannot see an agent that ran many
 hypotheses and surfaced the one that fit, which is a stateful session-layer
 concern by design.

@@ -2,7 +2,7 @@
 
 > Status: authoritative. Source of truth for what the system must do.
 >
-> Companion to [DOCTRINE.md](DOCTRINE.md) (product stance), [../history/architecture/ARCHITECTURE_HISTORY.md](../history/architecture/ARCHITECTURE_HISTORY.md) (implementation history), [USERJOURNEY.md](USERJOURNEY.md) (experience), [STATUS.md](../operations/STATUS.md) (what works today), and [ROADMAP.md](ROADMAP.md) (what's next).
+> Companion to [DOCTRINE.md](DOCTRINE.md) (product stance), [../history/architecture/ARCHITECTURE_HISTORY.md](../history/architecture/ARCHITECTURE_HISTORY.md) (implementation history), [USERJOURNEY.md](../using/USERJOURNEY.md) (experience), [STATUS.md](STATUS.md) (what works today), and [ROADMAP.md](ROADMAP.md) (what's next).
 > This document is the source of truth for **what the system must do**, not how.
 
 ## 1. Purpose
@@ -123,7 +123,7 @@ Build a single, locally-owned warehouse and tool substrate for the user's person
 
 ### Primary analytical interface — agent-facing tool surface
 
-The system SHALL expose a programmatic analytical surface suitable for an AI agent acting on the human user's behalf. In the current shipped shape this is the MCP surface described in `docs/architecture/STAGES.md` and `docs/operations/STATUS.md`.
+The system SHALL expose a programmatic analytical surface suitable for an AI agent acting on the human user's behalf. In the current shipped shape this is the MCP surface described in `docs/building/architecture/STAGES.md` and `docs/shared/STATUS.md`.
 
 ### Operator interface — CLI surface (`hpipe`)
 

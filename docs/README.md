@@ -2,13 +2,19 @@
 
 This index explains what each document is for and which ones are authoritative.
 
-Docs are grouped by **content domain** into five folders:
+Docs are split **by audience** at the directory level — your location in the tree
+tells you whose docs you are in:
 
-- `product/` — what the system is and where it's going.
-- `architecture/` — how the system is shaped and what its contracts are.
-- `operations/` — what the system currently does and how to run it.
-- `research/` — proposals, prior-art studies, and forward-looking analyses.
-- `history/` — archived plans, proposals, spikes, and historical references kept for context.
+- `shared/` — cross-cutting docs every audience needs (identity, contract, live
+  state, direction).
+- `using/` — for a **human** using or evaluating Premura.
+- `operating/` — for an **agent operating a developed Premura** for a human
+  through tools, without editing the repo.
+- `building/` — for **coding agents and maintainers** changing the repo; keeps
+  its domain subdirs (`architecture/`, `adr/`, `agents/`, `planning/`,
+  `research/`, `product/`).
+- `history/` — archived plans, proposals, spikes, and historical references kept
+  for context (audience-neutral).
 
 ## Start here — find your audience
 
@@ -18,7 +24,7 @@ are doing, not just who you are.
 - **Human using or evaluating Premura** → `../README.md` — what it is, how to
   run it locally, and where to go next.
 - **Agent operating a developed Premura for a human** (tools, no code edits) →
-  `operations/RUNTIME_AGENT.md` — MCP-first operation, approvals, honest data
+  `operating/RUNTIME_AGENT.md` — MCP-first operation, approvals, honest data
   state, trace disclosure, PubMed and privacy boundaries, operator fallback.
 - **Coding agent dropped into this clone** to change the code → `../AGENTS.md` —
   first steps, authoritative read order, and the safe-change/PR workflow.
@@ -31,28 +37,28 @@ routes separate.
 
 ## Source of truth
 
-- `product/DOCTRINE.md` — product identity: agent-primary execution, human-primary purpose.
-- `product/SPEC.md` — product and data-contract requirements.
-- `product/FULL_APP_DEVELOPMENT_PLAN.md` — phase-level plan from the current shipped state forward.
-- `architecture/STAGES.md` — architecture boundaries between parsers, engine, MCP, and UI.
-- `architecture/UPDATE_STRATEGY.md` — supported and deferred warehouse update kinds.
+- `shared/DOCTRINE.md` — product identity: agent-primary execution, human-primary purpose.
+- `shared/SPEC.md` — product and data-contract requirements.
+- `building/product/FULL_APP_DEVELOPMENT_PLAN.md` — phase-level plan from the current shipped state forward.
+- `building/architecture/STAGES.md` — architecture boundaries between parsers, engine, MCP, and UI.
+- `building/architecture/UPDATE_STRATEGY.md` — supported and deferred warehouse update kinds.
 - `../src/premura/parsers/CONTRACT.md` — authoritative parser plugin contract.
 
 For the analytical layer specifically, the shortest trustworthy read order is:
 
-- `operations/STATUS.md` — what analytical behavior is already shipped
-- `architecture/STAGES.md` — where Stage 2 ends and Stage 3 begins
+- `shared/STATUS.md` — what analytical behavior is already shipped
+- `building/architecture/STAGES.md` — where Stage 2 ends and Stage 3 begins
 - `../src/premura/engine/CONTRACT.md` — what Stage 2 signals may and may not claim
-- `product/FULL_APP_DEVELOPMENT_PLAN.md` §`v0.3 analytical depth` — the current phase-level plan
+- `building/product/FULL_APP_DEVELOPMENT_PLAN.md` §`v0.3 analytical depth` — the current phase-level plan
 
 ## Live reference
 
-- `operations/STATUS.md` — what is currently true and shipped.
-- `operations/OPERATIONS.md` — operator commands and day-to-day run surface.
-- `product/ROADMAP.md` — short live narrative of what is next; points to the phase plan instead of restating it.
+- `shared/STATUS.md` — what is currently true and shipped.
+- `using/OPERATIONS.md` — operator commands and day-to-day run surface.
+- `shared/ROADMAP.md` — short live narrative of what is next; points to the phase plan instead of restating it.
 - `history/product/ROADMAP_BOOTSTRAP_PLAN.md` — historical record of the first mission-instantiation pass (M1-M3) and its rationale.
-- `product/USERJOURNEY.md` — intended operator experience over time.
-- `architecture/PARSER_CONTRIBUTING.md` — parser contributor guide layered on top of the
+- `using/USERJOURNEY.md` — intended operator experience over time.
+- `building/architecture/PARSER_CONTRIBUTING.md` — parser contributor guide layered on top of the
   parser contract.
 
 ## Proposal and archive
@@ -70,5 +76,5 @@ For the analytical layer specifically, the shortest trustworthy read order is:
 - If two docs disagree, prefer the more code-adjacent shipped contract.
 - Parser rules should live in `../src/premura/parsers/CONTRACT.md`; other docs
   should summarize and link, not restate.
-- Stage-boundary rules should live in `architecture/STAGES.md`; other docs should reference
+- Stage-boundary rules should live in `building/architecture/STAGES.md`; other docs should reference
   it when needed.

@@ -1,6 +1,6 @@
 # Implement-Review Drift Audit — finish-analytical-tool-set-01KT0Y95
 
-> Method: [`docs/agents/implement-review-drift-audit.md`](../../agents/implement-review-drift-audit.md).
+> Method: [`docs/building/agents/implement-review-drift-audit.md`](../../building/agents/implement-review-drift-audit.md).
 > This audit consumes a post-merge mission-review note and asks *why the
 > implement→review→merge loop admitted it*, then names the missing control so the
 > next mission cannot repeat it. It is not a bug report — the bug is already
@@ -155,7 +155,7 @@ reviewer initiative.
 |---|---|
 | Span metadata reports local calendar days | **FIXED** — `7af861f` (`paired_inputs.py:614-618`; `BeforeAfterPair.before_day/after_day`) |
 | Regression fixture with `local_tz` where UTC date ≠ local day | **FIXED** — `7af861f` `test_span_metadata_uses_local_days_when_utc_dates_differ` |
-| Drift dimension registry extended | **DONE** — D4 added to `docs/agents/implement-review-drift-audit.md` |
+| Drift dimension registry extended | **DONE** — D4 added to `docs/building/agents/implement-review-drift-audit.md` |
 | Systemic prevention (below) | **OPEN** — recommendations for the next missions |
 
 ## Prevention — stop the class, not just this instance

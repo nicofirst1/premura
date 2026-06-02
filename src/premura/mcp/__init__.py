@@ -24,7 +24,7 @@ Two entrypoints are provided:
   the full default tool set.  No Stage 2 validity guarantees apply to results
   returned by ``query_warehouse``; callers own all result interpretation.
 
-See ``docs/adr/0004-stage3-operator-entrypoint.md`` for the decision record.
+See ``docs/building/adr/0004-stage3-operator-entrypoint.md`` for the decision record.
 """
 
 from __future__ import annotations

@@ -6,7 +6,7 @@
 >
 > Companion to [STAGES.md](STAGES.md) and [UPDATE_STRATEGY.md](UPDATE_STRATEGY.md).
 > The machine-readable surfaces that this document explains in prose live next to
-> it under `docs/architecture/contracts/`:
+> it under `docs/building/architecture/contracts/`:
 > [profile_and_intake_entities.yaml](contracts/profile_and_intake_entities.yaml),
 > [profile_and_intake_examples.yaml](contracts/profile_and_intake_examples.yaml),
 > [profile_and_intake_invariants.yaml](contracts/profile_and_intake_invariants.yaml),
@@ -320,7 +320,7 @@ parser/plugin follow-on work named below.
 
 Storage and the agent-mediated profile-capture path now ship. The Stage 2
 **input-resolution seam** is also now wired (see
-[`src/premura/engine/_resolution.py`](../../src/premura/engine/_resolution.py)
+[`src/premura/engine/_resolution.py`](../../../src/premura/engine/_resolution.py)
 and `src/premura/engine/CONTRACT.md`'s "Declaring dependencies through the
 input-resolution seam"): observation history and profile context have concrete
 resolvers, and **BMI ships as the first cross-domain Stage 2 proof consumer**
