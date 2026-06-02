@@ -15,7 +15,8 @@ subtasks:
 - T030
 - T031
 - T032
-shell_pid: '5063'
+shell_pid: "5063"
+agent: "claude:opus:python-implementer:implementer"
 history:
 - timestamp: '2026-06-02T13:00:02Z'
   actor: tasks
@@ -158,3 +159,7 @@ a justified no-op.
 ```bash
 spec-kitty agent action implement WP08 --agent <name>
 ```
+
+## Activity Log
+
+- 2026-06-02T13:11:56Z – claude:opus:python-implementer:implementer – shell_pid=5063 – Assigned agent via action command
