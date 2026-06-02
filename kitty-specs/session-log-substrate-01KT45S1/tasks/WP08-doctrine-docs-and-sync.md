@@ -15,8 +15,8 @@ subtasks:
 - T030
 - T031
 - T032
-shell_pid: "5063"
-agent: "claude:opus:python-implementer:implementer"
+shell_pid: "17415"
+agent: "claude:opus:python-reviewer:reviewer"
 history:
 - timestamp: '2026-06-02T13:00:02Z'
   actor: tasks
@@ -164,3 +164,4 @@ spec-kitty agent action implement WP08 --agent <name>
 
 - 2026-06-02T13:11:56Z – claude:opus:python-implementer:implementer – shell_pid=5063 – Assigned agent via action command
 - 2026-06-02T13:17:26Z – claude:opus:python-implementer:implementer – shell_pid=5063 – Ready for review
+- 2026-06-02T13:17:59Z – claude:opus:python-reviewer:reviewer – shell_pid=17415 – Started review via action command
