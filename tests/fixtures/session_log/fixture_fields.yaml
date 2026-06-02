@@ -1,0 +1,25 @@
+# Ground-truth source-field manifest for fitbit_heart_rate_synthetic.csv.
+#
+# This is the honesty-rail ground truth (D6): the grader reconciles a parser's
+# behaviour against THIS file, never against the parser's own self-report. Every
+# column of the CSV is enumerated here exactly once.
+#
+# Distinct-metric rule (D6 / R3): each non-null `canonical_metric` is UNIQUE, so
+# "that metric is present in the warehouse" unambiguously witnesses that one
+# field. A null `canonical_metric` means the field is inherently unmappable, so
+# the only honest disposition is to declare it (unmapped_metrics / skipped_rows).
+#
+# Values in the CSV are entirely invented — never a real Fitbit export, never
+# PHI (C-003 / C-004). Only the column names + units mirror public Fitbit-export
+# structure.
+source: fitbit_heart_rate
+csv: fitbit_heart_rate_synthetic.csv
+source_fields:
+  - name: timestamp
+    canonical_metric: null      # structural sample time, not itself a metric
+  - name: bpm
+    canonical_metric: heart_rate
+  - name: confidence
+    canonical_metric: null      # Fitbit per-sample confidence flag, no canonical metric
+  - name: altitude_m
+    canonical_metric: null      # altitude has no canonical metric here

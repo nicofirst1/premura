@@ -307,6 +307,34 @@ bridge** — connecting a fetched paper to the operator's own warehouse queries 
 also remain future work. This slice grounds citations in fetched records; it does
 not yet tie literature to personal data.
 
+## Runtime build-and-use parser boundary (settled 2026-06-02)
+
+The `session-log-substrate-01KT45S1` mission (slice one — the loggable session
+substrate) is **in progress**; its first landed change is a doctrine
+clarification (FR-130). The maintainer settled the runtime/dev-time boundary the
+docs previously contradicted: at runtime an agent may build a parser and **use
+it immediately for the operator's own data, with no reviewer** — this is part of
+using an installed Premura. Review enters **only if the human consents to
+contribute that parser back** as a public PR; the PR (not the local use) goes
+through the existing development/review process.
+
+- **Three docs now agree.** `docs/building/planning/operating-agent-roles.md`
+  §"Dev-time boundary", `docs/building/adr/0010-runtime-orchestrator-and-operating-roles.md`,
+  and `docs/shared/DOCTRINE.md` state the build-and-use-now rule consistently; no
+  remaining sentence requires review before a parser is used on the operator's
+  own data.
+- **Operating-role definition unchanged.** "Operating role" still means narrowly
+  *a job the orchestrator dispatches through Premura's MCP tools*; parser-building
+  is file-editing and remains **not** an MCP operating role. Only the
+  review-before-use clause changed. This sits inside charter risk-boundary #4
+  (internal work autonomous; PR-back is the human-approved external action), so no
+  charter amendment was needed.
+- **Pinned by a test.** `tests/test_doctrine_build_and_use.py` asserts on the file
+  bytes (SC-007) so the three docs cannot silently revert to review-before-use.
+- **Still in flight.** The rest of the session-log substrate slice (the session
+  log store, runtime contract checker, sandbox/ingest runner, fixtures, grader,
+  and repeatable check) is implemented on the mission lane and not yet merged.
+
 ## What's working end-to-end
 
 | Component | State | Evidence |

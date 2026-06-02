@@ -55,6 +55,8 @@ Premura is roughly **agent-first in execution, human-first in purpose** ("~80% f
 - **Agent operating/extending the repo** — the contracts, rubrics, and this doctrine. (`AGENTS.md` router → `CONTEXT.md`, `DOCTRINE.md`, contracts.)
 - **Contributor (human or agent) opening a PR** — how to extend correctly. (`CONTRIBUTING.md`, parser contract.)
 
+Building and using a parser for the operator's own data is part of operating an installed Premura: at runtime an agent may build a parser and use it immediately for the operator's own data, with no reviewer. Review enters only if the human consents to contribute that parser back — the PR (the contributor audience above), not the local use, goes through the existing development/review process.
+
 ## What Premura is not
 
 - Not a dashboard-first product.

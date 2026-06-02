@@ -72,6 +72,16 @@ class Settings(BaseSettings):
         return self.duck_dir / "health.duckdb"
 
     @property
+    def session_log_path(self) -> Path:
+        """The session log's own DuckDB file (sibling of warehouse_path).
+
+        A separate file from the health warehouse so the operating-session log
+        and the health facts never share a writer (FR-070). Real runs default
+        here; sandboxes override the path per isolation tag.
+        """
+        return self.duck_dir / "session_log.duckdb"
+
+    @property
     def exports_dir(self) -> Path:
         return self.data_dir / "exports"
 

@@ -234,10 +234,16 @@ granted repo-write automation.
 
 ## Dev-time boundary
 
-Parser extension is not an operating role. Runtime can discover and describe the
-need for a parser, produce a share packet, and ask whether to start dev-time
-work. The actual code change remains outside the runtime orchestrator and goes
-through the existing development/review process.
+Parser extension is not an operating role — it is file-editing, not a job the
+orchestrator dispatches through Premura's MCP tools. That narrow definition is
+unchanged. What the boundary does **not** require is a reviewer before the
+parser is used: at runtime an agent may build a parser and use it immediately
+for the operator's own data with no reviewer — this is part of using an
+installed Premura. Runtime can discover and describe the need for a parser,
+produce a share packet, and ask whether to start dev-time work. Review enters
+**only if the human consents to contribute that parser back** as a public PR;
+that PR (the user-approved draft-PR / share-packet flow above), not the local
+use, goes through the existing development/review process.
 
 The separate bootstrap agent is also outside this plan. It deserves its own
 issue: make a fresh clone agent-installable, including dependencies, project
