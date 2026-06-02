@@ -20,8 +20,8 @@ subtasks:
 - T019
 - T020
 - T021
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "62198"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "68053"
 history:
 - timestamp: '2026-06-02T13:00:02Z'
   actor: tasks
@@ -153,3 +153,4 @@ spec-kitty agent action implement WP05 --agent <name>
 
 - 2026-06-02T13:56:45Z – claude:opus:python-implementer:implementer – shell_pid=62198 – Started implementation via action command
 - 2026-06-02T14:01:39Z – claude:opus:python-implementer:implementer – shell_pid=62198 – Ready for review: deterministic three-rule grader recomputing loaded/runtime_valid/honest_about_gaps from warehouse+manifest+captured sets; verdict validates against grader-verdict.schema.json; catches dishonest altitude_m drop
+- 2026-06-02T14:02:21Z – claude:opus:python-reviewer:reviewer – shell_pid=68053 – Started review via action command
