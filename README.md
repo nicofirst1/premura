@@ -2,8 +2,17 @@
 
 Local-first, agent-operable health reasoning substrate. A human supplies health-data exports, questions, and approvals; agents ingest, normalize, analyze, compare, and explain through deterministic tools over a single DuckDB warehouse. The system captures the metrics Health Connect does not bridge (HRV rMSSD overnight, stress, body battery, training load/readiness, VO₂ max, etc.) while keeping encrypted export and backup artifacts under the human user's control.
 
+This page is the human/operator landing page: what Premura is, how to run it
+locally, and where to go next. You do not need the planning or history docs to
+start.
+
+> **Who are you?**
+> - **Operating Premura for a human through an agent** (tools, not code edits)? Read the [runtime-agent operating guide](docs/operations/RUNTIME_AGENT.md).
+> - **A coding agent dropped into this clone** to change the code? Start with [`AGENTS.md`](AGENTS.md).
+> - **A contributor opening a PR**? Start with [`CONTRIBUTING.md`](CONTRIBUTING.md).
+> - **Just exploring?** Keep reading, then browse the [docs guide](docs/README.md).
+
 > Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [Doctrine](docs/product/DOCTRINE.md) · [SPEC](docs/product/SPEC.md) · [STATUS](docs/operations/STATUS.md) · [Stages](docs/architecture/STAGES.md) · [Roadmap](docs/product/ROADMAP.md) · [Full Plan](docs/product/FULL_APP_DEVELOPMENT_PLAN.md)
-> Contributor guide: [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
 Premura is still pre-`v1`: future release tags use the `v0.x.0` line until all
 four stages form a coherent user-facing path. The historical `v1.0.0` tag is a

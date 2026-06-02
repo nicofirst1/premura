@@ -10,12 +10,24 @@ Docs are grouped by **content domain** into five folders:
 - `research/` — proposals, prior-art studies, and forward-looking analyses.
 - `history/` — archived plans, proposals, spikes, and historical references kept for context.
 
-## Start here
+## Start here — find your audience
 
-- `../README.md` — operator and installation entry point.
-- `../CONTRIBUTING.md` — main development guide for contributors and coding
-  agents.
-- `../AGENTS.md` — short router for agents and quick human navigation.
+These four doors are deliberately distinct; pick the one that matches what you
+are doing, not just who you are.
+
+- **Human using or evaluating Premura** → `../README.md` — what it is, how to
+  run it locally, and where to go next.
+- **Agent operating a developed Premura for a human** (tools, no code edits) →
+  `operations/RUNTIME_AGENT.md` — MCP-first operation, approvals, honest data
+  state, trace disclosure, PubMed and privacy boundaries, operator fallback.
+- **Coding agent dropped into this clone** to change the code → `../AGENTS.md` —
+  first steps, authoritative read order, and the safe-change/PR workflow.
+- **Contributor (human or agent) opening a PR** → `../CONTRIBUTING.md` —
+  development setup, checks, conventions, and review handoff.
+
+The runtime agent and the coding agent are **not** the same audience: one
+operates a shipped Premura through tools, the other edits the repo. Keep their
+routes separate.
 
 ## Source of truth
 

@@ -1,7 +1,14 @@
 # AGENTS.md
 
-> Repo-root router for humans and AI agents. Use this file to find the right
-> working guide, not as the full contract itself.
+> Repo-root router for a **coding agent dropped into this clone** to change
+> Premura's code. Use this file to find the right working guide, not as the full
+> contract itself.
+>
+> **Different audience?** If you are operating a developed Premura for a human
+> through tools (not editing the repo), stop here and read the
+> [runtime-agent operating guide](docs/operations/RUNTIME_AGENT.md) instead. If
+> you are a human deciding whether to use Premura, start at
+> [`README.md`](README.md).
 
 ## Read this first — two rules govern everything here
 
@@ -33,6 +40,26 @@ optional context; it is the thing agents most often get wrong.
   `docs/architecture/PARSER_CONTRIBUTING.md`, then `src/premura/parsers/CONTRACT.md`.
 - If you are using Claude Code to generate a parser, also read
   `src/premura/skills/parser-generator/SKILL.md`.
+
+## First steps in this clone
+
+You are inside a working clone of the repo. Before changing anything:
+
+1. **Bootstrap once.** Run `uv run hpipe bootstrap` — it prepares and verifies
+   this checkout (environment + bundled skills) and tells you whether an
+   agent-session reload is needed. It is setup-only; it never ingests, uploads,
+   or touches the warehouse.
+2. **Read in this order:** [`docs/product/DOCTRINE.md`](docs/product/DOCTRINE.md)
+   (the two rules) → `CONTEXT.md` (maintainer vocabulary) →
+   [`CONTRIBUTING.md`](CONTRIBUTING.md) (setup, checks, conventions, PR handoff)
+   → the relevant contract for your change.
+3. **Make the change safely** following `CONTRIBUTING.md` §"Change style" and
+   §"Architecture boundaries". Keep changes inside the right stage.
+4. **Before review handoff,** run the changed-scope checks (`ruff`, `mypy`,
+   `pytest`) documented in `CONTRIBUTING.md` and prepare the pull request there.
+
+`CONTRIBUTING.md` owns the full development setup, check commands, and PR/review
+workflow — this router points to it rather than restating it.
 
 ## Standards-first rule (project-level)
 
