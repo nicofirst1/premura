@@ -11,6 +11,8 @@ subtasks:
 - T007
 - T008
 - T009
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "25468"
 history:
 - timestamp: '2026-06-02T13:00:02Z'
   actor: tasks
@@ -129,3 +131,7 @@ observable function output).
 ```bash
 spec-kitty agent action implement WP02 --agent <name>
 ```
+
+## Activity Log
+
+- 2026-06-02T13:22:59Z – claude:opus:python-implementer:implementer – shell_pid=25468 – Started implementation via action command
