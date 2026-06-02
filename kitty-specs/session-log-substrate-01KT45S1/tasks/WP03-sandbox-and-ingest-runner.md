@@ -172,3 +172,4 @@ spec-kitty agent action implement WP03 --agent <name>
 - 2026-06-02T13:43:02Z – claude:opus:python-reviewer:reviewer – shell_pid=47999 – Started review via action command
 - 2026-06-02T13:49:34Z – claude:opus:python-reviewer:reviewer – shell_pid=47999 – Reject cycle-1: sandbox copies untracked-not-ignored files; contract is tracked-only (R2/D2). Unnecessary (install_parser/operator deliver parser into sandbox) + determinism/containment smell (.spec-kitty/review-lock.json gets copied).
 - 2026-06-02T13:50:21Z – claude:opus:python-implementer:implementer – shell_pid=55698 – Started implementation via action command
+- 2026-06-02T13:53:01Z – claude:opus:python-implementer:implementer – shell_pid=55698 – Fixed: tracked-only sandbox copy + regression test (cycle 1)
