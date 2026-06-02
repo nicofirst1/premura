@@ -17,9 +17,9 @@ DIRECTIVE_034/036). Front-loadable (no deps): **WP01, WP02, WP04, WP08**.
 | T004 | `record_ingest_provenance` writer (two-origin + contract_pass) | WP01 | | [D] |
 | T005 | `config.session_log_path` property | WP01 | | [D] |
 | T006 | store tests (row capture, single-writer, vocab) | WP01 | | [D] |
-| T007 | `ContractCheckResult` + `check_runtime_contract` clauses 1–2 | WP02 | [P] |
-| T008 | `check_runtime_contract` clauses 3–4 | WP02 | [P] |
-| T009 | contract-check tests (each clause pass/fail) | WP02 | [P] |
+| T007 | `ContractCheckResult` + `check_runtime_contract` clauses 1–2 | WP02 | [D] |
+| T008 | `check_runtime_contract` clauses 3–4 | WP02 | [D] |
+| T009 | contract-check tests (each clause pass/fail) | WP02 | [D] |
 | T010 | `sandbox.py` build temp copy from tracked tree + temp paths | WP03 | |
 | T011 | sandbox teardown + `install_parser` helper | WP03 | |
 | T012 | `ingest_runner.py` subprocess → JSON outcome envelope | WP03 | |
@@ -72,9 +72,9 @@ declared/emitted sets + an `empty_warehouse` and assert each clause.
 **Prompt**: [tasks/WP02-runtime-contract-checker.md](tasks/WP02-runtime-contract-checker.md) (~250 lines)
 **Dependencies**: none. **Requirements**: FR-050.
 
-- [ ] T007 `ContractCheckResult` + `check_runtime_contract` clauses `no_derived_emitted`, `declared_equals_emitted` (WP02)
-- [ ] T008 clauses `declared_exist_in_dim_metric`, `produced_batch_without_raising` (WP02)
-- [ ] T009 contract-check tests: each clause pass + fail (WP02)
+- [x] T007 `ContractCheckResult` + `check_runtime_contract` clauses `no_derived_emitted`, `declared_equals_emitted` (WP02)
+- [x] T008 clauses `declared_exist_in_dim_metric`, `produced_batch_without_raising` (WP02)
+- [x] T009 contract-check tests: each clause pass + fail (WP02)
 
 ### WP04 — Synthetic fixtures + reference parsers
 
