@@ -69,10 +69,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
+from premura.harness import open_sandbox_warehouse_for_grading
 from premura.harness.grader import grade
 from premura.harness.sandbox import Sandbox, build_sandbox, install_parser
 from premura.session_log import store
-from premura.store import duck
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -454,7 +454,10 @@ def _drive_live_trial(
         provenance = _captured_provenance(envelope)
 
         # (5) Grade against the sandbox warehouse (read-only, AFTER the runner closed).
-        warehouse_conn = duck.connect(sandbox.warehouse_path, read_only=True)
+        #     On the failure path the operator's parser raised before any warehouse
+        #     file was created; the helper materializes an EMPTY (0-fact-row)
+        #     warehouse so grading still yields a deterministic FAIL (FR-080).
+        warehouse_conn = open_sandbox_warehouse_for_grading(sandbox.warehouse_path)
         try:
             verdict = grade(
                 provenance=provenance,

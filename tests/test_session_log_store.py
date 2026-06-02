@@ -351,7 +351,7 @@ def test_ingest_provenance_two_origin_round_trip(tmp_path: Path) -> None:
     declared = ["heart_rate"]
     emitted = ["heart_rate"]
     unmapped = ["confidence", "altitude_m"]
-    skipped = [{"reason": "bad row", "field": "bpm"}]
+    skipped = [{"raw_field": "bpm", "reason": "bad row"}]
 
     store.record_ingest_provenance(
         conn,

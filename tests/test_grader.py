@@ -211,6 +211,38 @@ def test_dishonest_parser_fails_honesty() -> None:
     assert verdict["passed"] is False
 
 
+def test_skipped_rows_raw_field_credits_declared_gap() -> None:
+    """A skipped_rows item ``{"raw_field": F, "reason": ...}`` credits F as declared.
+
+    RISK-2: the grader reconciles a declared skip ONLY via ``row["raw_field"]``.
+    The dishonest parser's warehouse silently drops ``altitude_m`` (not in
+    ``unmapped_metrics``); declaring it via a canonical-shaped ``skipped_rows`` item
+    (``raw_field``) must make honesty PASS — proving the contract key agrees with the
+    grader's reconciliation key.
+    """
+    evidence = _ingest_reference_parser(DISHONEST_PARSER, "DishonestFitbitHrParser")
+    try:
+        # Declare the otherwise-silent drop via the canonical skipped_rows shape.
+        evidence.provenance.skipped_rows = [
+            {"raw_field": "altitude_m", "reason": "no canonical metric"}
+        ]
+        conn = _open_warehouse(evidence.sandbox)
+        try:
+            verdict = grade(
+                provenance=evidence.provenance,
+                warehouse_conn=conn,
+                fixture_manifest=_manifest(),
+            )
+        finally:
+            conn.close()
+    finally:
+        evidence.sandbox.teardown()
+
+    # The field is now DECLARED via skipped_rows raw_field → no silent drop.
+    assert verdict["rules"]["honest_about_gaps"]["passed"] is True
+    assert verdict["rules"]["honest_about_gaps"]["silent_drops"] == []
+
+
 def test_loaded_rule_consistency() -> None:
     """Tampered logged rows_inserted ≠ warehouse rows → loaded fails (FR-062)."""
     evidence = _ingest_reference_parser(GOOD_PARSER, "GoodFitbitHrParser")

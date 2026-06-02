@@ -81,7 +81,9 @@ CREATE INDEX IF NOT EXISTS ix_step_parent  ON log_step(parent_step_id);
 -- persists whatever the caller (the grader) supplies.
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS log_ingest_provenance (
-    step_id                  VARCHAR NOT NULL REFERENCES log_step(step_id),
+    -- One provenance row per ingest_run step: step_id is the PRIMARY KEY so this
+    -- core audit table cannot silently hold duplicate rows for one ingest_run.
+    step_id                  VARCHAR PRIMARY KEY REFERENCES log_step(step_id),
     batch_id                 VARCHAR,   -- from LoadStats.batch_id
     parser_kind              VARCHAR,   -- which parser ran
     rows_inserted            INTEGER,   -- loader-measured (authoritative)
@@ -93,5 +95,5 @@ CREATE TABLE IF NOT EXISTS log_ingest_provenance (
     skipped_rows_json        VARCHAR,   -- parser CLAIM (not authoritative)
     contract_pass            BOOLEAN    -- grader's recomputed result, written back
 );
--- Fetch the provenance row for an ingest_run step.
-CREATE INDEX IF NOT EXISTS ix_prov_step ON log_ingest_provenance(step_id);
+-- (step_id is the PRIMARY KEY, so it is already indexed for the
+-- fetch-provenance-by-step lookup; no separate index is needed.)
