@@ -18,6 +18,8 @@ subtasks:
 - T023
 - T024
 - T025
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "71827"
 history:
 - timestamp: '2026-06-02T13:00:02Z'
   actor: tasks
@@ -147,3 +149,7 @@ all dependency WP prompts.
 ```bash
 spec-kitty agent action implement WP06 --agent <name>
 ```
+
+## Activity Log
+
+- 2026-06-02T14:05:15Z – claude:opus:python-implementer:implementer – shell_pid=71827 – Started implementation via action command
