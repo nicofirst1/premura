@@ -89,6 +89,26 @@ Authoritative stage guidance lives in `docs/architecture/STAGES.md`.
 - When behavior or workflow changes, update the relevant docs in the same
   change.
 
+## Pull requests and review handoff
+
+This guide owns the contribution path for both humans and coding agents. Before
+opening a pull request:
+
+1. Keep the change scoped to one coherent unit of work (see §"Change style").
+2. Run the changed-scope checks above and make them green: `uv run ruff check .`,
+   `uv run ruff format --check .`, `uv run mypy <changed-paths>`, and the fast
+   `uv run python -m pytest -q -x --tb=short` loop. Run `-m regression` when you
+   touch parser schemas, real-export handling, or release validation.
+3. Update the docs touched by the behavior change in the same PR.
+4. Open the pull request with a summary of intent, the checks you ran, and any
+   follow-up left out of scope. A reviewer (human or agent) should be able to
+   verify the change against the relevant contract without reconstructing it.
+
+Coding agents working inside the repo reach this section through
+[`AGENTS.md`](AGENTS.md); runtime agents proposing changes from a live session
+do so through a reviewed share packet — see
+[`docs/operations/RUNTIME_AGENT.md`](docs/operations/RUNTIME_AGENT.md).
+
 ## Source of truth
 
 - Product and data-contract intent: `docs/product/SPEC.md`
