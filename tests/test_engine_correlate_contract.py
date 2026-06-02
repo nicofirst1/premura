@@ -65,7 +65,10 @@ def test_lagged_association_is_distinct_from_single_series_questions() -> None:
     """Lagged association must NOT collapse onto a single-series question type;
     the ADR forbids reusing a descriptive/single-series shape for two-series
     association."""
-    assert AnalyticalQuestionType.LAGGED_ASSOCIATION is not AnalyticalQuestionType.LEVEL_SHIFT_DETECTION
+    assert (
+        AnalyticalQuestionType.LAGGED_ASSOCIATION
+        is not AnalyticalQuestionType.LEVEL_SHIFT_DETECTION
+    )
     assert AnalyticalQuestionType.LAGGED_ASSOCIATION is not AnalyticalQuestionType.SMOOTHED_PATTERN
     values = {qt.value for qt in AnalyticalQuestionType}
     # The three reviewed question types are all distinct closed values.

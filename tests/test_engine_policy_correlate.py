@@ -29,7 +29,6 @@ from premura.engine.policies._defaults import BUILTIN_POLICIES
 from premura.engine.policies._evaluator import evaluate_evidence
 from premura.engine.policies._model import (
     EvidenceCandidate,
-    EvidenceStatus,
     QuestionType,
     RejectionReason,
     SufficiencyRule,

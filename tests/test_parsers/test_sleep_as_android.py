@@ -1,4 +1,5 @@
 """SAA parser — synthetic CSV, no real PHI."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -10,7 +11,8 @@ def _write_fixture(tmp_path: Path) -> Path:
     csv = (
         "Id,Tz,From,To,Sched,Hours,Rating,Comment,Framerate,Snore,Noise,Cycles,DeepSleep,LenAdjust,Geo,"
         "23:00,23:01,23:02,00:00,00:01\n"
-        "1700000000000,Europe/Berlin,21. 03. 2024 23:00,22. 03. 2024 06:00,,7.0,3.5,sample,60.0,0,0,4,0.42,0,,"
+        "1700000000000,Europe/Berlin,21. 03. 2024 23:00,22. 03. 2024 06:00,"
+        ",7.0,3.5,sample,60.0,0,0,4,0.42,0,,"
         "1.2,0.9,0.4,0.1,0.0\n"
     )
     p = tmp_path / "saa.csv"
