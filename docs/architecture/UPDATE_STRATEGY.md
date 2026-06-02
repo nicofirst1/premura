@@ -178,11 +178,16 @@ correction records a new statement and keeps the prior one visible. Conflating
 the two would either lose correction lineage (if treated as a rebuild) or
 pretend declarations have a raw artifact to rebuild from (they do not).
 
-### Still deferred
+### What ships today and what remains deferred
 
-As with the rest of the profile/intake contract, **no mechanism for this ships
-today**. There is no table, no `hpipe` verb, and no API for recording or
-superseding profile assertions or intake corrections. This section fixes the
-*intended update shape* so a future storage adapter and workflow mission can
-implement it without re-deciding whether corrections are rebuilds. The contract
-is the fixed point; the adapter is free to move underneath it.
+Baseline profile assertions now have a concrete mechanism: dedicated profile
+tables, `hpipe profile-fields` / `hpipe profile-record`, and the matching
+agent-mediated MCP capture tools record one allowlisted profile fact at a time
+and supersede the prior open assertion while keeping history.
+
+Structured nutrition and supplement intake storage also exists, but source
+adaptation and correction workflow remain follow-on work. A future parser can
+load normalized intake records through the intake load path; a future correction
+workflow should still follow the shape above by adding a new statement/record and
+preserving lineage rather than pretending intake corrections are warehouse
+rebuilds.

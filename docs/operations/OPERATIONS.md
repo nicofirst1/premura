@@ -8,8 +8,8 @@
 ## How to use it today
 
 ```bash
-# put inputs in data/inbox/ (HC .db, Garmin GDPR .zip, SAA/BMT .csv), then:
-uv run hpipe ingest                      # autodiscovers all four sources
+# put inputs in data/inbox/ (HC .db, Garmin GDPR .zip, SAA/BMT .csv, lab files), then:
+uv run hpipe ingest                      # autodiscovers all supported sources
 uv run hpipe status                      # current row counts
 uv run hpipe export --month 2026-05      # snapshot + tarball + age-encrypt
 uv run hpipe upload --month 2026-05      # opt-in upload step
@@ -26,5 +26,6 @@ duckdb -readonly data/duck/health.duckdb
 ## Notes
 
 - Upload remains opt-in; `run-monthly` does not push automatically.
+- Lab ingest is part of the current source surface; install the lab extras before parsing real PDFs.
 - `README.md` is the primary bootstrap and installation guide.
 - `STATUS.md` is the authoritative snapshot of what is currently verified.

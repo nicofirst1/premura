@@ -37,12 +37,12 @@ phrasing.
   `hpipe install-skills`, which copies the skill into `./.claude/skills/` in
   the current project root.
 - **General development guide:** `CONTRIBUTING.md`
-- **Four-stage data flow:** `docs/STAGES.md` — Ingest (parsers) → Engine →
+- **Four-stage data flow:** `docs/architecture/STAGES.md` — Ingest (parsers) → Engine →
   MCP → UI. Each stage's importable Python package documents its layering
   rule in its `__init__.py` docstring (notably: Stage 3 MCP never reads
   `hp.fact_measurement` directly; Stage 4 UI never reads it or calls the
   engine directly).
-- **Warehouse update policy:** `docs/UPDATE_STRATEGY.md` — the six update
+- **Warehouse update policy:** `docs/architecture/UPDATE_STRATEGY.md` — the six update
   kinds and which ones the current architecture handles versus defers.
 
 If `CONTRACT.md` ever disagrees with this file, `CONTRACT.md` wins.

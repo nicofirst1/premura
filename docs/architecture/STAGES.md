@@ -35,8 +35,8 @@ Data moves through the system in a strict order. Each stage has a different cont
 
 Parsers turn a vendor artifact into rows in `hp.fact_measurement` / `hp.fact_interval` per the long-format star schema documented in [../history/architecture/ARCHITECTURE_HISTORY.md](../history/architecture/ARCHITECTURE_HISTORY.md).
 
-- Today: HC `.db`, Garmin GDPR `.zip`, Sleep as Android CSV, BMT CSV.
-- Coming: blood / urine / stool lab PDFs (see [../history/research/PROPOSAL_LABS.md](../history/research/PROPOSAL_LABS.md)), continuous glucose, additional wearables.
+- Today: HC `.db`, Garmin GDPR `.zip`, Sleep as Android CSV, BMT CSV, and lab files through the in-tree lab parser.
+- Coming: continuous glucose and additional wearables.
 - No derivation, no imputation, no analysis. Ingest stores **what was observed, in canonical units, with provenance**.
 - Idempotent (sha256 + `dedupe_key UNIQUE`), append-only.
 

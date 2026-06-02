@@ -31,22 +31,17 @@ Wears four hats over the system's lifetime:
 ## Journey 1 — First-time setup (~30 minutes, once)
 
 ### Goal
-Get to "the pipeline can run end-to-end" with no remaining manual steps for the monthly path.
+Get to "the checkout is ready, the local keys are backed up, and the monthly path is understood" with no hidden setup steps.
 
 ### Steps
 
 1. **Clone / open the repo** at `~/repos/personal/premura/`.
-2. **Run bootstrap**: `bash ops/bootstrap.sh`. This:
-   - `brew install age rclone`
-   - `uv sync` to install Python deps
-   - Creates `~/.config/premura/` (mode 700)
-   - Generates an `age` keypair at `~/.config/premura/age.key` (mode 600), writes the public recipient to `~/.config/premura/recipients.txt`
-   - **Prompts: "Back up `~/.config/premura/age.key` to your password manager now. WITHOUT IT YOUR BACKUPS ARE UNRECOVERABLE. [press Enter when done]"**
-   - Walks user through `rclone config` for a `gdrive` remote with `drive.file` scope
-3. **Run `hpipe doctor`** — verifies `age`, `rclone`, `uv`, DuckDB warehouse path, age key fingerprint, rclone remote reachability. All green = ready.
-4. **First HC ingest** (sanity check): drop the latest HC export (e.g. `~/Downloads/health_connect_export.db`) into `data/inbox/`, run `hpipe ingest --source hc`. Expect hundreds of thousands of rows + a printed coverage summary by metric.
-5. **Install launchd agent**: `hpipe install-launchd`. The agent is now scheduled for the 1st of every month at 10:00 local.
-6. **(Optional) Open your project wiki hub page** — if you keep a personal knowledge wiki, add a hub page for this project per PLAN §"Wiki integration".
+2. **Run the fresh-clone setup check**: `uv run hpipe bootstrap`. This prepares/verifies the local checkout and bundled skills, confirms the core project surfaces import, and tells the agent whether a session reload is needed. It is setup-only: it does not ingest, analyze, query the warehouse, or upload.
+3. **Run the operator bootstrap script**: `bash ops/bootstrap.sh`. This handles workstation prerequisites such as `age`, optional `rclone`, and the local `age` keypair. Back up `~/.config/premura/age.key` before relying on encrypted artifacts; without it, backups are unrecoverable.
+4. **Run `uv run hpipe doctor`** — verifies the local environment and configured operational prerequisites. Optional upload gaps are not the same as ingest readiness.
+5. **First HC ingest** (sanity check): drop the latest HC export (e.g. `~/Downloads/health_connect_export.db`) into `data/inbox/`, run `uv run hpipe ingest --source hc`. Expect rows plus a printed coverage summary by metric.
+6. **Install launchd agent**: `uv run hpipe install-launchd`. The agent is now scheduled for the 1st of every month at 10:00 local.
+7. **(Optional) Open your project wiki hub page** — if you keep a personal knowledge wiki, add a hub page for this project per PLAN §"Wiki integration".
 
 ### Success criteria
 - `hpipe status` shows non-zero row counts.
@@ -56,12 +51,12 @@ Get to "the pipeline can run end-to-end" with no remaining manual steps for the 
 ### Common stumbles to anticipate
 - Forgetting to back up the `age.key`. The bootstrap script blocks until the user types `confirmed`.
 - Picking `drive` (full) instead of `drive.file` (app-sandboxed) scope during `rclone config`. The bootstrap prompts explicitly.
-- Python version drift if uv picks a different interpreter than expected. The `.python-version` file pins to 3.11.
+- Python version drift if uv picks a different interpreter than expected. The `.python-version` file pins the supported interpreter.
 
 ## Journey 2 — Monthly run (~10 minutes user time, every month)
 
 ### Trigger
-On the 1st at 10:00 local, launchd fires `hpipe run-monthly`. A macOS notification appears: *"Premura: request fresh Garmin GDPR dump, drop SAA + BMT exports in `data/inbox/`, then `touch data/inbox/.ready`."*
+On the 1st at 10:00 local, launchd fires `hpipe run-monthly`. A macOS notification appears: *"Premura: request fresh Garmin GDPR dump, drop available exports in `data/inbox/`, then `touch data/inbox/.ready`."*
 
 ### Steps the user performs
 
@@ -69,29 +64,30 @@ On the 1st at 10:00 local, launchd fires `hpipe run-monthly`. A macOS notificati
 2. **Sleep as Android export** (~1 min): open SAA → Settings → Backup → Export to file → save the CSV to `~/repos/personal/premura/data/inbox/`.
 3. **Body Measurement Tracker export** (~1 min): open BMT → Settings → Export → CSV → save to `data/inbox/`.
 4. **Drop Garmin zip into inbox**: move the downloaded zip to `data/inbox/`.
-5. **Health Connect**: nothing to do — HC's own auto-export deposits a fresh `.db` daily into a Drive folder; the pipeline pulls the latest before processing.
-6. **Mark ready**: `touch data/inbox/.ready`.
-7. **Wait**: pipeline polls hourly. On next tick it ingests everything, runs cross-source dedupe, snapshots the warehouse, encrypts with `age`, uploads to `gdrive:/backups/premura/YYYY/MM/`, garbage-collects local exports older than 3 months, and emits a "Done: N rows added" notification.
+5. **Health Connect**: export or copy the current HC `.db` into `data/inbox/` when you want it included.
+6. **Lab files, if any**: drop supported lab files into `data/inbox/` only after the local lab extras are installed.
+7. **Mark ready**: `touch data/inbox/.ready`.
+8. **Wait**: pipeline polls hourly. On next tick it ingests available source artifacts, runs cross-source dedupe, snapshots the warehouse, encrypts with `age`, garbage-collects local exports older than the configured retention window, and emits a done notification. Upload is not automatic; run `uv run hpipe upload --month YYYY-MM` only when you want to push encrypted artifacts to Drive.
 
 ### Steps the system performs (invisible to user)
 
 ```
-ingest hc      → ingest garmin → ingest saa → ingest bmt
+ingest hc      → ingest garmin → ingest saa → ingest bmt → ingest lab when present
    ↓
 dedupe (cross-source priority)
    ↓
 write to hp.fact_measurement + hp.fact_interval (idempotent)
    ↓
-export snapshot  →  age encrypt  →  rclone upload  →  verify lsl  →  notify
+export snapshot  →  age encrypt  →  local retention cleanup  →  notify
 ```
 
 ### Success notification
-*"Premura 2026-05: +X rows · HRV+Y · HR+Z · sleep+W. Backup at gdrive:/backups/premura/2026/05/"*
+*"Premura 2026-05: +X rows · HRV+Y · HR+Z · sleep+W. Encrypted artifact ready locally."*
 
 ### Failure modes
 - **No `.ready` after 7 days**: agent renotifies and exits. No data ingested. User must re-trigger when ready.
 - **Garmin zip never arrived**: skip Garmin this month; HC + SAA + BMT still get ingested. Next month's Garmin GDPR will cover the gap (Garmin always exports a rolling window).
-- **rclone auth expired**: pipeline fails at upload step. Notification: *"Upload failed: rclone reauth needed. Run `rclone config reconnect gdrive:`"*. The warehouse is already updated locally — re-run `hpipe upload` after fixing auth.
+- **rclone auth expired**: monthly ingest/export still completes locally. The explicit upload step fails until the user runs `rclone config reconnect gdrive:` and retries `uv run hpipe upload --month YYYY-MM`.
 - **Disk full**: pipeline halts before encrypting. `hpipe gc --keep 1` frees ~2 months of local exports.
 
 ## Journey 3 — Agent-mediated analysis (default, anytime)
@@ -173,13 +169,14 @@ The encrypted Drive snapshot + the age key + this repo are sufficient. That's th
 
 | Touchpoint | Frequency | User effort |
 |---|---|---|
-| `bash ops/bootstrap.sh` | once | 15 min |
+| `uv run hpipe bootstrap` | once per fresh clone | <5 min |
+| `bash ops/bootstrap.sh` | once per workstation | 15 min |
 | Password-manager backup of age.key | once | 2 min |
 | `rclone config` for gdrive | once | 5 min |
 | `hpipe install-launchd` | once | <1 min |
 | Garmin GDPR request → download | monthly | 2 min request + wait |
-| SAA export → drop in inbox | monthly | 1 min |
-| BMT export → drop in inbox | monthly | 1 min |
+| HC/SAA/BMT exports → drop in inbox | monthly | varies |
+| Lab files → drop in inbox | occasional | varies |
 | `touch data/inbox/.ready` | monthly | <1 min |
 | Read success notification | monthly | passive |
 | Ad-hoc query | as needed | varies |

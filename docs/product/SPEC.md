@@ -11,18 +11,19 @@ Build a single, locally-owned warehouse and tool substrate for the user's person
 
 ## 2. Scope
 
-### In scope (v1)
-- Ingestion of **monthly cadence** dumps from four named sources:
+### In scope (current pre-v1 line)
+- Ingestion of **monthly cadence** dumps from the supported source surface:
   1. **Garmin Connect** — GDPR data export `.zip` (manual request from `account.garmin.com/datamanagement/`)
-  2. **Health Connect** — `.db` produced by HC's built-in auto-export to Google Drive
+  2. **Health Connect** — user-exported `.db`
   3. **Sleep as Android** — CSV export
   4. **Body Measurement Tracker** (cookapps) — CSV export
+  5. **Labs** — local lab files through the in-tree lab parser
 - Parsing each source into a unified long-format star schema in **DuckDB**.
 - Deterministic cross-source deduplication.
 - Encryption of exported warehouse snapshots and staged raw artifacts with **`age`**, using a recipient public key whose private key the user holds.
-- Off-site backup to **Google Drive** via **`rclone`**.
+- Opt-in off-site backup to **Google Drive** via **`rclone`**; the monthly run stops after producing encrypted local artifacts unless the user explicitly runs upload.
 - A macOS **launchd** agent that runs on a calendar trigger, emits a notification when fresh inputs are needed, and waits for a user-controlled sentinel before processing.
-- A Python CLI (`hpipe`) covering: `ingest`, `status`, `export`, `upload`, `doctor`, `run-monthly`, `gc`, `install-launchd`.
+- A Python CLI (`hpipe`) covering setup, ingest, status, export, opt-in upload, doctor, monthly operation, garbage collection, launchd installation, bundled skill installation, and bounded profile capture.
 - An agent-facing MCP/tool surface over the warehouse and engine. This is the default analytical interface; direct CLI and SQL use remain valid expert fallback paths.
 
 ### Out of scope (v1)
@@ -45,7 +46,7 @@ Build a single, locally-owned warehouse and tool substrate for the user's person
 | FR-4 | The system SHALL ingest a Body Measurement Tracker CSV, converting units per `config.parsers.bmt.weight_unit` and `config.parsers.bmt.length_unit`, and assigning unknown columns to `metric_id = bmt_custom:<slug>` with `unit='unknown'`. | Ingest a sample with kg and lb settings; assert canonical kg output. |
 | FR-5 | The system SHALL deduplicate within a single source (native UUID / synthesized key UNIQUE) and across sources (priority-ordered match by metric_id + ±2s timestamp + ±0.01 value). | Ingest the HC file twice; assert `COUNT(*)` unchanged. Ingest a Garmin GDPR row and an HC-bridged Garmin row of the same metric/value/instant; assert one row with `source_id` = Garmin GDPR. |
 | FR-6 | The system SHALL produce an encrypted artifact `health.duckdb.age` (and `raw.tar.gz.age` of the month's staged raws) recoverable with the user's `age` private key. | Round-trip: `age -d` of the encrypted file, byte-diff against the source. |
-| FR-7 | The system SHALL upload encrypted artifacts to `gdrive:/backups/premura/YYYY/MM/` and verify via `rclone lsl`. | Run upload; verify listing shows expected files with matching sizes. |
+| FR-7 | The system SHALL upload encrypted artifacts to `gdrive:/backups/premura/YYYY/MM/` only when the user explicitly invokes the opt-in upload command, and verify via `rclone lsl`. | Run `hpipe upload --month YYYY-MM`; verify listing shows expected files with matching sizes. |
 | FR-8 | The system SHALL run unattended-or-notify on macOS via launchd, calendar-triggered monthly, and never act on inputs unless the user has touched `data/inbox/.ready`. | `launchctl kickstart` the agent; verify it notifies and exits without ingesting if `.ready` is absent. |
 | FR-9 | The system SHALL be idempotent: re-running any ingest with the same input file (matched by sha256) is a no-op for rows already written. | Two consecutive ingests of the same file; second run's `rows_inserted = 0`, `rows_skipped_dup = N`. |
 | FR-10 | The system SHALL preserve historical rows even when a fresher dump no longer contains them (Garmin's 2-/5-year horizon). | Ingest dump A covering 2024-01–2026-04; ingest dump B covering 2024-03–2026-05; assert rows from 2024-01–2024-02 still present and tagged with dump A's `ingest_batch`. |
@@ -62,7 +63,7 @@ Build a single, locally-owned warehouse and tool substrate for the user's person
 
 ### NFR-Durability
 - The DuckDB warehouse is the **system of record** post-ingestion. Stage/raw files MAY be garbage-collected per `hpipe gc --keep N` (default N=3 months).
-- Garmin GDPR exports expire 3 days after generation; once ingested, the encrypted raw tarball on Drive is the only remaining copy of the original dump.
+- Garmin GDPR exports expire 3 days after generation; once ingested, the encrypted raw tarball is the durable copy of the original dump. If the user opts into Drive upload, that encrypted artifact is also stored off-machine.
 - The `age` private key loss = total backup loss. The system MUST emit a setup-time warning and a periodic reminder.
 
 ### NFR-Observability
@@ -127,14 +128,17 @@ The system SHALL expose a programmatic analytical surface suitable for an AI age
 ### Operator interface — CLI surface (`hpipe`)
 
 ```
-hpipe ingest [--source all|hc|garmin|saa|bmt] [PATH]   # parse and store
+hpipe bootstrap                                         # fresh-clone setup readiness; on a fresh clone use `uv run hpipe bootstrap`
+hpipe ingest [--source all|hc|garmin|saa|bmt|lab] [PATH] # parse and store
 hpipe status                                            # summary of ingest_run + row counts per metric
-hpipe export --month YYYY-MM                            # snapshot + tarball staged raws
-hpipe upload                                            # age-encrypt + rclone copy to Drive
-hpipe run-monthly                                       # full pipeline (launchd entry-point)
+hpipe export --month YYYY-MM                            # snapshot + tarball staged raws, age-encrypt
+hpipe upload --month YYYY-MM                            # opt-in rclone copy to Drive
+hpipe run-monthly                                       # ingest + encrypt pipeline (no upload step)
 hpipe doctor                                            # environment + config preflight
 hpipe gc --keep N                                       # drop local exports older than N months
 hpipe install-launchd / uninstall-launchd               # manage the launchd agent
+hpipe install-skills                                    # install bundled agent skills
+hpipe profile-fields / profile-record                   # expert mirror of bounded profile capture
 ```
 
 All commands MUST emit a non-zero exit code on any failure that breaks the contract (failed sha256, failed upload verification, failed encryption round-trip).
@@ -144,7 +148,7 @@ All commands MUST emit a non-zero exit code on any failure that breaks the contr
 The v1 milestone is met when, simultaneously:
 
 - A full monthly run starting from a fresh checkout completes the verification ladder in PLAN §"Verification" with no manual fix-ups beyond the one-time bootstrap.
-- A randomly chosen month's encrypted artifact on Drive decrypts to a DuckDB file whose row counts match the local warehouse at the same point in time.
+- A randomly chosen month's encrypted artifact decrypts to a DuckDB file whose row counts match the local warehouse at the same point in time. If the user opts into Drive upload, the uploaded copy must pass the same check.
 - `hpipe doctor` reports green on the operator's Mac and on a second clean Mac (proves no implicit state outside the repo + `~/.config/premura/`).
 - The wiki hub page (in the operator's personal knowledge wiki, location operator-specific) is committed and passes `/wiki-lint`.
 
@@ -153,7 +157,7 @@ The v1 milestone is met when, simultaneously:
 - The user is the sole operator and sole subject. Multi-user data is out of scope.
 - The user keeps `~/.config/premura/age.key` backed up in their password manager. Loss of this key is treated as user error, not a system failure.
 - Google Drive remains available and the rclone `gdrive` remote stays authenticated.
-- Garmin Connect, Sleep as Android, and Body Measurement Tracker continue to offer user-initiated exports in their current formats. Format drift is mitigated by defensive parsers (pattern-based file discovery, `PRAGMA table_info` checks) but not eliminated.
+- Garmin Connect, Sleep as Android, Body Measurement Tracker, Health Connect, and supported lab sources continue to offer user-initiated exports in their current formats. Format drift is mitigated by defensive parsers (pattern-based file discovery, `PRAGMA table_info` checks) but not eliminated.
 - macOS launchd is available; Linux/Windows operators would need to substitute `systemd` or Task Scheduler equivalents (out of v1 scope).
 - DuckDB ≥ 1.1 stays backwards-compatible enough to read the warehouse file. DuckDB has shipped a forward-compat statement; we accept the risk.
 
