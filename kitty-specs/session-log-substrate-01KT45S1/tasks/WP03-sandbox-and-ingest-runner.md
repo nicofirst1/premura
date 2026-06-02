@@ -14,8 +14,8 @@ subtasks:
 - T011
 - T012
 - T013
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "40594"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "47999"
 history:
 - timestamp: '2026-06-02T13:00:02Z'
   actor: tasks
@@ -169,3 +169,4 @@ spec-kitty agent action implement WP03 --agent <name>
 
 - 2026-06-02T13:36:05Z – claude:opus:python-implementer:implementer – shell_pid=40594 – Started implementation via action command
 - 2026-06-02T13:42:07Z – claude:opus:python-implementer:implementer – shell_pid=40594 – Ready for review: sandbox (tracked-tree copy, redirected paths, guaranteed teardown) + subprocess ingest runner emitting schema-valid JSON envelope; runner never writes the session log. All gates green.
+- 2026-06-02T13:43:02Z – claude:opus:python-reviewer:reviewer – shell_pid=47999 – Started review via action command
