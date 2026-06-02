@@ -28,10 +28,10 @@ DIRECTIVE_034/036). Front-loadable (no deps): **WP01, WP02, WP04, WP08**.
 | T015 | `good_fitbit_hr` reference parser (PASS) | WP04 | [D] |
 | T016 | `dishonest_fitbit_hr` reference parser (silent drop) | WP04 | [D] |
 | T017 | fixtures tests (manifest ↔ CSV; parser behaviors) | WP04 | [D] |
-| T018 | `grade()` verdict struct + `loaded` rule | WP05 | |
-| T019 | `runtime_valid` rule (calls contract_check on captured evidence) | WP05 | |
-| T020 | `honest_about_gaps` reconciliation vs fixture manifest | WP05 | |
-| T021 | grader tests (PASS / FAIL+silent_drops / no-trust) | WP05 | |
+| T018 | `grade()` verdict struct + `loaded` rule | WP05 | | [D] |
+| T019 | `runtime_valid` rule (calls contract_check on captured evidence) | WP05 | | [D] |
+| T020 | `honest_about_gaps` reconciliation vs fixture manifest | WP05 | | [D] |
+| T021 | grader tests (PASS / FAIL+silent_drops / no-trust) | WP05 | | [D] |
 | T022 | `repeatable_check.py` orchestrator + scripted log steps | WP06 | |
 | T023 | wire good-path + dishonest-path | WP06 | |
 | T024 | end-to-end tests (full PASS + FAIL) | WP06 | |
@@ -130,10 +130,10 @@ verdict excludes ids/timestamps.
 **Prompt**: [tasks/WP05-deterministic-grader.md](tasks/WP05-deterministic-grader.md) (~420 lines)
 **Dependencies**: WP01, WP02, WP04. **Requirements**: FR-060, FR-061, FR-062, FR-063, FR-064, FR-065; NFR-006.
 
-- [ ] T018 verdict structure + `loaded` rule (warehouse rows vs logged) (WP05)
-- [ ] T019 `runtime_valid` rule — call `check_runtime_contract` on captured evidence (WP05)
-- [ ] T020 `honest_about_gaps` — reconcile fixture manifest vs warehouse + claims (WP05)
-- [ ] T021 grader tests: PASS / FAIL+silent_drops / no-self-report-trust (WP05)
+- [x] T018 verdict structure + `loaded` rule (warehouse rows vs logged) (WP05)
+- [x] T019 `runtime_valid` rule — call `check_runtime_contract` on captured evidence (WP05)
+- [x] T020 `honest_about_gaps` — reconcile fixture manifest vs warehouse + claims (WP05)
+- [x] T021 grader tests: PASS / FAIL+silent_drops / no-self-report-trust (WP05)
 
 ---
 
