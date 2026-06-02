@@ -14,10 +14,15 @@ restore point for the first local-ingest pipeline, not the forward version line.
 Fresh clone? An agent (or human) in the repo runs **one setup command first**:
 
 ```bash
-hpipe bootstrap                             # SETUP ONLY: prepare + verify this local checkout, report reload guidance
+uv run hpipe bootstrap                      # SETUP ONLY: prepare + verify this local checkout, report reload guidance
 ```
 
-`hpipe bootstrap` prepares/verifies the local checkout (environment + bundled
+`uv run` is the entry point because `hpipe` is a console script that only exists
+after the package is installed — `uv run` provisions the local environment, then
+runs bootstrap, so it works on a brand-new clone (it needs only `uv` on PATH;
+absence of `uv` is reported as a bounded prerequisite, not a silent failure).
+
+`uv run hpipe bootstrap` prepares/verifies the local checkout (environment + bundled
 skills), tells you whether an agent-session reload is needed, and hands off the
 next safe step. It is setup-only — it never ingests data, touches the warehouse,
 or uploads anything. Then operate normally:
@@ -50,7 +55,7 @@ duckdb -readonly data/duck/health.duckdb
 ## CLI surface
 
 ```
-hpipe bootstrap                     # fresh-clone setup readiness (setup only — no ingest/upload)
+hpipe bootstrap                     # setup readiness (on a fresh clone use `uv run hpipe bootstrap`; setup only — no ingest/upload)
 hpipe ingest [--source all|hc|garmin|saa|bmt|lab] [PATH]
 hpipe status
 hpipe export --month YYYY-MM        # snapshot + tarball staged raws, age-encrypt

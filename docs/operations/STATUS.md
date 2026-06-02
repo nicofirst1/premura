@@ -378,10 +378,13 @@ Row counts shown here are *shape illustrations* from a single operator's pipelin
 
 ## Fresh-clone setup (shipped 2026-06-01)
 
-`hpipe bootstrap` is shipped, **setup-only** behavior for a freshly cloned
+`uv run hpipe bootstrap` is shipped, **setup-only** behavior for a freshly cloned
 checkout on the maintainer's supported macOS local workstation. It prepares and
-verifies the local checkout (environment + bundled skills) and reports whether an
-agent-session reload is needed before normal operation. It is **not** a runtime
+verifies the local checkout (environment + bundled skills), confirms the core
+project surfaces (`hpipe`, `premura-mcp`, `premura-mcp-operator`) import, and
+reports whether an agent-session reload is needed before normal operation. The
+`uv run` prefix is required because `hpipe` is a console script that does not
+exist on a fresh clone until the package is installed. It is **not** a runtime
 health-data operation: it does not ingest source artifacts, query the warehouse,
 run analysis, or upload anything. See README "Quick start" for the fresh-clone
 entry point.

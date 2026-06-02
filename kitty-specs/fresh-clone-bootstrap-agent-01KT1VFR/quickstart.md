@@ -7,7 +7,7 @@ This quickstart describes the intended behavior after implementation. It uses sy
 From the project root:
 
 ```bash
-hpipe bootstrap
+uv run hpipe bootstrap
 ```
 
 Expected result:
@@ -22,7 +22,7 @@ Expected result:
 Run the command again:
 
 ```bash
-hpipe bootstrap
+uv run hpipe bootstrap
 ```
 
 Expected result:
@@ -47,7 +47,7 @@ Expected result:
 During review, confirm bootstrap did not run any health-data operation:
 
 ```bash
-hpipe bootstrap
+uv run hpipe bootstrap
 ```
 
 Expected result:

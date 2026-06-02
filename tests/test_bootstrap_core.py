@@ -69,6 +69,18 @@ def _available_tools(*names: str):
     return _probe
 
 
+def _surfaces(*, broken: set[str] | None = None):
+    """A surface-probe double: every target imports unless named in ``broken``."""
+    broken = broken or set()
+
+    def _probe(target: str) -> tuple[bool, str]:
+        if target in broken:
+            return False, f"import of {target} failed: boom"
+        return True, f"{target} importable"
+
+    return _probe
+
+
 # ---------------------------------------------------------------------------
 # Closed vocabulary guards
 # ---------------------------------------------------------------------------
@@ -280,6 +292,125 @@ def test_core_service_does_not_touch_health_data_operations(
     # The next step is a safe setup/operation handoff, never an ingest/analysis.
     lowered = run.summary.next_step.lower()
     assert not any(bad in lowered for bad in ("ingest", "run-monthly", "upload", "analyz"))
+
+
+def test_core_surfaces_are_verified_when_dependencies_ready(tmp_path: Path) -> None:
+    """FR-003: a ready checkout reports each declared core surface as startable.
+
+    Verification is import-only (no surface is run), and every surface in the
+    registry produces a passing command-availability check.
+    """
+    runner = FakeRunner()
+    run = run_bootstrap(
+        tmp_path,
+        command_runner=runner,
+        skill_installer=fake_installer([]),
+        tool_probe=_available_tools("uv", "rclone"),
+        surface_probe=_surfaces(),
+    )
+
+    surface_checks = [
+        c
+        for c in run.checks
+        if c.category == "command availability" and c.name.endswith("importable")
+    ]
+    assert len(surface_checks) == len(bootstrap._CORE_SURFACES)
+    assert surface_checks, "expected core-surface checks"
+    assert all(c.status is CheckStatus.PASS for c in surface_checks)
+    assert run.summary.status is SummaryStatus.READY
+
+
+def test_unimportable_core_surface_is_a_blocker(tmp_path: Path) -> None:
+    """A core surface that cannot import is a real, actionable blocker."""
+    target = bootstrap._CORE_SURFACES[0][1]
+    runner = FakeRunner()
+    run = run_bootstrap(
+        tmp_path,
+        command_runner=runner,
+        skill_installer=fake_installer([]),
+        tool_probe=_available_tools("uv"),
+        surface_probe=_surfaces(broken={target}),
+    )
+
+    blocked = [
+        c for c in run.checks if c.status is CheckStatus.BLOCKED and c.name.endswith("importable")
+    ]
+    assert blocked, "expected a blocked core-surface check"
+    assert all(c.next_action for c in blocked)
+    assert run.summary.status is SummaryStatus.BLOCKED
+    assert run.summary.ready_for_operation is False
+
+
+def test_core_surfaces_skipped_when_dependencies_missing(tmp_path: Path) -> None:
+    """With deps not installed, surfaces cannot import yet — skip, do not false-block.
+
+    The surface probe must not even be consulted, since importing before the
+    environment exists would itself fail spuriously.
+    """
+
+    def _exploding_probe(target: str) -> tuple[bool, str]:
+        raise AssertionError("surface probe must not run before dependencies exist")
+
+    run = run_bootstrap(
+        tmp_path,
+        command_runner=FakeRunner(),
+        skill_installer=fake_installer([]),
+        tool_probe=_available_tools(),  # uv absent -> deps not ready
+        surface_probe=_exploding_probe,
+    )
+
+    surface_checks = [c for c in run.checks if c.name.endswith("importable")]
+    assert surface_checks, "expected core-surface checks even when skipped"
+    assert all(c.status is CheckStatus.SKIPPED for c in surface_checks)
+    # Surfaces are not the blocker here; the missing dependency manager is.
+    assert all(c.status is not CheckStatus.BLOCKED for c in surface_checks)
+
+
+def test_default_runner_anchors_cwd_to_project_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """RISK-1: local setup commands must run with cwd anchored to the checkout."""
+    import subprocess
+
+    seen: dict[str, object] = {}
+
+    def _fake_run(argv, **kwargs):
+        seen["cwd"] = kwargs.get("cwd")
+        seen["timeout"] = kwargs.get("timeout")
+
+        class _Proc:
+            returncode = 0
+            stdout = "ok"
+            stderr = ""
+
+        return _Proc()
+
+    monkeypatch.setattr(subprocess, "run", _fake_run)
+    runner = bootstrap._make_default_command_runner(tmp_path)
+    outcome = runner("install_local_dependencies", ["uv", "sync"])
+
+    assert outcome.ok
+    assert seen["cwd"] == tmp_path
+    # A bounded timeout is always passed so a stall cannot hang indefinitely.
+    assert isinstance(seen["timeout"], (int, float)) and seen["timeout"] > 0
+
+
+def test_default_runner_converts_timeout_to_actionable_blocker(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """RISK-2: a hung setup command becomes a bounded, actionable failure."""
+    import subprocess
+
+    def _hang(argv, **kwargs):
+        raise subprocess.TimeoutExpired(cmd=argv, timeout=kwargs.get("timeout", 0))
+
+    monkeypatch.setattr(subprocess, "run", _hang)
+    runner = bootstrap._make_default_command_runner(tmp_path)
+    outcome = runner("install_local_dependencies", ["uv", "sync"])
+
+    assert not outcome.ok
+    assert outcome.returncode == 124
+    assert "timed out" in outcome.detail.lower()
 
 
 def test_required_readiness_does_not_depend_on_private_data(tmp_path: Path) -> None:

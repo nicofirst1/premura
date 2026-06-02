@@ -5,7 +5,7 @@
 Planned command:
 
 ```text
-hpipe bootstrap
+uv run hpipe bootstrap
 ```
 
 The command is agent-facing setup. It may prepare the local project environment and project skills, then verify readiness. It must not ingest health data, query private warehouse rows, call analytical MCP tools, upload artifacts, or start runtime operating roles.

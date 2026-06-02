@@ -140,32 +140,83 @@ SkillInstaller = Callable[[Path], list[Path]]
 #: A tool probe answers "is this CLI tool available on PATH?".
 ToolProbe = Callable[[str], bool]
 
+#: A surface probe answers "does this ``module:attribute`` import target resolve?"
+#: It returns ``(ok, detail)`` so a caller can classify a core-surface check
+#: without re-deriving why an import failed.
+SurfaceProbe = Callable[[str], tuple[bool, str]]
 
-def _default_command_runner(name: str, argv: list[str]) -> CommandOutcome:
-    """Execute a local setup command. Used only when no runner is injected."""
-    import subprocess
+#: Bound on a single local setup command. A fresh-clone bootstrap must fail with
+#: an actionable blocker rather than hang the agent indefinitely if dependency
+#: resolution stalls. Sized generously above the NFR-001 10-minute success
+#: target so a healthy clean sync never trips it.
+_LOCAL_COMMAND_TIMEOUT_SECONDS = 900
 
-    try:
-        proc = subprocess.run(  # noqa: S603 - argv is built by this module
-            argv,
-            capture_output=True,
-            text=True,
-            check=False,
+
+def _make_default_command_runner(project_root: Path) -> CommandRunner:
+    """Build the real subprocess runner anchored to the checkout root.
+
+    Commands run with ``cwd=project_root`` so local setup targets the intended
+    checkout regardless of the process working directory, and with a bounded
+    timeout so a stalled dependency resolution becomes an actionable blocker
+    instead of an indefinite hang. Used only when no runner is injected.
+    """
+
+    def _run(name: str, argv: list[str]) -> CommandOutcome:
+        import subprocess
+
+        try:
+            proc = subprocess.run(  # noqa: S603 - argv is built by this module
+                argv,
+                capture_output=True,
+                text=True,
+                check=False,
+                cwd=project_root,
+                timeout=_LOCAL_COMMAND_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            return CommandOutcome(
+                returncode=124,
+                changed=False,
+                detail=(
+                    f"{name} timed out after {_LOCAL_COMMAND_TIMEOUT_SECONDS}s; "
+                    "re-run it manually to see where it stalls."
+                ),
+            )
+        except (OSError, ValueError) as exc:  # pragma: no cover - defensive
+            return CommandOutcome(returncode=127, changed=False, detail=str(exc))
+        detail = (proc.stderr or proc.stdout or "").strip().splitlines()
+        return CommandOutcome(
+            returncode=proc.returncode,
+            # The default runner cannot know "changed vs current"; treat a clean
+            # run as a change so callers see the action happened.
+            changed=proc.returncode == 0,
+            detail=detail[-1] if detail else "",
         )
-    except (OSError, ValueError) as exc:  # pragma: no cover - defensive
-        return CommandOutcome(returncode=127, changed=False, detail=str(exc))
-    detail = (proc.stderr or proc.stdout or "").strip().splitlines()
-    return CommandOutcome(
-        returncode=proc.returncode,
-        # The default runner cannot know "changed vs current"; treat a clean
-        # run as a change so callers see the action happened.
-        changed=proc.returncode == 0,
-        detail=detail[-1] if detail else "",
-    )
+
+    return _run
 
 
 def _default_tool_probe(tool: str) -> bool:
     return shutil.which(tool) is not None
+
+
+def _default_surface_probe(target: str) -> tuple[bool, str]:
+    """Verify a ``"module:attribute"`` surface resolves by import only.
+
+    This confirms a core project surface *can start* (its entry point imports
+    cleanly) without actually starting it — bootstrap is setup-only and never
+    runs a CLI verb, MCP server, or pipeline.
+    """
+    import importlib
+
+    module_name, _, attr = target.partition(":")
+    try:
+        module = importlib.import_module(module_name)
+    except Exception as exc:  # noqa: BLE001 - any import failure is a real blocker
+        return False, f"import of {module_name} failed: {exc}"
+    if attr and not hasattr(module, attr):
+        return False, f"{module_name} has no attribute {attr!r}"
+    return True, f"{target} importable"
 
 
 # ---------------------------------------------------------------------------
@@ -255,6 +306,18 @@ _OPTIONAL_TOOLS: tuple[tuple[str, str], ...] = (
     ("rclone", "Encrypted-export upload to remote storage is unavailable until rclone is set up."),
 )
 
+#: Core project surfaces a ready checkout must be able to start, declared as a
+#: registry of ``(label, "module:attribute")`` import targets that mirrors
+#: pyproject's ``[project.scripts]``. Verification imports each target (never
+#: runs it), so adding a surface is a one-line registry edit, not new prose. A
+#: surface that fails to import is a real blocker: the environment cannot start
+#: it before normal operation.
+_CORE_SURFACES: tuple[tuple[str, str], ...] = (
+    ("hpipe CLI", "premura.cli:app"),
+    ("Premura MCP server", "premura.mcp.entrypoint:main"),
+    ("Premura operator MCP server", "premura.mcp.entrypoint:main_operator"),
+)
+
 
 def _build_skill_setup_state(written: list[Path], install_path: Path) -> SkillSetupState:
     """Convert an installer's written-paths list into a SkillSetupState.
@@ -342,12 +405,70 @@ def _classify_optional_capabilities(tool_probe: ToolProbe) -> list[BootstrapChec
     return checks
 
 
+def _classify_core_surfaces(
+    surface_probe: SurfaceProbe,
+    *,
+    dependencies_ready: bool,
+) -> list[BootstrapCheck]:
+    """Verify that each declared core project surface can start (imports cleanly).
+
+    When local dependencies are not yet installed the surfaces cannot import, so
+    they are reported ``skipped`` with the dependency next-action rather than as
+    false blockers — the dependency blocker already drives the summary.
+    """
+    checks: list[BootstrapCheck] = []
+    for label, target in _CORE_SURFACES:
+        name = f"{label} importable"
+        if not dependencies_ready:
+            checks.append(
+                BootstrapCheck(
+                    name=name,
+                    category=CATEGORY_COMMAND_AVAILABILITY,
+                    status=CheckStatus.SKIPPED,
+                    observed="not verified: local dependencies are not installed yet",
+                    next_action=(
+                        "Install local dependencies, then re-run bootstrap to verify "
+                        "core project surfaces."
+                    ),
+                    local_action_allowed=True,
+                )
+            )
+            continue
+        ok, detail = surface_probe(target)
+        if ok:
+            checks.append(
+                BootstrapCheck(
+                    name=name,
+                    category=CATEGORY_COMMAND_AVAILABILITY,
+                    status=CheckStatus.PASS,
+                    observed=detail,
+                    local_action_allowed=True,
+                )
+            )
+        else:
+            checks.append(
+                BootstrapCheck(
+                    name=name,
+                    category=CATEGORY_COMMAND_AVAILABILITY,
+                    status=CheckStatus.BLOCKED,
+                    observed=detail,
+                    next_action=(
+                        f"Core surface {label} ({target}) could not be imported. Re-run "
+                        "dependency setup and resolve the import error, then re-run bootstrap."
+                    ),
+                    local_action_allowed=True,
+                )
+            )
+    return checks
+
+
 def run_bootstrap(
     project_root: Path,
     *,
     command_runner: CommandRunner | None = None,
     skill_installer: SkillInstaller = skills.install_skills,
     tool_probe: ToolProbe | None = None,
+    surface_probe: SurfaceProbe | None = None,
 ) -> BootstrapRun:
     """Inspect and prepare a local Premura checkout, returning a report.
 
@@ -365,6 +486,9 @@ def run_bootstrap(
         skill files actually written (empty == already current).
     tool_probe:
         Boundary for "is this CLI tool on PATH?". Defaults to ``shutil.which``.
+    surface_probe:
+        Boundary for "does this core-surface import target resolve?". Defaults to
+        a real import probe; tests inject a fake so no real module is imported.
 
     Returns
     -------
@@ -373,8 +497,11 @@ def run_bootstrap(
         does not need to recompute status or infer reload guidance.
     """
     project_root = Path(project_root)
-    runner = command_runner if command_runner is not None else _default_command_runner
+    runner = (
+        command_runner if command_runner is not None else _make_default_command_runner(project_root)
+    )
     probe = tool_probe if tool_probe is not None else _default_tool_probe
+    surf_probe = surface_probe if surface_probe is not None else _default_surface_probe
 
     started_at = datetime.now(UTC)
     checks: list[BootstrapCheck] = []
@@ -385,11 +512,13 @@ def run_bootstrap(
     checks.append(dep_check)
 
     # 2) Local project dependency action — only if it is safe to run locally.
+    dependencies_ready = False
     if dep_check.local_action_allowed:
         outcome = runner(
             _DEP_ACTION,
             [_DEP_MANAGER, "sync", "--extra", "dev"],
         )
+        dependencies_ready = outcome.ok
         if not outcome.ok:
             actions.append(
                 BootstrapAction(
@@ -447,6 +576,11 @@ def run_bootstrap(
                 detail=f"{_DEP_MANAGER} unavailable; not installing system-wide",
             )
         )
+
+    # 2b) Core project surfaces: confirm each declared entry point can start by
+    #     importing it (setup-only — bootstrap never runs the surface). Skipped
+    #     with guidance when dependencies are not yet installed.
+    checks.extend(_classify_core_surfaces(surf_probe, dependencies_ready=dependencies_ready))
 
     # 3) Skill setup via the repo-supported installer.
     skills_install_path = project_root / ".claude" / "skills"

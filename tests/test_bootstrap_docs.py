@@ -30,10 +30,24 @@ def test_readme_mentions_hpipe_bootstrap() -> None:
     assert "quick start" in text
 
 
+def test_readme_fresh_clone_entry_point_is_runnable() -> None:
+    """The fresh-clone entry point must be the runnable ``uv run hpipe bootstrap``.
+
+    A bare ``hpipe bootstrap`` is not executable on a fresh clone because
+    ``hpipe`` is a console script that only exists after the package is
+    installed. The quick-start command must carry the ``uv run`` prefix so a
+    fresh-clone agent does not have to invent a missing pre-step (FR-001/SC-001).
+    """
+    text = _read(README).lower()
+    assert "uv run hpipe bootstrap" in text
+
+
 def test_contributing_mentions_bootstrap_without_dropping_dev_checks() -> None:
     """CONTRIBUTING names bootstrap AND keeps the dev validation guidance."""
     text = _read(CONTRIBUTING).lower()
     assert "hpipe bootstrap" in text
+    # The documented fresh-clone path must be runnable, not the bare console script.
+    assert "uv run hpipe bootstrap" in text
     # Development validation guidance must survive.
     for check in ("pytest", "ruff", "mypy"):
         assert check in text, f"CONTRIBUTING dropped the {check} dev check"
