@@ -12,6 +12,8 @@ subtasks:
 - T015
 - T016
 - T017
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "32127"
 history:
 - timestamp: '2026-06-02T13:00:02Z'
   actor: tasks
@@ -149,3 +151,7 @@ omit `altitude_m`, yet `altitude_m` is not loaded.
 ```bash
 spec-kitty agent action implement WP04 --agent <name>
 ```
+
+## Activity Log
+
+- 2026-06-02T13:28:00Z – claude:opus:python-implementer:implementer – shell_pid=32127 – Started implementation via action command
