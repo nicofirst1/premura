@@ -28,8 +28,8 @@ subtasks:
 - T004
 - T005
 - T006
-shell_pid: "4816"
-agent: "claude:opus:python-implementer:implementer"
+shell_pid: "21613"
+agent: "claude:opus:python-reviewer:reviewer"
 history:
 - timestamp: '2026-06-02T13:00:02Z'
   actor: tasks
@@ -209,3 +209,4 @@ spec-kitty agent action implement WP01 --agent <name>
 
 - 2026-06-02T13:11:46Z – claude:opus:python-implementer:implementer – shell_pid=4816 – Assigned agent via action command
 - 2026-06-02T13:19:14Z – claude:opus:python-implementer:implementer – shell_pid=4816 – Ready for review: session-log store (own file + schema + sole-writer API + additive config.session_log_path); 12 tests green, ruff/format/mypy clean
+- 2026-06-02T13:19:58Z – claude:opus:python-reviewer:reviewer – shell_pid=21613 – Started review via action command
