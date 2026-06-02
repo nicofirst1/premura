@@ -183,6 +183,31 @@ list as closed.
   to write the future. Backed by the 2026-06-02 session-log-substrate finding
   (`docs/history/audits/2026-06-02-session-log-substrate-live-doc-drift-rca.md`).
 
+### D7 — Spec-named edge case lacks an end-to-end acceptance fixture
+
+- **Checks:** every edge case the spec **explicitly enumerates** (an "Edge cases"
+  bullet, a Scenario step, a "X → fail / X → refuse" clause) has an **end-to-end**
+  acceptance fixture that drives it through the real production path — not only a
+  unit test of one component in isolation, and not only the happy path plus one
+  contrast path.
+- **Originates:** the edge case is *named in the spec* but *owned by no WP's
+  fixtures*. Each component WP tests its own slice (the runner emits an error
+  envelope; the grader fails on 0 rows) — but in isolation, with constructed
+  inputs. The integrating WP (and the first mission-review) exercises the obvious
+  paths (good + dishonest, present + absent) and **stops before the spec's failure
+  edge case**, because "two paths green" reads as "the story works." The bug hides
+  on the path nobody wired end-to-end. (Real finding: a parser that *raises*
+  crashed the run at a missing-warehouse open instead of producing the
+  spec-promised captured, graded FAIL — every component handled it locally, no test
+  drove it through the parent harness. F2 in
+  `docs/history/audits/2026-06-02-session-log-substrate-live-doc-drift-rca.md`.)
+- **Catching control:** at `/spec-kitty.tasks`, map each spec-enumerated edge case
+  to an owning integration WP's Definition of Done as a **named end-to-end
+  fixture**; and at mission-review, re-run the spec's edge-case list end-to-end (a
+  superset of the happy/contrast paths), treating an unexercised named edge case as
+  a coverage defect, not a pass. This sharpens the "Boundary-crossing acceptance
+  fixtures" gate (presence-vs-absence) to **spec-enumerated edge cases**.
+
 ### Rule for adding a dimension
 
 A new dimension is admissible iff it: (1) names a gap that lives **between** WP

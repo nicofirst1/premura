@@ -98,3 +98,82 @@ its own merge.
   WP08 review verified "in progress," not a fabricated "done."
 - Fix: this commit updates `STATUS.md` §"Runtime build-and-use parser boundary"
   and `ROADMAP.md` item 5 to the merged state.
+
+---
+
+## Addendum — second mission-review (OpenCode), post-merge: failure-path + contract findings
+
+A second independent mission-review of the same merged mission returned **FAIL**,
+then **PASS-WITH-NOTES** after remediation. Its findings are recorded here as part
+of the same close-the-loop (the charter requires auditing every non-clean verdict).
+Fixes landed on master in `cc31030` (DRIFT-1/RISK-2/DRIFT-2/RISK-3/RISK-1) and
+`3dd43b0` (RISK-4), each independently re-verified.
+
+### Finding F2 — Ingest-failure path crashed instead of producing a captured, graded failed run (HIGH)
+
+- **Drift.** The spec edge case (`spec.md:117-124`) + FR-080 promise that a parser
+  that **raises** still yields a failed `ingest_run` step and a failed grader
+  verdict ("no partial credit"). In the merged code a parser raising in
+  `parse()` was caught in `ingest_runner.py` **before** `duck.initialize(warehouse)`
+  ran, so the sandbox warehouse file was never created; the parent then did
+  `duck.connect(warehouse_path, read_only=True)` (`repeatable_check.py:314`,
+  `live_trial.py:457`) on a non-existent file → DuckDB raised → the run **aborted
+  before** `record_ingest_provenance` and `finish_session`. The failed run was
+  neither gradeable nor auditable — a direct miss against FR-080.
+- **Controls that should have fired & why each missed.**
+  1. *WP03 review* — verified the runner emits a schema-valid `status:error`
+     envelope, but in isolation; it never wired that envelope through the parent
+     harness. (Cross-worktree: the parent is WP06/WP07.)
+  2. *WP05 grader review* — verified the `loaded` rule fails on 0 rows, but the
+     test **constructed** an empty-warehouse connection directly; it never reached
+     the parent code path that opens a *missing* warehouse.
+  3. *WP06/WP07 review* — exercised the happy path and the dishonest-but-**successful**
+     path end-to-end; **no end-to-end test drove a parser that raises.** The spec
+     *named* this edge case, but no acceptance fixture exercised it.
+  4. *My mission-review (first pass)* — re-ran the primary story (good + dishonest)
+     but **also stopped at the successful paths** — it did not run the spec's named
+     failure edge case end-to-end. This is the gap dimension **D7** names.
+- **Missing control → D7** (below): a spec-*named* edge case must have an
+  **end-to-end acceptance fixture**, exercised in the owning integration WP's
+  Definition of Done *and* re-run at mission-review — not only the happy/contrast
+  paths. The boundary-crossing-fixture gate required presence-vs-absence; D7
+  sharpens it to **spec-enumerated edge cases**, not just the obvious two paths.
+- **Remediation.** Shared helper `open_sandbox_warehouse_for_grading` materializes
+  an empty (seeded, 0-row) warehouse when missing, so the grader returns a
+  deterministic FAIL on all three rules with the `ingest_run` step + provenance
+  recorded and the session finished. New end-to-end raising-parser/operator tests
+  (`test_raising_parser_yields_captured_failed_run`,
+  `test_raising_operator_yields_captured_failed_run`) proven non-hollow (fail
+  pre-fix with the missing-warehouse crash, pass post-fix). Commit `cc31030`.
+
+### Finding F3 — Cross-WP contract looseness (MEDIUM)
+
+- **Drift.** (a) `skipped_rows` items were typed as any object in the envelope
+  schema, but the grader credits a declared skip only via `row["raw_field"]` — a
+  schema-valid skip without `raw_field` was invisible to honesty reconciliation
+  (false `silent_drop`). (b) The shipped `run_live_trial` signature
+  (`config, *, driver, operator, repo_root, parser_attr, source=None`) diverged
+  from the contracted `(config, *, driver, operator)`.
+- **Why it missed.** The WP07 per-WP review judged the extra `run_live_trial`
+  params "sandbox plumbing, not signature drift" and waved them through — a
+  contracted-signature change should have been a **contract amendment** under the
+  charter's "justified deviation = drift signal" rule, applied at the per-WP gate.
+- **Remediation.** Envelope schema now requires `skipped_rows[].raw_field`
+  (grader-key agreement) with a crediting test; `contracts/live-trial-seam.md`
+  reconciled to the shipped signature with the named-deferral rationale. `cc31030`.
+
+### Finding F4 — Acceptance tests skipped (not failed) on missing committed fixtures (LOW)
+
+- **Drift.** The decisive acceptance suites guarded on committed WP04 fixtures with
+  `pytest.mark.skipif(...)` — sensible *in-flight* (a WP's test shouldn't fail
+  because a sibling WP's fixtures aren't in its worktree yet), but post-merge a
+  vanished committed fixture would **silently skip** the gate rather than block it.
+- **Remediation.** Replaced with a hard `FileNotFoundError` at collection time
+  (verified: a missing fixture now errors, not skips). `3dd43b0`.
+
+### Durable control added by this addendum — registry dimension D7
+
+**D7 — Spec-named edge case lacks an end-to-end acceptance fixture** added to the
+registry in `docs/building/agents/implement-review-drift-audit.md`, plus a
+sharpening of the charter "whole-story acceptance" gate to re-run the spec's
+enumerated edge cases end-to-end, not only the happy and contrast paths.
