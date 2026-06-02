@@ -27,7 +27,7 @@ The decisions:
   **asymmetric and caller-declared**, defaulting to 0. It is the opposite of a
   "close-enough timestamp" tolerance, which would blur direction, double-count,
   and rest on an arbitrary fudge. (See `Lag` and `Association` in
-  [CONTEXT.md](../../CONTEXT.md).)
+  [CONTEXT.md](../../../CONTEXT.md).)
 
 - **The lag is hypothesis-driven, and large lags require justification the
   *agent* supplies — the deterministic engine never does research.** Beyond a
@@ -115,7 +115,7 @@ only partly covered by `life_event_sensitive`) is an open question for the
 implementing mission — and, like the question types, would be a reviewed
 extension, not an ad-hoc string. *(Resolved: the answer was yes —
 `common_cause_plausible`, the rule-shaped lurking/common-cause flag settled by
-the research note ([`CORRELATE_METHODOLOGY_RESEARCH.md`](../history/research/CORRELATE_METHODOLOGY_RESEARCH.md)
+the research note ([`CORRELATE_METHODOLOGY_RESEARCH.md`](../../history/research/CORRELATE_METHODOLOGY_RESEARCH.md)
 Q4) and shipped on the closed `ConfoundKey` vocabulary in the
 `correlate-lagged-association` mission, 2026-05-30.)* The pre-registered-hypothesis input and the
 provenance it lands in are the seam the later audit-trace mission builds on

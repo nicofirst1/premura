@@ -45,7 +45,7 @@ _Avoid_: parse result, loader payload, import blob
 
 ### Personal context and intake
 
-These three domains have a fixed meaning contract ([PROFILE_AND_INTAKE_CONTRACT.md](docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md)) and now have concrete warehouse homes (migration `004_profile_intake.sql`). They are kept strictly distinct from observation history (what a device/lab measured) and note history (un-normalizable free text).
+These three domains have a fixed meaning contract ([PROFILE_AND_INTAKE_CONTRACT.md](docs/building/architecture/PROFILE_AND_INTAKE_CONTRACT.md)) and now have concrete warehouse homes (migration `004_profile_intake.sql`). They are kept strictly distinct from observation history (what a device/lab measured) and note history (un-normalizable free text).
 
 **Baseline profile context**:
 Stable or slowly-changing personal facts the operator *states about themselves* — birth date, biological sex, a declared standing height. These are the operator's own account, not an instrument reading, and they live in `hp.profile_context_assertion`, never in the measurement tables.
@@ -111,6 +111,20 @@ _Avoid_: job, sync, import attempt
 The module at the warehouse seam that applies source priority and matching tolerance rules to a validated ingest batch before persistence. It decides which rows survive against existing warehouse state.
 _Avoid_: duplicate filter, conflict resolver, merge helper
 
+### Audit and logging
+
+**Session log**:
+The record of one operating session — every step an agent took during it — kept in its own local file, read by tests and audits, and never shown to the operating human. It is PHI-bearing (it can hold the human's actual questions) and therefore stays local-only, never synced or exported. It is a separate, broader thing than the research trace.
+_Avoid_: interaction audit substrate, audit store, session replay.
+
+**Step**:
+One recorded unit of work in the session log — an agent turn, a model call, or a single tool execution — with its inputs, outputs, status, and timing. Steps nest into a tree (a turn contains the tool calls it made).
+_Avoid_: span (in prose; it is the underlying standard's word, not ours).
+
+**Research trace**:
+The narrow, analytical-tools-only honesty ledger that records the analytical tool calls in a research session and derives the *measured* disclosure "K user-facing findings among N unique hypotheses examined." It is engine-pure and measured-not-self-reported. It is **not** the general session log, and the two are kept in separate files.
+_Avoid_: audit log, session log (these are a different, broader layer).
+
 ### Planning
 
 **Mission**:
@@ -130,7 +144,7 @@ Working code that demonstrates an approach is feasible end-to-end. Often the art
 _Avoid_: PoC, proof of concept.
 
 **Design decision note**:
-A short doc — one paragraph or two — capturing a design choice and the reason it won. Lives under `docs/adr/`. The folder name `adr/` is kept for filesystem stability, but in prose call them "design decision notes."
+A short doc — one paragraph or two — capturing a design choice and the reason it won. Lives under `docs/building/adr/` (these are coding-agent/maintainer docs). The folder name `adr/` is kept for filesystem stability, but in prose call them "design decision notes."
 _Avoid_: ADR, architecture decision record (in prose; the folder name `adr/` is fine).
 
 **First sort**:

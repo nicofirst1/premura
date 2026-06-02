@@ -12,7 +12,7 @@
 ## Why this exists
 
 Premura is built to be operated and extended by AI agents (see
-[../../product/DOCTRINE.md](../../product/DOCTRINE.md)). A natural question is
+[../../shared/DOCTRINE.md](../../shared/DOCTRINE.md)). A natural question is
 whether anyone has already worked out *how* to design software this way, and how
 to hold the line between agent freedom and safety. This note records a
 deliberate search of the public record so future planning starts from what is

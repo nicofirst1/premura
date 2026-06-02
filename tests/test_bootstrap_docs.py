@@ -15,9 +15,9 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 README = REPO_ROOT / "README.md"
 CONTRIBUTING = REPO_ROOT / "CONTRIBUTING.md"
-STATUS = REPO_ROOT / "docs" / "operations" / "STATUS.md"
-OPERATIONS = REPO_ROOT / "docs" / "operations" / "OPERATIONS.md"
-PARSER_CONTRIBUTING = REPO_ROOT / "docs" / "architecture" / "PARSER_CONTRIBUTING.md"
+STATUS = REPO_ROOT / "docs" / "shared" / "STATUS.md"
+OPERATIONS = REPO_ROOT / "docs" / "using" / "OPERATIONS.md"
+PARSER_CONTRIBUTING = REPO_ROOT / "docs" / "building" / "architecture" / "PARSER_CONTRIBUTING.md"
 
 
 def _read(path: Path) -> str:
@@ -92,7 +92,7 @@ def test_operations_does_not_freeze_old_source_count() -> None:
 def test_parser_contributing_uses_current_doc_paths() -> None:
     """Parser guide links should use the current docs/architecture paths."""
     text = _read(PARSER_CONTRIBUTING)
-    assert "docs/architecture/STAGES.md" in text
-    assert "docs/architecture/UPDATE_STRATEGY.md" in text
+    assert "docs/building/architecture/STAGES.md" in text
+    assert "docs/building/architecture/UPDATE_STRATEGY.md" in text
     assert "docs/STAGES.md" not in text
     assert "docs/UPDATE_STRATEGY.md" not in text

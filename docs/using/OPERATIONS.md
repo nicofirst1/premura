@@ -2,8 +2,8 @@
 
 > Status: live reference. Operator commands and day-to-day run surface.
 >
-> Companion to [../README.md](../../README.md) (setup), [STATUS.md](STATUS.md)
-> (current shipped state), and [SPEC.md](../product/SPEC.md) (requirements).
+> Companion to [../README.md](../../README.md) (setup), [STATUS.md](../shared/STATUS.md)
+> (current shipped state), and [SPEC.md](../shared/SPEC.md) (requirements).
 
 ## How to use it today
 
@@ -72,7 +72,7 @@ uv run premura-mcp-operator --ack
 uv run premura-mcp-operator --ack --warehouse-path /absolute/path/to/health.duckdb
 ```
 
-`query_warehouse` returns up to 200 rows by default and accepts `max_rows` up to 1000. How an agent should operate these surfaces honestly on a human's behalf is the subject of [RUNTIME_AGENT.md](RUNTIME_AGENT.md).
+`query_warehouse` returns up to 200 rows by default and accepts `max_rows` up to 1000. How an agent should operate these surfaces honestly on a human's behalf is the subject of [RUNTIME_AGENT.md](../operating/RUNTIME_AGENT.md).
 
 ## Direct SQL
 

@@ -6,10 +6,10 @@ human working locally or an agent editing the repo.
 ## Start here
 
 - Read `README.md` for bootstrap and CLI usage.
-- Read `docs/architecture/STAGES.md` before moving logic across package boundaries.
+- Read `docs/building/architecture/STAGES.md` before moving logic across package boundaries.
 - Read `.kittify/charter/charter.md` for the current quality gates and risk
   boundaries.
-- If you are adding a new parser, also read `docs/architecture/PARSER_CONTRIBUTING.md` and
+- If you are adding a new parser, also read `docs/building/architecture/PARSER_CONTRIBUTING.md` and
   `src/premura/parsers/CONTRACT.md`.
 
 ## Setup
@@ -68,7 +68,7 @@ the task explicitly spans them.
 - `ui`: presentation, interview flow, and teaching. Do not read raw warehouse
   tables directly from here.
 
-Authoritative stage guidance lives in `docs/architecture/STAGES.md`.
+Authoritative stage guidance lives in `docs/building/architecture/STAGES.md`.
 
 ## Health-data and security rules
 
@@ -107,14 +107,14 @@ opening a pull request:
 Coding agents working inside the repo reach this section through
 [`AGENTS.md`](AGENTS.md); runtime agents proposing changes from a live session
 do so through a reviewed share packet — see
-[`docs/operations/RUNTIME_AGENT.md`](docs/operations/RUNTIME_AGENT.md).
+[`docs/operating/RUNTIME_AGENT.md`](docs/operating/RUNTIME_AGENT.md).
 
 ## Source of truth
 
-- Product and data-contract intent: `docs/product/SPEC.md`
+- Product and data-contract intent: `docs/shared/SPEC.md`
 - Architecture and repo shape: `docs/history/architecture/ARCHITECTURE_HISTORY.md`
-- Stage boundaries: `docs/architecture/STAGES.md`
-- Warehouse update policy: `docs/architecture/UPDATE_STRATEGY.md`
+- Stage boundaries: `docs/building/architecture/STAGES.md`
+- Warehouse update policy: `docs/building/architecture/UPDATE_STRATEGY.md`
 - Parser plugin contract: `src/premura/parsers/CONTRACT.md`
 - Parser-generation skill: `src/premura/skills/parser-generator/SKILL.md`
 

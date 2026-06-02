@@ -2,7 +2,7 @@
 
 > Status: proposal/archive. Historical implementation and architecture record, not the primary source of truth.
 >
-> Companion to [SPEC.md](../product/SPEC.md), [USERJOURNEY.md](../product/USERJOURNEY.md), [STATUS.md](../operations/STATUS.md), [ROADMAP.md](../product/ROADMAP.md).
+> Companion to [SPEC.md](../../shared/SPEC.md), [USERJOURNEY.md](../../using/USERJOURNEY.md), [STATUS.md](../../shared/STATUS.md), [ROADMAP.md](../../shared/ROADMAP.md).
 > Repo working directory: operator's choice (referred to as `$REPO` below).
 > Python package: `premura`; CLI entry: `hpipe`
 > Existing on disk: `uv init` baseline (Python 3.11, empty `main.py`, empty `pyproject.toml` deps) — bootstrap step 2 replaces these.

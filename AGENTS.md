@@ -6,7 +6,7 @@
 >
 > **Different audience?** If you are operating a developed Premura for a human
 > through tools (not editing the repo), stop here and read the
-> [runtime-agent operating guide](docs/operations/RUNTIME_AGENT.md) instead. If
+> [runtime-agent operating guide](docs/operating/RUNTIME_AGENT.md) instead. If
 > you are a human deciding whether to use Premura, start at
 > [`README.md`](README.md).
 
@@ -27,7 +27,7 @@ humans). Two rules follow, and they govern every spec, plan, contract, and doc:
    where it should define the rule for adding to the list?*
 
 **Before writing or reviewing any spec or plan, read
-[`docs/product/DOCTRINE.md`](docs/product/DOCTRINE.md)** — it is the
+[`docs/shared/DOCTRINE.md`](docs/shared/DOCTRINE.md)** — it is the
 authoritative statement of both rules, with worked examples. This is not
 optional context; it is the thing agents most often get wrong.
 
@@ -37,7 +37,7 @@ optional context; it is the thing agents most often get wrong.
   jargon.
 - If you are changing Premura's codebase, start with `CONTRIBUTING.md`.
 - If you are adding or reviewing a federated parser, read
-  `docs/architecture/PARSER_CONTRIBUTING.md`, then `src/premura/parsers/CONTRACT.md`.
+  `docs/building/architecture/PARSER_CONTRIBUTING.md`, then `src/premura/parsers/CONTRACT.md`.
 - If you are using Claude Code to generate a parser, also read
   `src/premura/skills/parser-generator/SKILL.md`.
 
@@ -49,7 +49,7 @@ You are inside a working clone of the repo. Before changing anything:
    this checkout (environment + bundled skills) and tells you whether an
    agent-session reload is needed. It is setup-only; it never ingests, uploads,
    or touches the warehouse.
-2. **Read in this order:** [`docs/product/DOCTRINE.md`](docs/product/DOCTRINE.md)
+2. **Read in this order:** [`docs/shared/DOCTRINE.md`](docs/shared/DOCTRINE.md)
    (the two rules) → `CONTEXT.md` (maintainer vocabulary) →
    [`CONTRIBUTING.md`](CONTRIBUTING.md) (setup, checks, conventions, PR handoff)
    → the relevant contract for your change.
@@ -80,12 +80,12 @@ canonical metric but still cannot become a loadable row, surface it via
 
 ### Issue tracker
 
-Issues for this repo are tracked in GitHub Issues for `nicofirst1/premura`. See `docs/agents/issue-tracker.md`.
+Issues for this repo are tracked in GitHub Issues for `nicofirst1/premura`. See `docs/building/agents/issue-tracker.md`.
 
 ### Triage labels
 
-This repo uses the canonical triage labels `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`. See `docs/agents/triage-labels.md`.
+This repo uses the canonical triage labels `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`. See `docs/building/agents/triage-labels.md`.
 
 ### Domain docs
 
-This repo is configured as single-context: skills should look for a root `CONTEXT.md` and `docs/adr/` when present. See `docs/agents/domain.md`.
+This repo is configured as single-context: skills should look for a root `CONTEXT.md` and `docs/building/adr/` when present. See `docs/building/agents/domain.md`.

@@ -5,9 +5,9 @@
 > surface for operating Premura. No code decisions are locked; this exists so a
 > future spec can start from shared language instead of re-deriving the framing.
 >
-> Companion reading: [`AGENTS.md`](../../AGENTS.md) §"two rules",
-> [`docs/product/DOCTRINE.md`](../product/DOCTRINE.md),
-> [`docs/architecture/STAGES.md`](../architecture/STAGES.md),
+> Companion reading: [`AGENTS.md`](../../../AGENTS.md) §"two rules",
+> [`docs/shared/DOCTRINE.md`](../../shared/DOCTRINE.md),
+> [`docs/building/architecture/STAGES.md`](../architecture/STAGES.md),
 > [`research-trace-multiplicity-audit.md`](research-trace-multiplicity-audit.md),
 > `src/premura/mcp/server.py`, `src/premura/engine/_registry.py`,
 > `src/premura/parsers/CONTRACT.md`, issue #10 (end-to-end agent acceptance

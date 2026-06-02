@@ -3,9 +3,9 @@
 > Status: live reference. How an agent operates a **developed** Premura on
 > behalf of a human — through tools, without editing the repo.
 >
-> Companion to [../product/DOCTRINE.md](../product/DOCTRINE.md) (why Premura is
+> Companion to [../product/DOCTRINE.md](../shared/DOCTRINE.md) (why Premura is
 > agent-first in execution, human-first in purpose), [../../README.md](../../README.md)
-> (install + surfaces), and [STATUS.md](STATUS.md) (what is shipped today). If you
+> (install + surfaces), and [STATUS.md](../shared/STATUS.md) (what is shipped today). If you
 > are instead changing Premura's code, this is the wrong guide — read
 > [../../AGENTS.md](../../AGENTS.md) and [../../CONTRIBUTING.md](../../CONTRIBUTING.md).
 
@@ -143,6 +143,6 @@ than a silent default.
 
 A fuller runtime multi-agent shape (orchestrator + bounded operating roles,
 answer-audit loop, improvement queue) is sketched as pre-spec design in
-[../planning/operating-agent-roles.md](../planning/operating-agent-roles.md).
+[../planning/operating-agent-roles.md](../building/planning/operating-agent-roles.md).
 That document is exploratory and **not** authoritative; this guide describes how
 to operate the shipped surface honestly today.

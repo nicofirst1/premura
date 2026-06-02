@@ -93,15 +93,15 @@ answers:
     use remain operator or expert fallback paths. Any future agent-facing
     layer inherits the same local-first stance unless explicitly amended.
   documentation_policy: >
-    docs/product/DOCTRINE.md, docs/product/SPEC.md,
-    docs/architecture/ARCHITECTURE_HISTORY.md,
-    docs/operations/STATUS.md, docs/product/USERJOURNEY.md,
-    docs/product/VISION.md, and docs/product/ROADMAP.md form the
+    docs/shared/DOCTRINE.md, docs/shared/SPEC.md,
+    docs/history/architecture/ARCHITECTURE_HISTORY.md,
+    docs/shared/STATUS.md, docs/using/USERJOURNEY.md,
+    docs/history/product/VISION.md, and docs/shared/ROADMAP.md form the
     canonical documentation set and MUST stay in sync with shipping
     behavior; STATUS.md is updated at the end of each mission.
     DOCTRINE.md is the source of truth for product stance: agent-primary
-    execution, human-primary purpose. Docs are grouped by content domain
-    (product/, architecture/, operations/, research/); see docs/README.md
+    execution, human-primary purpose. Docs are split by audience
+    (shared/, using/, operating/, building/; history/ is archive); see docs/README.md
     for the full index. README.md is the quick-start and should present
     the agent-mediated path as default. As external users arrive, every
     release tag MUST be accompanied by a CHANGELOG entry and a license

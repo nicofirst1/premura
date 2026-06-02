@@ -9,7 +9,7 @@ one that fit — a per-session property that per-call honesty cannot see. This n
 records the shape the trace is taking so the implementing mission, and the audit
 skill after it, extend it consistently instead of re-deciding. The mission spec
 is `kitty-specs/session-research-trace-01KSYT4A/spec.md`; the fuller planning
-brief is `docs/planning/research-trace-multiplicity-audit.md`.
+brief is `docs/building/planning/research-trace-multiplicity-audit.md`.
 
 The decisions:
 

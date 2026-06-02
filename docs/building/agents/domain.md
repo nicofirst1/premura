@@ -5,7 +5,7 @@ How the engineering skills should consume this repo's domain documentation when 
 ## Before exploring, read these
 
 - `CONTEXT.md` at the repo root, if it exists.
-- `docs/adr/` at the repo root, reading ADRs relevant to the area being changed.
+- `docs/building/adr/`, reading ADRs relevant to the area being changed.
 - If `CONTEXT-MAP.md` is later added at the repo root, treat the repo as multi-context and follow it to the relevant per-context `CONTEXT.md` files.
 
 If any of these files do not exist, proceed silently. Do not suggest creating them up front.
@@ -17,7 +17,7 @@ Single-context layout for this repo:
 ```text
 /
 ├── CONTEXT.md
-├── docs/adr/
+├── docs/building/adr/
 └── src/
 ```
 

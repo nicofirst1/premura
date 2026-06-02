@@ -2,11 +2,11 @@
 
 > Status: proposal/archive. Long-term trajectory, not a build contract.
 >
-> Companion to [../../product/DOCTRINE.md](../../product/DOCTRINE.md), [../../product/SPEC.md](../../product/SPEC.md), [../architecture/ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md), [../../product/USERJOURNEY.md](../../product/USERJOURNEY.md), [../../operations/STATUS.md](../../operations/STATUS.md), [../../product/ROADMAP.md](../../product/ROADMAP.md), [../../architecture/STAGES.md](../../architecture/STAGES.md), [../research/PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md).
+> Companion to [../../shared/DOCTRINE.md](../../shared/DOCTRINE.md), [../../shared/SPEC.md](../../shared/SPEC.md), [../architecture/ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md), [../../using/USERJOURNEY.md](../../using/USERJOURNEY.md), [../../shared/STATUS.md](../../shared/STATUS.md), [../../shared/ROADMAP.md](../../shared/ROADMAP.md), [../../building/architecture/STAGES.md](../../building/architecture/STAGES.md), [../research/PROPOSAL_LABS.md](../research/PROPOSAL_LABS.md).
 >
-> The **pillars below describe the trajectory**. For the orthogonal *data-flow shape* (Ingest → Signal processing → MCP → UI), see [../../architecture/STAGES.md](../../architecture/STAGES.md). Pillars and stages compose: a feature is located in pillars by intent and in stages by where it sits in the pipeline.
+> The **pillars below describe the trajectory**. For the orthogonal *data-flow shape* (Ingest → Signal processing → MCP → UI), see [../../building/architecture/STAGES.md](../../building/architecture/STAGES.md). Pillars and stages compose: a feature is located in pillars by intent and in stages by where it sits in the pipeline.
 >
-> Captured 2026-05-20 as the project's scope expands from "personal pipeline for Nicolò" toward an agent-operable health reasoning system. See [../../product/DOCTRINE.md](../../product/DOCTRINE.md) for the product stance this trajectory now serves: agent-primary execution, human-primary purpose. The bare-bone v1 (the work tracked in [../../operations/STATUS.md](../../operations/STATUS.md)) is the foundation. Everything below is the trajectory we are deliberately *not* building yet.
+> Captured 2026-05-20 as the project's scope expands from "personal pipeline for Nicolò" toward an agent-operable health reasoning system. See [../../shared/DOCTRINE.md](../../shared/DOCTRINE.md) for the product stance this trajectory now serves: agent-primary execution, human-primary purpose. The bare-bone v1 (the work tracked in [../../shared/STATUS.md](../../shared/STATUS.md)) is the foundation. Everything below is the trajectory we are deliberately *not* building yet.
 
 ## What this is becoming
 
@@ -41,7 +41,7 @@ The `hp.fact_measurement` + `hp.fact_interval` + `hp.dim_metric` + `hp.dim_sourc
 
 ### Pillar 3 — AI tools that don't lie
 
-The MCP-server idea from [ROADMAP.md](ROADMAP.md) is the operational form. The principles:
+The MCP-server idea from [ROADMAP.md](../../shared/ROADMAP.md) is the operational form. The principles:
 
 - **Deterministic tools, narrating LLM.** The LLM calls `correlate(metric_a, metric_b, window_days)`, receives `{r, n, p, ci}`, and explains it. The LLM never produces effect sizes from training.
 - **Pattern-spotting tools, not pattern-claiming LLM.** `changepoint_detect(metric_id, since)`, `seasonal_decompose(metric_id)`, `anomaly_score(metric_id, lookback)`. The output is structured; the LLM contextualizes.
@@ -97,13 +97,13 @@ Health is GDPR Article 9 special-category data. The v1 contract holds at every f
 ## Deliberately deferred
 
 - **GUI.** The user signalled "open to it eventually" — not blocking on it. Everything in the interview / teaching layer will land first in CLI + MCP, where it's reusable by whatever front-end comes later.
-- **Drive auto-upload.** Now opt-in (see [STATUS.md](../operations/STATUS.md)). The encrypted artifact is returned to the user; they choose where it goes.
+- **Drive auto-upload.** Now opt-in (see [STATUS.md](../../shared/STATUS.md)). The encrypted artifact is returned to the user; they choose where it goes.
 - **Hosted / multi-user.** Single-user, single-machine, by design. Could change *after* the extensibility + teaching layers are mature, never before.
 
 ## How this changes near-term work
 
-It mostly doesn't. The barebone v1 [STATUS.md](../operations/STATUS.md) work — close the launchd loop, verify age round-trip, dust off the wiki page — is unchanged. The vision above sets the *shape* of v2; concrete v2 work items are captured in [ROADMAP.md](ROADMAP.md).
+It mostly doesn't. The barebone v1 [STATUS.md](../../shared/STATUS.md) work — close the launchd loop, verify age round-trip, dust off the wiki page — is unchanged. The vision above sets the *shape* of v2; concrete v2 work items are captured in [ROADMAP.md](../../shared/ROADMAP.md).
 
 The first steps along Pillar 3 are now on the ground rather than only on paper: the warehouse can answer a small handful of grounded, freshness-aware questions about the user's own data (current and trending resting HR, steps and weight trends, deep sleep against one's own normal, an overnight-HRV before/after around a named date). They are deliberately descriptive and comparative — they describe and compare the user's own history, never diagnose, never claim significance or causation — and they live behind the same CLI/MCP boundary the rest of this trajectory will build on. The "AI tools that don't lie" promise here is modest by design: honest about freshness and gaps, and silent when the data can't support an answer. The statistical depth, literature grounding, and the teaching surface that turn these into a tutor are still ahead.
 
-Profile- and intake-aware reasoning also has a clearer semantic path now: the meaning contract for baseline profile context, nutrition intake, and supplement intake is fixed (`docs/architecture/PROFILE_AND_INTAKE_CONTRACT.md`), so a future function knows where a declared height or a meal's energy lives and how to declare that it needs them. This is a settled boundary, **not** a shipped capability — there is still no intake capture, no profile-aware analysis, and no storage for these domains; that work stays deferred (issue `#6`).
+Profile- and intake-aware reasoning also has a clearer semantic path now: the meaning contract for baseline profile context, nutrition intake, and supplement intake is fixed (`docs/building/architecture/PROFILE_AND_INTAKE_CONTRACT.md`), so a future function knows where a declared height or a meal's energy lives and how to declare that it needs them. This is a settled boundary, **not** a shipped capability — there is still no intake capture, no profile-aware analysis, and no storage for these domains; that work stays deferred (issue `#6`).

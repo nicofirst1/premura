@@ -2,17 +2,14 @@
 
 Local-first, agent-operable health reasoning substrate. A human supplies health-data exports, questions, and approvals; agents ingest, normalize, analyze, compare, and explain through deterministic tools over a single DuckDB warehouse. The system captures the metrics Health Connect does not bridge (HRV rMSSD overnight, stress, body battery, training load/readiness, VO₂ max, etc.) while keeping encrypted export and backup artifacts under the human user's control.
 
-This page is the human/operator landing page: what Premura is, how to run it
-locally, and where to go next. You do not need the planning or history docs to
-start.
+This is the human landing page: what Premura is, how to get it running, and
+where to go next. Premura is built to be **operated by an AI agent on your
+behalf** — the short version of getting started is: **clone this repo, then ask
+an AI coding agent to set it up and run it for you.** You point it at your data
+and approve sensitive actions; it does the ingest, analysis, and explanation
+through tools. You do not need the planning or history docs to start.
 
-> **Who are you?**
-> - **Operating Premura for a human through an agent** (tools, not code edits)? Read the [runtime-agent operating guide](docs/operations/RUNTIME_AGENT.md).
-> - **A coding agent dropped into this clone** to change the code? Start with [`AGENTS.md`](AGENTS.md).
-> - **A contributor opening a PR**? Start with [`CONTRIBUTING.md`](CONTRIBUTING.md).
-> - **Just exploring?** Keep reading, then browse the [docs guide](docs/README.md).
-
-> Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [Doctrine](docs/product/DOCTRINE.md) · [SPEC](docs/product/SPEC.md) · [STATUS](docs/operations/STATUS.md) · [Stages](docs/architecture/STAGES.md) · [Roadmap](docs/product/ROADMAP.md) · [Full Plan](docs/product/FULL_APP_DEVELOPMENT_PLAN.md)
+> Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [Doctrine](docs/shared/DOCTRINE.md) · [SPEC](docs/shared/SPEC.md) · [STATUS](docs/shared/STATUS.md) · [Stages](docs/building/architecture/STAGES.md) · [Roadmap](docs/shared/ROADMAP.md) · [Full Plan](docs/building/product/FULL_APP_DEVELOPMENT_PLAN.md)
 
 Premura is still pre-`v1`: future release tags use the `v0.x.0` line until all
 four stages form a coherent user-facing path. The historical `v1.0.0` tag is a
@@ -53,7 +50,7 @@ The `age` private key at `~/.config/premura/age.key` is the single secret. Lose 
 
 ## What's in the warehouse
 
-`hp.fact_measurement` (point-in-time) and `hp.fact_interval` (bounded events), joined to `hp.dim_metric` + `hp.dim_source`. See [STATUS.md](docs/operations/STATUS.md) for live row counts and [SPEC.md §5](docs/product/SPEC.md) for the data contract.
+`hp.fact_measurement` (point-in-time) and `hp.fact_interval` (bounded events), joined to `hp.dim_metric` + `hp.dim_source`. See [STATUS.md](docs/shared/STATUS.md) for live row counts and [SPEC.md §5](docs/shared/SPEC.md) for the data contract.
 
 Query directly:
 
@@ -77,9 +74,15 @@ the default path, not raw SQL:
   so it is never the silent default.
 
 For the full `hpipe` CLI reference and the complete MCP tool inventory, see
-[OPERATIONS.md](docs/operations/OPERATIONS.md). For how an agent should operate
-Premura honestly on a human's behalf, see the
-[runtime-agent operating guide](docs/operations/RUNTIME_AGENT.md). Direct DuckDB
-and notebook access remain available as expert fallbacks. Contributors and
-coding agents: development setup, checks, and the PR workflow live in
-[`CONTRIBUTING.md`](CONTRIBUTING.md).
+[OPERATIONS.md](docs/using/OPERATIONS.md). Direct DuckDB and notebook access
+remain available as expert fallbacks.
+
+## Pointers for your agent
+
+When you hand Premura to an AI agent, point it at the right guide:
+
+- **Operating Premura for you** (running tools on your data, no code edits) →
+  [runtime-agent operating guide](docs/operating/RUNTIME_AGENT.md).
+- **Changing Premura's code** in this clone → [`AGENTS.md`](AGENTS.md).
+- **Opening a pull request** (human or agent) → development setup, checks, and
+  the PR workflow live in [`CONTRIBUTING.md`](CONTRIBUTING.md).

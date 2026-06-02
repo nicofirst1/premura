@@ -6,7 +6,7 @@ the route each audience is sent down:
   ``README.md``           — human deciding whether to use/try Premura
   ``AGENTS.md``           — coding agent dropped into this clone to change code
   ``CONTRIBUTING.md``     — contributor (human or agent) opening a PR
-  ``docs/operations/RUNTIME_AGENT.md`` — agent operating a developed Premura
+  ``docs/operating/RUNTIME_AGENT.md`` — agent operating a developed Premura
                             for a human, without editing the repo
   ``docs/README.md``      — index that must keep those audiences distinct
 
@@ -27,10 +27,10 @@ README = REPO_ROOT / "README.md"
 AGENTS = REPO_ROOT / "AGENTS.md"
 CONTRIBUTING = REPO_ROOT / "CONTRIBUTING.md"
 DOCS_INDEX = REPO_ROOT / "docs" / "README.md"
-RUNTIME_AGENT_GUIDE = REPO_ROOT / "docs" / "operations" / "RUNTIME_AGENT.md"
+RUNTIME_AGENT_GUIDE = REPO_ROOT / "docs" / "operating" / "RUNTIME_AGENT.md"
 
 # The path the rest of the docs surface uses to route to the runtime-agent guide.
-RUNTIME_GUIDE_REL = "docs/operations/RUNTIME_AGENT.md"
+RUNTIME_GUIDE_REL = "docs/operating/RUNTIME_AGENT.md"
 
 
 def _read(path: Path) -> str:
@@ -118,7 +118,7 @@ def test_runtime_agent_guide_exists_and_covers_operation() -> None:
     fallback surface.
     """
     assert RUNTIME_AGENT_GUIDE.exists(), (
-        "runtime-agent operating guide is missing at docs/operations/RUNTIME_AGENT.md"
+        "runtime-agent operating guide is missing at docs/operating/RUNTIME_AGENT.md"
     )
     text = _read(RUNTIME_AGENT_GUIDE)
     low = text.lower()
@@ -166,4 +166,4 @@ def test_docs_index_routes_four_audiences_separately() -> None:
     # The runtime agent gets its own door, not folded into AGENTS.md/CONTRIBUTING.
     # docs/README.md links relative to its own location, so match the path
     # suffix (a substring of both the repo-root and docs-relative link forms).
-    assert "operations/RUNTIME_AGENT.md" in text
+    assert "operating/RUNTIME_AGENT.md" in text

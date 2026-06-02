@@ -3,7 +3,7 @@
 > Status: pre-mission research input. Produced 2026-05-30 by a research agent to
 > inform the future `correlate` mission spec and resolve the scientific choices
 > deliberately left open by design decision note
-> [`0008`](../../adr/0008-correlate-pre-registered-lagged-association.md). The
+> [`0008`](../../building/adr/0008-correlate-pre-registered-lagged-association.md). The
 > architecture/honesty contract is settled in 0008; this note settles the
 > *statistical* choices (coefficient, uncertainty band, sample floor, confound
 > key, lag ceiling) and lists what the implementing mission must still pin down.

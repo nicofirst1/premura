@@ -2,7 +2,7 @@
 
 > Status: proposal/archive. Forward-looking lab-ingestion proposal, not current shipped behavior.
 >
-> Companion to [../../product/SPEC.md](../../product/SPEC.md), [../architecture/ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md), [../product/VISION.md](../product/VISION.md), [../../architecture/STAGES.md](../../architecture/STAGES.md), [../../product/ROADMAP.md](../../product/ROADMAP.md).
+> Companion to [../../shared/SPEC.md](../../shared/SPEC.md), [../architecture/ARCHITECTURE_HISTORY.md](../architecture/ARCHITECTURE_HISTORY.md), [../product/VISION.md](../product/VISION.md), [../../building/architecture/STAGES.md](../../building/architecture/STAGES.md), [../../shared/ROADMAP.md](../../shared/ROADMAP.md).
 > Captured 2026-05-21. Forward-looking — not v1 work. Scopes the addition of clinical lab results as a first-class source class.
 
 ## Why
@@ -28,7 +28,7 @@ A typical operator profile is a many-years backlog of lab PDFs across multiple l
 | Provenance | Lab name, date of draw, sometimes ordering physician |
 | Free-text | Some labs (microbiome/specialty) emit multi-page clinical commentary and therapy recommendations beyond the numeric tables |
 
-## Stage placement (per [STAGES.md](../architecture/STAGES.md))
+## Stage placement (per [STAGES.md](../../building/architecture/STAGES.md))
 
 ### Stage 1 — Ingest
 

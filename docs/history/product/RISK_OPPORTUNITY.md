@@ -2,7 +2,7 @@
 
 > Status: proposal/archive. Strategy memo for prioritization, not a delivery contract.
 >
-> Companion to [VISION.md](VISION.md), [../../product/ROADMAP.md](../../product/ROADMAP.md), [../research/PRIOR_ART_RESULTS.md](../research/PRIOR_ART_RESULTS.md).
+> Companion to [VISION.md](VISION.md), [../../shared/ROADMAP.md](../../shared/ROADMAP.md), [../research/PRIOR_ART_RESULTS.md](../research/PRIOR_ART_RESULTS.md).
 > Written 2026-05-20 to decide *how much time to invest* in v2 now that prior-art research confirms the gap.
 
 ## TL;DR
