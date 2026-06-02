@@ -192,3 +192,16 @@ the merged result). This methodology is the *post-mortem*: it consumes
 mission-review's findings and asks why the loop admitted them, then proposes the
 control — usually a change to a WP prompt's validation block, a contract field
 constraint, or an added pipeline gate — so the next mission cannot repeat it.
+
+## Where durable controls land
+
+spec-kitty is an external orchestrator Premura *consumes*, not code this repo
+owns, so durable controls are encoded in the layer Premura controls on top of
+it. The standing, cross-mission gates this method has produced live in the
+**Fidelity Gates** section of `.kittify/charter/charter.md` — the
+boundary-crossing-fixture rule, whole-story acceptance at mission-review,
+risks-and-deferrals-are-not-waivers, and the requirement to run this audit after
+any non-clean verdict. When an audit names a new durable control, add it there
+(or to the contract / WP-prompt it pins), and add any new drift *dimension* to
+the registry above. The charter holds the rule; this doc holds the evolving
+dimensions.
