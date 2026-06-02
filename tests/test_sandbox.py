@@ -30,11 +30,15 @@ ENVELOPE_SCHEMA = (
     / "ingest-outcome-envelope.schema.json"
 )
 
-# Gate the runner tests on the WP04 fixtures actually existing in this lane.
-pytestmark = pytest.mark.skipif(
-    not GOOD_PARSER.exists() or not SYNTHETIC_CSV.exists(),
-    reason="WP04 reference fixtures not present in this worktree",
-)
+# These reference fixtures are committed with the mission (WP04); their absence is
+# a HARD failure, never a skip — a vanished committed fixture must block the gate,
+# not pass green.
+_missing = [p.name for p in (GOOD_PARSER, SYNTHETIC_CSV) if not p.exists()]
+if _missing:
+    raise FileNotFoundError(
+        f"Committed session-log fixtures missing: {_missing}. "
+        "They ship with the mission; their absence must fail the suite, not skip it."
+    )
 
 
 def _load_envelope_schema() -> dict:

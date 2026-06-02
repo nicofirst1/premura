@@ -25,7 +25,6 @@ from pathlib import Path
 
 import duckdb
 import jsonschema
-import pytest
 
 from premura.config import REPO_ROOT
 from premura.harness import repeatable_check
@@ -43,11 +42,15 @@ VERDICT_SCHEMA = (
     / "grader-verdict.schema.json"
 )
 
-# Gate on the WP04 reference fixtures actually existing in this lane.
-pytestmark = pytest.mark.skipif(
-    not GOOD_PARSER.exists() or not DISHONEST_PARSER.exists() or not SYNTHETIC_CSV.exists(),
-    reason="WP04 reference fixtures not present in this worktree",
-)
+# These reference fixtures are committed with the mission (WP04); their absence is
+# a HARD failure, never a skip — a vanished committed fixture must block the gate,
+# not pass green.
+_missing = [p.name for p in (GOOD_PARSER, DISHONEST_PARSER, SYNTHETIC_CSV) if not p.exists()]
+if _missing:
+    raise FileNotFoundError(
+        f"Committed session-log fixtures missing: {_missing}. "
+        "They ship with the mission; their absence must fail the suite, not skip it."
+    )
 
 
 def _read_steps(session_log_path: Path) -> list[tuple[str, str, str, str]]:
