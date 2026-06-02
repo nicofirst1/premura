@@ -33,6 +33,7 @@ from premura.harness import repeatable_check
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "session_log"
 GOOD_PARSER = FIXTURE_DIR / "parsers" / "good_fitbit_hr.py"
 DISHONEST_PARSER = FIXTURE_DIR / "parsers" / "dishonest_fitbit_hr.py"
+RAISING_PARSER = FIXTURE_DIR / "parsers" / "raising_fitbit_hr.py"
 SYNTHETIC_CSV = FIXTURE_DIR / "fitbit_heart_rate_synthetic.csv"
 VERDICT_SCHEMA = (
     REPO_ROOT
@@ -93,6 +94,67 @@ def test_dishonest_path_fails_end_to_end() -> None:
     # The self-report still loads + is runtime-valid; only reconciliation catches it.
     assert verdict["rules"]["loaded"]["passed"] is True
     assert verdict["rules"]["runtime_valid"]["passed"] is True
+
+
+# --------------------------------------------------------------------------- #
+# DRIVE-1 / FR-080 — a raising parser yields a CAPTURED, GRADED FAIL, not a crash.
+# --------------------------------------------------------------------------- #
+
+
+def test_raising_parser_yields_captured_failed_run() -> None:
+    """Parser raises before any batch → captured, graded FAIL (spec edge / FR-080).
+
+    The parser raises before the runner reaches ``duck.initialize(warehouse)``, so
+    NO warehouse file is created. The harness must NOT crash on the missing
+    warehouse: it materializes an empty (0-fact-row) warehouse for grading, records
+    the ``ingest_run`` step as ``error`` with a provenance row, finishes the
+    session, and the grader returns a deterministic FAIL (no partial credit).
+    """
+    # Call RETURNS (no exception escapes the run); keep the sandbox to inspect the log.
+    result = repeatable_check.run_repeatable_check(
+        REPO_ROOT,
+        parser_src=RAISING_PARSER,
+        parser_attr="RaisingFitbitHrParser",
+        keep_sandbox=True,
+    )
+    log_path = result.session_log_path
+    try:
+        verdict = result.verdict
+        # Deterministic FAIL: loaded fails (0 warehouse rows) and so does the verdict.
+        assert verdict["passed"] is False
+        assert verdict["rules"]["loaded"]["passed"] is False
+        assert verdict["rules"]["loaded"]["warehouse_rows"] == 0
+        # runtime_valid fails (ingest_run_ok is False on the error envelope).
+        assert verdict["rules"]["runtime_valid"]["passed"] is False
+
+        conn = duckdb.connect(str(log_path), read_only=True)
+        try:
+            # The ingest_run step was recorded with result_status == 'error'.
+            ingest_step = conn.execute(
+                "SELECT step_id, result_status FROM log_step WHERE tool_name = 'ingest_run'"
+            ).fetchone()
+            assert ingest_step is not None
+            step_id, status = ingest_step
+            assert status == "error"
+
+            # A provenance row exists for that step (the run is auditable).
+            prov = conn.execute(
+                "SELECT contract_pass FROM log_ingest_provenance WHERE step_id = ?",
+                [step_id],
+            ).fetchone()
+            assert prov is not None
+            assert prov[0] is False  # grader's runtime_valid for the failed run
+
+            # The session was FINISHED (not aborted): finished_at is set.
+            finished = conn.execute("SELECT finished_at FROM log_session").fetchone()
+            assert finished is not None
+            assert finished[0] is not None
+        finally:
+            conn.close()
+    finally:
+        import shutil
+
+        shutil.rmtree(log_path.parent.parent, ignore_errors=True)
 
 
 # --------------------------------------------------------------------------- #

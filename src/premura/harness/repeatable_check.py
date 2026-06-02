@@ -48,10 +48,10 @@ from typing import TYPE_CHECKING, Any
 
 import yaml  # type: ignore[import-untyped]
 
+from premura.harness import open_sandbox_warehouse_for_grading
 from premura.harness.grader import grade
 from premura.harness.sandbox import Sandbox, build_sandbox, install_parser
 from premura.session_log import store
-from premura.store import duck
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -310,8 +310,11 @@ def run_repeatable_check(
 
         # (5) Grade: open the sandbox WAREHOUSE read-only ONLY NOW — the runner
         #     subprocess has already closed its writable warehouse handle, so the
-        #     read never contends (separate file from the log handle anyway).
-        warehouse_conn = duck.connect(sandbox.warehouse_path, read_only=True)
+        #     read never contends (separate file from the log handle anyway). On the
+        #     failure path the parser raised before any warehouse file was created;
+        #     the helper materializes an EMPTY (0-fact-row) warehouse so grading still
+        #     yields a deterministic FAIL instead of crashing the run (FR-080).
+        warehouse_conn = open_sandbox_warehouse_for_grading(sandbox.warehouse_path)
         try:
             verdict = grade(
                 provenance=provenance,

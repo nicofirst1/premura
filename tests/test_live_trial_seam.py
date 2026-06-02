@@ -42,6 +42,7 @@ from premura.harness.live_trial import (
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "session_log"
 GOOD_PARSER = FIXTURE_DIR / "parsers" / "good_fitbit_hr.py"
+RAISING_PARSER = FIXTURE_DIR / "parsers" / "raising_fitbit_hr.py"
 SYNTHETIC_CSV = FIXTURE_DIR / "fitbit_heart_rate_synthetic.csv"
 VERDICT_SCHEMA = (
     REPO_ROOT
@@ -196,6 +197,66 @@ def test_seam_reuses_harness_machinery_operator_edits_sandbox() -> None:
             ).fetchone()
             assert prov is not None
             assert prov[0] == result.verdict["rules"]["runtime_valid"]["passed"]
+        finally:
+            conn.close()
+    finally:
+        import shutil
+
+        shutil.rmtree(log_path.parent.parent, ignore_errors=True)
+
+
+# --------------------------------------------------------------------------- #
+# DRIVE-1 / FR-080 — a raising operator parser yields a CAPTURED, GRADED FAIL.
+# --------------------------------------------------------------------------- #
+
+
+def test_raising_operator_yields_captured_failed_run() -> None:
+    """Operator installs a parser that raises → captured, graded FAIL (FR-080).
+
+    Same edge case as the repeatable check, exercised through the live-trial seam
+    (run_kind=live_trial): the operator's parser raises before any warehouse file is
+    created, yet the seam RETURNS a deterministic FAIL with the ``ingest_run`` step
+    recorded as ``error``, a provenance row, and a finished session — never a crash.
+    """
+    operator = ReferenceParserOperator(parser_src=RAISING_PARSER)
+    result = live_trial.run_live_trial_with_log(
+        LiveTrialConfig(),
+        driver=ScriptedDriver(),
+        operator=operator,
+        repo_root=REPO_ROOT,
+        parser_attr="RaisingFitbitHrParser",
+    )
+    log_path = result.session_log_path
+    try:
+        verdict = result.verdict
+        assert verdict["passed"] is False
+        assert verdict["rules"]["loaded"]["passed"] is False
+        assert verdict["rules"]["loaded"]["warehouse_rows"] == 0
+        assert verdict["rules"]["runtime_valid"]["passed"] is False
+
+        # The session is the DISTINCT live_trial kind and was finished, not aborted.
+        run_kind, _operator_model, _driver_model = _read_session(log_path)
+        assert run_kind == "live_trial"
+
+        conn = duckdb.connect(str(log_path), read_only=True)
+        try:
+            ingest_step = conn.execute(
+                "SELECT step_id, result_status FROM log_step WHERE tool_name = 'ingest_run'"
+            ).fetchone()
+            assert ingest_step is not None
+            step_id, status = ingest_step
+            assert status == "error"
+
+            prov = conn.execute(
+                "SELECT contract_pass FROM log_ingest_provenance WHERE step_id = ?",
+                [step_id],
+            ).fetchone()
+            assert prov is not None
+            assert prov[0] is False
+
+            finished = conn.execute("SELECT finished_at FROM log_session").fetchone()
+            assert finished is not None
+            assert finished[0] is not None
         finally:
             conn.close()
     finally:

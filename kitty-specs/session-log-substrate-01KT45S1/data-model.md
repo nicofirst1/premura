@@ -59,7 +59,7 @@ warehouse + the fixture. `contract_pass` is the grader's **output**, not an inpu
 | `declared_metrics_json` | VARCHAR(JSON) | captured so grader recomputes "declared = emitted" |
 | `emitted_metric_ids_json` | VARCHAR(JSON) | captured (the batch's emitted metric_ids) |
 | `unmapped_metrics_json` | VARCHAR(JSON) | **parser claim** (not authoritative) |
-| `skipped_rows_json` | VARCHAR(JSON) | **parser claim** (not authoritative) |
+| `skipped_rows_json` | VARCHAR(JSON) | **parser claim** (not authoritative); each item declares `raw_field` = the source-field name it skipped (the grader's reconciliation key), plus optional `reason` |
 | `contract_pass` | BOOLEAN | **grader's recomputed** runtime-subset result, written back |
 
 Source fields for the honesty reconciliation are **not** stored here — they come
@@ -84,7 +84,7 @@ Emitted on stdout by `harness/ingest_runner.py` running inside the sandbox. Raw
   "declared_metrics": ["heart_rate"],
   "emitted_metric_ids": ["heart_rate"],
   "unmapped_metrics": ["confidence", "altitude_m"],
-  "skipped_rows": [ { "reason": "...", "field": "..." } ]
+  "skipped_rows": [ { "raw_field": "...", "reason": "..." } ]
 }
 ```
 

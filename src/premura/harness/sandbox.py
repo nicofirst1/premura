@@ -9,6 +9,14 @@ warehouse; teardown removes everything so no extracted data persists (NFR-004).
 The runner that consumes a sandbox lives in
 :mod:`premura.harness.ingest_runner`; this module only builds and disposes the
 isolation boundary.
+
+**Isolation scope (slice-one).** The sandbox provides REPO-TREE and
+WAREHOUSE/LOG-FILE isolation only: a throwaway temp copy of the tracked repo tree
+with the DuckDB warehouse and session-log paths redirected into the temp dir. It
+is NOT OS-level or home-directory sandboxing — the ingest subprocess still runs as
+the host user and can read the host environment (``PATH``/``HOME`` are passed
+through to resolve the interpreter). Stronger OS-level isolation (containers,
+namespaces, a restricted filesystem) is out of slice-one scope.
 """
 
 from __future__ import annotations
