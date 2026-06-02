@@ -36,9 +36,9 @@ DIRECTIVE_034/036). Front-loadable (no deps): **WP01, WP02, WP04, WP08**.
 | T023 | wire good-path + dishonest-path | WP06 | | [D] |
 | T024 | end-to-end tests (full PASS + FAIL) | WP06 | | [D] |
 | T025 | determinism + offline tests (NFR-001/002) | WP06 | | [D] |
-| T026 | live-trial `Driver`/`Operator` protocols + `run_live_trial` | WP07 | |
-| T027 | fake-operator seam test | WP07 | |
-| T028 | NFR-005 test: live trial not in any default gate | WP07 | |
+| T026 | live-trial `Driver`/`Operator` protocols + `run_live_trial` | WP07 | | [D] |
+| T027 | fake-operator seam test | WP07 | | [D] |
+| T028 | NFR-005 test: live trial not in any default gate | WP07 | | [D] |
 | T029 | edit `operating-agent-roles.md` review-before-use sentence | WP08 | [D] |
 | T030 | edit ADR 0010 line + DOCTRINE.md clarifying line | WP08 | [D] |
 | T031 | live-doc sync (STATUS / ROADMAP) | WP08 | [D] |
@@ -164,9 +164,9 @@ by no default gate.
 **Prompt**: [tasks/WP07-live-trial-seam.md](tasks/WP07-live-trial-seam.md) (~260 lines)
 **Dependencies**: WP03, WP05. **Requirements**: FR-030, FR-031; NFR-005; SC-005.
 
-- [ ] T026 `Driver`/`Operator` protocols + `LiveTrialConfig` + `run_live_trial` (WP07)
-- [ ] T027 fake-operator seam test (drives to a verdict) (WP07)
-- [ ] T028 NFR-005 test: live trial not wired into any default pytest/CI gate (WP07)
+- [x] T026 `Driver`/`Operator` protocols + `LiveTrialConfig` + `run_live_trial` (WP07)
+- [x] T027 fake-operator seam test (drives to a verdict) (WP07)
+- [x] T028 NFR-005 test: live trial not wired into any default pytest/CI gate (WP07)
 
 ---
 
