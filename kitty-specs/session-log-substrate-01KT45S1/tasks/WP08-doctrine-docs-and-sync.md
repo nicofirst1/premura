@@ -166,3 +166,4 @@ spec-kitty agent action implement WP08 --agent <name>
 - 2026-06-02T13:17:26Z – claude:opus:python-implementer:implementer – shell_pid=5063 – Ready for review
 - 2026-06-02T13:17:59Z – claude:opus:python-reviewer:reviewer – shell_pid=17415 – Started review via action command
 - 2026-06-02T13:19:55Z – claude:opus:python-reviewer:reviewer – shell_pid=17415 – Review passed: build-and-use-now parser rule (FR-130) landed consistently in operating-agent-roles.md, ADR 0010, DOCTRINE.md; SC-007 met (no local-use review gate; contribute-back PR review preserved); operating-role MCP definition unchanged; test fails pre-edit/passes post-edit (5 passed); ruff format+check clean; STATUS/ROADMAP synced as in-progress; scope clean.
+- 2026-06-02T14:26:16Z – claude:opus:python-reviewer:reviewer – shell_pid=17415 – Done override: Mission merged to master (798493b)
