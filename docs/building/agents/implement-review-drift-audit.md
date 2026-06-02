@@ -162,6 +162,27 @@ list as closed.
   "justified deviation = drift signal" rule, applied at the per-WP gate instead
   of only at audit time).
 
+### D6 — Self-describing live-doc lifecycle tense (a pre-merge sync cannot describe its own merge)
+
+- **Checks:** every live status/roadmap doc a mission writes **about its own
+  lifecycle state** ("in progress", "on the lane", "not yet merged", "landing
+  soon") reads the *post-merge* truth — flipped to merged/landed with the merge
+  commit — not the pre-merge tense the sync WP authored.
+- **Originates:** the live-doc-sync WP completes and is reviewed **before** the
+  squash-merge. At the only moment it can run, the honest text is "in progress";
+  its reviewer correctly approves that as accurate-at-the-time. Nothing re-runs on
+  the far side of the merge to flip the tense, so the honest pre-merge sentence
+  becomes a stale claim the instant the mission merges. (Distinct from "missions
+  drop the live-doc-sync WP": here the WP is *present and correct* — the gap is the
+  merge boundary it cannot see past.)
+- **Catching control:** a **post-merge live-doc reconciliation** owned by the
+  orchestrator's close-out (NOT a pre-merge WP), firing after `spec-kitty merge`
+  records the WPs `done`: re-read the mission's own `STATUS.md`/`ROADMAP.md`, flip
+  any "in progress / on the lane / not yet merged" language about *this* mission to
+  the merged state with the merge commit. Never fix this by asking the pre-merge WP
+  to write the future. Backed by the 2026-06-02 session-log-substrate finding
+  (`docs/history/audits/2026-06-02-session-log-substrate-live-doc-drift-rca.md`).
+
 ### Rule for adding a dimension
 
 A new dimension is admissible iff it: (1) names a gap that lives **between** WP

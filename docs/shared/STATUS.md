@@ -310,8 +310,8 @@ not yet tie literature to personal data.
 ## Runtime build-and-use parser boundary (settled 2026-06-02)
 
 The `session-log-substrate-01KT45S1` mission (slice one — the loggable session
-substrate) is **in progress**; its first landed change is a doctrine
-clarification (FR-130). The maintainer settled the runtime/dev-time boundary the
+substrate) is **shipped** — merged to master on 2026-06-02 (commit `798493b`).
+Its doctrine-facing change is a clarification (FR-130). The maintainer settled the runtime/dev-time boundary the
 docs previously contradicted: at runtime an agent may build a parser and **use
 it immediately for the operator's own data, with no reviewer** — this is part of
 using an installed Premura. Review enters **only if the human consents to
@@ -331,9 +331,14 @@ through the existing development/review process.
   charter amendment was needed.
 - **Pinned by a test.** `tests/test_doctrine_build_and_use.py` asserts on the file
   bytes (SC-007) so the three docs cannot silently revert to review-before-use.
-- **Still in flight.** The rest of the session-log substrate slice (the session
-  log store, runtime contract checker, sandbox/ingest runner, fixtures, grader,
-  and repeatable check) is implemented on the mission lane and not yet merged.
+- **Merged and green.** The full session-log substrate slice — the session
+  log store (its own local DuckDB file), runtime contract checker, sandbox/ingest
+  runner, synthetic fixtures + good/dishonest reference parsers, deterministic
+  three-rule grader, offline repeatable check, and the live-trial seam (real-model
+  wiring a named follow-up) — landed in `798493b` with all eight work packages
+  approved and merged. The deterministic grader recomputes every rule from ground
+  truth (warehouse + fixture manifest), so a parser that silently drops a field is
+  graded **fail** by reconciliation even when its own metadata looks clean.
 
 ## What's working end-to-end
 

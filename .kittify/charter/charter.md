@@ -24,6 +24,8 @@ Per-work-package review verifies local correctness against a green suite, but sp
 
 - Risks and deferrals are not silent waivers. Every open risk recorded in a mission's `plan.md` MUST resolve before WP approval to exactly one of: a WP-owned task, an explicit non-goal, or a named mission-level acceptance check. A "deferral" or "justified deviation" note for a spec-required behavior is a drift signal under `DIRECTIVE_010`: the per-WP reviewer either rejects the WP or requires a spec/contract amendment first -- it is never accepted as-is.
 
+- Post-merge live-doc reconciliation. A mission's own live status docs (`docs/shared/STATUS.md`, `docs/shared/ROADMAP.md`) describe its lifecycle state, but the work package that syncs them runs and is reviewed BEFORE the merge -- so at sync time the honest tense is "in progress / on the lane / not yet merged," and a pre-merge WP structurally cannot describe its own merge. After `spec-kitty merge` records the WPs `done`, the orchestrator's close-out (NOT a pre-merge WP) MUST re-read those docs and flip any "in progress / not yet merged" language about THIS mission to the merged/landed state with the merge commit. This is registered drift dimension `D6`; do not "fix" it by asking the sync WP to write the future.
+
 - Close the loop. After any non-clean mission-review verdict (FAIL or PASS-WITH-NOTES), the drift-audit method (`docs/building/agents/implement-review-drift-audit.md`) MUST be run and the durable control it names -- a charter gate, a contract field constraint, a WP-prompt validation line, or a newly registered drift dimension -- landed before the next mission of similar shape. This is what turns a one-off patch into a control every future mission inherits.
 
 
