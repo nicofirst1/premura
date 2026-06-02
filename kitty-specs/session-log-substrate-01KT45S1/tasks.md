@@ -24,10 +24,10 @@ DIRECTIVE_034/036). Front-loadable (no deps): **WP01, WP02, WP04, WP08**.
 | T011 | sandbox teardown + `install_parser` helper | WP03 | |
 | T012 | `ingest_runner.py` subprocess → JSON outcome envelope | WP03 | |
 | T013 | sandbox/runner tests (tracked-only, envelope valid, teardown) | WP03 | |
-| T014 | synthetic CSV + `fixture_fields.yaml` manifest | WP04 | [P] |
-| T015 | `good_fitbit_hr` reference parser (PASS) | WP04 | [P] |
-| T016 | `dishonest_fitbit_hr` reference parser (silent drop) | WP04 | [P] |
-| T017 | fixtures tests (manifest ↔ CSV; parser behaviors) | WP04 | [P] |
+| T014 | synthetic CSV + `fixture_fields.yaml` manifest | WP04 | [D] |
+| T015 | `good_fitbit_hr` reference parser (PASS) | WP04 | [D] |
+| T016 | `dishonest_fitbit_hr` reference parser (silent drop) | WP04 | [D] |
+| T017 | fixtures tests (manifest ↔ CSV; parser behaviors) | WP04 | [D] |
 | T018 | `grade()` verdict struct + `loaded` rule | WP05 | |
 | T019 | `runtime_valid` rule (calls contract_check on captured evidence) | WP05 | |
 | T020 | `honest_about_gaps` reconciliation vs fixture manifest | WP05 | |
@@ -84,10 +84,10 @@ matches CSV header; good parser declares unmapped; dishonest parser drops a fiel
 **Prompt**: [tasks/WP04-fixtures-and-reference-parsers.md](tasks/WP04-fixtures-and-reference-parsers.md) (~320 lines)
 **Dependencies**: none. **Requirements**: FR-040; supports NFR-007/SC-002.
 
-- [ ] T014 synthetic CSV + `fixture_fields.yaml` (complete source-field set, distinct metric per mappable field) (WP04)
-- [ ] T015 `good_fitbit_hr` parser — maps HR, declares the rest unmapped, loads (WP04)
-- [ ] T016 `dishonest_fitbit_hr` parser — silently drops one fixture field (WP04)
-- [ ] T017 fixtures tests: manifest ↔ CSV header; each reference parser behaves as labeled (WP04)
+- [x] T014 synthetic CSV + `fixture_fields.yaml` (complete source-field set, distinct metric per mappable field) (WP04)
+- [x] T015 `good_fitbit_hr` parser — maps HR, declares the rest unmapped, loads (WP04)
+- [x] T016 `dishonest_fitbit_hr` parser — silently drops one fixture field (WP04)
+- [x] T017 fixtures tests: manifest ↔ CSV header; each reference parser behaves as labeled (WP04)
 
 ### WP08 — Doctrine docs update (FR-130) + live-doc sync
 
