@@ -1,7 +1,7 @@
 {
-  "event_count": 10,
-  "last_event_id": "01KT47C9MSKQRWQ5G21WAGMZG9",
-  "materialized_at": "2026-06-02T13:11:45.049669+00:00",
+  "event_count": 12,
+  "last_event_id": "01KT47CM46PB16QPD0C69JR1A3",
+  "materialized_at": "2026-06-02T13:11:55.782172+00:00",
   "mission_number": "",
   "mission_slug": "session-log-substrate-01KT45S1",
   "mission_type": "software-dev",
@@ -12,9 +12,9 @@
     "claimed": 0,
     "done": 0,
     "for_review": 0,
-    "in_progress": 1,
+    "in_progress": 2,
     "in_review": 0,
-    "planned": 7
+    "planned": 6
   },
   "work_packages": {
     "WP01": {
@@ -67,11 +67,11 @@
       "last_transition_at": "2026-06-02T13:08:24.378720+00:00"
     },
     "WP08": {
-      "actor": "finalize-tasks",
+      "actor": "implement-command",
       "force_count": 1,
-      "lane": "planned",
-      "last_event_id": "01KT4765NWVF7FDPWF2FFF8R4X",
-      "last_transition_at": "2026-06-02T13:08:24.380608+00:00"
+      "lane": "in_progress",
+      "last_event_id": "01KT47CM46PB16QPD0C69JR1A3",
+      "last_transition_at": "2026-06-02T13:11:55.782172+00:00"
     }
   }
 }
