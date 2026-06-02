@@ -1,7 +1,7 @@
 {
-  "event_count": 36,
-  "last_event_id": "01KT49QVFCE76QAFZ03WNQEQTZ",
-  "materialized_at": "2026-06-02T13:53:00.908554+00:00",
+  "event_count": 37,
+  "last_event_id": "01KT49S4JQMDVGFZ8B845FYPJZ",
+  "materialized_at": "2026-06-02T13:53:42.999297+00:00",
   "mission_number": "",
   "mission_slug": "session-log-substrate-01KT45S1",
   "mission_type": "software-dev",
@@ -11,9 +11,9 @@
     "canceled": 0,
     "claimed": 0,
     "done": 0,
-    "for_review": 1,
+    "for_review": 0,
     "in_progress": 0,
-    "in_review": 0,
+    "in_review": 1,
     "planned": 3
   },
   "work_packages": {
@@ -32,11 +32,11 @@
       "last_transition_at": "2026-06-02T13:27:23.102877+00:00"
     },
     "WP03": {
-      "actor": "user",
+      "actor": "claude:opus:python-reviewer:reviewer",
       "force_count": 2,
-      "lane": "for_review",
-      "last_event_id": "01KT49QVFCE76QAFZ03WNQEQTZ",
-      "last_transition_at": "2026-06-02T13:53:00.908554+00:00"
+      "lane": "in_review",
+      "last_event_id": "01KT49S4JQMDVGFZ8B845FYPJZ",
+      "last_transition_at": "2026-06-02T13:53:42.999297+00:00"
     },
     "WP04": {
       "actor": "user",
