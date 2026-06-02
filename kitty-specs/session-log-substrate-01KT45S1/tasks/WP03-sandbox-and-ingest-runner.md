@@ -175,3 +175,4 @@ spec-kitty agent action implement WP03 --agent <name>
 - 2026-06-02T13:53:01Z – claude:opus:python-implementer:implementer – shell_pid=55698 – Fixed: tracked-only sandbox copy + regression test (cycle 1)
 - 2026-06-02T13:53:43Z – claude:opus:python-reviewer:reviewer – shell_pid=59085 – Started review via action command
 - 2026-06-02T13:56:04Z – claude:opus:python-reviewer:reviewer – shell_pid=59085 – Review passed: tracked-only sandbox copy verified + untracked-exclusion regression test sound; runner/envelope/teardown unchanged from prior approval
+- 2026-06-02T14:26:10Z – claude:opus:python-reviewer:reviewer – shell_pid=59085 – Done override: Mission merged to master (798493b)
