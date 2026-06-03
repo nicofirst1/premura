@@ -33,9 +33,9 @@ WP02 (scoreboard) ─────┘                              └─► WP05
 | T014 | `run_live_trial_ollama()` entry + `__main__` | WP03 | | [D] |
 | T015 | `pyproject.toml` — register + exclude `live_trial` marker | WP03 | [D] |
 | T016 | Gated `live_trial` end-to-end test | WP03 | [D] |
-| T017 | Wire `real_model_operator`/`real_model_driver` to delegate | WP04 | |
-| T018 | Verify existing seam test + invariants (no regression) | WP04 | |
-| T019 | Gated test: placeholders resolved, delegated end-to-end | WP04 | [P] |
+| T017 | Wire `real_model_operator`/`real_model_driver` to delegate | WP04 | | [D] |
+| T018 | Verify existing seam test + invariants (no regression) | WP04 | | [D] |
+| T019 | Gated test: placeholders resolved, delegated end-to-end | WP04 | [D] |
 | T020 | E2E fixture: real-data no-persist | WP05 | [P] |
 | T021 | E2E fixture: operator never succeeds within the cap | WP05 | [P] |
 | T022 | E2E fixture: model server unavailable outcome | WP05 | [P] |
@@ -105,9 +105,9 @@ instead of raising — without altering the rest of the slice-one seam.
 prompt**: ~200 lines. **Prompt**:
 [tasks/WP04-close-deferred-seam.md](tasks/WP04-close-deferred-seam.md)
 
-- [ ] T017 Wire `real_model_operator`/`real_model_driver` to delegate (WP04)
-- [ ] T018 Verify existing seam test + invariants (no regression) (WP04)
-- [ ] T019 Gated test: placeholders resolved, delegated end-to-end (WP04)
+- [x] T017 Wire `real_model_operator`/`real_model_driver` to delegate (WP04)
+- [x] T018 Verify existing seam test + invariants (no regression) (WP04)
+- [x] T019 Gated test: placeholders resolved, delegated end-to-end (WP04)
 
 Requirements: FR-013 (also NFR-001, NFR-004, NFR-006, C-004).
 
