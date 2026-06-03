@@ -17,9 +17,9 @@ WP02 (scoreboard) ─────┘                              └─► WP05
 
 | ID | Description | WP | Parallel |
 | --- | --- | --- | --- |
-| T001 | `SelfReconciliationResult` structure | WP01 | |
-| T002 | `self_reconcile()` — raw-header vs declared∪loaded, manifest-blind | WP01 | |
-| T003 | Unit test: raw-header rule, loophole, grader-equivalence on fixture | WP01 | [P] |
+| T001 | `SelfReconciliationResult` structure | WP01 | | [D] |
+| T002 | `self_reconcile()` — raw-header vs declared∪loaded, manifest-blind | WP01 | | [D] |
+| T003 | Unit test: raw-header rule, loophole, grader-equivalence on fixture | WP01 | [D] |
 | T004 | `ScoreboardEntry` + `LiveTrialRunRecord` structures | WP02 | |
 | T005 | `persist_run()` — kept log + verdict.json, synthetic-only guard | WP02 | |
 | T006 | `append_scoreboard()` / `read_scoreboard()` — append-only JSONL | WP02 | |
@@ -51,9 +51,9 @@ in the source file header**. **Priority**: foundation. **Dependencies**: none.
 no model server). **Est. prompt**: ~260 lines. **Prompt**:
 [tasks/WP01-self-reconciliation-gate.md](tasks/WP01-self-reconciliation-gate.md)
 
-- [ ] T001 `SelfReconciliationResult` structure (WP01)
-- [ ] T002 `self_reconcile()` — raw-header vs declared∪loaded, manifest-blind (WP01)
-- [ ] T003 Unit test: raw-header rule, loophole, grader-equivalence on fixture (WP01)
+- [x] T001 `SelfReconciliationResult` structure (WP01)
+- [x] T002 `self_reconcile()` — raw-header vs declared∪loaded, manifest-blind (WP01)
+- [x] T003 Unit test: raw-header rule, loophole, grader-equivalence on fixture (WP01)
 
 Requirements: FR-003, C-005.
 
