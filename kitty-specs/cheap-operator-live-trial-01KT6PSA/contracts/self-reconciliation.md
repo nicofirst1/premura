@@ -6,14 +6,17 @@ retry loop. It is the answer-key-free twin of `grader.honest_about_gaps`.
 ## Surface
 
 ```
-self_reconcile(source_path, batch) -> SelfReconciliationResult
+self_reconcile(source_path, batch, mapped_columns) -> SelfReconciliationResult
 ```
 
 - **`source_columns`** are read from the **source file's header/structure**
   (e.g. CSV header row) — the full ground set — NOT from whatever columns the
   parser happened to inspect. (Closes the "lazy parser skips a column" loophole.)
-- A column is **accounted** iff it is the source field of a declared/emitted
-  metric OR appears in `batch.unmapped_metrics` / `batch.skipped_rows`.
+- **`mapped_columns`** is an **explicit input** — the source columns the parser
+  consumed to emit metrics. The caller supplies it; the gate never infers it from
+  the batch.
+- A column is **accounted** iff it is in `mapped_columns` OR
+  `batch.unmapped_metrics` OR `batch.skipped_rows` (`raw_field`).
 - `passed` iff `source_columns ⊆ accounted`; `unaccounted` is the sorted
   difference, fed back to the operator verbatim on failure.
 
