@@ -6,5 +6,7 @@
   "mission_slug": "cheap-operator-live-trial-01KT6PSA",
   "mission_type": "software-dev",
   "slug": "cheap-operator-live-trial-01KT6PSA",
-  "target_branch": "master"
+  "target_branch": "master",
+  "vcs": "git",
+  "source_description": "Slice two of issue #10 (end-to-end agent acceptance sandbox / capability-tier sweep), parser-only path. Turns the seed harness src/premura/harness/live_trial_ollama.py into standing local infra: a cheap local operator drives the parser-build flow over the synthetic fixture with a self-reconciliation retry loop (grader stays an independent honesty judge), single configurable model per run recording operator_model/driver_model, and a kept session log + capability-floor scoreboard. Local-only, never blocks CI (NFR-005). See docs/building/planning/agent-interaction-audit-substrate.md and docs/history/audits/2026-06-03-live-trial-first-real-model-spike.md."
 }
