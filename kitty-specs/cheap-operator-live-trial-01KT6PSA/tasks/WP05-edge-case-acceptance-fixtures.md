@@ -14,6 +14,8 @@ subtasks:
 - T020
 - T021
 - T022
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "93782"
 history:
 - timestamp: '2026-06-03T12:45:00Z'
   actor: tasks
@@ -135,3 +137,7 @@ Planning happened on `master`; this WP merges back into `master`. Depends on WP0
 Execution worktrees are allocated per computed lane from `lanes.json`.
 
 Implement command: `spec-kitty agent action implement WP05 --agent <name>`
+
+## Activity Log
+
+- 2026-06-03T14:33:23Z – claude:opus:python-implementer:implementer – shell_pid=93782 – Started implementation via action command
