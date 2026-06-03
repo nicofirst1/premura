@@ -8,9 +8,9 @@ independent foundations (parallel-safe). WP03 depends on both. WP04 closes the
 deferred seam and depends on WP03.
 
 ```
-WP01 (self-reconcile) ─┐
-                       ├─► WP03 (operator + loop) ─► WP04 (seam wiring)
-WP02 (scoreboard) ─────┘
+WP01 (self-reconcile) ─┐                              ┌─► WP04 (seam wiring)
+                       ├─► WP03 (operator + loop) ────┤
+WP02 (scoreboard) ─────┘                              └─► WP05 (edge-case fixtures)
 ```
 
 ## Subtask Index
@@ -36,6 +36,9 @@ WP02 (scoreboard) ─────┘
 | T017 | Wire `real_model_operator`/`real_model_driver` to delegate | WP04 | |
 | T018 | Verify existing seam test + invariants (no regression) | WP04 | |
 | T019 | Gated test: placeholders resolved, delegated end-to-end | WP04 | [P] |
+| T020 | E2E fixture: real-data no-persist | WP05 | [P] |
+| T021 | E2E fixture: operator never succeeds within the cap | WP05 | [P] |
+| T022 | E2E fixture: model server unavailable outcome | WP05 | [P] |
 
 ---
 
@@ -108,7 +111,24 @@ prompt**: ~200 lines. **Prompt**:
 
 Requirements: FR-013 (also NFR-001, NFR-004, NFR-006, C-004).
 
+## WP05 — End-to-end acceptance fixtures for the spec-named edge cases
+
+**Goal**: an owning end-to-end fixture for each spec-named edge case (real-data
+no-persist, cap exhaustion, model unavailable), all running in the **default
+suite** via an injected fake operator (no model server). Closes the D7 coverage
+gap that lives between WP02's unit test and WP03's happy path. **Priority**:
+acceptance. **Dependencies**: WP03. **Independent test**: `uv run pytest
+tests/test_live_trial_edge_cases.py`. **Est. prompt**: ~190 lines. **Prompt**:
+[tasks/WP05-edge-case-acceptance-fixtures.md](tasks/WP05-edge-case-acceptance-fixtures.md)
+
+- [ ] T020 E2E fixture: real-data no-persist (WP05)
+- [ ] T021 E2E fixture: operator never succeeds within the cap (WP05)
+- [ ] T022 E2E fixture: model server unavailable outcome (WP05)
+
+Requirements: FR-002, FR-012 (edge-case ownership; also NFR-001, NFR-002).
+
 ## MVP
 
 WP01 + WP02 + WP03 deliver a runnable, graded cheap-operator live trial with a
-persisted floor. WP04 is the clean integration into the shared seam.
+persisted floor. WP04 is the clean integration into the shared seam; WP05 proves
+the spec-named edge cases end-to-end (the D7 acceptance gate).

@@ -82,34 +82,23 @@ honesty signal that exists at real runtime, where there is no manifest or grader
 with no manifest.
 
 **Steps**:
-1. Signature: `def self_reconcile(source_path: Path, batch: IngestBatch) -> SelfReconciliationResult:`.
+1. Signature (mapped columns are an **explicit input**, never guessed):
+   `def self_reconcile(source_path: Path, batch: IngestBatch, mapped_columns: Iterable[str]) -> SelfReconciliationResult:`
+   where `mapped_columns` is the set of source columns the parser consumed to emit
+   its metrics. The caller (the operator in WP03) supplies it; tests pass it
+   explicitly. This removes the ambiguity of inferring mapped columns from the
+   batch.
 2. **Source columns (the ground set)** — read them from the file's
    header/structure, NOT from what the parser chose to read:
    - For the CSV fixture: open `source_path` and read the header row
      (`csv.reader` → first row) to get the column names.
    - Keep this a small, focused reader; slice scope is the heart-rate CSV. If the
-     file has no header / is unreadable, return `passed=False` with all-unknown
-     handled gracefully (an empty ground set is not a silent pass — see edge
-     cases).
-3. **Accounted set** — a column is accounted iff:
-   - it is the **source field of a declared/emitted metric** (derive the source
-     field names the parser actually consumed for its measurements — e.g. via a
-     small mapping the parser exposes, or by treating any column whose name the
-     parser used as a metric source as accounted), OR
-   - it appears in `batch.unmapped_metrics`, OR
-   - it appears as a `raw_field` in `batch.skipped_rows`.
-   > Implementation note: the batch does not store "which raw column produced
-   > each measurement" directly. Use the conservative, honest definition: a
-   > column is accounted iff it is in `unmapped_metrics`/`skipped_rows` **or** it
-   > is the documented mapped source column for an emitted metric. For the
-   > heart-rate path the only mapped column is the bpm column; treat a column as
-   > "mapped" iff the parser declared a metric and named that column as its
-   > source (the parser contract requires the parser to be explicit). If the
-   > parser gives no way to know its mapped source column, fall back to: mapped
-   > columns = source columns that are NOT unmapped/skipped AND the batch emitted
-   > ≥1 metric — but prefer an explicit mapped-source list if the operator
-   > convention provides one. Document whichever rule you implement in the
-   > docstring so the reviewer can verify it against `honest_about_gaps`.
+     file has no header / is unreadable, return `passed=False` (an empty ground
+     set is not a silent pass — see edge cases).
+3. **Accounted set** — exactly: `accounted = set(mapped_columns) |
+   set(batch.unmapped_metrics) | {r.raw_field for r in batch.skipped_rows}`. No
+   inference, no fallback. (This is the answer-key-free analogue of the grader's
+   "loaded OR declared".)
 4. Compute `unaccounted = sorted(set(source_columns) - accounted)`, set
    `passed = not unaccounted`.
 
@@ -125,16 +114,15 @@ with no manifest.
 
 **Purpose**: prove the gate is correct AND equivalent to the grader on the fixture.
 
-**Steps**: in `tests/test_self_reconcile.py`:
-1. **Honest parser passes**: build an `IngestBatch` mapping the bpm column and
-   declaring `timestamp`/`confidence`/`altitude_m` as unmapped → `passed True`,
+**Steps**: in `tests/test_self_reconcile.py` (pass `mapped_columns` explicitly):
+1. **Honest parser passes**: `mapped_columns={"bpm"}`, batch declares
+   `timestamp`/`confidence`/`altitude_m` as unmapped → `passed True`,
    `unaccounted == []`.
-2. **Silent drop fails**: same batch but omit `altitude_m` from unmapped →
+2. **Silent drop fails**: same but omit `altitude_m` from unmapped →
    `passed False`, `unaccounted == ["altitude_m"]`.
-3. **Loophole closed**: a parser that simply does not read `confidence` (so it is
-   neither mapped nor declared) still FAILS — assert `confidence` ∈ `unaccounted`.
-   This is the key regression test: the ground set is the FILE header, not the
-   columns the parser read.
+3. **Loophole closed**: `mapped_columns={"bpm"}` and `confidence` is neither
+   mapped nor declared → FAILS, `confidence` ∈ `unaccounted`. The ground set is the
+   FILE header, not the columns the parser read.
 4. **Grader equivalence**: for the honest batch, assert `self_reconcile(...).passed`
    matches `grader._grade_honest_about_gaps(...)["passed"]` computed against the
    committed `fixture_fields.yaml`. (The test may import the manifest; the gate

@@ -85,8 +85,11 @@ The real-data no-persist guard is a hard PHI boundary (NFR-002 / C-001).
    session-log DuckDB to `session_log.duckdb`, write `verdict.json`
    (`json.dumps(verdict, sort_keys=True)` — the verdict carries no ids/timestamps,
    so this stays stable). Return the run dir path.
-4. `DATA_DIR = <repo>/data/live_trials` resolved relative to the package, matching
-   the seam's existing data-dir convention.
+4. `DATA_DIR` defaults to `<repo-root>/data/live_trials`, where `<repo-root>` is
+   resolved from this module's path (e.g. `Path(__file__).resolve().parents[3]`,
+   the same way `live_trial_ollama` resolves the repo root) — NOT the process
+   cwd. All `persist_run` / scoreboard paths accept an explicit override arg so
+   tests pass a `tmp_path` and never touch the real `data/` dir.
 
 **Edge cases**: model slug must be filesystem-safe (replace `:` `/`).
 

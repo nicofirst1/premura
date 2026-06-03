@@ -96,7 +96,11 @@ synthetic runs. The run reuses the slice-one machinery via
      `_PARSER_DEST_RELPATH`; normalize the class name to the runner-resolved
      `parser_attr`.
    - Gate the attempt: (a) import/parse/validate in a subprocess rooted at the
-     sandbox `src`, and (b) `self_reconcile(source_path, batch)` from WP01.
+     sandbox `src`, and (b) `self_reconcile(source_path, batch, mapped_columns)`
+     from WP01 — where `mapped_columns` is the set of source columns the generated
+     parser consumed to emit metrics (have the generated parser expose its mapped
+     source columns, e.g. a module-level constant the operator reads, so the gate
+     gets an explicit set rather than guessing).
    - On failure within the cap: feed back the parse error and/or the
      `unaccounted` columns; retry. On pass or cap-exhaustion: stop.
 3. Expose telemetry for grading/recording: `tries_used`, per-attempt
@@ -121,18 +125,32 @@ authority.
    attempt-1 parser through the runner + grade), independently of any feedback.
 3. Assemble a `LiveTrialRunRecord` (WP02) with `operator_model`, `driver_model`,
    `attempts_used`, `first_attempt_verdict`, `final_verdict`.
-4. For a **synthetic** run only, `persist_run(...)` + `append_scoreboard(...)`
-   (WP02). A real-data run records nothing (delegated to WP02's guard).
+4. **Classify the source explicitly**: `is_synthetic` is True iff `source`
+   resolves to the committed synthetic fixture path; any other source is treated
+   as real (non-persisting). Define this in one helper so WP05 can exercise it.
+5. Pass `is_synthetic` to `persist_run(...)`; on synthetic also
+   `append_scoreboard(...)` (WP02). A real-data run records nothing — the
+   no-persist decision is made HERE and enforced by WP02's guard.
 
 ### T014 — Run entry + `__main__`
 
 **Steps**:
 1. `run_live_trial_ollama(*, model=DEFAULT_MODEL, source=<synthetic fixture>,
-   max_tries=3, repo_root=<repo>) -> (LiveTrialRunRecord, list[AttemptRecord])`.
-   Default source is the committed synthetic fixture (no private data, C-001).
-2. `__main__`: run, print attempts used, the **first-attempt** and **final**
-   three-rule verdicts, and the kept run path; on no server print a clear message
-   and exit non-zero WITHOUT raising into any default test (NFR-001).
+   max_tries=3, repo_root=<repo>, operator=None) -> LiveTrialOutcome`. The
+   **`operator` parameter is injectable** (defaults to constructing an
+   `OllamaOperator`); WP05's edge-case fixtures pass a deterministic fake operator
+   so the end-to-end path runs in the default suite without a model server. Do NOT
+   hardcode `OllamaOperator` inside the function body.
+2. **Unavailable is a returnable outcome, not just a print.** Define a small typed
+   result (e.g. `LiveTrialOutcome` = the `(LiveTrialRunRecord, attempts)` on
+   success, OR a `model_unavailable=True` sentinel when the default operator can't
+   reach the server). `run_live_trial_ollama` must **return** the unavailable
+   outcome (or raise `OllamaUnavailableError` that a caller catches) — it must NOT
+   only `print`. This is what lets WP05 own the unavailable edge with an assertion.
+3. `__main__`: call the function; on the unavailable outcome print a clear message
+   and exit non-zero; otherwise print attempts used, the **first-attempt** and
+   **final** three-rule verdicts, and the kept run path. Nothing here raises into a
+   default-collected test (NFR-001).
 
 ### T015 — `pyproject.toml` marker
 
