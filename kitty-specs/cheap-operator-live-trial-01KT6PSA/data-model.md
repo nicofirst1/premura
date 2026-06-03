@@ -9,12 +9,14 @@ The manifest-blind, raw-header honesty gate's output.
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `passed` | bool | true iff every raw source column is accounted for |
+| `passed` | bool | true iff the source has columns AND every raw source column is accounted for |
 | `source_columns` | list[str] | columns read from the source file header/structure (ground set) |
 | `accounted` | set[str] | columns that are a declared metric's source OR in `unmapped`/`skipped` |
 | `unaccounted` | list[str] | `source_columns − accounted` (sorted); fed back to the operator on failure |
 
-Rule: `passed == (unaccounted == [])`. Never references the fixture manifest.
+Rule: `passed == (bool(source_columns) and unaccounted == [])` — an empty/headerless
+source cannot witness honesty, so it never silently passes. Never references the
+fixture manifest.
 
 ## AttemptRecord (in-process; FR-010/FR-014)
 

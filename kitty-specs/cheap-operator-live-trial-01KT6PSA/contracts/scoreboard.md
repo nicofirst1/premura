@@ -6,7 +6,7 @@
 persist_run(run_record, *, kept_session_log, verdict, is_synthetic) -> Path | None
 append_scoreboard(entry) -> None
 read_scoreboard() -> list[ScoreboardEntry]
-current_floor(entries) -> mapping[model -> {first_attempt_pass, final_pass, runs, last_ts}]
+current_floor(entries) -> mapping[model -> {runs, first_attempt_pass_runs, final_pass_runs, reaches_final_pass, last_ts}]
 ```
 
 ## Rules
@@ -23,8 +23,9 @@ current_floor(entries) -> mapping[model -> {first_attempt_pass, final_pass, runs
   ordered, independently-parseable lines. A malformed line is skipped on read with
   a warning, never silently dropping the rest.
 - **Floor query (FR-011)**: `current_floor` groups by `operator_model` and reports,
-  per tier, whether it reaches `final_pass` and how `first_attempt_pass` vs
-  `final_pass` has trended — the capability floor at any time.
+  per tier, the run count, the first-attempt-pass and final-pass run counts (so the
+  first-vs-final retry-loop lift is visible), whether the tier ever `reaches_final_pass`,
+  and the `last_ts` — the capability floor at any time.
 - **No off-machine path (NFR-002)**: no function syncs/uploads/exports any of
   these artifacts. Local files only.
 
