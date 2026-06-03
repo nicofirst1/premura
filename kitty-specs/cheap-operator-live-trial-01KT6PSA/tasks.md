@@ -26,13 +26,13 @@ WP02 (scoreboard) ─────┘                              └─► WP05
 | T007 | `current_floor()` + module `__main__` floor print | WP02 | | [D] |
 | T008 | `.gitignore` `data/live_trials/` | WP02 | [D] |
 | T009 | Unit test: append/read/order integrity, real-data no-persist, floor | WP02 | [D] |
-| T010 | Ollama client (urllib): `_ollama`, `ollama_available`, model config | WP03 | |
-| T011 | `OllamaOperator.operate` — retry loop with self-reconcile gate | WP03 | |
-| T012 | `OllamaDriver` — fixed goal + canned respond | WP03 | |
-| T013 | Grade attempt-1 + final; assemble + persist (synthetic only) | WP03 | |
-| T014 | `run_live_trial_ollama()` entry + `__main__` | WP03 | |
-| T015 | `pyproject.toml` — register + exclude `live_trial` marker | WP03 | [P] |
-| T016 | Gated `live_trial` end-to-end test | WP03 | [P] |
+| T010 | Ollama client (urllib): `_ollama`, `ollama_available`, model config | WP03 | | [D] |
+| T011 | `OllamaOperator.operate` — retry loop with self-reconcile gate | WP03 | | [D] |
+| T012 | `OllamaDriver` — fixed goal + canned respond | WP03 | | [D] |
+| T013 | Grade attempt-1 + final; assemble + persist (synthetic only) | WP03 | | [D] |
+| T014 | `run_live_trial_ollama()` entry + `__main__` | WP03 | | [D] |
+| T015 | `pyproject.toml` — register + exclude `live_trial` marker | WP03 | [D] |
+| T016 | Gated `live_trial` end-to-end test | WP03 | [D] |
 | T017 | Wire `real_model_operator`/`real_model_driver` to delegate | WP04 | |
 | T018 | Verify existing seam test + invariants (no regression) | WP04 | |
 | T019 | Gated test: placeholders resolved, delegated end-to-end | WP04 | [P] |
@@ -84,13 +84,13 @@ tests/test_live_trial_ollama.py` (needs Ollama; skips otherwise). **Est. prompt*
 ~430 lines. **Prompt**:
 [tasks/WP03-cheap-operator-and-loop.md](tasks/WP03-cheap-operator-and-loop.md)
 
-- [ ] T010 Ollama client (urllib): `_ollama`, `ollama_available`, model config (WP03)
-- [ ] T011 `OllamaOperator.operate` — retry loop with self-reconcile gate (WP03)
-- [ ] T012 `OllamaDriver` — fixed goal + canned respond (WP03)
-- [ ] T013 Grade attempt-1 + final; assemble + persist (synthetic only) (WP03)
-- [ ] T014 `run_live_trial_ollama()` entry + `__main__` (WP03)
-- [ ] T015 `pyproject.toml` — register + exclude `live_trial` marker (WP03)
-- [ ] T016 Gated `live_trial` end-to-end test (WP03)
+- [x] T010 Ollama client (urllib): `_ollama`, `ollama_available`, model config (WP03)
+- [x] T011 `OllamaOperator.operate` — retry loop with self-reconcile gate (WP03)
+- [x] T012 `OllamaDriver` — fixed goal + canned respond (WP03)
+- [x] T013 Grade attempt-1 + final; assemble + persist (synthetic only) (WP03)
+- [x] T014 `run_live_trial_ollama()` entry + `__main__` (WP03)
+- [x] T015 `pyproject.toml` — register + exclude `live_trial` marker (WP03)
+- [x] T016 Gated `live_trial` end-to-end test (WP03)
 
 Requirements: FR-001, FR-002, FR-004, FR-005, FR-008, FR-009, FR-010, FR-014
 (also NFR-003, C-003, C-005).
