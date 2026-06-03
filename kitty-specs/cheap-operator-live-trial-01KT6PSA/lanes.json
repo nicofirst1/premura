@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "mission_slug": "cheap-operator-live-trial-01KT6PSA",
+  "mission_id": "01KT6PSADWHD3BDGPDBWD43QV2",
+  "mission_branch": "kitty/mission-cheap-operator-live-trial-01KT6PSA",
+  "target_branch": "master",
+  "lanes": [
+    {
+      "lane_id": "lane-a",
+      "wp_ids": [
+        "WP01",
+        "WP02",
+        "WP03",
+        "WP04"
+      ],
+      "write_scope": [
+        ".gitignore",
+        "pyproject.toml",
+        "src/premura/harness/live_trial.py",
+        "src/premura/harness/live_trial_ollama.py",
+        "src/premura/harness/scoreboard.py",
+        "src/premura/harness/self_reconcile.py",
+        "tests/test_live_trial_ollama.py",
+        "tests/test_real_model_seam.py",
+        "tests/test_scoreboard.py",
+        "tests/test_self_reconcile.py"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "artifact-rendering",
+        "legacy-cleanup"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    }
+  ],
+  "computed_at": "2026-06-03T13:05:31.203074+00:00",
+  "computed_from": "dependency_graph+ownership",
+  "planning_artifact_wps": [],
+  "collapse_report": {
+    "events": [
+      {
+        "wp_a": "WP03",
+        "wp_b": "WP01",
+        "rule": "dependency",
+        "evidence": "WP03 depends on WP01"
+      },
+      {
+        "wp_a": "WP03",
+        "wp_b": "WP02",
+        "rule": "dependency",
+        "evidence": "WP03 depends on WP02"
+      },
+      {
+        "wp_a": "WP04",
+        "wp_b": "WP03",
+        "rule": "dependency",
+        "evidence": "WP04 depends on WP03"
+      }
+    ],
+    "total_merges": 3,
+    "independent_wps_collapsed": 0,
+    "by_rule": {
+      "dependency": 3
+    }
+  }
+}
