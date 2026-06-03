@@ -14,8 +14,8 @@ subtasks:
 - T001
 - T002
 - T003
-shell_pid: "30098"
-agent: "claude:opus:python-implementer:implementer"
+shell_pid: "38940"
+agent: "claude:opus:python-reviewer:reviewer"
 history:
 - timestamp: '2026-06-03T12:45:00Z'
   actor: tasks
@@ -166,3 +166,4 @@ Implement command: `spec-kitty agent action implement WP01 --agent <name>`
 
 - 2026-06-03T13:33:42Z – claude:opus:python-implementer:implementer – shell_pid=30098 – Assigned agent via action command
 - 2026-06-03T13:39:04Z – claude:opus:python-implementer:implementer – shell_pid=30098 – Ready for review: self_reconcile gate + unit tests green
+- 2026-06-03T13:39:36Z – claude:opus:python-reviewer:reviewer – shell_pid=38940 – Started review via action command
