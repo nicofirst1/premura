@@ -62,11 +62,13 @@ recovered-in-N attempts.
 ### Edge cases
 
 - **Loadable-but-dishonest parser** *(the decisive case)*: the operator produces a
-  parser that loads rows but silently drops an unmapped column. The loop's
-  self-reconciliation catches the gap *only if the parser misdeclares its own
-  columns*; if the operator declares dishonestly-consistently, the **grader**
-  still FAILs `honest_about_gaps` against ground truth. The recorded honesty
-  verdict is the grader's, never the loop's.
+  parser that loads rows but silently drops a column. Because self-reconciliation
+  checks **every raw column in the source file's header** (not only the columns
+  the parser chose to read), it catches the silent drop and feeds it back. The
+  residual it cannot catch is a **wrong mapping** (a column declared as the wrong
+  metric — accounted-for, but mis-mapped); that is judged by the **grader** alone
+  and recorded as a capability-floor finding. The recorded honesty verdict is
+  always the grader's, never the loop's.
 - **Model server unavailable**: the trial reports a clear "model not reachable"
   outcome and the default test suite stays green (the trial is never collected by
   default).
@@ -144,8 +146,10 @@ recovered-in-N attempts.
 - **Operator (cheap model)** — authors a parser into the sandbox; subject to the
   self-reconciliation retry loop. **Driver** — fixed-goal stand-in supplying the
   goal and canned answers.
-- **Self-reconciliation gate** — an in-loop, manifest-blind check of the parser's
-  own column declarations; distinct from the grader.
+- **Self-reconciliation gate** — an in-loop, manifest-blind check that **every raw
+  column in the source file's header** is a declared metric or declared unmapped;
+  the answer-key-free twin of the grader's `honest_about_gaps`, distinct from the
+  grader.
 - **Grader verdict** — the independent three-rule judgment (loaded / runtime-valid
   / honest-about-gaps) that is the sole recorded honesty authority.
 - **Kept run record** — the persisted session log + verdict for a synthetic run.
