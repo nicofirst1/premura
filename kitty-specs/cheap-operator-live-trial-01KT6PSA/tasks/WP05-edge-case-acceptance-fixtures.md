@@ -14,8 +14,8 @@ subtasks:
 - T020
 - T021
 - T022
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "93782"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "2464"
 history:
 - timestamp: '2026-06-03T12:45:00Z'
   actor: tasks
@@ -142,3 +142,4 @@ Implement command: `spec-kitty agent action implement WP05 --agent <name>`
 
 - 2026-06-03T14:33:23Z – claude:opus:python-implementer:implementer – shell_pid=93782 – Started implementation via action command
 - 2026-06-03T14:42:12Z – claude:opus:python-implementer:implementer – shell_pid=93782 – Ready for review: 3 default-suite e2e edge-case fixtures via injected fake operator; frozen guard green
+- 2026-06-03T14:42:56Z – claude:opus:python-reviewer:reviewer – shell_pid=2464 – Started review via action command
