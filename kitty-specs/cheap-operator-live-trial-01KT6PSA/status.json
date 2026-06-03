@@ -1,7 +1,7 @@
 {
-  "event_count": 20,
-  "last_event_id": "01KT6XCCM3Q98AE5A867GSDBGE",
-  "materialized_at": "2026-06-03T14:14:45.635330+00:00",
+  "event_count": 22,
+  "last_event_id": "01KT6XDWWDRVZRNZRMA18GJYG7",
+  "materialized_at": "2026-06-03T14:15:35.053267+00:00",
   "mission_number": "",
   "mission_slug": "cheap-operator-live-trial-01KT6PSA",
   "mission_type": "software-dev",
@@ -12,9 +12,9 @@
     "claimed": 0,
     "done": 0,
     "for_review": 0,
-    "in_progress": 0,
+    "in_progress": 1,
     "in_review": 0,
-    "planned": 2
+    "planned": 1
   },
   "work_packages": {
     "WP01": {
@@ -39,11 +39,11 @@
       "last_transition_at": "2026-06-03T14:14:45.635330+00:00"
     },
     "WP04": {
-      "actor": "finalize-tasks",
+      "actor": "claude:opus:python-implementer:implementer",
       "force_count": 1,
-      "lane": "planned",
-      "last_event_id": "01KT6SDKHZGQ9ZRKNHBXAV5N6W",
-      "last_transition_at": "2026-06-03T13:05:31.199301+00:00"
+      "lane": "in_progress",
+      "last_event_id": "01KT6XDWWDRVZRNZRMA18GJYG7",
+      "last_transition_at": "2026-06-03T14:15:35.053267+00:00"
     },
     "WP05": {
       "actor": "finalize-tasks",
