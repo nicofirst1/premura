@@ -13,8 +13,8 @@ subtasks:
 - T017
 - T018
 - T019
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "76986"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "89313"
 history:
 - timestamp: '2026-06-03T12:45:00Z'
   actor: tasks
@@ -122,3 +122,4 @@ Implement command: `spec-kitty agent action implement WP04 --agent <name>`
 
 - 2026-06-03T14:15:35Z – claude:opus:python-implementer:implementer – shell_pid=76986 – Started implementation via action command
 - 2026-06-03T14:24:32Z – claude:opus:python-implementer:implementer – shell_pid=76986 – Ready for review: real_model_operator/driver delegate to live_trial_ollama; seam green; gated delegated test added
+- 2026-06-03T14:25:20Z – claude:opus:python-reviewer:reviewer – shell_pid=89313 – Started review via action command
