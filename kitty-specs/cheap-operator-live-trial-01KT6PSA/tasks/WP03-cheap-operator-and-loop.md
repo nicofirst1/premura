@@ -25,8 +25,8 @@ subtasks:
 - T014
 - T015
 - T016
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "49870"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "68294"
 history:
 - timestamp: '2026-06-03T12:45:00Z'
   actor: tasks
@@ -200,3 +200,4 @@ Implement command: `spec-kitty agent action implement WP03 --agent <name>`
 
 - 2026-06-03T13:49:25Z – claude:opus:python-implementer:implementer – shell_pid=49870 – Started implementation via action command
 - 2026-06-03T14:06:20Z – claude:opus:python-implementer:implementer – shell_pid=49870 – Ready for review: Ollama operator + retry loop, grades both attempts, persists synthetic-only; gated test skips without server
+- 2026-06-03T14:07:37Z – claude:opus:python-reviewer:reviewer – shell_pid=68294 – Started review via action command
