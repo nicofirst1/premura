@@ -20,12 +20,12 @@ WP02 (scoreboard) ─────┘                              └─► WP05
 | T001 | `SelfReconciliationResult` structure | WP01 | | [D] |
 | T002 | `self_reconcile()` — raw-header vs declared∪loaded, manifest-blind | WP01 | | [D] |
 | T003 | Unit test: raw-header rule, loophole, grader-equivalence on fixture | WP01 | [D] |
-| T004 | `ScoreboardEntry` + `LiveTrialRunRecord` structures | WP02 | |
-| T005 | `persist_run()` — kept log + verdict.json, synthetic-only guard | WP02 | |
-| T006 | `append_scoreboard()` / `read_scoreboard()` — append-only JSONL | WP02 | |
-| T007 | `current_floor()` + module `__main__` floor print | WP02 | |
-| T008 | `.gitignore` `data/live_trials/` | WP02 | [P] |
-| T009 | Unit test: append/read/order integrity, real-data no-persist, floor | WP02 | [P] |
+| T004 | `ScoreboardEntry` + `LiveTrialRunRecord` structures | WP02 | | [D] |
+| T005 | `persist_run()` — kept log + verdict.json, synthetic-only guard | WP02 | | [D] |
+| T006 | `append_scoreboard()` / `read_scoreboard()` — append-only JSONL | WP02 | | [D] |
+| T007 | `current_floor()` + module `__main__` floor print | WP02 | | [D] |
+| T008 | `.gitignore` `data/live_trials/` | WP02 | [D] |
+| T009 | Unit test: append/read/order integrity, real-data no-persist, floor | WP02 | [D] |
 | T010 | Ollama client (urllib): `_ollama`, `ollama_available`, model config | WP03 | |
 | T011 | `OllamaOperator.operate` — retry loop with self-reconcile gate | WP03 | |
 | T012 | `OllamaDriver` — fixed goal + canned respond | WP03 | |
@@ -65,12 +65,12 @@ floor query. **Priority**: foundation. **Dependencies**: none. **Independent
 test**: `uv run pytest tests/test_scoreboard.py`. **Est. prompt**: ~360 lines.
 **Prompt**: [tasks/WP02-run-record-and-scoreboard.md](tasks/WP02-run-record-and-scoreboard.md)
 
-- [ ] T004 `ScoreboardEntry` + `LiveTrialRunRecord` structures (WP02)
-- [ ] T005 `persist_run()` — kept log + verdict.json, synthetic-only guard (WP02)
-- [ ] T006 `append_scoreboard()` / `read_scoreboard()` — append-only JSONL (WP02)
-- [ ] T007 `current_floor()` + module `__main__` floor print (WP02)
-- [ ] T008 `.gitignore` `data/live_trials/` (WP02)
-- [ ] T009 Unit test: append/read/order integrity, real-data no-persist, floor (WP02)
+- [x] T004 `ScoreboardEntry` + `LiveTrialRunRecord` structures (WP02)
+- [x] T005 `persist_run()` — kept log + verdict.json, synthetic-only guard (WP02)
+- [x] T006 `append_scoreboard()` / `read_scoreboard()` — append-only JSONL (WP02)
+- [x] T007 `current_floor()` + module `__main__` floor print (WP02)
+- [x] T008 `.gitignore` `data/live_trials/` (WP02)
+- [x] T009 Unit test: append/read/order integrity, real-data no-persist, floor (WP02)
 
 Requirements: FR-006, FR-007, FR-011, FR-012 (also NFR-002, NFR-005, C-001).
 
