@@ -11,6 +11,8 @@ wheels/
 
 # Data — local-only, never committed
 data/
+# Live-trial kept logs, verdicts, and scoreboard (C-001 — never committed)
+data/live_trials/
 
 # Secrets / artifacts
 *.age

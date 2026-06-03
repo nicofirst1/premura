@@ -58,7 +58,8 @@ select = ["E", "F", "I", "B", "UP", "N", "W"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = ["-m", "not regression"]
+addopts = ["-m", "not regression and not live_trial"]
 markers = [
     "regression: tests that run against real on-disk exports (skipped when files absent)",
+    "live_trial: local model-driven live trials (needs a running Ollama); never in CI (NFR-005)",
 ]

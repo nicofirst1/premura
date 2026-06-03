@@ -40,12 +40,15 @@ The concrete cheap-model :class:`Operator` and :class:`Driver` are a **named
 follow-up**, NOT a silent waiver (DIRECTIVE_010). This slice ships the seam and
 proves it end-to-end with a deterministic FAKE operator
 (:class:`ReferenceParserOperator`, an outside-boundary substitute permitted by
-DIRECTIVE_036) over the SYNTHETIC fixture. No real model is invoked anywhere in
-this module. The deferral is made visible by two explicitly-named placeholders
-below — :func:`real_model_operator` and :func:`real_model_driver` — each raising
-:class:`NotImplementedError` that points back at this follow-up. SC-005 is refined
-accordingly: the seam is exercised by a fake operator; model-driven execution
-against the real dump is the follow-up (recorded in plan.md Risks R5).
+DIRECTIVE_036) over the SYNTHETIC fixture. No real model is invoked by this
+module's committed default suite. That follow-up was CLOSED in WP04 (FR-013): the
+two explicitly-named factories below — :func:`real_model_operator` and
+:func:`real_model_driver` — now DELEGATE to the WP03 cheap-model operator/driver
+when handed the arguments to build one. A BARE no-argument call still raises a
+:class:`NotImplementedError` that points back at this follow-up (there is nothing
+to delegate to without a data source). SC-005 is refined accordingly: the seam is
+exercised by a fake operator in the default suite; model-driven execution against
+the real dump is the local follow-up (recorded in plan.md Risks R5).
 
 == NFR-005: the live trial is wired into NO CI gate and can NEVER block ===========
 
@@ -225,9 +228,12 @@ class ScriptedDriver:
 
 
 # --------------------------------------------------------------------------- #
-# Named-follow-up placeholders: the REAL cheap-model operator/driver are DEFERRED.
-# Calling either raises NotImplementedError pointing at the follow-up (D4 / R5 /
-# SC-005). No model is invoked in this slice.
+# Closed follow-up (D4 / R5 / SC-005): the REAL cheap-model operator/driver are now
+# WIRED (FR-013) — these factories delegate to the WP03 Ollama operator/driver when
+# handed the arguments to build one. A BARE no-argument call still raises
+# NotImplementedError pointing at the follow-up, since the real operator must be
+# handed a data source (there is nothing to delegate to without one). The import is
+# lazy so this slice-one seam has no import cycle with the WP03 module.
 # --------------------------------------------------------------------------- #
 
 _DEFERRED_MSG = (
@@ -240,22 +246,44 @@ _DEFERRED_MSG = (
 )
 
 
-def real_model_operator(*_args: object, **_kwargs: object) -> Operator:
-    """DEFERRED (D4/R5): the real cheap-model operator factory — not wired here.
+def real_model_operator(source: Path | None = None, **kwargs: Any) -> Operator:
+    """Resolve the D4/R5 follow-up: delegate to the WP03 cheap-model operator.
 
-    A named follow-up placeholder, not a forgotten gap. The slice-one seam is
-    proven by :class:`ReferenceParserOperator`; wiring a real model is the
-    local-only follow-up.
+    The slice-one substrate shipped this as a ``NotImplementedError`` placeholder;
+    that follow-up is now CLOSED (FR-013). Given a data ``source``, this builds and
+    returns the real cheap-model :class:`Operator` —
+    :class:`premura.harness.live_trial_ollama.OllamaOperator` — forwarding
+    ``model`` / ``max_tries`` kwargs. The import is LAZY so the slice-one seam has
+    no import cycle with the WP03 module (which imports this one).
+
+    Calling it with NO ``source`` is the bare named-follow-up probe: there is no
+    data to build a parser against, so it still raises a ``NotImplementedError``
+    pointing back at the follow-up (the real operator MUST be handed a source).
     """
-    raise NotImplementedError(_DEFERRED_MSG.format(role="Operator"))
+    if source is None:
+        raise NotImplementedError(_DEFERRED_MSG.format(role="Operator"))
+    from premura.harness.live_trial_ollama import OllamaOperator
+
+    return OllamaOperator(source, **kwargs)
 
 
-def real_model_driver(*_args: object, **_kwargs: object) -> Driver:
-    """DEFERRED (D4/R5): the real cheap-model driver factory — not wired here.
+def real_model_driver(**kwargs: Any) -> Driver:
+    """Resolve the D4/R5 follow-up: delegate to the WP03 cheap-model driver.
 
-    A named follow-up placeholder, not a forgotten gap (see :func:`real_model_operator`).
+    The slice-one substrate shipped this as a ``NotImplementedError`` placeholder;
+    that follow-up is now CLOSED (FR-013). It builds and returns the real
+    cheap-model :class:`Driver` —
+    :class:`premura.harness.live_trial_ollama.OllamaDriver` — forwarding the
+    ``model`` kwarg. The import is LAZY to avoid an import cycle.
+
+    Calling it with NO model kwargs is the bare named-follow-up probe and still
+    raises a ``NotImplementedError`` pointing back at the follow-up.
     """
-    raise NotImplementedError(_DEFERRED_MSG.format(role="Driver"))
+    if not kwargs:
+        raise NotImplementedError(_DEFERRED_MSG.format(role="Driver"))
+    from premura.harness.live_trial_ollama import OllamaDriver
+
+    return OllamaDriver(**kwargs)
 
 
 # --------------------------------------------------------------------------- #
