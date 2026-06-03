@@ -3,6 +3,7 @@ vcs:
 agents:
   available:
   - copilot
+  - claude
   auto_commit: true
 project:
   uuid: 10797660-ae0f-41ea-93ee-46b8a631d28e
