@@ -172,3 +172,4 @@ Implement command: `spec-kitty agent action implement WP02 --agent <name>`
 ## Activity Log
 
 - 2026-06-03T13:42:13Z – claude:opus:python-implementer:implementer – shell_pid=42271 – Started implementation via action command
+- 2026-06-03T13:46:09Z – claude:opus:python-implementer:implementer – shell_pid=42271 – Ready for review: run record + scoreboard, synthetic-only guard, floor query; tests green
