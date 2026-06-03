@@ -36,9 +36,9 @@ WP02 (scoreboard) ─────┘                              └─► WP05
 | T017 | Wire `real_model_operator`/`real_model_driver` to delegate | WP04 | | [D] |
 | T018 | Verify existing seam test + invariants (no regression) | WP04 | | [D] |
 | T019 | Gated test: placeholders resolved, delegated end-to-end | WP04 | [D] |
-| T020 | E2E fixture: real-data no-persist | WP05 | [P] |
-| T021 | E2E fixture: operator never succeeds within the cap | WP05 | [P] |
-| T022 | E2E fixture: model server unavailable outcome | WP05 | [P] |
+| T020 | E2E fixture: real-data no-persist | WP05 | [D] |
+| T021 | E2E fixture: operator never succeeds within the cap | WP05 | [D] |
+| T022 | E2E fixture: model server unavailable outcome | WP05 | [D] |
 
 ---
 
@@ -121,9 +121,9 @@ acceptance. **Dependencies**: WP03. **Independent test**: `uv run pytest
 tests/test_live_trial_edge_cases.py`. **Est. prompt**: ~190 lines. **Prompt**:
 [tasks/WP05-edge-case-acceptance-fixtures.md](tasks/WP05-edge-case-acceptance-fixtures.md)
 
-- [ ] T020 E2E fixture: real-data no-persist (WP05)
-- [ ] T021 E2E fixture: operator never succeeds within the cap (WP05)
-- [ ] T022 E2E fixture: model server unavailable outcome (WP05)
+- [x] T020 E2E fixture: real-data no-persist (WP05)
+- [x] T021 E2E fixture: operator never succeeds within the cap (WP05)
+- [x] T022 E2E fixture: model server unavailable outcome (WP05)
 
 Requirements: FR-002, FR-012 (edge-case ownership; also NFR-001, NFR-002).
 
