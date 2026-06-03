@@ -14,7 +14,8 @@ subtasks:
 - T001
 - T002
 - T003
-shell_pid: '30098'
+shell_pid: "30098"
+agent: "claude:opus:python-implementer:implementer"
 history:
 - timestamp: '2026-06-03T12:45:00Z'
   actor: tasks
@@ -160,3 +161,7 @@ worktrees are allocated per computed lane from `lanes.json` during
 `/spec-kitty.implement` — do not create worktrees by hand.
 
 Implement command: `spec-kitty agent action implement WP01 --agent <name>`
+
+## Activity Log
+
+- 2026-06-03T13:33:42Z – claude:opus:python-implementer:implementer – shell_pid=30098 – Assigned agent via action command
