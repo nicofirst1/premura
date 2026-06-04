@@ -19,8 +19,8 @@ subtasks:
 - T015
 - T016
 - T031
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "36316"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "61636"
 history:
 - 2026-06-04T11:52:07Z created by /spec-kitty.tasks
 authoritative_surface: src/premura/engine/views/
@@ -176,3 +176,4 @@ Black-box through `resolve_dependency`, not resolver internals.
 
 - 2026-06-04T13:08:21Z – claude:opus:python-implementer:implementer – shell_pid=36316 – Started implementation via action command
 - 2026-06-04T13:34:02Z – claude:opus:python-implementer:implementer – shell_pid=36316 – Ready for review: intake resolvers (both domains) + parameterized compute seam (T011-T016, T031)
+- 2026-06-04T13:35:08Z – claude:opus:python-reviewer:reviewer – shell_pid=61636 – Started review via action command
