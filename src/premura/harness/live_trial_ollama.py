@@ -49,6 +49,7 @@ import urllib.request
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+from urllib.parse import urlparse
 
 from premura.harness import live_trial
 from premura.harness.live_trial import (
@@ -64,6 +65,7 @@ from premura.harness.scoreboard import (
     append_scoreboard,
     persist_run,
 )
+from premura.harness.self_reconcile import SelfReconciliationResult
 
 # --------------------------------------------------------------------------- #
 # Configuration (env-overridable; defaults to a locally available cheap coder).
@@ -165,6 +167,23 @@ class OllamaUnavailableError(RuntimeError):
 # --------------------------------------------------------------------------- #
 
 
+def _validated_ollama_url(url: str) -> str:
+    """Enforce the slice's local-only model backend boundary (C-003).
+
+    ``OLLAMA_URL`` is env-configurable for localhost variants, but this mission's
+    contract is still *local model backend*. Refuse non-local endpoints so prompt
+    data and source samples cannot be sent off-machine by configuration drift.
+    """
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"}:
+        raise OllamaUnavailableError(f"Ollama URL must be http(s), got: {url!r}")
+    if parsed.hostname not in {"localhost", "127.0.0.1", "::1"}:
+        raise OllamaUnavailableError(
+            f"Ollama URL must stay local-only for this slice, got: {url!r}"
+        )
+    return url
+
+
 def _ollama(prompt: str, *, model: str, timeout: int = 300) -> str:
     """Call the local Ollama ``/api/generate`` endpoint (``stream=False``, low temp).
 
@@ -172,6 +191,7 @@ def _ollama(prompt: str, *, model: str, timeout: int = 300) -> str:
     if the endpoint is unreachable so callers can treat unavailability as a
     returnable outcome rather than a crash.
     """
+    url = _validated_ollama_url(OLLAMA_URL)
     body = json.dumps(
         {
             "model": model,
@@ -181,7 +201,7 @@ def _ollama(prompt: str, *, model: str, timeout: int = 300) -> str:
         }
     ).encode("utf-8")
     req = urllib.request.Request(
-        OLLAMA_URL,
+        url,
         data=body,
         headers={"Content-Type": "application/json"},
     )
@@ -200,7 +220,7 @@ def ollama_available() -> bool:
     """True if the local Ollama endpoint answers (used by the gated test to skip)."""
     try:
         _ollama("ping", model=DEFAULT_MODEL, timeout=10)
-    except Exception:  # noqa: BLE001 - any failure means "not available"
+    except OllamaUnavailableError:
         return False
     return True
 
@@ -244,7 +264,8 @@ class _GateOutcome:
 
     passed: bool
     feedback: str
-    unaccounted: list[str] = field(default_factory=list)
+    self_reconciliation: SelfReconciliationResult
+    parser_error: str | None = None
 
 
 # The in-sandbox probe: imports the generated parser, parses + validates the
@@ -257,9 +278,18 @@ import json
 import sys
 from pathlib import Path
 
-result = {{"ok": False, "error": "", "unaccounted": [], "self_reconcile_passed": False}}
+result = {{
+    "ok": False,
+    "parser_error": "",
+    "self_reconciliation": {{
+        "passed": False,
+        "source_columns": [],
+        "accounted": [],
+        "unaccounted": [],
+    }},
+}}
 try:
-    from premura.harness.self_reconcile import self_reconcile
+    from premura.harness.self_reconcile import _read_source_columns, self_reconcile
     from premura.parsers.base import normalize_parse_output
     from premura.parsers.{module_attr} import {attr} as _Parser
     import premura.parsers.{module_attr} as _mod
@@ -277,11 +307,22 @@ try:
     mapped = list(getattr(_mod, {mapped_const!r}, []))
     recon = self_reconcile(Path({source!r}), batch, mapped)
     result["ok"] = True
-    result["self_reconcile_passed"] = bool(recon.passed)
-    result["unaccounted"] = list(recon.unaccounted)
+    result["self_reconciliation"] = {{
+        "passed": bool(recon.passed),
+        "source_columns": list(recon.source_columns),
+        "accounted": sorted(recon.accounted),
+        "unaccounted": list(recon.unaccounted),
+    }}
 except Exception as exc:  # noqa: BLE001
     import traceback
-    result["error"] = traceback.format_exc()[-1500:]
+    cols = _read_source_columns(Path({source!r}))
+    result["parser_error"] = traceback.format_exc()[-1500:]
+    result["self_reconciliation"] = {{
+        "passed": False,
+        "source_columns": list(cols),
+        "accounted": [],
+        "unaccounted": sorted(cols),
+    }}
 print(json.dumps(result))
 """
 
@@ -325,31 +366,42 @@ def _gate_parser(sandbox_src: Path, source: Path) -> _GateOutcome:
     except (json.JSONDecodeError, IndexError):
         outcome = {}
 
+    recon_payload = outcome.get("self_reconciliation") or {}
+    recon = SelfReconciliationResult(
+        passed=bool(recon_payload.get("passed")),
+        source_columns=list(recon_payload.get("source_columns", [])),
+        accounted=frozenset(recon_payload.get("accounted", [])),
+        unaccounted=list(recon_payload.get("unaccounted", [])),
+    )
+
     if not outcome.get("ok"):
-        error = outcome.get("error") or (proc.stderr or proc.stdout).strip()[-1500:]
-        return _GateOutcome(passed=False, feedback=f"import/parse/validate failed:\n{error}")
+        error = outcome.get("parser_error") or (proc.stderr or proc.stdout).strip()[-1500:]
+        return _GateOutcome(
+            passed=False,
+            feedback=f"import/parse/validate failed:\n{error}",
+            self_reconciliation=recon,
+            parser_error=error,
+        )
 
-    if outcome.get("self_reconcile_passed"):
-        return _GateOutcome(passed=True, feedback="")
+    if recon.passed:
+        return _GateOutcome(passed=True, feedback="", self_reconciliation=recon)
 
-    unaccounted = list(outcome.get("unaccounted", []))
     feedback = (
         "self-reconcile FAILED — these source columns were neither mapped nor "
-        f"declared as a gap (silent drops): {unaccounted}. "
+        f"declared as a gap (silent drops): {recon.unaccounted}. "
         "Map each real metric column and add it to "
         f"{_MAPPED_COLUMNS_CONST}; declare every other column in unmapped_metrics."
     )
-    return _GateOutcome(passed=False, feedback=feedback, unaccounted=unaccounted)
+    return _GateOutcome(passed=False, feedback=feedback, self_reconciliation=recon)
 
 
 @dataclass(slots=True)
 class AttemptRecord:
     """Telemetry for one operator attempt (for grading + inspection, FR-014)."""
 
-    attempt: int
-    gate_passed: bool
-    feedback: str
-    unaccounted: list[str]
+    index: int
+    self_reconciliation: SelfReconciliationResult
+    parser_error: str | None
     code: str
 
 
@@ -395,7 +447,7 @@ class OllamaOperator:
     @property
     def gate_passed(self) -> bool:
         """Whether the FINAL attempt passed the self-reconcile gate."""
-        return bool(self.attempts) and self.attempts[-1].gate_passed
+        return bool(self.attempts) and self.attempts[-1].self_reconciliation.passed
 
     def operate(self, sandbox: Sandbox, goal: str) -> None:
         """Author a parser into the sandbox, gated and retried (NFR-003 / C-005)."""
@@ -416,10 +468,9 @@ class OllamaOperator:
             outcome = _gate_parser(sandbox_src, self.source)
             self.attempts.append(
                 AttemptRecord(
-                    attempt=attempt,
-                    gate_passed=outcome.passed,
-                    feedback=outcome.feedback,
-                    unaccounted=outcome.unaccounted,
+                    index=attempt,
+                    self_reconciliation=outcome.self_reconciliation,
+                    parser_error=outcome.parser_error,
                     code=code,
                 )
             )
@@ -539,6 +590,7 @@ def run_live_trial_ollama(
     max_tries: int = MAX_TRIES,
     repo_root: Path = _REPO_ROOT,
     operator: OllamaOperator | None = None,
+    keep_sandboxes: bool = False,
 ) -> LiveTrialOutcome:
     """Drive one Ollama-backed live trial end-to-end (T013/T014; FR-001..014).
 
@@ -610,12 +662,20 @@ def run_live_trial_ollama(
             )
         )
 
+    kept_final_result: LiveTrialResult | None = final_result
+    kept_first_result: LiveTrialResult | None = first_result
+    if not keep_sandboxes:
+        _teardown_kept_sandbox(final_result)
+        _teardown_kept_sandbox(first_result)
+        kept_final_result = None
+        kept_first_result = None
+
     return LiveTrialOutcome(
         model_unavailable=False,
         record=record,
         attempts=operator.attempts,
-        final_result=final_result,
-        first_attempt_result=first_result,
+        final_result=kept_final_result,
+        first_attempt_result=kept_first_result,
         persisted_run_dir=persisted_dir,
     )
 

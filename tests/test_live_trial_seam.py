@@ -30,7 +30,6 @@ from pathlib import Path
 
 import duckdb
 import jsonschema
-import pytest
 
 from premura.config import REPO_ROOT
 from premura.harness import live_trial
@@ -328,24 +327,25 @@ def test_live_trial_not_in_default_gate() -> None:
     # not depend on it: importing this module ran no live trial.
 
 
-def test_real_model_wiring_is_a_named_deferred_followup() -> None:
-    """R5/D4: real-model wiring is an EXPLICIT named follow-up, not a silent waiver.
+def test_real_model_wiring_is_closed_followup() -> None:
+    """FR-013: the named follow-up is closed; the seam exports working factories.
 
-    The real cheap-model operator/driver factories are named placeholders that
-    raise ``NotImplementedError`` pointing back at the follow-up — so a reviewer
-    sees the deferral is intentional, and nothing silently invokes a model.
+    Bare calls no longer behave like placeholder probes. They return real operator /
+    driver objects without reaching a model server during construction.
     """
-    with pytest.raises(NotImplementedError, match="NAMED follow-up"):
-        live_trial.real_model_operator()
-    with pytest.raises(NotImplementedError, match="NAMED follow-up"):
-        live_trial.real_model_driver()
+    operator = live_trial.real_model_operator()
+    driver = live_trial.real_model_driver()
 
-    # The deferral is documented in the module docstring as a named follow-up.
+    assert isinstance(operator, live_trial.Operator)
+    assert isinstance(driver, live_trial.Driver)
+    assert isinstance(operator.model_id, str) and operator.model_id
+    assert isinstance(driver.model_id, str) and driver.model_id
+
+    # The module docstring documents the follow-up as closed, not deferred.
     doc = live_trial.__doc__ or ""
-    assert "named follow-up" in doc.lower()
-    assert "DEFERRED" in doc
+    assert "closed" in doc.lower()
 
-    # No real model client is imported (no model is invoked in this slice).
+    # No frontier/cloud model client is imported by the seam itself.
     src = Path(live_trial.__file__).read_text(encoding="utf-8")
     for forbidden in ("import anthropic", "import openai", "from anthropic", "from openai"):
         assert forbidden not in src

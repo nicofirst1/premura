@@ -34,21 +34,16 @@ Design boundaries (mirrors WP06 :mod:`premura.harness.repeatable_check`):
   :mod:`premura.harness.repeatable_check`. The seam is the shared lower machinery,
   not a shared orchestrator file.
 
-== Named follow-up: real-model wiring is DEFERRED (D4 / R5 / SC-005) ==============
+== Named follow-up CLOSED: real-model wiring is available (D4 / R5 / SC-005) ======
 
-The concrete cheap-model :class:`Operator` and :class:`Driver` are a **named
-follow-up**, NOT a silent waiver (DIRECTIVE_010). This slice ships the seam and
-proves it end-to-end with a deterministic FAKE operator
-(:class:`ReferenceParserOperator`, an outside-boundary substitute permitted by
-DIRECTIVE_036) over the SYNTHETIC fixture. No real model is invoked by this
-module's committed default suite. That follow-up was CLOSED in WP04 (FR-013): the
-two explicitly-named factories below — :func:`real_model_operator` and
-:func:`real_model_driver` — now DELEGATE to the WP03 cheap-model operator/driver
-when handed the arguments to build one. A BARE no-argument call still raises a
-:class:`NotImplementedError` that points back at this follow-up (there is nothing
-to delegate to without a data source). SC-005 is refined accordingly: the seam is
-exercised by a fake operator in the default suite; model-driven execution against
-the real dump is the local follow-up (recorded in plan.md Risks R5).
+The concrete cheap-model :class:`Operator` and :class:`Driver` were a **named
+follow-up**, NOT a silent waiver (DIRECTIVE_010). WP04 closes that follow-up
+(FR-013): the two explicitly-named factories below —
+:func:`real_model_operator` and :func:`real_model_driver` — now DELEGATE to the
+WP03 cheap-model operator/driver. The default-constructed operator points at the
+committed SYNTHETIC fixture so construction stays network-free and deterministic;
+no committed default-suite test invokes a real model, while the gated tests prove
+the delegated path works when Ollama is available.
 
 == NFR-005: the live trial is wired into NO CI gate and can NEVER block ===========
 
@@ -229,41 +224,29 @@ class ScriptedDriver:
 
 # --------------------------------------------------------------------------- #
 # Closed follow-up (D4 / R5 / SC-005): the REAL cheap-model operator/driver are now
-# WIRED (FR-013) — these factories delegate to the WP03 Ollama operator/driver when
-# handed the arguments to build one. A BARE no-argument call still raises
-# NotImplementedError pointing at the follow-up, since the real operator must be
-# handed a data source (there is nothing to delegate to without one). The import is
-# lazy so this slice-one seam has no import cycle with the WP03 module.
+# WIRED (FR-013) — these factories delegate to the WP03 Ollama operator/driver.
+# The operator defaults to the committed synthetic fixture so the seam can be
+# constructed without bespoke caller plumbing and without reopening stub behavior.
+# The import is lazy so this slice-one seam has no import cycle with the WP03 module.
 # --------------------------------------------------------------------------- #
-
-_DEFERRED_MSG = (
-    "Real cheap-model live-trial wiring is a NAMED follow-up (D4 / R5 / SC-005), "
-    "deferred from the slice-one substrate — NOT a silent waiver. This slice ships "
-    "the seam and proves it with a fake operator over the synthetic fixture; the "
-    "real {role} (cheap model + parser-generator skill, run locally against "
-    "~/Downloads/MyFitbitData) is the follow-up. See contracts/live-trial-seam.md "
-    "and plan.md Risks R5."
-)
 
 
 def real_model_operator(source: Path | None = None, **kwargs: Any) -> Operator:
     """Resolve the D4/R5 follow-up: delegate to the WP03 cheap-model operator.
 
     The slice-one substrate shipped this as a ``NotImplementedError`` placeholder;
-    that follow-up is now CLOSED (FR-013). Given a data ``source``, this builds and
-    returns the real cheap-model :class:`Operator` —
+    that follow-up is now CLOSED (FR-013). This builds and returns the real
+    cheap-model :class:`Operator` —
     :class:`premura.harness.live_trial_ollama.OllamaOperator` — forwarding
-    ``model`` / ``max_tries`` kwargs. The import is LAZY so the slice-one seam has
+    ``model`` / ``max_tries`` kwargs. A bare call defaults to the committed
+    synthetic fixture, which keeps construction deterministic and removes the last
+    placeholder-style stub behavior. The import is LAZY so the slice-one seam has
     no import cycle with the WP03 module (which imports this one).
-
-    Calling it with NO ``source`` is the bare named-follow-up probe: there is no
-    data to build a parser against, so it still raises a ``NotImplementedError``
-    pointing back at the follow-up (the real operator MUST be handed a source).
     """
-    if source is None:
-        raise NotImplementedError(_DEFERRED_MSG.format(role="Operator"))
     from premura.harness.live_trial_ollama import OllamaOperator
 
+    if source is None:
+        source = Path(__file__).resolve().parents[3] / _SYNTHETIC_CSV
     return OllamaOperator(source, **kwargs)
 
 
@@ -276,11 +259,9 @@ def real_model_driver(**kwargs: Any) -> Driver:
     :class:`premura.harness.live_trial_ollama.OllamaDriver` — forwarding the
     ``model`` kwarg. The import is LAZY to avoid an import cycle.
 
-    Calling it with NO model kwargs is the bare named-follow-up probe and still
-    raises a ``NotImplementedError`` pointing back at the follow-up.
+    Calling it with no kwargs still returns a working driver using the default
+    cheap local model; there is no remaining stub behavior.
     """
-    if not kwargs:
-        raise NotImplementedError(_DEFERRED_MSG.format(role="Driver"))
     from premura.harness.live_trial_ollama import OllamaDriver
 
     return OllamaDriver(**kwargs)

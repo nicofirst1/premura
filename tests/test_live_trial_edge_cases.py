@@ -293,3 +293,9 @@ def test_model_unavailable_returns_sentinel_not_crash(
     assert _run_dirs(runs_dir) == []
     assert scoreboard_mod.read_scoreboard(path=scoreboard_path) == []
     assert not scoreboard_path.exists()
+
+
+def test_nonlocal_ollama_url_is_rejected() -> None:
+    """C-003: the live-trial model backend stays local-only even via env/config."""
+    with pytest.raises(lto.OllamaUnavailableError, match="local-only"):
+        lto._validated_ollama_url("http://example.com/api/generate")

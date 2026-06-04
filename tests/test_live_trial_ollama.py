@@ -62,6 +62,12 @@ def test_ollama_drives_trial_end_to_end() -> None:
         assert record.operator_model == lto.DEFAULT_MODEL
         assert record.driver_model == lto.OllamaDriver(model=lto.DEFAULT_MODEL).model_id
         assert 1 <= record.attempts_used <= lto.MAX_TRIES
+        assert len(outcome.attempts) == record.attempts_used
+        for index, attempt in enumerate(outcome.attempts, start=1):
+            assert attempt.index == index
+            assert isinstance(attempt.self_reconciliation.passed, bool)
+            assert isinstance(attempt.self_reconciliation.unaccounted, list)
+            assert attempt.parser_error is None or isinstance(attempt.parser_error, str)
 
         first = record.first_attempt_verdict["rules"]
         final = record.final_verdict["rules"]
