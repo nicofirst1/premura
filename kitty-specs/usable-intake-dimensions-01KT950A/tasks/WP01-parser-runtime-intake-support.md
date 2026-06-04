@@ -19,8 +19,8 @@ subtasks:
 - T004
 - T005
 - T006
-shell_pid: "5646"
-agent: "claude:opus:python-implementer:implementer"
+shell_pid: "19912"
+agent: "claude:opus:python-reviewer:reviewer"
 history:
 - 2026-06-04T11:52:07Z created by /spec-kitty.tasks
 authoritative_surface: src/premura/parsers/
@@ -190,3 +190,4 @@ not patch inside-boundary internals.
 
 - 2026-06-04T12:38:02Z – claude:opus:python-implementer:implementer – shell_pid=5646 – Assigned agent via action command
 - 2026-06-04T12:53:15Z – claude:opus:python-implementer:implementer – shell_pid=5646 – Ready for review: union ParseOutput + normalize_parse_output dispatch; all 4 call sites routed; IntakeBatch gap surface added; existing parsers + live-trial seam green
+- 2026-06-04T12:53:50Z – claude:opus:python-reviewer:reviewer – shell_pid=19912 – Started review via action command
