@@ -67,6 +67,18 @@ agent cannot fabricate results or skip the honesty rules, the guardrails are
 genuinely solid. (The schema already records `operator_model` / `driver_model`
 so capability tiers can be compared later — issue #10's "capability-tier sweep".)
 
+> **Evidenced 2026-06-04 — the "floor" was a harness-context artifact, not a
+> capability ceiling.** A
+> [tool-loop + multiturn follow-up](../../history/audits/2026-06-04-live-trial-tool-loop-14b-followup.md)
+> first read as "the operator is below the floor, the tier needs a frontier
+> model"; a clean re-test reversed that — the **same** local 14B scored
+> PASS/PASS/PASS on 2/3 runs through the production one-shot harness once given a
+> coherent brief. So a richer tool-using, multiturn operator is a **headroom**
+> instrument scored as its own tier (context plumbing + separate-tier scoring),
+> **not** a remedy for a cheap-model floor, and likely needs no frontier model.
+> Scoped (parked) in
+> [`tool-loop-live-trial-tier.md`](tool-loop-live-trial-tier.md).
+
 ## Settled vocabulary
 
 Plain-English names, chosen to satisfy `CONTEXT.md`'s no-jargon rule and to stay
@@ -399,6 +411,11 @@ self-report.
 - The **improvement hook + JSON queue + "want to open a PR?"** flow.
 - The **synthetic-fixture auto-generator** (the next step).
 - The full **analyze-and-answer** path and its honesty audit (the *second* slice).
+- A **tool-using, multiturn operator tier** — scored separately from the
+  constrained one-shot floor (headroom, not a floor remedy; premise corrected by
+  the [14B follow-up audit](../../history/audits/2026-06-04-live-trial-tool-loop-14b-followup.md)).
+  Scoped as a parked draft in [`tool-loop-live-trial-tier.md`](tool-loop-live-trial-tier.md);
+  held behind the intake source-adaptation mission.
 
 ## OTel-shaped schema sketch (illustrative, not locked)
 
