@@ -65,6 +65,7 @@ Dependencies: WP01
 - [ ] T014 No-fallback regression: a same-named observation row never satisfies an intake dependency (NFR-003) (WP03)
 - [ ] T015 Structural-generalization test: no per-domain branch in the shared `resolve_dependency` path (NFR-005) (WP03)
 - [ ] T016 Local-midnight resolver test: `day_basis = local_calendar_day` and the resolved day set uses local day (NFR-006) (WP03)
+- [ ] T031 Extend `compute()` to thread caller params to a signal fn, backward-compatibly — the parameterized-signal invocation seam WP04/WP05 use (WP03)
 
 ## WP04 — Intake descriptive signals
 
@@ -126,6 +127,10 @@ Dependencies: WP01, WP04
 | SC-003 | WP04 |
 | SC-004 | WP01 + WP06 |
 | SC-005, SC-006 | WP06 |
+
+> **FR-002 vs FR-005 (Finding 3):** FR-002 is the *resolver's* job — missing/stale + no cross-domain fallback (WP03). Answer-sufficiency (`insufficient_data`) is the *signal's* call — that is **FR-005 (WP04)**. The two halves are owned in different WPs on purpose, so neither hides between scopes.
+> **Parameterized-signal seam (Finding 1):** WP03/T031 owns extending `compute()` so signals receive caller params; WP04 signals register against it; WP05 tools pass params through it. `correlate` is an analytical tool (separate door), not the model.
+> **Intake gap surface (Finding 2):** WP01 adds `unmapped_metrics`/`skipped_rows` to `IntakeBatch` so WP02's reference parser can declare gaps.
 
 ## Edge-case → end-to-end fixture map (D7)
 

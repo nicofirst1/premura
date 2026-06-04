@@ -50,6 +50,14 @@ exist (`parsers/base.py`, `store/profile_intake.py`) but **nothing connects a
 parser to them** — `persist_intake_batch` is reachable only by hand-constructing
 a batch in a test. So there is no intake parser path to run or to document.
 
+**`IntakeBatch` also lacks a gap surface.** `IngestBatch` carries `unmapped_metrics`
+/ `skipped_rows` so a parser can honestly declare fields it could not map;
+`IntakeBatch` (`base.py:282`) carries **none**. WP02's reference parser and the
+spec's "unmapped field surfaced as a gap" edge case both need it, so **this WP
+adds an unmapped/skipped gap surface to `IntakeBatch`** — review metadata that
+rides on the batch, exactly like `IngestBatch.unmapped_metrics`, never loadable
+rows.
+
 **The chosen approach is backward-compatible (decided at tasks time, delegated by
 the plan's data-model).** Do **not** force-rewrite the five existing parsers.
 Pick the *smallest* shape that lets a parser optionally carry intake while every
@@ -92,6 +100,12 @@ Existing parsers that must remain untouched and green: `garmin_gdpr.py`,
   so call sites do not each re-implement routing.
 - A bare `IngestBatch` (today's parsers) normalizes to observation-only — no
   behavior change for them.
+- **Add an unmapped/skipped gap surface to `IntakeBatch`** (e.g.
+  `unmapped_metrics: list[str]` and `skipped_rows: list[SkippedRow]`, mirroring
+  `IngestBatch`) so an intake parser can honestly declare fields it could not map.
+  These are **review metadata carried on the batch, not loadable rows** —
+  `persist_intake_batch` need not load them (same posture as
+  `IngestBatch.unmapped_metrics`).
 - Files: `src/premura/parsers/base.py`. Keep it typed (mypy clean).
 
 ### T002 — Reconcile the parser contract (`parsers/CONTRACT.md`)
@@ -102,6 +116,8 @@ Existing parsers that must remain untouched and green: `garmin_gdpr.py`,
   are unchanged and intake is additive.
 - Keep the two-seam / one-home rule explicit: intake never becomes
   `Measurement`/`Interval`/`ClinicalNote` rows.
+- Document the new `IntakeBatch` gap surface (`unmapped_metrics` / `skipped_rows`):
+  intake parsers declare unmapped fields the same way observation parsers do.
 
 ### T003 — Route each output to its seam at every call site
 - In `cli.py`, `harness/ingest_runner.py`, `harness/live_trial_ollama.py`: use the
@@ -144,6 +160,7 @@ not patch inside-boundary internals.
 ## Definition of Done
 
 - [ ] An intake-emitting parser persists to the intake tables through the runtime path.
+- [ ] `IntakeBatch` has an unmapped/skipped gap surface; an intake parser can declare a gap (unblocks WP02's honesty fixtures).
 - [ ] All five existing parsers + the session-log fixtures + the live-trial seam are green, unchanged.
 - [ ] All four call sites route through the T001 helper; none left on the old path.
 - [ ] `CONTRACT.md` documents the implemented path and contains no "replace vs remain-supported" contradiction.

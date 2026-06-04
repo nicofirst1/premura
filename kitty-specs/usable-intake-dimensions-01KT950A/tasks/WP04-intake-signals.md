@@ -55,9 +55,15 @@ of **NFR-006**, and **SC-001/SC-002/SC-003**.
 - Signals declare their dependency and call `resolve_dependency(...)` for their
   domain (import it as `descriptive_signals.resolve_dependency` so tests can
   monkeypatch, mirroring the existing pattern at `descriptive_signals.py:45`).
-- These signals are **parameterized** (a matcher/key + a window) — follow the
-  parameterized-tool precedent (`correlate`), not the zero-arg signal precedent
-  (`resting_hr_status`).
+- These signals are **parameterized** (a matcher/key + a window). The existing
+  zero-arg signal path `compute(name, conn)` passes no params, and `correlate` is
+  **not** the model (it is an *analytical tool* on a separate door —
+  `invoke_analytical_tool` — not a registered signal). Instead, your signal `fn`
+  receives caller params through the **WP03-extended `compute()` seam** (T031).
+  Register the signals via `register_builtin_signals()` as normal; their `fn`
+  accepts the threaded params.
+- Use the supplement matcher semantics **pinned by WP03** (T012) — do not invent a
+  second matching rule.
 
 ## Subtasks
 

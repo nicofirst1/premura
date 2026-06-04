@@ -42,11 +42,12 @@ agent can actually use them, following the existing signal-tool pattern. Satisfi
   standard envelope is `{tool_name, status, message, result, missing_input?}`
   (see `server.py:854-879`).
 - The intake signals are **parameterized** (matcher/key + window), unlike the
-  zero-arg `resting_hr_status`. Follow the **parameterized** tool precedent
-  (`correlate` and the other analytical tools already pass caller params through).
-  Thread the caller's matcher/key + window from the tool signature into the signal
-  call; do **not** re-derive intake semantics from raw tables (the wrapper is
-  thin).
+  zero-arg `resting_hr_status`. Pass the caller's matcher/key + window through the
+  **WP03-extended `compute()` seam** (T031) — e.g. extend `_run_signal(...)` to
+  forward params to `engine.compute(...)`. Do **not** route through the
+  analytical-tool door (`invoke_analytical_tool`) that `correlate` uses — these are
+  descriptive signals, not analytical tools — and do **not** re-derive intake
+  semantics from raw tables (the wrapper stays thin).
 - Default-surface registration happens in `src/premura/mcp/entrypoint.py` (the
   live tool registry). Both new tools go on the **default** surface alongside the
   existing signal-backed tools.
