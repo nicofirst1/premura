@@ -53,7 +53,10 @@ The user is actively writing more requirements; this section will grow.
    real-model factories for real, added structured per-attempt telemetry,
    enforced the local-only model backend in code, and added an opt-in,
    synthetic-only retained-sandbox inspection mode. **Still deferred (named so
-   future work is not assumed shipped):** a tool-using / multiturn operator tier,
+   future work is not assumed shipped):** a [tool-using / multiturn operator
+   tier](../building/planning/tool-loop-live-trial-tier.md) (parked behind intake
+   source-adaptation; premise corrected by the
+   [14B follow-up audit](../history/audits/2026-06-04-live-trial-tool-loop-14b-followup.md)),
    conversation-turn capture, the judge AI, the improvement hook, the fixture
    auto-generator, and the analyze-and-answer slice.
 
