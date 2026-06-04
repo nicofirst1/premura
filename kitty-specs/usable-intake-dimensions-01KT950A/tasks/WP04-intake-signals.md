@@ -19,6 +19,8 @@ subtasks:
 - T020
 - T021
 - T022
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "67211"
 history:
 - 2026-06-04T11:52:07Z created by /spec-kitty.tasks
 authoritative_surface: src/premura/engine/descriptive_signals.py
@@ -144,3 +146,7 @@ through the signal envelopes (black-box).
 - Confirm the local-midnight test would fail if the report path recomputed from
   raw UTC.
 - Confirm no `__init__.py` change crept in.
+
+## Activity Log
+
+- 2026-06-04T13:40:12Z – claude:opus:python-implementer:implementer – shell_pid=67211 – Started implementation via action command
