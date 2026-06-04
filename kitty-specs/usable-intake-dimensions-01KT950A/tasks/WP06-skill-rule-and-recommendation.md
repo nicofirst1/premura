@@ -17,6 +17,8 @@ subtasks:
 - T028
 - T029
 - T030
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "22348"
 history:
 - 2026-06-04T11:52:07Z created by /spec-kitty.tasks
 authoritative_surface: src/premura/skills/parser-generator/
@@ -124,3 +126,7 @@ add it to back SC-005. Otherwise the DoD is reviewer-verifiable against the code
 - Open the WP01 protocol and confirm the skill quotes it accurately.
 - Confirm the add-a-dimension steps match what WP03/WP04/WP05 actually did.
 - Confirm the recommendation's trigger is concrete enough to act on.
+
+## Activity Log
+
+- 2026-06-04T14:13:28Z – claude:opus:python-implementer:implementer – shell_pid=22348 – Started implementation via action command
