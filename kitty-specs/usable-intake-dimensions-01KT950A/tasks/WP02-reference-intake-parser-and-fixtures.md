@@ -14,6 +14,8 @@ subtasks:
 - T008
 - T009
 - T010
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "24677"
 history:
 - 2026-06-04T11:52:07Z created by /spec-kitty.tasks
 authoritative_surface: tests/fixtures/intake/
@@ -113,3 +115,7 @@ them pass. Assert through persisted warehouse rows, not parser internals.
 - Confirm the reference parser uses the WP01 protocol, not a side path.
 - Confirm every edge-case row exists AND is asserted (not just present).
 - Confirm nothing real/PHI leaked into the fixture values.
+
+## Activity Log
+
+- 2026-06-04T12:57:38Z – claude:opus:python-implementer:implementer – shell_pid=24677 – Started implementation via action command
