@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "mission_slug": "usable-intake-dimensions-01KT950A",
+  "mission_id": "01KT950A5TH11J844CNABJH0FM",
+  "mission_branch": "kitty/mission-usable-intake-dimensions-01KT950A",
+  "target_branch": "master",
+  "lanes": [
+    {
+      "lane_id": "lane-a",
+      "wp_ids": [
+        "WP01"
+      ],
+      "write_scope": [
+        "src/premura/cli.py",
+        "src/premura/harness/ingest_runner.py",
+        "src/premura/harness/live_trial_ollama.py",
+        "src/premura/parsers/CONTRACT.md",
+        "src/premura/parsers/base.py",
+        "tests/fixtures/session_log/test_fixtures.py",
+        "tests/test_intake_parser_runtime.py"
+      ],
+      "predicted_surfaces": [
+        "api"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    },
+    {
+      "lane_id": "lane-b",
+      "wp_ids": [
+        "WP02"
+      ],
+      "write_scope": [
+        "tests/fixtures/intake/**"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "artifact-rendering"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    },
+    {
+      "lane_id": "lane-c",
+      "wp_ids": [
+        "WP03"
+      ],
+      "write_scope": [
+        "src/premura/engine/__init__.py",
+        "src/premura/engine/views/nutrition_intake.py",
+        "src/premura/engine/views/supplement_intake.py",
+        "tests/test_intake_resolvers.py"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "artifact-rendering"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    },
+    {
+      "lane_id": "lane-d",
+      "wp_ids": [
+        "WP04"
+      ],
+      "write_scope": [
+        "src/premura/engine/comparative_signals.py",
+        "src/premura/engine/descriptive_signals.py",
+        "tests/test_intake_signals.py"
+      ],
+      "predicted_surfaces": [
+        "api"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    },
+    {
+      "lane_id": "lane-e",
+      "wp_ids": [
+        "WP05"
+      ],
+      "write_scope": [
+        "src/premura/mcp/entrypoint.py",
+        "src/premura/mcp/server.py",
+        "tests/test_mcp_intake_tools.py"
+      ],
+      "predicted_surfaces": [
+        "api"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    },
+    {
+      "lane_id": "lane-f",
+      "wp_ids": [
+        "WP06"
+      ],
+      "write_scope": [
+        "docs/building/architecture/INTAKE_DIMENSIONS.md",
+        "docs/building/planning/intake-dimension-contract-recommendation.md",
+        "src/premura/skills/parser-generator/**"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "artifact-rendering"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    }
+  ],
+  "computed_at": "2026-06-04T12:00:38.292429+00:00",
+  "computed_from": "dependency_graph+ownership",
+  "planning_artifact_wps": []
+}
