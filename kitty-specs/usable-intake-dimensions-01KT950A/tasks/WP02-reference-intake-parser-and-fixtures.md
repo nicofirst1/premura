@@ -119,3 +119,4 @@ them pass. Assert through persisted warehouse rows, not parser internals.
 ## Activity Log
 
 - 2026-06-04T12:57:38Z – claude:opus:python-implementer:implementer – shell_pid=24677 – Started implementation via action command
+- 2026-06-04T13:03:38Z – claude:opus:python-implementer:implementer – shell_pid=24677 – Ready for review: reference intake parser + synthetic nutrition/supplement fixtures; parse->IntakeBatch->persist_intake_batch e2e green; edge cases (event vs item qty, local_tz day divergence, text-only vs numeric dose, unmapped gap, idempotency) all asserted.
