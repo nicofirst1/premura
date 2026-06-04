@@ -130,3 +130,4 @@ add it to back SC-005. Otherwise the DoD is reviewer-verifiable against the code
 ## Activity Log
 
 - 2026-06-04T14:13:28Z – claude:opus:python-implementer:implementer – shell_pid=22348 – Started implementation via action command
+- 2026-06-04T14:25:49Z – claude:opus:python-implementer:implementer – shell_pid=22348 – Ready for review: skill intake path (T027), add-a-dimension rule (T028), recommendation note (T029), doc-consistency test (T030). WP03 matcher carry-forward captured in INTAKE_DIMENSIONS.md + kitty-specs contract gap noted for mission-review.
