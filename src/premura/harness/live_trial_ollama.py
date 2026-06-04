@@ -24,7 +24,9 @@ Boundaries this module honours:
   sample, the goal, and (on retry) its own failure verbatim — nothing else.
 * **C-003 / NFR-002 / FR-012** — only the committed SYNTHETIC fixture persists
   (via WP02 :func:`persist_run`, synthetic-guarded). A real-dump source records
-  NOTHING; the real-data path stays a manual, local-only exercise.
+  NOTHING; the real-data path stays a manual, local-only exercise. The opt-in
+  ``keep_sandboxes`` inspection knob is likewise synthetic-only — a real source
+  always tears its sandbox down so no real local data is left on disk.
 * **NFR-005** — the matching test is marked ``live_trial`` and the default suite
   excludes it; a missing/failing live trial can never block CI.
 
@@ -207,9 +209,18 @@ def _ollama(prompt: str, *, model: str, timeout: int = 300) -> str:
     )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 - fixed localhost URL
-            payload = json.loads(resp.read())
+            raw = resp.read()
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         raise OllamaUnavailableError(f"Ollama not reachable at {OLLAMA_URL}: {exc}") from exc
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        # A reachable-but-garbled local endpoint is still "unavailable" as far as a
+        # caller is concerned: surface it as the returnable sentinel, not a crash
+        # that escapes the availability probe (NFR-001).
+        raise OllamaUnavailableError(
+            f"Ollama returned a non-JSON response at {OLLAMA_URL}: {exc}"
+        ) from exc
     response = payload.get("response")
     if not isinstance(response, str):
         raise OllamaUnavailableError(f"Ollama returned no 'response' field: {payload!r}")
@@ -612,6 +623,11 @@ def run_live_trial_ollama(
     Returns a :class:`LiveTrialOutcome`. If the default operator cannot reach the
     model server, returns ``LiveTrialOutcome(model_unavailable=True)`` (it does
     NOT only print).
+
+    ``keep_sandboxes`` retains the kept-sandbox trees on the returned outcome for
+    caller inspection, but ONLY for a SYNTHETIC source. A non-synthetic source
+    always tears both sandboxes down regardless of this flag, so no real local
+    data is left on disk (FR-004 / NFR-002 / NFR-004).
     """
     if operator is None:
         if not ollama_available():
@@ -664,7 +680,12 @@ def run_live_trial_ollama(
 
     kept_final_result: LiveTrialResult | None = final_result
     kept_first_result: LiveTrialResult | None = first_result
-    if not keep_sandboxes:
+    # keep_sandboxes is honored ONLY for the synthetic fixture: a kept sandbox
+    # holds the parsed source, so retaining one for a NON-synthetic source would
+    # leave the operator's real local data on disk after the run — exactly the
+    # no-persist rule enforced above for persistence (FR-012 / C-003 / NFR-002).
+    # A non-synthetic source therefore always tears both sandboxes down.
+    if not (keep_sandboxes and synthetic):
         _teardown_kept_sandbox(final_result)
         _teardown_kept_sandbox(first_result)
         kept_final_result = None

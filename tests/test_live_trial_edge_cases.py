@@ -299,3 +299,102 @@ def test_nonlocal_ollama_url_is_rejected() -> None:
     """C-003: the live-trial model backend stays local-only even via env/config."""
     with pytest.raises(lto.OllamaUnavailableError, match="local-only"):
         lto._validated_ollama_url("http://example.com/api/generate")
+
+
+# --------------------------------------------------------------------------- #
+# keep_sandboxes is synthetic-only: a real-data run leaves nothing on disk.
+# --------------------------------------------------------------------------- #
+
+
+def test_keep_sandboxes_does_not_retain_real_data_sandbox(
+    tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """FR-004 / NFR-002: keep_sandboxes is honored ONLY for a synthetic source.
+
+    A kept sandbox holds the parsed source, so retaining one for a NON-synthetic
+    source would leave the operator's real local data on disk after the run — the
+    very no-persist rule this module enforces. Even with ``keep_sandboxes=True``, a
+    non-synthetic run must return no live results AND remove both sandbox trees.
+    """
+    runs_dir = Path(tmp_path) / "runs"  # type: ignore[arg-type]
+    scoreboard_path = runs_dir / "scoreboard.jsonl"
+    _redirect_persistence(monkeypatch, runs_dir=runs_dir, scoreboard_path=scoreboard_path)
+
+    # Spy on teardown to prove the sandbox trees were actually removed from disk.
+    torn_down: list[Path] = []
+    real_teardown = lto._teardown_kept_sandbox
+
+    def _spy_teardown(result: Any) -> None:
+        if result is not None:
+            torn_down.append(result.session_log_path.parent.parent)
+        real_teardown(result)
+
+    monkeypatch.setattr(lto, "_teardown_kept_sandbox", _spy_teardown)
+
+    real_like_source = Path(tmp_path) / "real_operator_heart_rate.csv"  # type: ignore[arg-type]
+    real_like_source.write_text(_SYNTHETIC_CSV.read_text(encoding="utf-8"), encoding="utf-8")
+    assert not lto.is_synthetic_source(real_like_source)
+
+    operator = _InjectedFakeOperator(_GOOD_PARSER, tries_used=1)
+    outcome = _run_entry(operator=operator, source=real_like_source, keep_sandboxes=True)
+
+    # keep_sandboxes was ignored for the non-synthetic source: no live results ...
+    assert outcome.final_result is None
+    assert outcome.first_attempt_result is None
+    # ... and both sandbox trees were actually torn down from disk.
+    assert torn_down, "expected the run to tear down both real-data sandboxes"
+    for tree in torn_down:
+        assert not tree.exists()
+
+
+def test_keep_sandboxes_retains_synthetic_sandbox(
+    tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """FR-004: the inspection knob actually works for the SYNTHETIC fixture.
+
+    Positive control for the guard above: with a synthetic source and
+    ``keep_sandboxes=True`` the kept-sandbox trees survive on the returned outcome
+    for caller inspection (and the default — tested elsewhere — tears them down).
+    """
+    runs_dir = Path(tmp_path) / "runs"  # type: ignore[arg-type]
+    scoreboard_path = runs_dir / "scoreboard.jsonl"
+    _redirect_persistence(monkeypatch, runs_dir=runs_dir, scoreboard_path=scoreboard_path)
+
+    operator = _InjectedFakeOperator(_GOOD_PARSER, tries_used=1)
+    outcome = _run_entry(operator=operator, source=_SYNTHETIC_CSV, keep_sandboxes=True)
+    try:
+        assert outcome.final_result is not None
+        assert outcome.first_attempt_result is not None
+        assert outcome.final_result.session_log_path.parent.parent.exists()
+    finally:
+        lto._teardown_kept_sandbox(outcome.final_result)
+        lto._teardown_kept_sandbox(outcome.first_attempt_result)
+
+
+# --------------------------------------------------------------------------- #
+# A malformed-but-local model response is the returnable sentinel, not a crash.
+# --------------------------------------------------------------------------- #
+
+
+def test_malformed_local_response_is_unavailable_not_crash(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """NFR-001: a non-JSON local response yields ``ollama_available() is False``.
+
+    The availability probe narrows its ``except`` to ``OllamaUnavailableError``, so
+    the raw client must wrap a garbled (non-JSON) local response as that sentinel
+    rather than letting a ``JSONDecodeError`` escape and crash the probe.
+    """
+
+    class _FakeResp:
+        def __enter__(self) -> _FakeResp:
+            return self
+
+        def __exit__(self, *_exc: object) -> bool:
+            return False
+
+        def read(self) -> bytes:
+            return b"<html>not json</html>"
+
+    monkeypatch.setattr(lto.urllib.request, "urlopen", lambda *_a, **_k: _FakeResp())
+    assert lto.ollama_available() is False
