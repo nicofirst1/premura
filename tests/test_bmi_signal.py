@@ -347,7 +347,7 @@ def test_bmi_is_registered_in_engine_registry(registered: Any) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_bmi_dispatches_through_compute(empty_warehouse: Any, anchor_ts: datetime) -> None:
+def test_bmi_dispatches_through_compute(empty_warehouse: Any) -> None:
     """``compute("bmi", conn)`` returns a real :class:`StatusResult`.
 
     This is the cross-WP integration test: BMI must be reachable through the
@@ -355,12 +355,17 @@ def test_bmi_dispatches_through_compute(empty_warehouse: Any, anchor_ts: datetim
     registration + lazy-loader chain wires it into production behavior.
 
     Uses the bare ``empty_warehouse`` fixture (not ``registered``) so the test
-    exercises ``compute()`` lazy loading itself.
+    exercises ``compute()`` lazy loading itself. Unlike the other BMI tests it
+    calls ``compute("bmi", conn)`` with no anchor, so ``bmi`` falls back to
+    ``datetime.now(UTC)`` for its freshness window — the seeded weight must
+    therefore be anchored to real ``now`` (not the fixed ``anchor_ts`` fixture),
+    or it ages out of the freshness window as wall-clock time advances.
     """
     conn = empty_warehouse
     _ensure_source(conn)
-    _record_height(conn, anchor=anchor_ts, value_cm=180.0)
-    _insert_weight(conn, ts=anchor_ts - timedelta(hours=1), value=72.0)
+    now = datetime.now(tz=UTC)
+    _record_height(conn, anchor=now, value_cm=180.0)
+    _insert_weight(conn, ts=now - timedelta(hours=1), value=72.0)
 
     result = compute("bmi", conn)
 
