@@ -14,8 +14,8 @@ subtasks:
 - T008
 - T009
 - T010
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "24677"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "32628"
 history:
 - 2026-06-04T11:52:07Z created by /spec-kitty.tasks
 authoritative_surface: tests/fixtures/intake/
@@ -120,3 +120,4 @@ them pass. Assert through persisted warehouse rows, not parser internals.
 
 - 2026-06-04T12:57:38Z – claude:opus:python-implementer:implementer – shell_pid=24677 – Started implementation via action command
 - 2026-06-04T13:03:38Z – claude:opus:python-implementer:implementer – shell_pid=24677 – Ready for review: reference intake parser + synthetic nutrition/supplement fixtures; parse->IntakeBatch->persist_intake_batch e2e green; edge cases (event vs item qty, local_tz day divergence, text-only vs numeric dose, unmapped gap, idempotency) all asserted.
+- 2026-06-04T13:04:17Z – claude:opus:python-reviewer:reviewer – shell_pid=32628 – Started review via action command
