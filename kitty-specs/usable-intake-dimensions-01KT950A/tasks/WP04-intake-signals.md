@@ -150,3 +150,4 @@ through the signal envelopes (black-box).
 ## Activity Log
 
 - 2026-06-04T13:40:12Z – claude:opus:python-implementer:implementer – shell_pid=67211 – Started implementation via action command
+- 2026-06-04T13:49:28Z – claude:opus:python-implementer:implementer – shell_pid=67211 – Ready for review: both intake signals via WP03 resolvers + T031 seam; 14/14 new tests green; lint/format clean; mypy clean for changed file (2 pre-existing errors in untouched _localtime/_query); only pre-existing test_bmi_dispatches_through_compute fails.
