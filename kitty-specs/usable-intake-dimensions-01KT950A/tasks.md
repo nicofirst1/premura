@@ -35,12 +35,12 @@ MVP / start here: **WP01** and **WP03** have no dependencies and can be dispatch
 **Goal**: make a parser able to emit intake output and have the runtime persist it, **backward-compatibly** — every existing observation-only parser keeps working unchanged — with **every** parser call site updated. Prompt: [tasks/WP01-parser-runtime-intake-support.md](tasks/WP01-parser-runtime-intake-support.md)
 **Priority**: P0 (foundation of the build chain). **Independent test**: an intake-emitting parser persists to intake tables AND all five existing parsers + the live-trial seam stay green.
 
-- [ ] T001 Choose & implement the smallest backward-compatible parser output shape in `parsers/base.py` (observation-only parsers untouched; runtime normalizes) (WP01)
-- [ ] T002 Update `parsers/CONTRACT.md` to describe the implemented intake path and reconcile the "existing parsers remain supported" wording with the chosen shape (WP01)
-- [ ] T003 Wire runtime to route each output to its seam at ALL call sites: `cli.py`, `harness/ingest_runner.py`, `harness/live_trial_ollama.py` (WP01)
-- [ ] T004 Reconcile the session-log fixture parsers (`tests/fixtures/session_log/test_fixtures.py`) with the new shape (they remain valid observation parsers) (WP01)
-- [ ] T005 Regression: full existing parser suite + live-trial seam green; dispatch test for observation vs intake vs both (WP01)
-- [ ] T006 Type/lint pass on the public protocol change; no new network path (WP01)
+- [x] T001 Choose & implement the smallest backward-compatible parser output shape in `parsers/base.py` (observation-only parsers untouched; runtime normalizes) (WP01)
+- [x] T002 Update `parsers/CONTRACT.md` to describe the implemented intake path and reconcile the "existing parsers remain supported" wording with the chosen shape (WP01)
+- [x] T003 Wire runtime to route each output to its seam at ALL call sites: `cli.py`, `harness/ingest_runner.py`, `harness/live_trial_ollama.py` (WP01)
+- [x] T004 Reconcile the session-log fixture parsers (`tests/fixtures/session_log/test_fixtures.py`) with the new shape (they remain valid observation parsers) (WP01)
+- [x] T005 Regression: full existing parser suite + live-trial seam green; dispatch test for observation vs intake vs both (WP01)
+- [x] T006 Type/lint pass on the public protocol change; no new network path (WP01)
 
 ## WP02 — Reference intake parser + synthetic fixtures
 
