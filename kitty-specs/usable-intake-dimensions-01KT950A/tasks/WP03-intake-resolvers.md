@@ -175,3 +175,4 @@ Black-box through `resolve_dependency`, not resolver internals.
 ## Activity Log
 
 - 2026-06-04T13:08:21Z – claude:opus:python-implementer:implementer – shell_pid=36316 – Started implementation via action command
+- 2026-06-04T13:34:02Z – claude:opus:python-implementer:implementer – shell_pid=36316 – Ready for review: intake resolvers (both domains) + parameterized compute seam (T011-T016, T031)
