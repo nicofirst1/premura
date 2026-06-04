@@ -1,0 +1,52 @@
+{
+  "_comment": "SYNTHETIC nutrition export. Real-looking column names, fully MADE-UP values. No PHI, no real operator data (C-001). Shape mimics a meal-logging app export.",
+  "source": {
+    "app_package": "com.example.mealtrack",
+    "app_name": "MealTrack",
+    "export_kind": "diary_v2"
+  },
+  "entries": [
+    {
+      "entry_id": "meal-2026-03-01-breakfast",
+      "logged_at_utc": "2026-03-01T07:15:00Z",
+      "tz": "Europe/Rome",
+      "meal": "breakfast",
+      "mood_tag": "rushed",
+      "totals": {
+        "energy_kcal": 420.0,
+        "protein_g": 18.5
+      },
+      "foods": [
+        {
+          "name": "rolled oats",
+          "brand": "GenericGrains",
+          "serving": "60 g dry",
+          "energy_kcal": 228.0,
+          "protein_g": 8.0
+        },
+        {
+          "name": "blueberries",
+          "serving": "100 g",
+          "energy_kcal": 57.0,
+          "protein_g": 0.7
+        }
+      ]
+    },
+    {
+      "entry_id": "meal-2026-03-02-latenight",
+      "logged_at_utc": "2026-03-02T23:40:00Z",
+      "tz": "Pacific/Auckland",
+      "meal": "snack",
+      "totals": {
+        "energy_kcal": 190.0
+      },
+      "foods": [
+        {
+          "name": "dark chocolate",
+          "serving": "30 g",
+          "energy_kcal": 170.0
+        }
+      ]
+    }
+  ]
+}

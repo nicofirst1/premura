@@ -260,10 +260,17 @@ from pathlib import Path
 result = {{"ok": False, "error": "", "unaccounted": [], "self_reconcile_passed": False}}
 try:
     from premura.harness.self_reconcile import self_reconcile
+    from premura.parsers.base import normalize_parse_output
     from premura.parsers.{module_attr} import {attr} as _Parser
     import premura.parsers.{module_attr} as _mod
 
-    batch = _Parser().parse(Path({source!r}))
+    # A parser may return a bare IngestBatch (observation-only) or a ParseOutput
+    # carrying observation and/or intake; normalize to the observation batch the
+    # self-reconcile gate operates on (FR-007 union shape).
+    observation, _intake = normalize_parse_output(_Parser().parse(Path({source!r})))
+    if observation is None:
+        raise AssertionError("parser emitted no observation batch")
+    batch = observation
     batch.validate()
     if not batch.measurements:
         raise AssertionError("parser emitted zero measurements")

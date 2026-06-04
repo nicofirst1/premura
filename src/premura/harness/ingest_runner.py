@@ -75,39 +75,62 @@ def run(*, source: Path, parser_spec: str, warehouse: Path) -> dict[str, Any]:
 
     # Import the seam lazily so an import error surfaces as a structured error
     # envelope rather than a bare traceback.
+    from premura.parsers.base import normalize_parse_output
     from premura.store import duck, loader
+    from premura.store.profile_intake import persist_intake_batch
 
     parser_kind = ""
     try:
         parser_kind, parser = _load_parser(parser_spec)
         envelope["parser_kind"] = parser_kind
 
-        batch = parser.parse(source)
-        # The runner owns the warehouse provenance fields; attach if the parser
-        # has not already done so.
-        if getattr(batch, "source_path", None) is None:
-            batch.attach_source_artifact(source)
+        # A parser may return a bare IngestBatch (observation-only, today's
+        # parsers) or a ParseOutput carrying observation and/or intake; the
+        # single dispatch helper routes each to its seam (FR-007).
+        observation, intake = normalize_parse_output(parser.parse(source))
 
         conn = duck.initialize(warehouse)
         try:
-            stats = loader.load(conn, batch)
+            if intake is not None:
+                # Intake never travels the observation loader; it persists
+                # through its own home, exactly as the CLI/harness do.
+                persist_intake_batch(conn, intake)
+
+            if observation is not None:
+                # The runner owns the warehouse provenance fields; attach if the
+                # parser has not already done so.
+                if observation.source_path is None:
+                    observation.attach_source_artifact(source)
+                stats = loader.load(conn, observation)
         finally:
             conn.close()
 
-        envelope.update(
-            status="ok",
-            error=None,
-            batch_id=stats.batch_id,
-            load_stats={
-                "rows_inserted": stats.rows_inserted,
-                "rows_skipped_dup": stats.rows_skipped_dup,
-                "rows_skipped_priority": stats.rows_skipped_priority,
-            },
-            declared_metrics=list(batch.declared_metrics),
-            emitted_metric_ids=sorted(batch.emitted_metrics),
-            unmapped_metrics=list(batch.unmapped_metrics),
-            skipped_rows=_skipped_rows_payload(batch),
-        )
+        # The outcome envelope is observation-shaped (its schema is owned by the
+        # session-log substrate). An intake-only parser produces no observation
+        # rows, so the envelope reports an empty observation outcome while the
+        # intake rows still land via persist_intake_batch above.
+        if observation is not None:
+            envelope.update(
+                status="ok",
+                error=None,
+                batch_id=stats.batch_id,
+                load_stats={
+                    "rows_inserted": stats.rows_inserted,
+                    "rows_skipped_dup": stats.rows_skipped_dup,
+                    "rows_skipped_priority": stats.rows_skipped_priority,
+                },
+                declared_metrics=list(observation.declared_metrics),
+                emitted_metric_ids=sorted(observation.emitted_metrics),
+                unmapped_metrics=list(observation.unmapped_metrics),
+                skipped_rows=_skipped_rows_payload(observation),
+            )
+        else:
+            envelope.update(
+                status="ok",
+                error=None,
+                unmapped_metrics=list(intake.unmapped_metrics) if intake else [],
+                skipped_rows=_skipped_rows_payload(intake) if intake else [],
+            )
         return envelope
     except Exception as exc:  # noqa: BLE001 - the runner's job is to capture any raise
         envelope.update(

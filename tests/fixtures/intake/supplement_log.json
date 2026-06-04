@@ -1,0 +1,32 @@
+{
+  "_comment": "SYNTHETIC supplement export. Real-looking column names, fully MADE-UP values. No PHI, no real operator data (C-001).",
+  "source": {
+    "app_package": "com.example.suppstack",
+    "app_name": "SuppStack",
+    "export_kind": "intake_v1"
+  },
+  "entries": [
+    {
+      "entry_id": "supp-2026-03-01-am",
+      "taken_at_utc": "2026-03-01T08:05:00Z",
+      "tz": "Europe/Rome",
+      "reminder_channel": "push",
+      "product": "Vitamin D3",
+      "ingredient": "cholecalciferol",
+      "form": "softgel",
+      "dose_amount": 2000.0,
+      "dose_unit": "IU"
+    },
+    {
+      "entry_id": "supp-2026-03-01-pm",
+      "taken_at_utc": "2026-03-01T21:30:00Z",
+      "tz": "Europe/Rome",
+      "product": "Greens Blend",
+      "ingredient": null,
+      "form": "powder",
+      "dose_amount": null,
+      "dose_unit": null,
+      "dose_note": "one heaping scoop"
+    }
+  ]
+}

@@ -26,8 +26,10 @@ loader calls. See the WP02 report note about ``_BUILTIN_SIGNAL_MODULES``.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING
+from collections.abc import Mapping
+from dataclasses import dataclass, field
+from datetime import UTC, date, datetime, timedelta
+from typing import TYPE_CHECKING, Any
 
 # WP03: import ``resolve_dependency`` and the declaration/request dataclasses at
 # module load time, not inside :func:`bmi`. Two reasons:
@@ -663,6 +665,461 @@ def _build_missing_input_report(
 
 
 # --------------------------------------------------------------------------- #
+# WP04 — Intake descriptive signals (one per intake domain)
+# --------------------------------------------------------------------------- #
+#
+# Two descriptive, NON-DIAGNOSTIC signals that consume the WP03 intake resolvers
+# through the *same* public seam BMI uses (``resolve_dependency``). They are
+# parameterized: a caller threads a matcher/quantity-key + a bounded window (and
+# optional freshness / sufficiency knobs) through the WP03-extended ``compute()``
+# seam (T031), and each signal's ``fn`` declares a ``params`` keyword.
+#
+# Doctrine (NFR-001 / contract §5): these signals report ONLY what the data
+# shows — coverage counts and a plain trend direction — and refuse honestly when
+# the declared domain is empty, stale, or too thin. They never compute a
+# reference range, never say "should", never report a p-value or "significance",
+# and never make a causal/diagnostic claim. The nutrition trend NEVER imputes a
+# missing day; gaps stay visible (the no-fallback / gap-visibility invariant
+# WP03 establishes in the resolver payload).
+#
+# Day basis (NFR-006 / D4): both signals report the SAME ``day_basis`` the
+# resolver computed on, and read coverage off the resolver's already-bucketed
+# local-calendar-day points/days. There is no second path that recomputes
+# day/window metadata from raw UTC.
+#
+# Refusal states are STRUCTURALLY DISTINCT (FR-005 / D5):
+#
+# * ``missing_input``    — the declared domain has no matching rows in the
+#                          window (the resolver returned ``usable=False``).
+# * ``stale_input``      — matching rows exist but the latest usable day is older
+#                          than the caller's freshness rule.
+# * ``insufficient_data``— enough freshness but too few distinct logged/observed
+#                          days to answer honestly.
+
+_DEFAULT_INTAKE_WINDOW_DAYS: int = 30
+"""Repo-default bounded look-back window when the caller declares none.
+
+Matches the resolver defaults (``views/*_intake.py``) so signal and resolver
+agree on the window unless the caller overrides it."""
+
+_DEFAULT_SUPPLEMENT_FRESHNESS_DAYS: int = 7
+"""Default staleness cutoff for adherence: a latest logged day older than this
+many days before the anchor is reported ``stale_input`` rather than presented as
+current coverage."""
+
+_DEFAULT_NUTRITION_FRESHNESS_DAYS: int = 7
+"""Default staleness cutoff for the nutrition trend's latest observed day."""
+
+_DEFAULT_MIN_LOGGED_DAYS: int = 1
+"""Minimum distinct logged days before adherence coverage is answered."""
+
+_MIN_TREND_DAYS: int = 2
+"""Minimum distinct observed days before a nutrition direction is named."""
+
+
+@dataclass(frozen=True)
+class SupplementAdherenceResult:
+    """Coverage answer for a caller-declared supplement matcher over a window.
+
+    Descriptive only: "K of N days carried a logged dose". No adherence
+    *judgement*, no recommendation, no reference range. ``status`` is one of the
+    four structurally distinct states; the coverage fields are populated only
+    when ``status == "available"`` (or retained for ``stale_input`` so the caller
+    can see why it is stale)."""
+
+    signal_name: str
+    matcher: str
+    status: str  # "available" | "missing_input" | "stale_input" | "insufficient_data"
+    window_day_count: int
+    logged_day_count: int
+    coverage_fraction: float | None = None
+    latest_logged_at: datetime | None = None
+    day_basis: str | None = None
+    logged_days: list[str] = field(default_factory=list)
+    caveats: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "family": "status",
+            "kind": "supplement_intake_adherence",
+            "signal_name": self.signal_name,
+            "matcher": self.matcher,
+            "status": self.status,
+            "window_day_count": self.window_day_count,
+            "logged_day_count": self.logged_day_count,
+            "coverage_fraction": self.coverage_fraction,
+            "latest_logged_at": _iso(self.latest_logged_at),
+            "day_basis": self.day_basis,
+            "logged_days": list(self.logged_days),
+            "caveats": list(self.caveats),
+        }
+
+
+@dataclass(frozen=True)
+class NutritionTrendResult:
+    """Plain direction of a caller-declared nutrient/energy key over a window.
+
+    Descriptive only: ``up`` / ``down`` / ``flat`` / ``unknown`` read off the
+    resolver's visible daily points. Missing days are NEVER imputed — they stay
+    gaps, surfaced in ``caveats``. No significance, no reference range, no causal
+    claim."""
+
+    signal_name: str
+    quantity_key: str
+    status: str  # "available" | "missing_input" | "stale_input" | "insufficient_data"
+    trend_direction: str  # up | down | flat | unknown
+    window_day_count: int
+    days_with_data: int
+    points: list[dict[str, Any]] = field(default_factory=list)
+    latest_logged_at: datetime | None = None
+    day_basis: str | None = None
+    caveats: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "family": "trend",
+            "kind": "nutrition_intake_trend",
+            "signal_name": self.signal_name,
+            "quantity_key": self.quantity_key,
+            "status": self.status,
+            "trend_direction": self.trend_direction,
+            "window_day_count": self.window_day_count,
+            "days_with_data": self.days_with_data,
+            "points": [dict(point) for point in self.points],
+            "latest_logged_at": _iso(self.latest_logged_at),
+            "day_basis": self.day_basis,
+            "caveats": list(self.caveats),
+        }
+
+
+def _iso(value: datetime | date | None) -> str | None:
+    if value is None:
+        return None
+    return value.isoformat()
+
+
+def _param_int(params: Mapping[str, Any], key: str, default: int) -> int:
+    """Read a positive-int param, falling back to ``default`` on absence/bad value."""
+    raw = params.get(key)
+    if raw is None:
+        return default
+    try:
+        parsed = int(raw)
+    except (TypeError, ValueError):
+        return default
+    return parsed if parsed > 0 else default
+
+
+def _anchor_naive_utc(params: Mapping[str, Any]) -> datetime:
+    """Resolve the anchor as naive UTC (the basis the resolvers compute on)."""
+    anchor = params.get("anchor_ts")
+    if not isinstance(anchor, datetime):
+        anchor = datetime.now(tz=UTC)
+    if anchor.tzinfo is not None:
+        return anchor.astimezone(UTC).replace(tzinfo=None)
+    return anchor
+
+
+def _intake_request(
+    *,
+    consumer_name: str,
+    domain: str,
+    required_key: str,
+    anchor_ts: datetime | None,
+    window_days: int,
+) -> ResolutionRequest:
+    """Build a ResolutionRequest threading the window through ``failure_mode``.
+
+    The resolver protocol is fixed at ``(conn, request)``; WP03 pins the
+    convention that callers thread an optional window through the declaration's
+    ``failure_mode`` slot as ``window_days=<int>``. We reuse that exact rule
+    rather than inventing a second channel."""
+    if anchor_ts is None:
+        anchor_ts = datetime.now(tz=UTC)
+    return ResolutionRequest(
+        anchor_ts=anchor_ts,
+        dependency=DependencyDeclaration(
+            consumer_name=consumer_name,
+            depends_on_domain=domain,
+            required_key=required_key,
+            failure_mode=f"window_days={window_days}",
+        ),
+    )
+
+
+# --------------------------------------------------------------------------- #
+# T017 — supplement_intake_adherence (status/coverage family)
+# --------------------------------------------------------------------------- #
+def supplement_intake_adherence(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    params: Mapping[str, Any],
+) -> SupplementAdherenceResult:
+    """Coverage "K of N days" for a caller-declared supplement matcher.
+
+    Parameters threaded through ``compute(..., params=...)`` (T031):
+
+    * ``matcher`` (required) — the supplement matcher, interpreted by the WP03
+      resolver using the matcher semantics pinned in
+      ``views/supplement_intake.py`` (case-insensitive substring,
+      product-then-ingredient, AND across tokens). This signal never re-derives
+      that rule.
+    * ``window_days`` — bounded look-back window N (repo default).
+    * ``anchor_ts`` — time reference (defaults to now, UTC).
+    * ``freshness_days`` — staleness cutoff for the latest logged day.
+    * ``min_logged_days`` — minimum distinct logged days before answering.
+
+    Reads coverage off the resolver payload (``logged_day_count``,
+    ``window_day_count``, ``logged_days``, ``latest_logged_at``, ``day_basis``)
+    — it does NOT re-read the warehouse. Descriptive only: it reports the count
+    and fraction of logged days, never whether that coverage is "good".
+    """
+    matcher = params.get("matcher")
+    if not isinstance(matcher, str) or not matcher.strip():
+        raise ValueError(
+            f"supplement_intake_adherence requires a non-empty 'matcher' param; got {matcher!r}"
+        )
+
+    window_days = _param_int(params, "window_days", _DEFAULT_INTAKE_WINDOW_DAYS)
+    freshness_days = _param_int(params, "freshness_days", _DEFAULT_SUPPLEMENT_FRESHNESS_DAYS)
+    min_logged_days = _param_int(params, "min_logged_days", _DEFAULT_MIN_LOGGED_DAYS)
+    anchor_ts = params.get("anchor_ts") if isinstance(params.get("anchor_ts"), datetime) else None
+    anchor_naive = _anchor_naive_utc(params)
+
+    resolved = resolve_dependency(
+        conn=conn,
+        request=_intake_request(
+            consumer_name="supplement_intake_adherence",
+            domain="supplement_intake",
+            required_key=matcher,
+            anchor_ts=anchor_ts,
+            window_days=window_days,
+        ),
+    )
+
+    # ---- missing_input: declared-but-empty domain (no matching rows) ----
+    if not resolved.usable:
+        return SupplementAdherenceResult(
+            signal_name="supplement_intake_adherence",
+            matcher=matcher,
+            status="missing_input",
+            window_day_count=window_days,
+            logged_day_count=0,
+            caveats=[
+                f"No supplement intake matching {matcher!r} is logged in the "
+                f"{window_days}-day window; this is an honest no-data refusal, "
+                "not substituted from another source."
+            ],
+        )
+
+    payload = resolved.payload or {}
+    logged_day_count = int(payload.get("logged_day_count", 0))
+    latest_logged_at = payload.get("latest_logged_at")
+    day_basis = payload.get("day_basis")
+    logged_days = list(payload.get("logged_days", []))
+
+    # ---- stale_input: latest logged day older than the freshness rule ----
+    if isinstance(latest_logged_at, datetime):
+        age = anchor_naive - latest_logged_at
+        if age > timedelta(days=freshness_days):
+            return SupplementAdherenceResult(
+                signal_name="supplement_intake_adherence",
+                matcher=matcher,
+                status="stale_input",
+                window_day_count=window_days,
+                logged_day_count=logged_day_count,
+                latest_logged_at=latest_logged_at,
+                day_basis=day_basis,
+                logged_days=logged_days,
+                caveats=[
+                    f"The most recent matching dose is older than the {freshness_days}-day "
+                    "freshness window, so current coverage is not reported."
+                ],
+            )
+
+    # ---- insufficient_data: too few distinct logged days to answer ----
+    if logged_day_count < min_logged_days:
+        return SupplementAdherenceResult(
+            signal_name="supplement_intake_adherence",
+            matcher=matcher,
+            status="insufficient_data",
+            window_day_count=window_days,
+            logged_day_count=logged_day_count,
+            latest_logged_at=latest_logged_at if isinstance(latest_logged_at, datetime) else None,
+            day_basis=day_basis,
+            logged_days=logged_days,
+            caveats=[
+                f"Only {logged_day_count} distinct logged day(s); at least "
+                f"{min_logged_days} are needed before coverage is reported."
+            ],
+        )
+
+    # ---- available: report plain K-of-N coverage ----
+    coverage_fraction = logged_day_count / window_days if window_days > 0 else None
+    caveats = [
+        f"Coverage is {logged_day_count} logged day(s) out of a {window_days}-day window; "
+        "days without a logged dose are shown as gaps, not assumed taken."
+    ]
+    return SupplementAdherenceResult(
+        signal_name="supplement_intake_adherence",
+        matcher=matcher,
+        status="available",
+        window_day_count=window_days,
+        logged_day_count=logged_day_count,
+        coverage_fraction=coverage_fraction,
+        latest_logged_at=latest_logged_at if isinstance(latest_logged_at, datetime) else None,
+        day_basis=day_basis,
+        logged_days=logged_days,
+        caveats=caveats,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# T018 — nutrition_intake_trend (trend family)
+# --------------------------------------------------------------------------- #
+def nutrition_intake_trend(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    params: Mapping[str, Any],
+) -> NutritionTrendResult:
+    """Plain up/down/flat direction of a caller-declared nutrient/energy key.
+
+    Parameters threaded through ``compute(..., params=...)`` (T031):
+
+    * ``quantity_key`` (required) — the nutrition quantity key the WP03 resolver
+      interprets (e.g. ``"energy"``, ``"protein"``).
+    * ``window_days`` — bounded look-back window (repo default).
+    * ``anchor_ts`` — time reference (defaults to now, UTC).
+    * ``freshness_days`` — staleness cutoff for the latest observed day.
+
+    Reads the resolver's already-bucketed daily ``points`` (local-day basis) and
+    names a plain direction from the first vs last OBSERVED point. Missing days
+    are NEVER imputed — gaps stay visible and are named in ``caveats``. No
+    significance, reference range, or causal claim.
+    """
+    quantity_key = params.get("quantity_key")
+    if not isinstance(quantity_key, str) or not quantity_key.strip():
+        raise ValueError(
+            "nutrition_intake_trend requires a non-empty 'quantity_key' param; "
+            f"got {quantity_key!r}"
+        )
+
+    window_days = _param_int(params, "window_days", _DEFAULT_INTAKE_WINDOW_DAYS)
+    freshness_days = _param_int(params, "freshness_days", _DEFAULT_NUTRITION_FRESHNESS_DAYS)
+    anchor_ts = params.get("anchor_ts") if isinstance(params.get("anchor_ts"), datetime) else None
+    anchor_naive = _anchor_naive_utc(params)
+
+    resolved = resolve_dependency(
+        conn=conn,
+        request=_intake_request(
+            consumer_name="nutrition_intake_trend",
+            domain="nutrition_intake",
+            required_key=quantity_key,
+            anchor_ts=anchor_ts,
+            window_days=window_days,
+        ),
+    )
+
+    # ---- missing_input: declared-but-empty domain (no matching rows) ----
+    if not resolved.usable:
+        return NutritionTrendResult(
+            signal_name="nutrition_intake_trend",
+            quantity_key=quantity_key,
+            status="missing_input",
+            trend_direction=TrendDirection.UNKNOWN.value,
+            window_day_count=window_days,
+            days_with_data=0,
+            caveats=[
+                f"No nutrition intake with quantity key {quantity_key!r} is logged in the "
+                f"{window_days}-day window; this is an honest no-data refusal, not "
+                "substituted from observation history."
+            ],
+        )
+
+    payload = resolved.payload or {}
+    points = list(payload.get("points", []))
+    days_with_data = int(payload.get("days_with_data", len(points)))
+    latest_logged_at = payload.get("latest_logged_at")
+    day_basis = payload.get("day_basis")
+
+    # ---- stale_input: latest observed day older than the freshness rule ----
+    if isinstance(latest_logged_at, datetime):
+        age = anchor_naive - latest_logged_at
+        if age > timedelta(days=freshness_days):
+            return NutritionTrendResult(
+                signal_name="nutrition_intake_trend",
+                quantity_key=quantity_key,
+                status="stale_input",
+                trend_direction=TrendDirection.UNKNOWN.value,
+                window_day_count=window_days,
+                days_with_data=days_with_data,
+                points=points,
+                latest_logged_at=latest_logged_at,
+                day_basis=day_basis,
+                caveats=[
+                    f"The most recent logged day is older than the {freshness_days}-day "
+                    "freshness window, so a current direction is not reported."
+                ],
+            )
+
+    # ---- insufficient_data: too few observed days to name a direction ----
+    if days_with_data < _MIN_TREND_DAYS:
+        return NutritionTrendResult(
+            signal_name="nutrition_intake_trend",
+            quantity_key=quantity_key,
+            status="insufficient_data",
+            trend_direction=TrendDirection.UNKNOWN.value,
+            window_day_count=window_days,
+            days_with_data=days_with_data,
+            points=points,
+            latest_logged_at=latest_logged_at if isinstance(latest_logged_at, datetime) else None,
+            day_basis=day_basis,
+            caveats=[
+                f"Only {days_with_data} observed day(s) in the window; at least "
+                f"{_MIN_TREND_DAYS} are needed before a direction is named. Missing days "
+                "are left as gaps, not filled in."
+            ],
+        )
+
+    # ---- available: name a plain direction from observed endpoints ----
+    direction = _intake_trend_direction(points)
+    caveats = [
+        "Direction reads the first and last logged day in the window; days without a "
+        "logged entry are shown as gaps, not filled in."
+    ]
+    return NutritionTrendResult(
+        signal_name="nutrition_intake_trend",
+        quantity_key=quantity_key,
+        status="available",
+        trend_direction=direction.value,
+        window_day_count=window_days,
+        days_with_data=days_with_data,
+        points=points,
+        latest_logged_at=latest_logged_at if isinstance(latest_logged_at, datetime) else None,
+        day_basis=day_basis,
+        caveats=caveats,
+    )
+
+
+def _intake_trend_direction(points: list[dict[str, Any]]) -> TrendDirection:
+    """Plain up/down/flat from the first vs last visible point's value.
+
+    Reuses the same relative-deadband rule as the metric trends so tiny wobble
+    reads ``flat``. Operates only on genuinely-logged points (the resolver never
+    imputes), so a direction is never manufactured from filled-in days.
+    """
+    if len(points) < 2:
+        return TrendDirection.UNKNOWN
+    first = float(points[0]["value"])
+    last = float(points[-1]["value"])
+    delta = last - first
+    tolerance = abs(first) * _FLAT_REL_TOLERANCE
+    if abs(delta) <= tolerance:
+        return TrendDirection.FLAT
+    return TrendDirection.UP if delta > 0 else TrendDirection.DOWN
+
+
+# --------------------------------------------------------------------------- #
 # Built-in registration (CONTRACT.md built-in loading contract)
 # --------------------------------------------------------------------------- #
 def register_builtin_signals() -> None:
@@ -772,6 +1229,58 @@ def register_builtin_signals() -> None:
             ),
         )
     )
+    # WP04 — parameterized intake descriptive signals. They are registered here
+    # (no ``engine/__init__.py`` edit — this module is already in
+    # ``_BUILTIN_SIGNAL_MODULES``) and are intentionally left out of the
+    # ``_BUILTIN_SIGNAL_NAMES`` load-guard frozenset, which is a SUBSET check, not
+    # the authoritative registry; ``REGISTRY`` is authoritative. Their ``fn``
+    # declares a ``params`` keyword so ``compute(name, conn, params=...)`` threads
+    # the caller's matcher/quantity-key + window through the T031 seam.
+    _register(
+        SignalSpec(
+            name="supplement_intake_adherence",
+            domain=["nutrition", "supplements", "intake"],
+            inputs=["supplement_intake"],
+            output=None,
+            priority="normal",
+            auto_safe=False,
+            revision="1",
+            fn=supplement_intake_adherence,
+            question="How many days did I log a supplement matching my filter, out of the window?",
+            family="status",
+            missing_input_hint=(
+                "Log supplement intake (a product or ingredient your matcher selects) "
+                "to answer this."
+            ),
+            caveat_summary=(
+                "Reports logged-day coverage (K of N days) only; days without a "
+                "logged dose are gaps, not assumed taken, and no adherence "
+                "judgement or recommendation is made.",
+            ),
+        )
+    )
+    _register(
+        SignalSpec(
+            name="nutrition_intake_trend",
+            domain=["nutrition", "intake"],
+            inputs=["nutrition_intake"],
+            output=None,
+            priority="normal",
+            auto_safe=False,
+            revision="1",
+            fn=nutrition_intake_trend,
+            question="Is a nutrient/energy key I name trending up, down, or flat over a window?",
+            family="trend",
+            missing_input_hint=(
+                "Log nutrition intake carrying the quantity key you name "
+                "(e.g. energy) to answer this."
+            ),
+            caveat_summary=(
+                "Plain up/down/flat over your own logged days; missing days stay "
+                "visible gaps and are never filled in.",
+            ),
+        )
+    )
 
 
 def _register(spec: SignalSpec) -> None:
@@ -784,5 +1293,9 @@ __all__ = [
     "steps_trend",
     "weight_trend",
     "bmi",
+    "supplement_intake_adherence",
+    "nutrition_intake_trend",
+    "SupplementAdherenceResult",
+    "NutritionTrendResult",
     "register_builtin_signals",
 ]

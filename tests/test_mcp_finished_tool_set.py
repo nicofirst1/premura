@@ -56,6 +56,8 @@ def _ensure_live_analytical_registry() -> None:
 
 # WP05 adds rolling_mean + paired_t_test to the prior sixteen default tools;
 # pubmed-grounding-tools later adds pubmed_search + pubmed_fetch (-> 20).
+# usable-intake-dimensions WP05 adds the two intake signal tools
+# (supplement_intake_adherence + nutrition_intake_trend) -> 22.
 _DEFAULT_TOOLS_FINISHED = sorted(
     [
         "list_metrics",
@@ -66,6 +68,8 @@ _DEFAULT_TOOLS_FINISHED = sorted(
         "weight_trend",
         "sleep_deep_pct_baseline",
         "hrv_change_around_date",
+        "supplement_intake_adherence",
+        "nutrition_intake_trend",
         "profile_context_supported_fields",
         "profile_context_record",
         "change_point",
@@ -149,7 +153,7 @@ def _pin_engine_clock(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 # ---------------------------------------------------------------------------
-# 1. Both tools are on the default (and operator) surface — now 20 tools total.
+# 1. Both tools are on the default (and operator) surface — now 22 tools total.
 # ---------------------------------------------------------------------------
 
 
@@ -158,7 +162,7 @@ def test_default_surface_lists_exactly_twenty_tools() -> None:
         server_ = build_server()
         names = sorted(tool.name for tool in await server_.list_tools())
         assert names == _DEFAULT_TOOLS_FINISHED
-        assert len(names) == 20
+        assert len(names) == 22
 
     asyncio.run(run())
 

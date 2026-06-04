@@ -435,11 +435,13 @@ def test_bmi_unaffected_by_unresolved_intake_domains(registered: Any, anchor_ts:
        declared dependencies, not by what other declarations are floating
        around.
     2. A direct ``resolve_dependency`` call against ``nutrition_intake``
-       returns ``usable=False, absence_reason="unsupported_domain"`` — the
-       explicit unresolved outcome required by FR-007. This anchors the
-       T013 lock: future Stage 2 consumers can declare intake dependencies
-       without contaminating BMI's behavior, because the seam refuses
-       intake declarations honestly until real resolvers ship.
+       refuses honestly without coercing into another domain. (Before the
+       usable-intake-dimensions mission this asserted ``unsupported_domain``;
+       FR-001 of that mission ships a real ``nutrition_intake`` resolver, so an
+       empty warehouse now resolves to the honest ``missing`` outcome instead.
+       Either way the seam never silently substitutes another domain's value —
+       which is the invariant this point protects: declaring an intake
+       dependency does not contaminate BMI's behavior.
     """
     conn = registered
     _ensure_source(conn)
@@ -453,8 +455,8 @@ def test_bmi_unaffected_by_unresolved_intake_domains(registered: Any, anchor_ts:
     assert result.metric_id == "bmi"
 
     # 2. Resolving a nutrition_intake dependency directly through the seam
-    #    proves the unresolved-domain outcome is honest, not silently coerced
-    #    into another domain.
+    #    proves the outcome is honest (no nutrition rows seeded → missing), not
+    #    silently coerced into another domain.
     nutrition_request = ResolutionRequest(
         anchor_ts=anchor_ts,
         dependency=DependencyDeclaration(
@@ -466,4 +468,4 @@ def test_bmi_unaffected_by_unresolved_intake_domains(registered: Any, anchor_ts:
     )
     nutrition_outcome = resolve_dependency(conn, nutrition_request)
     assert nutrition_outcome.usable is False
-    assert nutrition_outcome.absence_reason == "unsupported_domain"
+    assert nutrition_outcome.absence_reason == "missing"

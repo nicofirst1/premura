@@ -133,16 +133,18 @@ def test_resolved_input_carries_optional_payload(anchor_ts: datetime) -> None:
         "supplement_intake",
     ],
 )
-def test_undeclared_resolver_domains_fall_through_to_unsupported(
+def test_intake_domains_resolve_honestly_through_registered_resolvers(
     domain: str,
     anchor_ts: datetime,
+    empty_warehouse: Any,
 ) -> None:
-    """Domains that are declared in ``SEMANTIC_DOMAINS`` but have no registered
-    resolver yet must resolve to the explicit ``unsupported_domain`` outcome.
+    """Both intake domains now resolve through registered resolvers (FR-001).
 
-    This is FR-007 — honest refusal for declared-but-not-yet-resolvable
-    domains. It locks the no-silent-coercion guarantee that WP02's new
-    resolvers cannot weaken.
+    Before the usable-intake-dimensions mission these domains fell through to
+    ``unsupported_domain``; FR-001 ships real resolvers, so against an empty
+    warehouse they return the honest ``missing`` outcome instead — never a
+    silently-coerced value from another domain. This still locks the
+    no-silent-coercion guarantee, just at the new (resolvable) contract.
     """
     from premura.engine import (
         DependencyDeclaration,
@@ -158,23 +160,25 @@ def test_undeclared_resolver_domains_fall_through_to_unsupported(
     )
     request = ResolutionRequest(anchor_ts=anchor_ts, dependency=dep)
 
-    out = resolve_dependency(conn=None, request=request)
+    out = resolve_dependency(conn=empty_warehouse, request=request)
 
     assert out.usable is False
-    assert out.absence_reason == "unsupported_domain"
+    assert out.absence_reason == "missing"
     assert out.domain == domain
     assert out.required_key == f"{domain}:probe"
     assert out.anchor_ts == anchor_ts
-    assert out.message is not None and domain in out.message
+    assert out.message is not None
 
 
-def test_registered_resolver_domains_dispatch_through_registry() -> None:
-    """The mission's two shipped resolvers register themselves at lazy-load.
+def test_registered_resolver_domains_dispatch_through_registry(empty_warehouse: Any) -> None:
+    """All four declared resolvers register themselves at lazy-load.
 
-    This is the structural complement to the unsupported-domain test above:
-    observation_history and profile_context must show up in RESOLVERS once
-    the lazy loader has run. Behavioral verification lives in
-    ``tests/test_engine_resolvers.py``.
+    This is the structural complement to the honest-refusal test above: once the
+    lazy loader has run, every shipped resolver — the original
+    observation_history / profile_context plus the mission's new
+    nutrition_intake / supplement_intake — shows up in RESOLVERS. Behavioral
+    verification lives in ``tests/test_engine_resolvers.py`` and
+    ``tests/test_intake_resolvers.py``.
     """
     from premura.engine import (
         RESOLVERS,
@@ -183,12 +187,10 @@ def test_registered_resolver_domains_dispatch_through_registry() -> None:
         resolve_dependency,
     )
 
-    # Trigger the lazy loader by issuing a request against a declared-but-
-    # unresolved domain. The loader fires before dispatch, so this registers
-    # observation_history and profile_context without needing a DB connection
-    # — nutrition_intake has no resolver and returns ``unsupported_domain``.
+    # Trigger the lazy loader by issuing a request; the loader fires before
+    # dispatch, registering every built-in resolver module.
     resolve_dependency(
-        conn=None,
+        conn=empty_warehouse,
         request=ResolutionRequest(
             anchor_ts=datetime(2026, 1, 1, tzinfo=UTC),
             dependency=DependencyDeclaration(
@@ -202,6 +204,8 @@ def test_registered_resolver_domains_dispatch_through_registry() -> None:
 
     assert "observation_history" in RESOLVERS
     assert "profile_context" in RESOLVERS
+    assert "nutrition_intake" in RESOLVERS
+    assert "supplement_intake" in RESOLVERS
 
 
 # ---------------------------------------------------------------------------
@@ -375,11 +379,15 @@ def test_resolvers_dict_identity_is_stable_across_imports() -> None:
     assert engine_first.RESOLVERS is engine_second.RESOLVERS
 
 
-def test_repeated_resolution_yields_equal_results(anchor_ts: datetime) -> None:
+def test_repeated_resolution_yields_equal_results(
+    anchor_ts: datetime, empty_warehouse: Any
+) -> None:
     """Two identical requests produce equal :class:`ResolvedInput` instances.
 
     Locks the deterministic-public-surface promise (NFR-002 in the spec):
-    repeated runs with unchanged inputs produce the same outcome.
+    repeated runs with unchanged inputs produce the same outcome. The
+    nutrition_intake resolver (FR-001) requires a connection, so this runs
+    against an empty warehouse where both calls deterministically refuse.
     """
     from premura.engine import (
         DependencyDeclaration,
@@ -395,6 +403,6 @@ def test_repeated_resolution_yields_equal_results(anchor_ts: datetime) -> None:
     )
     request = ResolutionRequest(anchor_ts=anchor_ts, dependency=dep)
 
-    first = resolve_dependency(conn=None, request=request)
-    second = resolve_dependency(conn=None, request=request)
+    first = resolve_dependency(conn=empty_warehouse, request=request)
+    second = resolve_dependency(conn=empty_warehouse, request=request)
     assert first == second

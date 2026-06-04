@@ -195,6 +195,8 @@ _DEFAULT_TOOLS = sorted(
         "weight_trend",
         "sleep_deep_pct_baseline",
         "hrv_change_around_date",
+        "supplement_intake_adherence",
+        "nutrition_intake_trend",
         "profile_context_supported_fields",
         "profile_context_record",
         "change_point",

@@ -25,7 +25,7 @@ Two families of helpers live here:
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -427,11 +427,105 @@ def _run_signal(
     *,
     warehouse_path: Path | None,
     requested_window: int | None = None,
+    params: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Open the warehouse, run one registered engine signal, serialize the result."""
+    """Open the warehouse, run one registered engine signal, serialize the result.
+
+    ``params`` threads a parameterized signal's caller arguments (an intake
+    matcher / quantity key + window) through the WP03-extended ``compute()`` seam
+    (T031). When ``params is None`` the zero-arg signals are invoked exactly as
+    before; when supplied, the engine forwards them to a signal whose ``fn``
+    declared a ``params`` keyword. The wrapper performs NO warehouse reads or
+    intake math of its own — the engine owns the resolver, the coverage/direction
+    computation, and the freshness/sufficiency verdict.
+    """
     with _open_warehouse(warehouse_path) as conn:
-        result = engine.compute(spec_name, conn)
+        result = engine.compute(spec_name, conn, params=params)
     return _serialize_signal_result(spec_name, result, requested_window=requested_window)
+
+
+# --------------------------------------------------------------------------- #
+# Intake signal-backed Stage 3 tools (WP05)
+#
+# These two wrappers expose WP04's parameterized intake signals on the default
+# MCP surface. They are deliberately THIN: each validates only the caller-facing
+# parameter shape, then delegates ENTIRELY to the WP04 signal through the same
+# ``_run_signal`` path the zero-arg signals use, passing the caller's matcher /
+# quantity-key + window through the WP03-extended ``compute(..., params=...)``
+# seam (T031). There is NO raw fact-table SQL, NO re-read of the intake tables,
+# and NO re-derivation of coverage/trend semantics here — the engine owns the
+# resolver, the math, and the freshness/sufficiency verdict; the wrapper only
+# assembles the params dict and serializes the engine envelope. The four
+# structurally-distinct states (available / missing_input / stale_input /
+# insufficient_data) flow straight through from the engine's own ``status``.
+# --------------------------------------------------------------------------- #
+
+
+def supplement_intake_adherence(
+    matcher: str,
+    *,
+    window_days: int | None = None,
+    warehouse_path: Path | None = None,
+) -> dict[str, Any]:
+    """Coverage "K of N days" for a caller-declared supplement matcher (delegates to engine).
+
+    The caller declares the supplement ``matcher`` (interpreted by the WP03
+    resolver's pinned matcher semantics) and an optional bounded ``window_days``;
+    both pass straight through to the WP04 ``supplement_intake_adherence`` signal
+    via ``compute(..., params=...)``. This wrapper validates only the caller-facing
+    parameter shape — it re-reads no intake rows and re-derives no coverage. The
+    engine returns one of four structurally-distinct states (``available`` /
+    ``missing_input`` / ``stale_input`` / ``insufficient_data``); an empty,
+    stale, or too-thin domain comes back as an honest refusal with its own state,
+    never substituted from another source and never a diagnosis or recommendation.
+    """
+    clean_matcher = _require_matcher("matcher", matcher)
+    _ensure_optional_window("window_days", window_days, minimum=1, maximum=365)
+    params: dict[str, Any] = {"matcher": clean_matcher}
+    if window_days is not None:
+        params["window_days"] = window_days
+    return _run_signal(
+        "supplement_intake_adherence",
+        warehouse_path=warehouse_path,
+        params=params,
+    )
+
+
+def nutrition_intake_trend(
+    quantity_key: str,
+    *,
+    window_days: int | None = None,
+    warehouse_path: Path | None = None,
+) -> dict[str, Any]:
+    """Plain up/down/flat direction of a caller-declared nutrient/energy key (delegates to engine).
+
+    The caller declares the nutrition ``quantity_key`` (e.g. ``"energy"`` /
+    ``"protein"``, interpreted by the WP03 resolver) and an optional bounded
+    ``window_days``; both pass straight through to the WP04
+    ``nutrition_intake_trend`` signal via ``compute(..., params=...)``. This
+    wrapper validates only the caller-facing parameter shape — it re-reads no
+    intake rows and re-derives no direction, and it never imputes a missing day
+    (the engine keeps gaps visible). The engine returns one of four
+    structurally-distinct states (``available`` / ``missing_input`` /
+    ``stale_input`` / ``insufficient_data``); a plain trend direction only, never
+    a reference range, significance, or causal claim.
+    """
+    clean_key = _require_matcher("quantity_key", quantity_key)
+    _ensure_optional_window("window_days", window_days, minimum=1, maximum=365)
+    params: dict[str, Any] = {"quantity_key": clean_key}
+    if window_days is not None:
+        params["window_days"] = window_days
+    return _run_signal(
+        "nutrition_intake_trend",
+        warehouse_path=warehouse_path,
+        params=params,
+    )
+
+
+def _require_matcher(name: str, value: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{name} must be a non-empty string")
+    return value.strip()
 
 
 # --------------------------------------------------------------------------- #
@@ -940,7 +1034,19 @@ def _classify_result_status(payload: dict[str, Any]) -> str:
     Each unavailable reason gets its own label rather than collapsing into a
     single error: missing input, stale-but-present input, and insufficient data
     are different facts the caller may want to act on differently.
+
+    Parameterized intake signals (WP04/WP05) already compute their own
+    structurally-distinct ``status`` on the engine side (available / missing_input
+    / stale_input / insufficient_data). When the envelope carries that field we
+    trust it verbatim rather than re-deriving the verdict in the wrapper — the
+    classification stays single-sourced in the engine. The zero-arg Stage 2
+    signals do not set a top-level ``status``, so they fall through to the
+    family/freshness-based derivation below unchanged.
     """
+    declared_status = payload.get("status")
+    if isinstance(declared_status, str) and declared_status:
+        return declared_status
+
     family = payload.get("family")
     if family == "missing_input":
         return "missing_input"
@@ -1113,6 +1219,7 @@ __all__ = [
     "hrv_change_around_date",
     "list_metrics",
     "metric_summary",
+    "nutrition_intake_trend",
     "paired_t_test",
     "pubmed_fetch",
     "pubmed_search",
@@ -1124,6 +1231,7 @@ __all__ = [
     "sleep_deep_pct_baseline",
     "smoothed_average",
     "steps_trend",
+    "supplement_intake_adherence",
     "supported_profile_fields",
     "weight_trend",
 ]

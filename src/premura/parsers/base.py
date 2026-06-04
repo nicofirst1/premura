@@ -292,6 +292,13 @@ class IntakeBatch:
     source_descriptors: dict[str, SourceDescriptor] = field(default_factory=dict)
     nutrition_events: list[NutritionIntakeInput] = field(default_factory=list)
     supplement_events: list[SupplementIntakeInput] = field(default_factory=list)
+    # Review metadata, mirroring IngestBatch.unmapped_metrics / skipped_rows: an
+    # intake parser declares fields the decision tree produced no home for here.
+    # These ride on the batch for human review; they are NEVER loadable rows and
+    # persist_intake_batch does not write them (same posture as
+    # IngestBatch.unmapped_metrics).
+    unmapped_metrics: list[str] = field(default_factory=list)
+    skipped_rows: list[SkippedRow] = field(default_factory=list)
     ingest_batch: str | None = None
     notes: str | None = None
 
@@ -301,8 +308,8 @@ class IntakeBatch:
     def validate(self) -> None:
         for event in self.nutrition_events:
             event.validate()
-        for event in self.supplement_events:
-            event.validate()
+        for sup_event in self.supplement_events:
+            sup_event.validate()
 
         # Every intake row's source_id must be backed by a descriptor so the
         # store can upsert hp.dim_source without out-of-band parser state.
@@ -411,14 +418,60 @@ class IngestBatch:
             )
 
 
+@dataclass(slots=True)
+class ParseOutput:
+    """The backward-compatible union a parser may return from ``parse()``.
+
+    Today's parsers return a bare :class:`IngestBatch` (observation-only) and
+    keep working unchanged — the runtime normalizes that case. A parser that
+    needs the intake seam (or both seams from one source artifact) instead
+    returns a :class:`ParseOutput` carrying whichever batches it produced.
+
+    This is the *smallest backward-compatible shape*: it adds an optional return
+    type rather than swapping the existing one, so no existing parser is touched.
+    See ``CONTRACT.md`` ("Parser runtime output: observation, intake, or both").
+    """
+
+    observation: IngestBatch | None = None
+    intake: IntakeBatch | None = None
+
+
+# A parser's ``parse()`` may return today's bare ``IngestBatch`` (observation
+# only) or a ``ParseOutput`` carrying observation and/or intake batches.
+ParserOutput = IngestBatch | ParseOutput
+
+
+def normalize_parse_output(output: ParserOutput) -> tuple[IngestBatch | None, IntakeBatch | None]:
+    """Map any parser output to ``(observation_batch | None, intake_batch | None)``.
+
+    The single runtime dispatch helper. Every call site routes through this so
+    none re-implements the union handling (the risk that a call site is left on
+    the old path). A bare :class:`IngestBatch` — what every existing parser
+    returns — normalizes to observation-only, so their behavior is unchanged.
+    """
+    if isinstance(output, ParseOutput):
+        return output.observation, output.intake
+    if isinstance(output, IngestBatch):
+        return output, None
+    raise TypeError(
+        f"parse() must return an IngestBatch or a ParseOutput, got {type(output).__name__}"
+    )
+
+
 class Parser(Protocol):
-    """All parsers expose ``parse(path) -> IngestBatch``."""
+    """All parsers expose ``parse(path)``.
+
+    Observation-only parsers return a bare :class:`IngestBatch` (unchanged). A
+    parser that emits intake — or both observation and intake from one source —
+    returns a :class:`ParseOutput`; the runtime normalizes either via
+    :func:`normalize_parse_output`.
+    """
 
     source_kind: str
 
     def declares_metrics(self) -> list[str]: ...
 
-    def parse(self, path: Path) -> IngestBatch: ...
+    def parse(self, path: Path) -> ParserOutput: ...
 
 
 class PluginParser(Parser, Protocol):
@@ -426,8 +479,8 @@ class PluginParser(Parser, Protocol):
 
     language_hint: str | None
 
-    def parse(self, path: Path) -> IngestBatch:
-        """Parse ``path`` and return an :class:`IngestBatch`."""
+    def parse(self, path: Path) -> ParserOutput:
+        """Parse ``path`` and return an :class:`IngestBatch` or :class:`ParseOutput`."""
         ...
 
 

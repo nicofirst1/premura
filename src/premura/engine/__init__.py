@@ -29,6 +29,7 @@ See STAGES.md for the four-stage architecture this slots into.
 
 from __future__ import annotations
 
+import inspect
 import json
 import re
 from collections.abc import Mapping
@@ -209,6 +210,8 @@ _BUILTINS_LOADED: bool = False
 _BUILTIN_RESOLVER_MODULES: tuple[str, ...] = (
     "premura.engine.views.observation",
     "premura.engine.views.profile",
+    "premura.engine.views.nutrition_intake",
+    "premura.engine.views.supplement_intake",
 )
 
 # Tracks whether the built-in resolver modules have been imported and
@@ -350,15 +353,38 @@ def resolve_dependency(
     return _resolve_dependency(conn, request)
 
 
-def compute(spec_name: str, conn: duckdb.DuckDBPyConnection) -> object:
-    """Look up ``REGISTRY[spec_name]``, call its ``fn`` with ``conn``, return the result.
+def compute(
+    spec_name: str,
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    params: Mapping[str, Any] | None = None,
+) -> object:
+    """Look up ``REGISTRY[spec_name]``, call its ``fn``, return the result.
 
-    In the full Stage 2 implementation this raises :class:`KeyError` if
-    ``spec_name`` is not in :data:`REGISTRY`, raises :class:`RuntimeError` if
-    the spec was registered without a function body, may read
-    ``hp.fact_measurement``/``hp.fact_interval``/``hp.dim_metric`` via
-    ``conn``, and may persist a ``derived:*`` row to ``hp.fact_measurement``
-    when ``spec.output is not None``.
+    Raises :class:`KeyError` if ``spec_name`` is not in :data:`REGISTRY`, raises
+    :class:`RuntimeError` if the spec was registered without a function body, may
+    read ``hp.fact_measurement``/``hp.fact_interval``/``hp.dim_metric`` via
+    ``conn``, and may persist a ``derived:*`` row to ``hp.fact_measurement`` when
+    ``spec.output is not None``.
+
+    Parameterized-signal invocation seam (WP03 / T031). ``params`` lets a caller
+    thread per-invocation arguments (e.g. an intake matcher / quantity key /
+    window) to a signal whose ``fn`` opts in by declaring a ``params`` keyword
+    parameter. This is the seam WP04's parameterized intake signals register
+    against and WP05's tool wrappers pass through; there is deliberately no
+    second compute path and no routing through the analytical-tool door.
+
+    Backward compatibility is strict:
+
+    * ``params is None`` (the default, and every existing caller) → the ``fn`` is
+      invoked exactly as before, ``fn(conn)``. The existing zero-arg signals are
+      untouched.
+    * ``params`` supplied → the ``fn`` must declare a ``params`` parameter
+      (``def signal_fn(conn, *, params): ...``). It is then called
+      ``fn(conn, params=params)``. Passing ``params`` to a signal that does not
+      accept it is a programming error (the caller wired params to the wrong
+      signal) and raises :class:`TypeError` with an explicit message rather than
+      silently dropping the arguments.
     """
     _ensure_builtin_signals_loaded()
     if spec_name not in REGISTRY:
@@ -368,10 +394,35 @@ def compute(spec_name: str, conn: duckdb.DuckDBPyConnection) -> object:
     if spec.fn is None:
         raise RuntimeError(f"signal {spec_name!r} is registered without an implementation")
 
-    result = spec.fn(conn)
+    if params is None:
+        result = spec.fn(conn)
+    else:
+        if not _fn_accepts_params(spec.fn):
+            raise TypeError(
+                f"signal {spec_name!r} does not accept caller params; its fn must declare a "
+                "'params' parameter to be invoked with params"
+            )
+        result = spec.fn(conn, params=params)
+
     if spec.output is not None:
         return _persist_derived_rows(conn, spec, result)
     return result
+
+
+def _fn_accepts_params(fn: Any) -> bool:
+    """Return True iff ``fn`` declares a ``params`` parameter (or **kwargs).
+
+    Used by :func:`compute` to decide whether a signal opted into the
+    parameterized-invocation seam before threading caller params to it.
+    """
+    try:
+        signature = inspect.signature(fn)
+    except (TypeError, ValueError):  # pragma: no cover - builtins without signatures
+        return False
+    for parameter in signature.parameters.values():
+        if parameter.name == "params" or parameter.kind is inspect.Parameter.VAR_KEYWORD:
+            return True
+    return False
 
 
 def list_by_domain(domain: str) -> list[SignalSpec]:

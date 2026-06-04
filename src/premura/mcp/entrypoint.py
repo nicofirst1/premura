@@ -4,12 +4,14 @@ Two entrypoints are provided:
 
 * **Default surface** (``premura-mcp``, :func:`build_server`) — the agent-safe
   surface.  Exposes the catalog/summary helpers, all six approved Stage 2 signal
-  tools, the five Stage 3 analytical tools (``change_point`` /
-  ``smoothed_average`` / ``correlate`` / ``rolling_mean`` / ``paired_t_test``),
-  the bounded agent-mediated profile capture tools, the three session
-  research-trace tools (``research_trace_open`` / ``research_trace_mark_surfaced``
-  / ``research_trace_disclosure``), and the two PubMed grounding tools
-  (``pubmed_search`` / ``pubmed_fetch``) — 20 tools in total.  ``query_warehouse``
+  tools, the two parameterized intake signal tools
+  (``supplement_intake_adherence`` / ``nutrition_intake_trend``), the five Stage 3
+  analytical tools (``change_point`` / ``smoothed_average`` / ``correlate`` /
+  ``rolling_mean`` / ``paired_t_test``), the bounded agent-mediated profile
+  capture tools, the three session research-trace tools (``research_trace_open``
+  / ``research_trace_mark_surfaced`` / ``research_trace_disclosure``), and the two
+  PubMed grounding tools (``pubmed_search`` / ``pubmed_fetch``) — 22 tools in
+  total.  ``query_warehouse``
   is intentionally absent; agents should use the signal-backed tools, the
   analytical tools, the trace tools, the PubMed tools, and the catalog helpers
   instead.  The authoritative tool list is asserted in
@@ -304,6 +306,49 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
             anchor_date,
             window_days=window_days,
             warehouse_path=warehouse_path,
+        )
+
+    # --- Intake signal-backed tools (WP05) ------------------------------- #
+    # The two parameterized intake signals on the DEFAULT agent-safe surface.
+    # Each is a thin wrapper that delegates to the WP04 signal through the
+    # warehouse server's ``_run_signal`` -> ``compute(..., params=...)`` seam: it
+    # computes no coverage/trend, re-reads no intake tables, and issues no raw
+    # SQL. The caller threads a matcher/quantity-key + optional window; the
+    # engine's own four structurally-distinct states (available / missing_input /
+    # stale_input / insufficient_data) flow straight back, never collapsed into a
+    # generic error and never a diagnosis or recommendation.
+
+    @mcp.tool()
+    def supplement_intake_adherence(matcher: str, window_days: int | None = None) -> dict[str, Any]:
+        """Report logged-day coverage (K of N days) for a supplement you name.
+
+        You declare the supplement ``matcher`` (a product or ingredient your
+        filter selects, interpreted by Premura's pinned matcher semantics) and an
+        optional bounded ``window_days``. Returns plain coverage only — how many
+        distinct days in the window carried a logged dose — with no adherence
+        judgement, recommendation, or reference range. An empty, stale, or
+        too-thin domain comes back as one of the structurally-distinct states
+        (``missing_input`` / ``stale_input`` / ``insufficient_data``) with a
+        structured report, never substituted from another source.
+        """
+        return warehouse_server.supplement_intake_adherence(
+            matcher, window_days=window_days, warehouse_path=warehouse_path
+        )
+
+    @mcp.tool()
+    def nutrition_intake_trend(quantity_key: str, window_days: int | None = None) -> dict[str, Any]:
+        """Report a plain up/down/flat direction for a nutrient/energy key you name.
+
+        You declare the nutrition ``quantity_key`` (e.g. ``energy`` or
+        ``protein``) and an optional bounded ``window_days``. Returns a plain
+        direction over your own logged days; missing days stay visible gaps and
+        are never imputed, and the answer carries no significance, reference
+        range, or causal claim. An empty, stale, or too-thin domain comes back as
+        one of the structurally-distinct states (``missing_input`` /
+        ``stale_input`` / ``insufficient_data``), never a generic error.
+        """
+        return warehouse_server.nutrition_intake_trend(
+            quantity_key, window_days=window_days, warehouse_path=warehouse_path
         )
 
     # --- Stage 3 analytical tools (WP06) --------------------------------- #

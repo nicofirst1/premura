@@ -34,6 +34,7 @@ from .bootstrap import (
 from .config import settings
 from .mcp import server as mcp_server
 from .ops import encrypt, notify, upload
+from .parsers.base import normalize_parse_output
 from .parsers.bmt import BMTParser
 from .parsers.garmin_gdpr import GarminGDPRParser
 from .parsers.health_connect import HealthConnectParser
@@ -41,6 +42,7 @@ from .parsers.lab_pdf import LabPdfParser
 from .parsers.sleep_as_android import SleepAsAndroidParser
 from .store import duck
 from .store.loader import already_ingested, load
+from .store.profile_intake import persist_intake_batch
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -110,21 +112,41 @@ def _ingest_one(conn, source_key: str, override_path: Path | None) -> None:
     parser = parser_cls()
     console.print(f"[cyan]parsing[/cyan] {source_key} :: {candidate.name}")
     t0 = time.time()
-    batch = parser.parse(candidate)
+    observation, intake = normalize_parse_output(parser.parse(candidate))
     parse_dt = time.time() - t0
 
-    if already_ingested(conn, batch.source_sha256):
-        console.print(f"  [dim]sha256 {batch.source_sha256[:12]}… already ingested; skipping[/dim]")
-        return
+    # Observation seam: the existing loader path, behaving exactly as before for
+    # today's observation-only parsers.
+    if observation is not None:
+        # Ensure the source artifact is hashed for idempotency; today's parsers
+        # already attach it, this is a no-op for them.
+        if observation.source_sha256 is None:
+            observation.attach_source_artifact(candidate)
+        sha256 = observation.source_sha256
+        assert sha256 is not None  # set by attach_source_artifact above
+        if already_ingested(conn, sha256):
+            console.print(f"  [dim]sha256 {sha256[:12]}… already ingested; skipping[/dim]")
+        else:
+            t1 = time.time()
+            stats = load(conn, observation)
+            load_dt = time.time() - t1
+            console.print(
+                f"  parse {parse_dt:.1f}s • load {load_dt:.1f}s • "
+                f"inserted={stats.rows_inserted:,} dup_skip={stats.rows_skipped_dup:,} "
+                f"priority_skip={stats.rows_skipped_priority:,}"
+            )
 
-    t1 = time.time()
-    stats = load(conn, batch)
-    load_dt = time.time() - t1
-    console.print(
-        f"  parse {parse_dt:.1f}s • load {load_dt:.1f}s • "
-        f"inserted={stats.rows_inserted:,} dup_skip={stats.rows_skipped_dup:,} "
-        f"priority_skip={stats.rows_skipped_priority:,}"
-    )
+    # Intake seam: nutrition/supplement intake never travels the observation
+    # loader; it persists through its own home (FR-007, two-seam rule).
+    if intake is not None:
+        intake_stats = persist_intake_batch(conn, intake)
+        intake_dup_skip = (
+            intake_stats.nutrition_events_skipped_dup + intake_stats.supplement_events_skipped_dup
+        )
+        console.print(
+            f"  intake events inserted={intake_stats.events_inserted:,} "
+            f"dup_skip={intake_dup_skip:,}"
+        )
 
 
 def _discover_input(source_key: str) -> Path | None:

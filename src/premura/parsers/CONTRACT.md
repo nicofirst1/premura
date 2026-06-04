@@ -26,7 +26,9 @@ home.
 
 A single parser may emit **both** an `IngestBatch` (observations) and an
 `IntakeBatch` (intake) from one source artifact when the artifact genuinely
-carries both kinds of data. It must not fold one into the other.
+carries both kinds of data. It must not fold one into the other. See
+"Parser runtime output: observation, intake, or both" below for how `parse()`
+returns each and how the runtime routes them.
 
 Baseline profile facts (birth date, biological sex, declared height) are **not**
 a parser concern at all: they are captured through the bounded agent-mediated
@@ -45,9 +47,39 @@ A structural protocol. Implementations must expose:
 - `source_kind: str` — short stable identifier for the vendor or source.
 - `language_hint: str | None` — ISO 639-1 code if the source labels are known to be in one language, else `None`.
 - `def declares_metrics(self) -> list[str]` — every canonical `metric_id` the parser may emit.
-- `def parse(self, path: Path) -> IngestBatch` — parse the vendor file and return one ingest batch.
+- `def parse(self, path: Path) -> IngestBatch | ParseOutput` — parse the vendor
+  file and return its output (see the next section). Returning a bare
+  `IngestBatch` is observation-only and is the unchanged path every existing
+  parser uses.
 
 First-party parsers and plugin parsers now target the same seam.
+
+## Parser runtime output: observation, intake, or both
+
+`parse()` returns one of two shapes; the runtime normalizes either before
+routing it to a persistence seam:
+
+- **Observation-only (unchanged).** Return a bare `IngestBatch`. This is exactly
+  the historical contract — **existing observation-only parsers are unchanged
+  and stay supported**; intake support is purely additive and did **not** swap
+  the return type out from under them.
+- **Intake, or both.** Return a `ParseOutput(observation=..., intake=...)`
+  carrying an optional `IngestBatch` and/or an optional `IntakeBatch`. Use this
+  when the source carries intake (set `intake`), or carries both kinds of data
+  from one artifact (set both fields).
+
+The runtime calls the single dispatch helper
+`premura.parsers.base.normalize_parse_output(output)`, which maps any parser
+output to `(observation_batch | None, intake_batch | None)`. A bare `IngestBatch`
+normalizes to `(batch, None)`. The runtime then sends the observation batch (if
+any) to the observation loader and the intake batch (if any) to
+`premura.store.profile_intake.persist_intake_batch`. **Intake never becomes a
+`Measurement`, `Interval`, or `ClinicalNote`** — the two-seam / one-home rule
+holds at the runtime boundary, not just in prose.
+
+Every runtime call site (CLI ingest, the in-sandbox ingest runner, and the
+live-trial harness) routes through `normalize_parse_output`; a new entry point
+must do the same rather than re-implement the union handling.
 
 ### `IngestBatch`
 
@@ -71,7 +103,14 @@ The parser-to-store seam for normalized **nutrition and supplement intake**. Dis
 - `nutrition_events` — `NutritionIntakeInput` rows. Each anchors one eating/drinking occurrence and may hold `items` (`NutritionItemInput`) and event-level or item-level `quantities` (`NutritionQuantityInput`, e.g. `energy`/`protein` in their source unit).
 - `supplement_events` — `SupplementIntakeInput` rows. Each anchors one supplement-taking occurrence and may hold `items` (`SupplementItemInput`, naming a product and/or ingredient) with `doses` (`SupplementDoseInput`).
 - `source_descriptors` — provenance used to upsert `hp.dim_source`, exactly as for `IngestBatch`. Every intake row's `source_id` must have a descriptor.
+- `unmapped_metrics` — raw vendor fields an intake parser deliberately skipped because the decision tree produced no home for them. Same role as `IngestBatch.unmapped_metrics`: an intake parser declares an unmapped field here rather than dropping it silently or inventing a row.
+- `skipped_rows` — source rows that had a home but still produced no loadable intake row (for example a malformed quantity), surfaced with a reason. Same role as `IngestBatch.skipped_rows`.
 - `ingest_batch` — optional batch id recorded on each event for source-artifact loads.
+
+`unmapped_metrics` and `skipped_rows` are **review metadata carried on the
+batch, never loadable rows** — `persist_intake_batch` does not write them, the
+same posture as `IngestBatch.unmapped_metrics`. An intake parser declares its
+gaps exactly the way an observation parser does.
 
 Validation that the store boundary enforces (also runnable on the batch via `validate()`):
 
