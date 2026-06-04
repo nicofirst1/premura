@@ -74,12 +74,12 @@ Dependencies: WP01
 
 Dependencies: WP03
 
-- [ ] T017 `supplement_intake_adherence` signal (coverage "K of N days", caller-declared matcher + bounded window) in a registered signal module (WP04)
-- [ ] T018 `nutrition_intake_trend` signal (up/down/flat over a caller-declared nutrient/energy key + window; missing days stay visible gaps) (WP04)
-- [ ] T019 Positive-path fixtures (data present → answer surfaced) for BOTH signals, distinct from refusal tests (NFR-... / D5) (WP04)
-- [ ] T020 Refusal-path tests: missing (declared-but-empty domain), stale, insufficient — structurally distinct states (WP04)
-- [ ] T021 Local-midnight divergence fixture: reported day/window metadata uses the same local-day basis the computation uses (NFR-006 / D4) (WP04)
-- [ ] T022 Non-diagnostic assertion test: no reference ranges / "should" / p-value / "significant" / causal language (NFR-001) (WP04)
+- [x] T017 `supplement_intake_adherence` signal (coverage "K of N days", caller-declared matcher + bounded window) in a registered signal module (WP04)
+- [x] T018 `nutrition_intake_trend` signal (up/down/flat over a caller-declared nutrient/energy key + window; missing days stay visible gaps) (WP04)
+- [x] T019 Positive-path fixtures (data present → answer surfaced) for BOTH signals, distinct from refusal tests (NFR-... / D5) (WP04)
+- [x] T020 Refusal-path tests: missing (declared-but-empty domain), stale, insufficient — structurally distinct states (WP04)
+- [x] T021 Local-midnight divergence fixture: reported day/window metadata uses the same local-day basis the computation uses (NFR-006 / D4) (WP04)
+- [x] T022 Non-diagnostic assertion test: no reference ranges / "should" / p-value / "significant" / causal language (NFR-001) (WP04)
 
 ## WP05 — Default-surface MCP tool exposure
 
