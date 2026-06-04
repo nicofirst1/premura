@@ -59,13 +59,13 @@ Dependencies: WP01
 **Goal**: `nutrition_intake` and `supplement_intake` resolve to usable payloads through the existing `@resolver(domain=...)` seam, with explicit no-fallback behavior and no shared-seam special-casing. Prompt: [tasks/WP03-intake-resolvers.md](tasks/WP03-intake-resolvers.md)
 **Priority**: P0 (foundation of the read chain). **Independent test**: each domain resolves usable rows to a payload and refuses honestly when none/stale; a same-named observation row never satisfies an intake dependency.
 
-- [ ] T011 Implement `engine/views/nutrition_intake.py` resolver (generic daily-points payload, local-calendar-day basis) (WP03)
-- [ ] T012 Implement `engine/views/supplement_intake.py` resolver (generic logged-days payload, caller-declared matcher) (WP03)
-- [ ] T013 Register both modules in `_BUILTIN_RESOLVER_MODULES` in `engine/__init__.py` (WP03)
-- [ ] T014 No-fallback regression: a same-named observation row never satisfies an intake dependency (NFR-003) (WP03)
-- [ ] T015 Structural-generalization test: no per-domain branch in the shared `resolve_dependency` path (NFR-005) (WP03)
-- [ ] T016 Local-midnight resolver test: `day_basis = local_calendar_day` and the resolved day set uses local day (NFR-006) (WP03)
-- [ ] T031 Extend `compute()` to thread caller params to a signal fn, backward-compatibly — the parameterized-signal invocation seam WP04/WP05 use (WP03)
+- [x] T011 Implement `engine/views/nutrition_intake.py` resolver (generic daily-points payload, local-calendar-day basis) (WP03)
+- [x] T012 Implement `engine/views/supplement_intake.py` resolver (generic logged-days payload, caller-declared matcher) (WP03)
+- [x] T013 Register both modules in `_BUILTIN_RESOLVER_MODULES` in `engine/__init__.py` (WP03)
+- [x] T014 No-fallback regression: a same-named observation row never satisfies an intake dependency (NFR-003) (WP03)
+- [x] T015 Structural-generalization test: no per-domain branch in the shared `resolve_dependency` path (NFR-005) (WP03)
+- [x] T016 Local-midnight resolver test: `day_basis = local_calendar_day` and the resolved day set uses local day (NFR-006) (WP03)
+- [x] T031 Extend `compute()` to thread caller params to a signal fn, backward-compatibly — the parameterized-signal invocation seam WP04/WP05 use (WP03)
 
 ## WP04 — Intake descriptive signals
 
