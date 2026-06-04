@@ -19,7 +19,8 @@ subtasks:
 - T004
 - T005
 - T006
-shell_pid: '5646'
+shell_pid: "5646"
+agent: "claude:opus:python-implementer:implementer"
 history:
 - 2026-06-04T11:52:07Z created by /spec-kitty.tasks
 authoritative_surface: src/premura/parsers/
@@ -184,3 +185,7 @@ not patch inside-boundary internals.
 - Re-grep every `.parse(` call site and verify routing; the live-trial harness is
   the easy one to forget.
 - Verify the contract no longer contradicts itself.
+
+## Activity Log
+
+- 2026-06-04T12:38:02Z – claude:opus:python-implementer:implementer – shell_pid=5646 – Assigned agent via action command
