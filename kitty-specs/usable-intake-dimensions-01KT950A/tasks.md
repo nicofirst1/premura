@@ -45,7 +45,9 @@ MVP / start here: **WP01** and **WP03** have no dependencies and can be dispatch
 ## WP02 — Reference intake parser + synthetic fixtures
 
 **Goal**: prove `parse → IntakeBatch → persist_intake_batch` end-to-end with synthetic fixtures that carry the parser-side edge cases. Prompt: [tasks/WP02-reference-intake-parser-and-fixtures.md](tasks/WP02-reference-intake-parser-and-fixtures.md)
-**Priority**: P1. **Depends on**: WP01. **Independent test**: parsing the synthetic fixtures lands rows in the intake tables, with gaps surfaced and edge cases preserved.
+**Priority**: P1. **Independent test**: parsing the synthetic fixtures lands rows in the intake tables, with gaps surfaced and edge cases preserved.
+
+Dependencies: WP01
 
 - [ ] T007 Author synthetic **nutrition** fixture: event-level + item-level quantity, an event whose `local_tz` puts it on a different local day than its UTC date, one unmapped source field (WP02)
 - [ ] T008 Author synthetic **supplement** fixture: a text-only dose, a numeric dose, `local_tz`, one unmapped source field (WP02)
@@ -67,7 +69,9 @@ MVP / start here: **WP01** and **WP03** have no dependencies and can be dispatch
 ## WP04 — Intake descriptive signals
 
 **Goal**: one descriptive, non-diagnostic signal per domain, in the already-registered signal modules (no `__init__.py` edit), with positive-path, refusal-path, and local-midnight fixtures. Prompt: [tasks/WP04-intake-signals.md](tasks/WP04-intake-signals.md)
-**Priority**: P1. **Depends on**: WP03. **Independent test**: each signal answers when data is present, refuses honestly otherwise, never imputes missing days, and reports on the same day-basis it computes on.
+**Priority**: P1. **Independent test**: each signal answers when data is present, refuses honestly otherwise, never imputes missing days, and reports on the same day-basis it computes on.
+
+Dependencies: WP03
 
 - [ ] T017 `supplement_intake_adherence` signal (coverage "K of N days", caller-declared matcher + bounded window) in a registered signal module (WP04)
 - [ ] T018 `nutrition_intake_trend` signal (up/down/flat over a caller-declared nutrient/energy key + window; missing days stay visible gaps) (WP04)
@@ -79,7 +83,9 @@ MVP / start here: **WP01** and **WP03** have no dependencies and can be dispatch
 ## WP05 — Default-surface MCP tool exposure
 
 **Goal**: expose both intake signals as thin tools on the default MCP surface, following the existing parameterized signal-tool pattern. Prompt: [tasks/WP05-mcp-intake-tools.md](tasks/WP05-mcp-intake-tools.md)
-**Priority**: P2. **Depends on**: WP04. **Independent test**: both tools are published on the default surface and return the standard envelope with structurally-distinct missing/stale/insufficient states.
+**Priority**: P2. **Independent test**: both tools are published on the default surface and return the standard envelope with structurally-distinct missing/stale/insufficient states.
+
+Dependencies: WP04
 
 - [ ] T023 `supplement_intake_adherence` tool wrapper in `mcp/server.py` (thin; no re-derivation from raw tables) (WP05)
 - [ ] T024 `nutrition_intake_trend` tool wrapper in `mcp/server.py` (WP05)
@@ -89,7 +95,9 @@ MVP / start here: **WP01** and **WP03** have no dependencies and can be dispatch
 ## WP06 — Skill intake path + add-a-dimension rule + recommendation
 
 **Goal**: document the intake parser path generically in the parser-generator skill (matching WP01's settled protocol), write the generalized add-a-dimension rule (validated by both domains), and the deferred-abstraction recommendation note. Prompt: [tasks/WP06-skill-rule-and-recommendation.md](tasks/WP06-skill-rule-and-recommendation.md)
-**Priority**: P2. **Depends on**: WP01, WP04. **Independent test**: the skill documents the as-implemented protocol; the rule lists domain-agnostic steps both shipped domains followed; the recommendation states go/no-go + sketch + trigger.
+**Priority**: P2. **Independent test**: the skill documents the as-implemented protocol; the rule lists domain-agnostic steps both shipped domains followed; the recommendation states go/no-go + sketch + trigger.
+
+Dependencies: WP01, WP04
 
 - [ ] T027 Update the parser-generator skill to document the intake parser path generically (emit `IntakeBatch`, persist path), matching WP01 (FR-007 skill half) (WP06)
 - [ ] T028 Write the generalized "add a new intake dimension" rule, validated by both shipped domains (FR-009 / SC-005) (WP06)
