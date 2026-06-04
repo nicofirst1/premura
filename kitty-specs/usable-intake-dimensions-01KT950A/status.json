@@ -1,16 +1,16 @@
 {
-  "event_count": 41,
-  "last_event_id": "01KT9GZNFJE0D03SR6Q6ZD87CA",
-  "materialized_at": "2026-06-04T14:35:49.106231+00:00",
+  "event_count": 42,
+  "last_event_id": "01KT9GZPMTM012TWMD7PGSYR8Y",
+  "materialized_at": "2026-06-04T14:35:50.298614+00:00",
   "mission_number": "19",
   "mission_slug": "usable-intake-dimensions-01KT950A",
   "mission_type": "software-dev",
   "summary": {
-    "approved": 1,
+    "approved": 0,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
-    "done": 5,
+    "done": 6,
     "for_review": 0,
     "in_progress": 0,
     "in_review": 0,
@@ -54,10 +54,10 @@
     },
     "WP06": {
       "actor": "user",
-      "force_count": 1,
-      "lane": "approved",
-      "last_event_id": "01KT9GWNXR4BQX9PAKVN497BP5",
-      "last_transition_at": "2026-06-04T14:34:11.256934+00:00"
+      "force_count": 2,
+      "lane": "done",
+      "last_event_id": "01KT9GZPMTM012TWMD7PGSYR8Y",
+      "last_transition_at": "2026-06-04T14:35:50.298614+00:00"
     }
   }
 }
