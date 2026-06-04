@@ -189,3 +189,4 @@ not patch inside-boundary internals.
 ## Activity Log
 
 - 2026-06-04T12:38:02Z – claude:opus:python-implementer:implementer – shell_pid=5646 – Assigned agent via action command
+- 2026-06-04T12:53:15Z – claude:opus:python-implementer:implementer – shell_pid=5646 – Ready for review: union ParseOutput + normalize_parse_output dispatch; all 4 call sites routed; IntakeBatch gap surface added; existing parsers + live-trial seam green
