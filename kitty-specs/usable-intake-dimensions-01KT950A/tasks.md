@@ -49,10 +49,10 @@ MVP / start here: **WP01** and **WP03** have no dependencies and can be dispatch
 
 Dependencies: WP01
 
-- [ ] T007 Author synthetic **nutrition** fixture: event-level + item-level quantity, an event whose `local_tz` puts it on a different local day than its UTC date, one unmapped source field (WP02)
-- [ ] T008 Author synthetic **supplement** fixture: a text-only dose, a numeric dose, `local_tz`, one unmapped source field (WP02)
-- [ ] T009 Write the minimal reference intake parser (nutrition + supplement) emitting an `IntakeBatch` via the WP01 protocol; declare unmapped fields as gaps (no silent drop) (WP02)
-- [ ] T010 End-to-end test: parse → persist → assert rows in intake tables; unmapped surfaced; text-only dose + event/item quantities persist distinctly (WP02)
+- [x] T007 Author synthetic **nutrition** fixture: event-level + item-level quantity, an event whose `local_tz` puts it on a different local day than its UTC date, one unmapped source field (WP02)
+- [x] T008 Author synthetic **supplement** fixture: a text-only dose, a numeric dose, `local_tz`, one unmapped source field (WP02)
+- [x] T009 Write the minimal reference intake parser (nutrition + supplement) emitting an `IntakeBatch` via the WP01 protocol; declare unmapped fields as gaps (no silent drop) (WP02)
+- [x] T010 End-to-end test: parse → persist → assert rows in intake tables; unmapped surfaced; text-only dose + event/item quantities persist distinctly (WP02)
 
 ## WP03 — Intake resolvers (both domains)
 
