@@ -19,8 +19,8 @@ subtasks:
 - T020
 - T021
 - T022
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "67211"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "81268"
 history:
 - 2026-06-04T11:52:07Z created by /spec-kitty.tasks
 authoritative_surface: src/premura/engine/descriptive_signals.py
@@ -151,3 +151,4 @@ through the signal envelopes (black-box).
 
 - 2026-06-04T13:40:12Z – claude:opus:python-implementer:implementer – shell_pid=67211 – Started implementation via action command
 - 2026-06-04T13:49:28Z – claude:opus:python-implementer:implementer – shell_pid=67211 – Ready for review: both intake signals via WP03 resolvers + T031 seam; 14/14 new tests green; lint/format clean; mypy clean for changed file (2 pre-existing errors in untouched _localtime/_query); only pre-existing test_bmi_dispatches_through_compute fails.
+- 2026-06-04T13:50:07Z – claude:opus:python-reviewer:reviewer – shell_pid=81268 – Started review via action command
