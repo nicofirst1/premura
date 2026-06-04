@@ -396,18 +396,28 @@ def test_supplement_tool_states_are_structurally_distinct(
         "vitamin d3", window_days=30, warehouse_path=stale_db
     )
 
-    # insufficient: a single fresh logged day. The tool's default min_logged_days
-    # is 1, so a single fresh day is "available"; to surface insufficient through
-    # the engine we seed zero distinct logged days inside freshness but a present
-    # row — exercised at the engine level in test_intake_signals. Here we assert
-    # the two states the tool's own knobs can reach stay distinct, plus that
-    # neither collapses into the other or into a generic error string.
+    # insufficient: a single FRESH logged day, but the caller demands at least two
+    # distinct logged days via the published ``min_logged_days`` knob. That knob is
+    # how the documented four-state contract is made reachable on this tool — a
+    # single fresh day clears the default floor of 1 and would otherwise report
+    # ``available``.
+    insufficient_db = _warehouse(tmp_path / "i")
+    _seed_supplement(
+        insufficient_db,
+        [_supplement_event(ts_utc=_naive(anchor_ts, days=1), dedupe_key="fresh1")],
+    )
+    insufficient = server.supplement_intake_adherence(
+        "vitamin d3",
+        window_days=30,
+        min_logged_days=2,
+        warehouse_path=insufficient_db,
+    )
+
     assert missing["status"] == "missing_input"
     assert stale["status"] == "stale_input"
-    assert missing["status"] != stale["status"]
-    # Each unavailable state is a real label, not a generic "error".
-    assert missing["status"] in {"missing_input", "stale_input", "insufficient_data"}
-    assert stale["status"] in {"missing_input", "stale_input", "insufficient_data"}
+    assert insufficient["status"] == "insufficient_data"
+    # All three refusal states are structurally distinct through the tool layer.
+    assert len({missing["status"], stale["status"], insufficient["status"]}) == 3
 
 
 # ---------------------------------------------------------------------------

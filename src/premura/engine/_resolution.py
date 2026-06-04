@@ -15,11 +15,12 @@ Public callers should always reach this surface through ``premura.engine``::
         resolve_dependency,
     )
 
-The seam ships four valid semantic domains. Two now have concrete resolvers:
-``observation_history`` and ``profile_context``. The other two
-(``nutrition_intake`` and ``supplement_intake``) remain valid declaration
-targets and intentionally return ``unsupported_domain`` until later parser
-missions ship real rows.
+The seam ships four valid semantic domains, all backed by concrete resolvers:
+``observation_history``, ``profile_context``, ``nutrition_intake``, and
+``supplement_intake``. The two intake domains resolve through their registered
+resolvers (under :mod:`premura.engine.views`) and refuse honestly with a
+``missing`` / ``stale`` / ``insufficient`` outcome when no usable intake rows
+exist — never falling back to a same-named observation row.
 
 Key design rules (do not relax without a new mission):
 
@@ -57,12 +58,12 @@ SEMANTIC_DOMAINS: frozenset[str] = frozenset(
 )
 """The four valid semantic domains a :class:`DependencyDeclaration` may target.
 
-Two are supported by concrete resolvers (after WP02 lands):
-``observation_history`` and ``profile_context``. The other two
-(``nutrition_intake``, ``supplement_intake``) are valid declaration targets but
-resolve to an explicit unresolved outcome until later missions ship real
-parser-produced rows. The set is intentionally closed in this mission;
-expanding it requires a new mission per the spec's domain-vs-shape rubric.
+All four are backed by concrete resolvers: ``observation_history``,
+``profile_context``, ``nutrition_intake``, and ``supplement_intake``. The intake
+domains resolve through their registered resolvers and refuse honestly when no
+usable intake rows exist (never via cross-domain fallback to a same-named
+observation). The set is intentionally closed; expanding it requires a new
+mission per the spec's domain-vs-shape rubric.
 """
 
 

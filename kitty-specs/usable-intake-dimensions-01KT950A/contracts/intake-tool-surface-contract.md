@@ -26,8 +26,13 @@ surface.
 
 ## Behavioral promises
 
-- supplement tool: descriptive logged-on-K-of-N-days style answer only
-- nutrition tool: descriptive up/down/flat answer only
+- supplement tool: descriptive logged-on-K-of-N-days style answer only. The
+  caller-facing `min_logged_days` knob (default 1) is what makes the
+  `insufficient_data` state reachable on this tool — a single fresh logged day
+  clears the default floor and reports `available`, so a caller who needs a
+  thicker history raises the floor.
+- nutrition tool: descriptive up/down/flat answer only (its `insufficient_data`
+  floor of two distinct days is reachable with default params)
 - no fallback into another domain's value
 - no diagnosis / recommendation / causal language
 

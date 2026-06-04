@@ -186,11 +186,12 @@ RESOLVERS: dict[str, Resolver] = {}
 
 Empty at import time; populated by ``@resolver(domain=...)`` decorators when
 resolver implementation modules (under ``premura.engine.views``) are imported.
-The merged mission ships concrete observation and profile resolvers.
-Unsupported-but-declarable domains (``nutrition_intake``, ``supplement_intake``)
-intentionally have no entry here — they resolve via the fall-through
-``unsupported_domain`` outcome in
-:func:`premura.engine._resolution.resolve_dependency`.
+All four semantic domains ship concrete resolvers: ``observation_history`` and
+``profile_context``, plus the ``nutrition_intake`` and ``supplement_intake``
+intake resolvers. The ``unsupported_domain`` fall-through in
+:func:`premura.engine._resolution.resolve_dependency` now applies only to a
+hypothetical future domain added to ``SEMANTIC_DOMAINS`` before its resolver is
+registered.
 """
 
 

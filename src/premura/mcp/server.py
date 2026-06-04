@@ -465,25 +465,34 @@ def supplement_intake_adherence(
     matcher: str,
     *,
     window_days: int | None = None,
+    min_logged_days: int | None = None,
     warehouse_path: Path | None = None,
 ) -> dict[str, Any]:
     """Coverage "K of N days" for a caller-declared supplement matcher (delegates to engine).
 
     The caller declares the supplement ``matcher`` (interpreted by the WP03
-    resolver's pinned matcher semantics) and an optional bounded ``window_days``;
-    both pass straight through to the WP04 ``supplement_intake_adherence`` signal
-    via ``compute(..., params=...)``. This wrapper validates only the caller-facing
+    resolver's pinned matcher semantics), an optional bounded ``window_days``, and
+    an optional ``min_logged_days`` — the minimum distinct logged days the caller
+    needs before a coverage answer is meaningful (default ``1``). All three pass
+    straight through to the WP04 ``supplement_intake_adherence`` signal via
+    ``compute(..., params=...)``. This wrapper validates only the caller-facing
     parameter shape — it re-reads no intake rows and re-derives no coverage. The
     engine returns one of four structurally-distinct states (``available`` /
     ``missing_input`` / ``stale_input`` / ``insufficient_data``); an empty,
     stale, or too-thin domain comes back as an honest refusal with its own state,
     never substituted from another source and never a diagnosis or recommendation.
+    Raising ``min_logged_days`` above ``1`` is how a caller makes the
+    ``insufficient_data`` state reachable (a single fresh logged day satisfies the
+    default floor and reports ``available``).
     """
     clean_matcher = _require_matcher("matcher", matcher)
     _ensure_optional_window("window_days", window_days, minimum=1, maximum=365)
+    _ensure_optional_window("min_logged_days", min_logged_days, minimum=1, maximum=365)
     params: dict[str, Any] = {"matcher": clean_matcher}
     if window_days is not None:
         params["window_days"] = window_days
+    if min_logged_days is not None:
+        params["min_logged_days"] = min_logged_days
     return _run_signal(
         "supplement_intake_adherence",
         warehouse_path=warehouse_path,

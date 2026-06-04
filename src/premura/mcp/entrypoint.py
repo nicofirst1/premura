@@ -319,20 +319,30 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
     # generic error and never a diagnosis or recommendation.
 
     @mcp.tool()
-    def supplement_intake_adherence(matcher: str, window_days: int | None = None) -> dict[str, Any]:
+    def supplement_intake_adherence(
+        matcher: str,
+        window_days: int | None = None,
+        min_logged_days: int | None = None,
+    ) -> dict[str, Any]:
         """Report logged-day coverage (K of N days) for a supplement you name.
 
         You declare the supplement ``matcher`` (a product or ingredient your
-        filter selects, interpreted by Premura's pinned matcher semantics) and an
-        optional bounded ``window_days``. Returns plain coverage only — how many
-        distinct days in the window carried a logged dose — with no adherence
-        judgement, recommendation, or reference range. An empty, stale, or
-        too-thin domain comes back as one of the structurally-distinct states
-        (``missing_input`` / ``stale_input`` / ``insufficient_data``) with a
-        structured report, never substituted from another source.
+        filter selects, interpreted by Premura's pinned matcher semantics), an
+        optional bounded ``window_days``, and an optional ``min_logged_days`` —
+        the fewest distinct logged days you need before coverage is worth
+        reporting (default ``1``; raise it to have a too-thin history come back as
+        ``insufficient_data`` instead of ``available``). Returns plain coverage
+        only — how many distinct days in the window carried a logged dose — with
+        no adherence judgement, recommendation, or reference range. An empty,
+        stale, or too-thin domain comes back as one of the structurally-distinct
+        states (``missing_input`` / ``stale_input`` / ``insufficient_data``) with
+        a structured report, never substituted from another source.
         """
         return warehouse_server.supplement_intake_adherence(
-            matcher, window_days=window_days, warehouse_path=warehouse_path
+            matcher,
+            window_days=window_days,
+            min_logged_days=min_logged_days,
+            warehouse_path=warehouse_path,
         )
 
     @mcp.tool()
