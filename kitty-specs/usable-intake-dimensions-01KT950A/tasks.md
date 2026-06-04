@@ -88,10 +88,10 @@ Dependencies: WP03
 
 Dependencies: WP04
 
-- [ ] T023 `supplement_intake_adherence` tool wrapper in `mcp/server.py` (thin; no re-derivation from raw tables) (WP05)
-- [ ] T024 `nutrition_intake_trend` tool wrapper in `mcp/server.py` (WP05)
-- [ ] T025 Register both on the default surface in `mcp/entrypoint.py`; assert both published (FR-006) (WP05)
-- [ ] T026 Tool tests: one successful call per tool + missing/stale/insufficient tool-path tests (distinct states) (WP05)
+- [x] T023 `supplement_intake_adherence` tool wrapper in `mcp/server.py` (thin; no re-derivation from raw tables) (WP05)
+- [x] T024 `nutrition_intake_trend` tool wrapper in `mcp/server.py` (WP05)
+- [x] T025 Register both on the default surface in `mcp/entrypoint.py`; assert both published (FR-006) (WP05)
+- [x] T026 Tool tests: one successful call per tool + missing/stale/insufficient tool-path tests (distinct states) (WP05)
 
 ## WP06 — Skill intake path + add-a-dimension rule + recommendation
 
