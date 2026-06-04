@@ -15,8 +15,8 @@ subtasks:
 - T024
 - T025
 - T026
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "87932"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "13004"
 history:
 - 2026-06-04T11:52:07Z created by /spec-kitty.tasks
 authoritative_surface: src/premura/mcp/
@@ -113,3 +113,4 @@ tool payloads only.
 
 - 2026-06-04T13:56:12Z – claude:opus:python-implementer:implementer – shell_pid=87932 – Started implementation via action command
 - 2026-06-04T14:07:43Z – claude:opus:python-implementer:implementer – shell_pid=87932 – Ready for review: thin default-surface intake tools (supplement_intake_adherence + nutrition_intake_trend) delegating to WP04 signals via compute(params=); both published (+2 -> 22 tools); three refusal states stay distinct; lint/format/mypy/pytest green
+- 2026-06-04T14:08:26Z – claude:opus:python-reviewer:reviewer – shell_pid=13004 – Started review via action command
