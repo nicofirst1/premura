@@ -100,10 +100,10 @@ Dependencies: WP04
 
 Dependencies: WP01, WP04
 
-- [ ] T027 Update the parser-generator skill to document the intake parser path generically (emit `IntakeBatch`, persist path), matching WP01 (FR-007 skill half) (WP06)
-- [ ] T028 Write the generalized "add a new intake dimension" rule, validated by both shipped domains (FR-009 / SC-005) (WP06)
-- [ ] T029 Write the recommendation note: go/no-go + sketch + explicit trigger condition for a dedicated intake-dimension contract (FR-010 / SC-006) (WP06)
-- [ ] T030 Doc-consistency check: skill + rule describe the protocol/contract exactly as WP01 implemented it (no doc↔code drift) (WP06)
+- [x] T027 Update the parser-generator skill to document the intake parser path generically (emit `IntakeBatch`, persist path), matching WP01 (FR-007 skill half) (WP06)
+- [x] T028 Write the generalized "add a new intake dimension" rule, validated by both shipped domains (FR-009 / SC-005) (WP06)
+- [x] T029 Write the recommendation note: go/no-go + sketch + explicit trigger condition for a dedicated intake-dimension contract (FR-010 / SC-006) (WP06)
+- [x] T030 Doc-consistency check: skill + rule describe the protocol/contract exactly as WP01 implemented it (no doc↔code drift) (WP06)
 
 ---
 
