@@ -17,8 +17,8 @@ subtasks:
 - T028
 - T029
 - T030
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "22348"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "39072"
 history:
 - 2026-06-04T11:52:07Z created by /spec-kitty.tasks
 authoritative_surface: src/premura/skills/parser-generator/
@@ -131,3 +131,4 @@ add it to back SC-005. Otherwise the DoD is reviewer-verifiable against the code
 
 - 2026-06-04T14:13:28Z – claude:opus:python-implementer:implementer – shell_pid=22348 – Started implementation via action command
 - 2026-06-04T14:25:49Z – claude:opus:python-implementer:implementer – shell_pid=22348 – Ready for review: skill intake path (T027), add-a-dimension rule (T028), recommendation note (T029), doc-consistency test (T030). WP03 matcher carry-forward captured in INTAKE_DIMENSIONS.md + kitty-specs contract gap noted for mission-review.
+- 2026-06-04T14:26:52Z – claude:opus:python-reviewer:reviewer – shell_pid=39072 – Started review via action command
