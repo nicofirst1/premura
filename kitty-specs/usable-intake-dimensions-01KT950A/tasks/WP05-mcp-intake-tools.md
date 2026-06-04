@@ -15,6 +15,8 @@ subtasks:
 - T024
 - T025
 - T026
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "87932"
 history:
 - 2026-06-04T11:52:07Z created by /spec-kitty.tasks
 authoritative_surface: src/premura/mcp/
@@ -106,3 +108,7 @@ tool payloads only.
 
 - Confirm parameter pass-through matches the WP04 signal signatures.
 - Confirm both tools are on the default registry and the count assertion is exact.
+
+## Activity Log
+
+- 2026-06-04T13:56:12Z – claude:opus:python-implementer:implementer – shell_pid=87932 – Started implementation via action command

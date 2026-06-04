@@ -1,7 +1,7 @@
 {
-  "event_count": 26,
-  "last_event_id": "01KT9ENYM59AVW46WENCD2Z453",
-  "materialized_at": "2026-06-04T13:55:33.637836+00:00",
+  "event_count": 28,
+  "last_event_id": "01KT9EQ4CXHT48B0ZY3D950GED",
+  "materialized_at": "2026-06-04T13:56:12.317366+00:00",
   "mission_number": "",
   "mission_slug": "usable-intake-dimensions-01KT950A",
   "mission_type": "software-dev",
@@ -12,9 +12,9 @@
     "claimed": 0,
     "done": 0,
     "for_review": 0,
-    "in_progress": 0,
+    "in_progress": 1,
     "in_review": 0,
-    "planned": 2
+    "planned": 1
   },
   "work_packages": {
     "WP01": {
@@ -46,11 +46,11 @@
       "last_transition_at": "2026-06-04T13:55:33.637836+00:00"
     },
     "WP05": {
-      "actor": "finalize-tasks",
+      "actor": "claude:opus:python-implementer:implementer",
       "force_count": 1,
-      "lane": "planned",
-      "last_event_id": "01KT983GWED4Y3EZ7666AKQXKD",
-      "last_transition_at": "2026-06-04T12:00:38.286759+00:00"
+      "lane": "in_progress",
+      "last_event_id": "01KT9EQ4CXHT48B0ZY3D950GED",
+      "last_transition_at": "2026-06-04T13:56:12.317366+00:00"
     },
     "WP06": {
       "actor": "finalize-tasks",
