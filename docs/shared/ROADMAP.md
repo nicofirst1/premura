@@ -47,9 +47,15 @@ The user is actively writing more requirements; this section will grow.
    contributing it back as a public PR is reviewed — is now stated consistently
    across `operating-agent-roles.md`, ADR 0010, and [DOCTRINE.md](DOCTRINE.md), and
    pinned by a test (see [STATUS.md](STATUS.md) §"Runtime build-and-use parser boundary").
-   **Still deferred (named so future work is not assumed shipped):** the real
-   cheap-model live trial, conversation-turn capture, the judge AI, the improvement
-   hook, the fixture auto-generator, and the analyze-and-answer slice.
+   The **real cheap-model live trial has since shipped** (the
+   `cheap-operator-live-trial-01KT6PSA` mission), and a follow-up
+   (`live-trial-follow-up-hardening`, 2026-06-04) closed the seam's deferred
+   real-model factories for real, added structured per-attempt telemetry,
+   enforced the local-only model backend in code, and added an opt-in,
+   synthetic-only retained-sandbox inspection mode. **Still deferred (named so
+   future work is not assumed shipped):** a tool-using / multiturn operator tier,
+   conversation-turn capture, the judge AI, the improvement hook, the fixture
+   auto-generator, and the analyze-and-answer slice.
 
 Read the full phase doc for the rationale, risk retirement, and exit criteria:
 

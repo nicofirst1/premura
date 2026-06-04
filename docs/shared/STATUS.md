@@ -3,7 +3,7 @@
 > Status: live reference. Snapshot of what is true and shipped today.
 >
 > Companion to [SPEC.md](SPEC.md), [../history/architecture/ARCHITECTURE_HISTORY.md](../history/architecture/ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](../using/USERJOURNEY.md), [ROADMAP.md](ROADMAP.md).
-> Snapshot date: **2026-06-02**.
+> Snapshot date: **2026-06-04**.
 
 ## TL;DR
 
@@ -334,11 +334,40 @@ through the existing development/review process.
 - **Merged and green.** The full session-log substrate slice — the session
   log store (its own local DuckDB file), runtime contract checker, sandbox/ingest
   runner, synthetic fixtures + good/dishonest reference parsers, deterministic
-  three-rule grader, offline repeatable check, and the live-trial seam (real-model
-  wiring a named follow-up) — landed in `798493b` with all eight work packages
+  three-rule grader, offline repeatable check, and the live-trial seam (its
+  real-model wiring was a named follow-up, **since closed and hardened** — see
+  "Cheap-model live trial" below) — landed in `798493b` with all eight work packages
   approved and merged. The deterministic grader recomputes every rule from ground
   truth (warehouse + fixture manifest), so a parser that silently drops a field is
   graded **fail** by reconciliation even when its own metadata looks clean.
+
+## Cheap-model live trial — seam closed and hardened (shipped 2026-06-04)
+
+The `cheap-operator-live-trial-01KT6PSA` mission shipped the real cheap-model
+live trial over the session-log substrate's seam, and a follow-up
+(`live-trial-follow-up-hardening`) finished the cleanup the seam still carried:
+
+- **Seam closed for real (FR-001/002).** `live_trial.real_model_operator()` /
+  `real_model_driver()` are now fully closed delegated factories — a bare call
+  defaults to the committed synthetic fixture / default local model and returns a
+  working object instead of raising `NotImplementedError`. The seam no longer
+  describes itself as a deferred placeholder probe.
+- **Inspection-grade attempt telemetry (FR-003).** Each attempt records a
+  structured `SelfReconciliationResult` (source columns, accounted, unaccounted)
+  plus any parser import/parse error carried separately, so a local inspector can
+  see *why* an attempt failed, not just that it did.
+- **Local-only backend enforced in code (FR-005 / NFR-002).** A non-local
+  `OLLAMA_URL` is rejected before any network request, so prompt data and source
+  samples cannot leave the machine through config drift — the local-model
+  boundary is a code check, not just prose.
+- **Opt-in, synthetic-only inspection mode (FR-004 / NFR-004).** `keep_sandboxes`
+  retains the kept-sandbox trees for inspection, but **only** for a synthetic
+  source; a real-data run always tears its sandbox down, so the no-persist rule
+  for real local data still holds. Default behavior is unchanged (teardown).
+
+The matching real-model test stays behind the `live_trial` marker and runs
+locally against Ollama; the default suite still needs no model server and the
+live-trial path can never block CI (NFR-001 / NFR-005).
 
 ## What's working end-to-end
 
@@ -356,7 +385,7 @@ through the existing development/review process.
 | Export artifact encryption | ✅ | Live round-trip verified 2026-05-21 against `~/.config/premura/age.key`; decrypted snapshot byte-identical to `data/duck/health.duckdb` (`diff` empty). Per-test keypair regression in `tests/test_encrypt_roundtrip.py`. |
 | Drive upload (now OPT-IN, not auto) | ⚠️ Code complete, not live | `hpipe upload` only runs on explicit invocation. `run-monthly` no longer pushes to Drive — it stops after the encrypted artifact lands locally. |
 | Launchd plist | ✅ | Bootstrapped 2026-05-21 (`com.nbrandizzi.premura.monthly`). `kickstart` fired the macOS notification, `run-monthly` reached the `_wait_for_ready` loop without ingesting (no `.ready`), exited cleanly on SIGTERM. Plist render covered by `tests/test_launchd_plist.py` (incl. `plutil -lint`). |
-| Tests | ✅ | 785/785 pytest pass, incl. a real-data HC regression that round-trips ~900k rows, the FR-6 `age` round-trip suite, FR-8 plist render + `plutil -lint`, full Stage 2 engine + Stage 3 signal-tool coverage (all six signal-backed tools end-to-end), the profile/intake contract harness, profile capture append/supersede + allowlist enforcement, idempotent intake-batch loading, the Stage 2 input-resolution seam + BMI proof-consumer coverage, the evidence-admissibility policy layer, the Stage 3 analytical contract + `change_point`/`smoothed_average` end-to-end (admissibility gate, result envelope, closed confound vocabulary, first-class analytical question types), the `correlate` lagged-association tool end-to-end (paired-input preparation, same-day-after-lag pairing, Spearman + `N_eff` band, paired-sample floor refusals, forbidden-parameter refusals, `common_cause_plausible`, and the thin MCP wrapper), the completed `rolling_mean` and `paired_t_test` tools end-to-end (declared-window moving summary with coverage/imputation metadata; before/after anchor-date paired difference with descriptive uncertainty and no significance/causation claim; their refusal classes, trace identities, and thin MCP wrappers; the exactly-five-tool public catalog), and the session research trace end-to-end (the `005_trace_audit.sql` migration + `trace.*` ownership, the pure `premura.trace` service — raw-vs-N counting, exact-retry collapse, refusal breakdown, surfaced-unavailable fallback, engine-purity byte-identical envelopes — and the three trace MCP tools on the default/operator surfaces). |
+| Tests | ✅ | 1000/1000 default-suite pytest pass (the `live_trial`-marked real-model test is excluded from the default suite and runs locally against Ollama), incl. a real-data HC regression that round-trips ~900k rows, the FR-6 `age` round-trip suite, FR-8 plist render + `plutil -lint`, full Stage 2 engine + Stage 3 signal-tool coverage (all six signal-backed tools end-to-end), the profile/intake contract harness, profile capture append/supersede + allowlist enforcement, idempotent intake-batch loading, the Stage 2 input-resolution seam + BMI proof-consumer coverage, the evidence-admissibility policy layer, the Stage 3 analytical contract + `change_point`/`smoothed_average` end-to-end (admissibility gate, result envelope, closed confound vocabulary, first-class analytical question types), the `correlate` lagged-association tool end-to-end (paired-input preparation, same-day-after-lag pairing, Spearman + `N_eff` band, paired-sample floor refusals, forbidden-parameter refusals, `common_cause_plausible`, and the thin MCP wrapper), the completed `rolling_mean` and `paired_t_test` tools end-to-end (declared-window moving summary with coverage/imputation metadata; before/after anchor-date paired difference with descriptive uncertainty and no significance/causation claim; their refusal classes, trace identities, and thin MCP wrappers; the exactly-five-tool public catalog), and the session research trace end-to-end (the `005_trace_audit.sql` migration + `trace.*` ownership, the pure `premura.trace` service — raw-vs-N counting, exact-retry collapse, refusal breakdown, surfaced-unavailable fallback, engine-purity byte-identical envelopes — and the three trace MCP tools on the default/operator surfaces), and the cheap-model live-trial seam hardening (closed real-model factories, structured per-attempt `SelfReconciliationResult` with parser-error telemetry carried separately, local-only `OLLAMA_URL` rejection, and the synthetic-only retained-sandbox inspection mode). |
 
 ## Warehouse contents (current snapshot)
 
