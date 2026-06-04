@@ -19,6 +19,8 @@ subtasks:
 - T015
 - T016
 - T031
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "36316"
 history:
 - 2026-06-04T11:52:07Z created by /spec-kitty.tasks
 authoritative_surface: src/premura/engine/views/
@@ -169,3 +171,7 @@ Black-box through `resolve_dependency`, not resolver internals.
   invariant (not a trivially-true check).
 - Confirm `day_basis` is set on every payload and the local-midnight test crosses
   the boundary.
+
+## Activity Log
+
+- 2026-06-04T13:08:21Z – claude:opus:python-implementer:implementer – shell_pid=36316 – Started implementation via action command
