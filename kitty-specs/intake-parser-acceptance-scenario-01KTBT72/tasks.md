@@ -28,11 +28,11 @@ own. Tests are first-class here (this mission *is* a test harness).
 | T014 | Assemble the intake `DrawerGradingStrategy` | WP04 |  | [D] |
 | T015 | `scenario_registry.py` — observation + intake → `all_scenarios()` | WP04 |  | [D] |
 | T016 | Layer-1 happy-path e2e: reference parser → full three-rule pass | WP04 |  | [D] |
-| T017 | e2e: mis-filed intake row → `loaded` fails | WP05 | [P] |
-| T018 | e2e: unmappable field → declared gap (not silent drop) | WP05 | [P] |
-| T019 | e2e: renamed-but-consumed column → accounted | WP05 | [P] |
-| T020 | e2e: intake-only vs both drawer targets | WP05 | [P] |
-| T021 | structural: no per-source branch + ≥2 scenarios over one path | WP05 | [P] |
+| T017 | e2e: mis-filed intake row → `loaded` fails | WP05 | [D] |
+| T018 | e2e: unmappable field → declared gap (not silent drop) | WP05 | [D] |
+| T019 | e2e: renamed-but-consumed column → accounted | WP05 | [D] |
+| T020 | e2e: intake-only vs both drawer targets | WP05 | [D] |
+| T021 | structural: no per-source branch + ≥2 scenarios over one path | WP05 | [D] |
 | T022 | Widen captured provenance to carry the intake surface (transport) | WP06 |  | [D] |
 | T023 | `live_trial` run path drives a `Scenario`; pass strategy to `grade()` | WP06 |  | [D] |
 | T024 | Failure path persists a completed failing record on import/parse failure | WP06 |  | [D] |
@@ -129,11 +129,11 @@ WP06 (deterministic) and WP07 (live), not here.
 **Independent test**: the five e2e/structural tests pass deterministically, offline.
 **Prompt**: [tasks/WP05-intake-edge-cases-and-no-fork.md](tasks/WP05-intake-edge-cases-and-no-fork.md) · ~340 lines
 
-- [ ] T017 e2e: mis-filed intake row → `loaded` fails (WP05)
-- [ ] T018 e2e: unmappable field → declared gap (not silent drop) (WP05)
-- [ ] T019 e2e: renamed-but-consumed column → accounted (WP05)
-- [ ] T020 e2e: intake-only vs both drawer targets (WP05)
-- [ ] T021 structural: no per-source branch + ≥2 scenarios over one path (WP05)
+- [x] T017 e2e: mis-filed intake row → `loaded` fails (WP05)
+- [x] T018 e2e: unmappable field → declared gap (not silent drop) (WP05)
+- [x] T019 e2e: renamed-but-consumed column → accounted (WP05)
+- [x] T020 e2e: intake-only vs both drawer targets (WP05)
+- [x] T021 structural: no per-source branch + ≥2 scenarios over one path (WP05)
 
 **Dependencies**: WP04. **Risks**: edge cases asserted at component level (D7) — every one here is full sandbox→grade.
 
