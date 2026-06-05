@@ -98,10 +98,13 @@ without reshaping anything:
 - **Intake-only vs both.** A parser that returns only intake (no observation) is
   graded fully on the intake drawer; a parser that returns both is graded on each
   drawer in its scenario's target set — the harness no longer assumes observation.
-- **Live model produces a malformed parser.** A cheap-model attempt that fails to
-  import or parse records a structured per-attempt self-reconciliation and a
-  parser error, and the run still produces a well-formed (failing) verdict for
-  inspection — it does not raise.
+- **Malformed parser (failure path).** A parser that fails to import or parse
+  still produces and **persists a completed, failing graded record** with a
+  structured per-attempt self-reconciliation and the parser error — the harness
+  never crashes before a gradeable record exists (FR-009). This failure path is
+  proved **deterministically in the default suite** via a stub operator that emits
+  a broken parser; it does **not** require the live model. (The live cheap model
+  hitting the same path in layer 2 is the opt-in version of the same guarantee.)
 
 ## Requirements
 
@@ -109,15 +112,17 @@ without reshaping anything:
 
 | ID | Requirement | Status |
 |---|---|---|
-| FR-001 | The harness exposes a **scenario** abstraction: a named bundle of (source artifact, ground-truth field manifest, target warehouse drawer(s), reference parser). A new acceptance source is added by **registering a scenario**, not by branching harness code. | Draft |
+| FR-001 | The harness exposes a **scenario** abstraction: a named bundle of (source artifact, ground-truth field manifest, target warehouse drawer(s), reference parser). A new acceptance source is added by **registering a scenario**, not by branching harness code. **Failure clause (testable):** adding a new scenario must require **no change to the shared grading logic** — registering the scenario is the only edit. In particular, *which warehouse tables count as boundary truth for `loaded`* and *which `runtime_valid` clause set applies* are carried **by the scenario**, never hardwired in the shared grader. | Draft |
 | FR-002 | A new **structurally-alien synthetic intake source** ships as a scenario: a made-up meals/supplements file whose container, field names, units, and time encoding differ from every built-in source **and** from the existing intake fixtures. It covers at least one nutrition shape and one supplement shape. It contains **no real data**. | Draft |
 | FR-003 | The harness **keeps and grades the intake half** of a parse: when a parser returns intake (a parse output carrying an intake batch), the harness loads it through the shipped intake load path and reconciles it. Intake is no longer discarded. | Draft |
-| FR-004 | **Layer 1:** a committed **reference intake parser**, run as the operator in the default suite, produces a well-formed three-rule verdict — `loaded` (the expected intake rows landed in the intake tables), `runtime_valid` (the parser passes the parser contract), `honest_about_gaps` (every unmapped/skipped source field is declared, none silently dropped). | Draft |
-| FR-005 | The grader computes every rule for an intake scenario **by reconciliation against ground truth** (the intake tables + the scenario manifest), **never** from the parser's or runner's self-report. The persisted contract-pass is the grader's recomputed `runtime_valid`. | Draft |
-| FR-006 | For an intake scenario, the `loaded` rule reconciles rows in the **intake drawer** (the nutrition/supplement homes). A row that lands in the **observation drawer** instead is a `loaded` **failure** (no cross-drawer coercion is scored as success). | Draft |
+| FR-004 | **Layer 1:** a committed **reference intake parser**, run as the operator in the default suite, produces a well-formed three-rule verdict — `loaded` (the expected intake rows landed in the intake tables), `runtime_valid` (the bounded runtime-checkable subset of FR-010, **not** the full parser-review contract), `honest_about_gaps` (per FR-005: every unmapped/skipped source field declared, none silently dropped). | Draft |
+| FR-005 | Every rule for an intake scenario is computed **by reconciliation against ground truth** (the intake-drawer tables + the scenario manifest), **never** from the parser's or runner's self-report. The parser's **declared** unmapped/skipped metadata is reconciled against the **manifest-derived** gap set: a source field that is **neither truly loaded (warehouse truth) nor declared** is a silent-drop **failure** of `honest_about_gaps`. Declared gaps are **evidence to verify, never proof to accept**. The persisted contract-pass is the grader's recomputed `runtime_valid`. | Draft |
+| FR-006 | For an intake scenario, the `loaded` rule reconciles rows in the **intake drawer** (the nutrition/supplement homes), per the boundary-truth tables the scenario carries (FR-001). A row that lands in the **observation drawer** instead is a `loaded` **failure** (no cross-drawer coercion is scored as success). | Draft |
 | FR-007 | **Layer 2:** the local cheap model can drive the intake scenario as the operator — it authors the intake parser for the alien source and is graded by the same three rules. The run records `run_kind`, `operator_model`, and `driver_model` so capability tiers stay comparable. | Draft |
 | FR-008 | Each intake-scenario run records, for the graded attempt(s), a structured per-attempt **self-reconciliation** (source columns / accounted / unaccounted) plus any parser import/parse error, written to the session log by the harness as the sole log writer — the same record shape the observation scenario produces. | Draft |
-| FR-009 | The intake scenario is built so the later **answer + judge** step (layer 3) can attach without reshaping it: the scenario record carries the source, manifest, and graded-run references a future answer-and-judge pass would consume. Layer 3 itself is **not** built here. | Draft |
+| FR-009 | **Failure path produces a completed record.** A **completed, persisted graded run record** exists even when the operator's parser fails to import or parse: the failure path produces and persists a *failing* graded record (with the structured self-reconciliation + parser error of FR-008) and **never crashes before a gradeable record exists**. | Draft |
+| FR-010 | `runtime_valid` is a **bounded runtime-checkable subset**, explicitly **not** the full parser-review contract (`src/premura/parsers/CONTRACT.md`). For an **observation** scenario it is exactly the clauses the shipped `check_runtime_contract` enforces: (1) no reserved `derived:` namespace emitted, (2) declared set equals emitted set, (3) every declared metric exists in `dim_metric`, (4) the ingest produced a batch without raising. For an **intake** scenario it is the **analogous** bounded check over the intake batch's declared/emitted surface (produced-a-batch-without-raising; declared-equals-emitted over the intake batch's declared keys; no reserved/forbidden namespace) — defined for the intake batch shape, because the observation clauses are `metric_id`/`dim_metric`-shaped and do not transfer verbatim. The spec's clause list and the implementation's runtime checker **must agree** (verified in plan). | Draft |
+| FR-011 | The intake scenario is built so the later **answer + judge** step (layer 3) can attach without reshaping it: the scenario record carries the source, manifest, and graded-run references a future answer-and-judge pass would consume. Layer 3 itself is **not** built here. | Draft |
 
 ### Non-Functional Requirements
 
@@ -144,12 +149,14 @@ without reshaping anything:
 
 | ID | Criterion |
 |---|---|
-| SC-001 | An automatic test proves Premura can be taught to read an unfamiliar meals/supplements file: the reference intake parser scores a full pass on all three rules, every run, with no network. |
-| SC-002 | A meals/supplement row that lands in the measurements drawer never counts as success — proven by a test where a mis-filed row fails the `loaded` rule. |
-| SC-003 | The same harness scores at least two different kinds of source (a measurements file and a meals/supplements file) with no source-specific code in the shared scoring path. |
-| SC-004 | A source field with no canonical home is reported as a declared gap, never silently dropped — proven by a fixture containing an unmappable field. |
-| SC-005 | The local cheap model drives the meals/supplements scenario end-to-end at least once (opt-in run), producing a well-formed verdict whose score is recorded for inspection and never asserted as a pass. |
-| SC-006 | Enabling intake scoring leaves every existing measurements-scenario result unchanged. |
+| SC-001 | An **end-to-end** default-suite run (drop → parse → load → grade) proves Premura can be taught to read an unfamiliar meals/supplements file: the reference intake parser scores a full pass on all three rules, every run, with no network. |
+| SC-002 | A meals/supplement row that lands in the measurements drawer never counts as success — proven by an **end-to-end harness run** where a mis-filed row fails the `loaded` rule (not a component-level assertion). |
+| SC-003 | The same harness scores at least two different kinds of source (a measurements file and a meals/supplements file) with **no source-specific code in the shared scoring path**, proven by both scenarios running through the one abstraction. |
+| SC-004 | A source field with no canonical home is reported as a declared gap, never silently dropped — proven by an **end-to-end harness run** over a fixture containing an unmappable field; a parser that drops it is graded not honest. |
+| SC-005 | The local cheap model drives the meals/supplements scenario end-to-end at least once (opt-in run), producing a well-formed verdict whose score is recorded for inspection and **never asserted as a pass**. |
+| SC-006 | Enabling intake scoring leaves every existing measurements-scenario result **unchanged** (regression-proven). |
+| SC-007 | The **failure path** is proved by an **end-to-end default-suite run** using a stub operator that emits a broken parser: a completed, persisted, **failing** graded record exists and the harness does not crash (FR-009). |
+| SC-008 | `runtime_valid` for both scenarios checks **exactly the bounded runtime subset** (FR-010) and **never** the full parser-review contract — asserted against the shipped runtime checker's clause set. |
 
 ## Key Entities
 
@@ -166,7 +173,12 @@ without reshaping anything:
 - **Intake batch + load path** — the shipped `IntakeBatch` → `persist_intake_batch`
   path the harness now drives and reconciles.
 - **Three-rule verdict** — `loaded` / `runtime_valid` / `honest_about_gaps`,
-  recomputed from ground truth.
+  recomputed from ground truth. `runtime_valid` is the **bounded runtime subset**
+  (FR-010), not the full parser-review contract; `loaded` boundary truth and the
+  `runtime_valid` clause set are **carried by the scenario**, not hardwired.
+- **Bounded runtime check** — the closed clause set `runtime_valid` recomputes
+  (FR-010): the observation form is the shipped `check_runtime_contract`; the
+  intake form is its analogue over the intake batch's declared/emitted surface.
 - **Run record** — the session-log entry carrying `run_kind`, `operator_model`,
   `driver_model`, and per-attempt self-reconciliation.
 
