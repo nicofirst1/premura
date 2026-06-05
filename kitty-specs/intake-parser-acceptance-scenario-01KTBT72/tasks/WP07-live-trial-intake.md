@@ -110,3 +110,4 @@ Implement: `spec-kitty agent action implement WP07 --agent <name>`
 ## Activity Log
 
 - 2026-06-05T14:13:45Z – claude:opus:python-implementer:implementer – shell_pid=77537 – Started implementation via action command
+- 2026-06-05T14:27:59Z – claude:opus:python-implementer:implementer – shell_pid=77537 – Ready for review: layer-2 live-trial intake — drawer-driven probe (T027), scenario-parametric entry recording run_kind/operator_model/driver_model (T028), live_trial-marked intake test that prints score and never asserts pass (T029). grade() still no fork; default suite excludes the marker.
