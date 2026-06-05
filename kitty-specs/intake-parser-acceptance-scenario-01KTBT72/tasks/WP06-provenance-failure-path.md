@@ -15,8 +15,8 @@ subtasks:
 - T024
 - T025
 - T026
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "47182"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "61398"
 history:
 - timestamp: '2026-06-05T12:36:09Z'
   action: created
@@ -125,3 +125,4 @@ Implement: `spec-kitty agent action implement WP06 --agent <name>`
 
 - 2026-06-05T13:42:57Z – claude:opus:python-implementer:implementer – shell_pid=47182 – Started implementation via action command
 - 2026-06-05T13:56:28Z – claude:opus:python-implementer:implementer – shell_pid=47182 – Ready for review: captured provenance carries the intake runtime-evidence seam (produced+error), live path drives a Scenario into generic grade() with no fork, failure path persists a completed failing record (StubBrokenParserOperator), self_reconcile widened. ruff/format/mypy clean; 1026 passed (4 live_trial deselected).
+- 2026-06-05T13:57:38Z – claude:opus:python-reviewer:reviewer – shell_pid=61398 – Started review via action command
