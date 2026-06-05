@@ -21,6 +21,8 @@ subtasks:
 - T014
 - T015
 - T016
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "37614"
 history:
 - timestamp: '2026-06-05T12:36:09Z'
   action: created
@@ -119,3 +121,7 @@ intake value.
 Plan/base **master** → merge **master**; worktree per `lanes.json` lane. Depends on WP01,
 WP02, WP03 (branch from the integrated lane base).
 Implement: `spec-kitty agent action implement WP04 --agent <name>`
+
+## Activity Log
+
+- 2026-06-05T13:33:55Z – claude:opus:python-implementer:implementer – shell_pid=37614 – Started implementation via action command
