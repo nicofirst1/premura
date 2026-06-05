@@ -20,7 +20,8 @@ subtasks:
 - T003
 - T004
 - T005
-shell_pid: '3359'
+shell_pid: "3359"
+agent: "claude:opus:python-implementer:implementer"
 history:
 - timestamp: '2026-06-05T12:36:09Z'
   action: created
@@ -147,3 +148,7 @@ is provably non-regressing.
 Plan/base branch **master**; final merge target **master**. The execution worktree is
 allocated per the computed lane in `lanes.json`. Implement with:
 `spec-kitty agent action implement WP01 --agent <name>`
+
+## Activity Log
+
+- 2026-06-05T12:57:51Z – claude:opus:python-implementer:implementer – shell_pid=3359 – Assigned agent via action command
