@@ -18,8 +18,8 @@ subtasks:
 - T019
 - T020
 - T021
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "64981"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "73259"
 history:
 - timestamp: '2026-06-05T12:36:09Z'
   action: created
@@ -137,3 +137,4 @@ Implement: `spec-kitty agent action implement WP05 --agent <name>`
 
 - 2026-06-05T14:01:00Z – claude:opus:python-implementer:implementer – shell_pid=64981 – Started implementation via action command
 - 2026-06-05T14:09:52Z – claude:opus:python-implementer:implementer – shell_pid=64981 – Ready for review: intake edge-case e2es (T017-T020) + structural no-fork guard (T021); 23 passed incl. observation golden + WP04 happy-path
+- 2026-06-05T14:10:30Z – claude:opus:python-reviewer:reviewer – shell_pid=73259 – Started review via action command
