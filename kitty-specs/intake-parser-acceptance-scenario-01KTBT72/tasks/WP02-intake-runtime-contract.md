@@ -12,6 +12,8 @@ subtasks:
 - T007
 - T008
 - T030
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "19145"
 history:
 - timestamp: '2026-06-05T12:36:09Z'
   action: created
@@ -142,3 +144,7 @@ correct stage-tagged `error`; a clean intake run yields `status="ok"`.
 
 Plan/base **master** → merge **master**; worktree per `lanes.json` lane.
 Implement: `spec-kitty agent action implement WP02 --agent <name>`
+
+## Activity Log
+
+- 2026-06-05T13:14:50Z – claude:opus:python-implementer:implementer – shell_pid=19145 – Started implementation via action command
