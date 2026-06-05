@@ -125,6 +125,34 @@ _Avoid_: span (in prose; it is the underlying standard's word, not ours).
 The narrow, analytical-tools-only honesty ledger that records the analytical tool calls in a research session and derives the *measured* disclosure "K user-facing findings among N unique hypotheses examined." It is engine-pure and measured-not-self-reported. It is **not** the general session log, and the two are kept in separate files.
 _Avoid_: audit log, session log (these are a different, broader layer).
 
+### Acceptance evaluation
+
+This is the project's central bet turned into a test. Two grading layers exist and they are **not** interchangeable. The **deterministic checks** are a cheap, objective floor we build first and run often; the real destination is the **live, two-agent, judge-graded end-to-end** evaluation. Build the floor, but do not lose the destination — a green deterministic run is necessary, not sufficient. (Source of truth: GitHub issue #10.) The first scenario being built against this is **intake** — a made-up meals/supplements source the operator must learn to read — gradeable by the deterministic checks now and by the judge later.
+
+**End-to-end agent acceptance evaluation**:
+The final acceptance gate: a self-running sandbox that hands an agent nothing but a fresh clone and measures whether it can install Premura, teach it to read an unfamiliar health-data source, and answer a real person's health questions without fabricating. It is standing infrastructure — run periodically and scored across many runs — never a blocking CI gate, because agent runs are nondeterministic.
+_Avoid_: integration test, smoke test, CI gate.
+
+**Driver agent**:
+The agent that *plays the human* in an acceptance run — a capable model improvising as a realistic, even naive, user ("can you install this? here's my data — how's my heart?"). It is the test driver, not the thing being tested.
+_Avoid_: user simulator, test client, bot.
+
+**Operator agent**:
+The Premura-operating agent *under test* in an acceptance run — the thing being audited. It is run deliberately across capability tiers, weak and cheap models included, because the claim being tested is that the repo is operable by agents at all, not only by frontier ones.
+_Avoid_: system under test, assistant.
+
+**Capability floor**:
+The smallest, cheapest model that can still operate Premura end-to-end successfully. This is the central number the acceptance evaluation chases: frontier-only success is necessary but not sufficient evidence for the agent-first thesis.
+_Avoid_: baseline model, minimum spec.
+
+**Deterministic check**:
+The cheap, objective grading layer — did the expected rows land with the right meaning and units, did the parser pass its contract. Runs often and may even gate CI. It is the floor of the acceptance evaluation, not the whole of it.
+_Avoid_: unit test, assertion (when what is being graded is a whole agent run).
+
+**Judge agent**:
+The grading agent that evaluates the hard, health-specific half of an acceptance run — did the operator stay grounded and honest: surface unmapped fields, refuse on insufficient or garbage data, and avoid fabricated or ungrounded advice. It turns risk R7 (fabricated/ungrounded advice) into a measurable test. Not built yet.
+_Avoid_: scorer, validator, classifier.
+
 ### Planning
 
 **Mission**:

@@ -3,7 +3,7 @@
 > Status: live reference. Snapshot of what is true and shipped today.
 >
 > Companion to [SPEC.md](SPEC.md), [../history/architecture/ARCHITECTURE_HISTORY.md](../history/architecture/ARCHITECTURE_HISTORY.md), [USERJOURNEY.md](../using/USERJOURNEY.md), [ROADMAP.md](ROADMAP.md).
-> Snapshot date: **2026-06-04**.
+> Snapshot date: **2026-06-05**.
 
 ## TL;DR
 
@@ -15,7 +15,7 @@
 
 The first grounded analytical behavior now exists on top of the v1 ingest pipeline.
 
-**Stage 2 — six grounded signals.** `src/premura/engine/` ships six freshness-aware answers over the user's own warehouse data (`descriptive_signals.py`, `comparative_signals.py`), registered through the static built-in module list and documented by `src/premura/engine/CONTRACT.md`:
+**Stage 2 — eight grounded signals.** `src/premura/engine/` ships eight freshness-aware answers over the user's own warehouse data (`descriptive_signals.py`, `comparative_signals.py`), registered through the static built-in module list and documented by `src/premura/engine/CONTRACT.md`:
 
 | Signal | Family | Answers |
 |---|---|---|
@@ -25,17 +25,19 @@ The first grounded analytical behavior now exists on top of the v1 ingest pipeli
 | `weight_trend` | trend | "Is my weight rising / falling / flat?" (carry-forward flagged) |
 | `sleep_deep_pct_baseline` | baseline | "Is my latest deep-sleep % below my **own** recent normal?" |
 | `hrv_change_around_date` | change | "Did my overnight HRV shift after a date I name?" |
+| `supplement_intake_adherence` | status | "How consistently have I logged a supplement I name, recently?" (coverage "logged on K of the last N days") |
+| `nutrition_intake_trend` | trend | "Is my logged nutrient/energy field trending up / down / flat?" (never imputes missing days) |
 
-These are descriptive/comparative only — no reference ranges, no diagnosis, no statistical significance, no causation. They return explicit stale / unavailable / insufficient-data states instead of presenting a misleading answer.
+The last two are the **usable-intake-dimensions** signals — see "Usable intake dimensions" below. These are descriptive/comparative only — no reference ranges, no diagnosis, no statistical significance, no causation. They return explicit stale / unavailable / insufficient-data states instead of presenting a misleading answer.
 
 **BMI cross-domain proof consumer (shipped).** Stage 2 now hosts the first cross-domain signal: `bmi` (family `status`). It resolves a declared standing height from profile context plus a usable body-weight observation from observation history through the new input-resolution seam, computes `BMI = weight_kg / height_m**2`, and refuses honestly (`missing_input` / `stale_input` / `insufficient_data`) when either prerequisite is missing or stale. BMI is a **structural proof consumer**, not a clinical or diagnostic interpretation.
 
-**Input-resolution seam (shipped).** `premura.engine.resolve_dependency`, `RESOLVERS`, and the `@resolver(domain=...)` decorator (re-exported from `premura.engine`) wire declared dependencies to domain-aware resolvers. Two concrete resolvers ship in this mission: `observation_history` (`premura/engine/views/observation.py`) and `profile_context` (`premura/engine/views/profile.py`). Two `SEMANTIC_DOMAINS` remain declarable but unresolved — `nutrition_intake` and `supplement_intake` — and currently return an explicit `usable=False, absence_reason="unsupported_domain"` outcome until a future mission ships their concrete resolvers.
+**Input-resolution seam (shipped).** `premura.engine.resolve_dependency`, `RESOLVERS`, and the `@resolver(domain=...)` decorator (re-exported from `premura.engine`) wire declared dependencies to domain-aware resolvers. All four `SEMANTIC_DOMAINS` now have concrete resolvers: `observation_history` (`premura/engine/views/observation.py`), `profile_context` (`premura/engine/views/profile.py`), and — added by the usable-intake-dimensions mission (see below) — `nutrition_intake` (`premura/engine/views/nutrition_intake.py`) and `supplement_intake` (`premura/engine/views/supplement_intake.py`). The old `unsupported_domain` outcome for the two intake domains is gone; a declared intake dependency with no matching, fresh row now resolves to an explicit missing / stale non-usable outcome and never substitutes a value from another domain.
 
 **Stage 3 — two entrypoints, clean boundary.** `src/premura/mcp/` ships two entrypoints:
 
-- **Default agent surface (`premura-mcp`)** — twenty tools: two validity-gated catalog/summary helpers (`list_metrics`, `metric_summary`) that delegate entirely to the Stage 2 engine, the six signal-backed tools listed above, two agent-mediated profile-capture tools (`profile_context_supported_fields`, `profile_context_record`), the five Stage 3 analytical tools (`change_point`, `smoothed_average`, `correlate`, `rolling_mean`, `paired_t_test` — see "Stage 3 analytical tools" below), the three session research trace tools (`research_trace_open`, `research_trace_mark_surfaced`, `research_trace_disclosure` — see "Session research trace" below), and the two PubMed grounding tools (`pubmed_search`, `pubmed_fetch` — see "PubMed literature grounding" below). No tool on this surface reads `hp.*` directly; catalog/signal access goes through the engine, profile capture goes through the bounded `record_profile_context` store boundary, the trace tools read only derived `trace.*` rows, and the PubMed tools reach only the external literature (never `hp.*` health rows). This is the fully validity-gated / bounded default path.
-- **Operator surface (`premura-mcp-operator`)** — all twenty default tools plus `query_warehouse` (raw SQL escape hatch), for twenty-one total. Lower-guarantee: `query_warehouse` returns raw rows without Stage 2 validity, freshness, or imputation guarantees. Agent use requires explicit user approval, enforced by surface separation plus an explicit launch acknowledgment (`--ack` / `PREMURA_OPERATOR_ACK`) the operator entrypoint demands before exposing the raw-SQL tool.
+- **Default agent surface (`premura-mcp`)** — twenty-two tools: two validity-gated catalog/summary helpers (`list_metrics`, `metric_summary`) that delegate entirely to the Stage 2 engine, the eight signal-backed tools listed above (the six originals plus `supplement_intake_adherence` and `nutrition_intake_trend`), two agent-mediated profile-capture tools (`profile_context_supported_fields`, `profile_context_record`), the five Stage 3 analytical tools (`change_point`, `smoothed_average`, `correlate`, `rolling_mean`, `paired_t_test` — see "Stage 3 analytical tools" below), the three session research trace tools (`research_trace_open`, `research_trace_mark_surfaced`, `research_trace_disclosure` — see "Session research trace" below), and the two PubMed grounding tools (`pubmed_search`, `pubmed_fetch` — see "PubMed literature grounding" below). No tool on this surface reads `hp.*` directly; catalog/signal access goes through the engine, profile capture goes through the bounded `record_profile_context` store boundary, the trace tools read only derived `trace.*` rows, and the PubMed tools reach only the external literature (never `hp.*` health rows). This is the fully validity-gated / bounded default path.
+- **Operator surface (`premura-mcp-operator`)** — all twenty-two default tools plus `query_warehouse` (raw SQL escape hatch), for twenty-three total. Lower-guarantee: `query_warehouse` returns raw rows without Stage 2 validity, freshness, or imputation guarantees. Agent use requires explicit user approval, enforced by surface separation plus an explicit launch acknowledgment (`--ack` / `PREMURA_OPERATOR_ACK`) the operator entrypoint demands before exposing the raw-SQL tool.
 
 The signal-backed tools return a structured payload whose `status` is `available` / `missing_input` / `stale_input` / `insufficient_data`. When an answer is unavailable the payload's `message` carries the signal's authored missing-input guidance, and `missing_input` / `stale_input` responses attach a structured `missing_input` report (`required_inputs` / `missing_inputs` / `stale_inputs`) a caller can branch on.
 
@@ -369,6 +371,47 @@ The matching real-model test stays behind the `live_trial` marker and runs
 locally against Ollama; the default suite still needs no model server and the
 live-trial path can never block CI (NFR-001 / NFR-005).
 
+## Usable intake dimensions (shipped 2026-06-04)
+
+The `usable-intake-dimensions-01KT950A` mission (mission #19, merged `4d9a12e`)
+turned the two intake domains from *storable-but-unreadable* into first-class,
+agent-usable dimensions. Before it, `nutrition_intake` / `supplement_intake` had
+storage tables and a load path but every declared dependency resolved to
+`unsupported_domain`, and there was no parser path from a source export to
+`IntakeBatch`. All six work packages are merged and done. What now works:
+
+- **Both intake domains resolve through the existing seam.** Concrete resolvers
+  (`engine/views/nutrition_intake.py`, `engine/views/supplement_intake.py`) ride
+  the same `@resolver(domain=...)` seam as observation/profile — no new
+  abstraction layer, no per-domain branch in the shared resolution path (asserted
+  structurally by `tests/test_intake_resolvers.py`). A "no matching row" case
+  returns an explicit missing / stale outcome and **never** falls back to a
+  same-named observation row.
+- **Two new descriptive signals, on the default surface.**
+  `supplement_intake_adherence` (family `status`) answers "logged on K of the last
+  N days" for a caller-declared supplement matcher; `nutrition_intake_trend`
+  (family `trend`) answers up/down/flat for a caller-declared nutrient/energy key
+  and **never imputes** missing days. Both return the standard four-state envelope
+  and are exposed as default-surface tools (taking it to twenty-two).
+- **A real runtime intake-parser path.** The parser contract and the
+  `parser-generator` skill were updated together so a runtime agent can
+  **build-and-use** an intake parser (`parse → IntakeBatch → persist`) for the
+  operator's own data with no review — the same build-and-use boundary settled for
+  observation parsers. A minimal reference intake parser + synthetic fixture prove
+  the path end-to-end (FR-007/008).
+- **The generalization is written down, not just asserted.**
+  `docs/building/architecture/INTAKE_DIMENSIONS.md` records the four
+  domain-agnostic steps for making any declared intake dimension usable, validated
+  by both shipped domains; the go/no-go on a dedicated intake-dimension contract
+  (deliberately **not** built — constraint C-003) is reasoned in
+  `docs/building/planning/intake-dimension-contract-recommendation.md`.
+
+**Still deferred (named so it is not assumed shipped):** adapting a *specific real
+vendor export* (an actual meal-logging or supplement-log file) is now
+fill-in-the-blank parser work against the documented path — the foundation is
+done, a concrete real-source parser is not yet written. Age-adjusted
+interpretation also remains deferred.
+
 ## What's working end-to-end
 
 | Component | State | Evidence |
@@ -385,7 +428,7 @@ live-trial path can never block CI (NFR-001 / NFR-005).
 | Export artifact encryption | ✅ | Live round-trip verified 2026-05-21 against `~/.config/premura/age.key`; decrypted snapshot byte-identical to `data/duck/health.duckdb` (`diff` empty). Per-test keypair regression in `tests/test_encrypt_roundtrip.py`. |
 | Drive upload (now OPT-IN, not auto) | ⚠️ Code complete, not live | `hpipe upload` only runs on explicit invocation. `run-monthly` no longer pushes to Drive — it stops after the encrypted artifact lands locally. |
 | Launchd plist | ✅ | Bootstrapped 2026-05-21 (`com.nbrandizzi.premura.monthly`). `kickstart` fired the macOS notification, `run-monthly` reached the `_wait_for_ready` loop without ingesting (no `.ready`), exited cleanly on SIGTERM. Plist render covered by `tests/test_launchd_plist.py` (incl. `plutil -lint`). |
-| Tests | ✅ | 1000/1000 default-suite pytest pass (the `live_trial`-marked real-model test is excluded from the default suite and runs locally against Ollama), incl. a real-data HC regression that round-trips ~900k rows, the FR-6 `age` round-trip suite, FR-8 plist render + `plutil -lint`, full Stage 2 engine + Stage 3 signal-tool coverage (all six signal-backed tools end-to-end), the profile/intake contract harness, profile capture append/supersede + allowlist enforcement, idempotent intake-batch loading, the Stage 2 input-resolution seam + BMI proof-consumer coverage, the evidence-admissibility policy layer, the Stage 3 analytical contract + `change_point`/`smoothed_average` end-to-end (admissibility gate, result envelope, closed confound vocabulary, first-class analytical question types), the `correlate` lagged-association tool end-to-end (paired-input preparation, same-day-after-lag pairing, Spearman + `N_eff` band, paired-sample floor refusals, forbidden-parameter refusals, `common_cause_plausible`, and the thin MCP wrapper), the completed `rolling_mean` and `paired_t_test` tools end-to-end (declared-window moving summary with coverage/imputation metadata; before/after anchor-date paired difference with descriptive uncertainty and no significance/causation claim; their refusal classes, trace identities, and thin MCP wrappers; the exactly-five-tool public catalog), and the session research trace end-to-end (the `005_trace_audit.sql` migration + `trace.*` ownership, the pure `premura.trace` service — raw-vs-N counting, exact-retry collapse, refusal breakdown, surfaced-unavailable fallback, engine-purity byte-identical envelopes — and the three trace MCP tools on the default/operator surfaces), and the cheap-model live-trial seam hardening (closed real-model factories, structured per-attempt `SelfReconciliationResult` with parser-error telemetry carried separately, local-only `OLLAMA_URL` rejection, and the synthetic-only retained-sandbox inspection mode). |
+| Tests | ✅ | 1000/1000 default-suite pytest pass (the `live_trial`-marked real-model test is excluded from the default suite and runs locally against Ollama), incl. a real-data HC regression that round-trips ~900k rows, the FR-6 `age` round-trip suite, FR-8 plist render + `plutil -lint`, full Stage 2 engine + Stage 3 signal-tool coverage (all eight signal-backed tools end-to-end, including the `supplement_intake_adherence` / `nutrition_intake_trend` intake signals — `tests/test_intake_resolvers.py`, `tests/test_intake_signals.py` — with a local-midnight fixture and a no-cross-domain-fallback regression), the profile/intake contract harness, profile capture append/supersede + allowlist enforcement, idempotent intake-batch loading, the Stage 2 input-resolution seam + BMI proof-consumer coverage, the evidence-admissibility policy layer, the Stage 3 analytical contract + `change_point`/`smoothed_average` end-to-end (admissibility gate, result envelope, closed confound vocabulary, first-class analytical question types), the `correlate` lagged-association tool end-to-end (paired-input preparation, same-day-after-lag pairing, Spearman + `N_eff` band, paired-sample floor refusals, forbidden-parameter refusals, `common_cause_plausible`, and the thin MCP wrapper), the completed `rolling_mean` and `paired_t_test` tools end-to-end (declared-window moving summary with coverage/imputation metadata; before/after anchor-date paired difference with descriptive uncertainty and no significance/causation claim; their refusal classes, trace identities, and thin MCP wrappers; the exactly-five-tool public catalog), and the session research trace end-to-end (the `005_trace_audit.sql` migration + `trace.*` ownership, the pure `premura.trace` service — raw-vs-N counting, exact-retry collapse, refusal breakdown, surfaced-unavailable fallback, engine-purity byte-identical envelopes — and the three trace MCP tools on the default/operator surfaces), and the cheap-model live-trial seam hardening (closed real-model factories, structured per-attempt `SelfReconciliationResult` with parser-error telemetry carried separately, local-only `OLLAMA_URL` rejection, and the synthetic-only retained-sandbox inspection mode). |
 
 ## Warehouse contents (current snapshot)
 
