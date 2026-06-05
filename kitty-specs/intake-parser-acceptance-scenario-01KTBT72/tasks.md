@@ -16,10 +16,10 @@ own. Tests are first-class here (this mission *is* a test harness).
 | T003 | Implement the observation `DrawerGradingStrategy` (wraps today's logic) | WP01 |  | [D] |
 | T004 | Refactor `grade()` to compute rules via the strategy (no per-drawer branch) | WP01 |  | [D] |
 | T005 | Golden-verdict regression test (observation byte-identical) | WP01 |  | [D] |
-| T006 | Implement `check_intake_runtime_contract` over the IntakeBatch surface | WP02 | [P] |
-| T007 | Return a `ContractCheckResult`-shaped result (sorted violations) | WP02 | [P] |
-| T008 | Test intake runtime clauses + clause names/count match contract | WP02 | [P] |
-| T030 | Runner witnesses intake parse/validate/persist (stage-tagged error) | WP02 |  |
+| T006 | Implement `check_intake_runtime_contract` over the IntakeBatch surface | WP02 | [D] |
+| T007 | Return a `ContractCheckResult`-shaped result (sorted violations) | WP02 | [D] |
+| T008 | Test intake runtime clauses + clause names/count match contract | WP02 | [D] |
+| T030 | Runner witnesses intake parse/validate/persist (stage-tagged error) | WP02 |  | [D] |
 | T009 | Author `alien_intake.csv` (meals+supplements, epoch-µs, foreign cols) | WP03 | [P] |
 | T010 | Author `alien_intake_manifest.yaml` (grader-only ground truth) | WP03 | [P] |
 | T011 | Implement `reference_intake_parser.py` (+ `MAPPED_SOURCE_COLUMNS`) | WP03 | [P] |
@@ -81,10 +81,10 @@ not the full parser-review contract, and not a fake canonical-metric mirror.
 **Independent test**: each clause's pass/fail; clause names/count match the contract.
 **Prompt**: [tasks/WP02-intake-runtime-contract.md](tasks/WP02-intake-runtime-contract.md) · ~200 lines
 
-- [ ] T006 Implement `check_intake_runtime_contract` over the IntakeBatch surface (WP02)
-- [ ] T007 Return a `ContractCheckResult`-shaped result (sorted violations) (WP02)
-- [ ] T008 Test intake runtime clauses + clause names/count match contract (WP02)
-- [ ] T030 Runner witnesses intake parse/validate/persist; emits stage-tagged error (WP02)
+- [x] T006 Implement `check_intake_runtime_contract` over the IntakeBatch surface (WP02)
+- [x] T007 Return a `ContractCheckResult`-shaped result (sorted violations) (WP02)
+- [x] T008 Test intake runtime clauses + clause names/count match contract (WP02)
+- [x] T030 Runner witnesses intake parse/validate/persist; emits stage-tagged error (WP02)
 
 **Dependencies**: none. **Risks**: drifting toward the full review contract (guarded by T008). Owns the producer (runner) + consumer (checker) of the runtime-evidence seam so it is internal to one WP.
 
