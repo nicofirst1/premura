@@ -1,108 +1,159 @@
-# Implementation Plan: [FEATURE]
-*Path: [templates/plan-template.md](templates/plan-template.md)*
+# Implementation Plan: Intake Parser Acceptance Scenario
 
-
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/kitty-specs/[###-feature-name]/spec.md`
-
-**Note**: This template is filled in by the `/spec-kitty.plan` command. See `src/specify_cli/missions/software-dev/command-templates/plan.md` for the execution workflow.
-
-The planner will not begin until all planning questions have been answered—capture those answers in this document before progressing to later phases.
+**Branch**: `master` | **Date**: 2026-06-05 | **Spec**: [spec.md](spec.md)
+**Input**: Feature specification from `kitty-specs/intake-parser-acceptance-scenario-01KTBT72/spec.md`
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+Turn the live-trial harness's implicit "one hardcoded observation source" into an
+explicit **`Scenario`** abstraction, then prove it generalizes by running both the
+existing observation source and a new, deliberately-alien synthetic intake source
+through one generic grader. The grader's three rules (`loaded`, `runtime_valid`,
+`honest_about_gaps`) stay recomputed from ground truth, but *which warehouse tables
+are boundary truth* and *which runtime-valid clause set applies* are **carried by
+the scenario**, not hardwired. Two layers ship: a deterministic default-suite floor
+(reference intake parser) and an opt-in live cheap-model run (qwen authors the
+parser); the answer+judge step (layer 3) is a named follow-up the scenario record is
+shaped to accept later.
+
+The central engineering move is generalizing the **shipped** observation grader
+(`src/premura/harness/grader.py`) into a drawer-parametric grader without a per-source
+branch (NFR-005), with the observation scenario injecting exactly today's behavior so
+observation verdicts stay byte-identical (C-004).
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
-
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [Project-specific test approach or NEEDS CLARIFICATION]
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: Python 3.11 (repo standard; `uv`-managed)
+**Primary Dependencies**: existing in-repo only — `premura.harness` (grader, sandbox,
+ingest_runner, self_reconcile, live_trial, scoreboard), `premura.session_log.store`,
+`premura.parsers` (base/`ParseOutput`/`IntakeBatch`/`contract_check`), `premura.store.profile_intake`
+(`persist_intake_batch`). No new third-party dependency.
+**Storage**: DuckDB — observation `hp.fact_*` and intake `hp.nutrition_intake_*` /
+`hp.supplement_intake_*` (drawers); session-log store (its own local DuckDB file).
+**Testing**: `pytest`. Default suite stays offline/deterministic (layer 1 + failure
+path). Layer 2 is collected only under the `live_trial` marker (local Ollama).
+**Target Platform**: maintainer's local macOS workstation (same as existing live trial).
+**Project Type**: single (library + test harness).
+**Performance Goals**: not a perf feature; default-suite additions stay within normal
+test timing (no model server, no network).
+**Constraints**: local-only (`OLLAMA_URL` guard inherited); synthetic-only data and
+synthetic-only sandbox retention; layer 2 can never block CI; observation grading
+behavior preserved byte-for-byte.
+**Scale/Scope**: one new scenario abstraction; one alien intake source + manifest; one
+reference intake parser; one intake runtime-valid checker; grader generalization;
+deterministic failure-path + reconciliation tests; one opt-in live-trial intake test.
 
 ## Charter Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+*GATE: Must pass before Phase 0. Re-checked after Phase 1.*
 
-[Gates determined based on charter file]
+Charter present (compact, `software-dev-default`). Relevant directives from
+`spec-kitty charter context`:
+
+- **DIRECTIVE_010 (named follow-up, not silent waiver):** layer 3 (answer+judge) is a
+  named, scoped follow-up (FR-011 / Out of scope), not an unstated gap. **Pass.**
+- **Agent-first + design-a-level-above (DOCTRINE):** the deliverable is agent-graded
+  (no human form); the `Scenario` is a bounded abstraction with a rule for adding the
+  next source, not an intake special case. **Pass.**
+- **Standards-first / privacy:** synthetic-only alien source, no PHI, no new outbound
+  network, local-only model backend. **Pass.**
+- **No-fork / measurable gates (NFR-005/006, C-004):** generalize the shipped grader,
+  prove ≥2 scenarios over one path, pin observation regression with a golden verdict.
+  **Pass (enforced by tests, not prose).**
+
+No charter conflicts. Re-check after Phase 1: still pass (no design choice introduces a
+human surface, an enumerated domain list, an off-machine path, or a parallel grader).
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```
-kitty-specs/[###-feature]/
-├── plan.md              # This file (/spec-kitty.plan command output)
-├── research.md          # Phase 0 output (/spec-kitty.plan command)
-├── data-model.md        # Phase 1 output (/spec-kitty.plan command)
-├── quickstart.md        # Phase 1 output (/spec-kitty.plan command)
-├── contracts/           # Phase 1 output (/spec-kitty.plan command)
-└── tasks.md             # Phase 2 output (/spec-kitty.tasks command - NOT created by /spec-kitty.plan)
+kitty-specs/intake-parser-acceptance-scenario-01KTBT72/
+├── plan.md              # This file
+├── research.md          # Phase 0 — decisions + rationale
+├── data-model.md        # Phase 1 — Scenario, manifest, provenance, verdict entities
+├── quickstart.md        # Phase 1 — how to run both layers
+├── contracts/           # Phase 1 — scenario, intake-runtime, drawer-grading, alien-source contracts
+└── tasks.md             # /spec-kitty.tasks output — NOT created here
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
 ```
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+src/premura/harness/
+├── scenario.py          # NEW — Scenario abstraction + registry (source, manifest,
+│                        #        reference parser, drawer-grading strategy)
+├── grader.py            # CHANGED — grade() becomes drawer-parametric via the
+│                        #           scenario's injected strategy; observation
+│                        #           behavior preserved (golden verdict)
+├── intake_contract_check.py  # NEW — check_intake_runtime_contract (the bounded
+│                        #             intake runtime-valid clause set)
+├── live_trial.py        # CHANGED — drive a Scenario (observation or intake); capture
+│                        #           intake provenance; failure path persists a record
+├── live_trial_ollama.py # CHANGED — layer-2 entry can select the intake scenario
+└── (sandbox.py, ingest_runner.py, self_reconcile.py, scoreboard.py — REUSED as-is
+    where possible; minimal additive change only if provenance widening requires it)
+
+tests/fixtures/intake_scenario/        # NEW — synthetic, obviously-fake
+├── alien_intake.csv                    #   the alien meals+supplements source
+├── alien_intake_manifest.yaml          #   grader-only ground-truth field map (C-005)
+└── reference_intake_parser.py          #   the layer-1 known-good parser
 
 tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+├── test_intake_scenario_grading.py     # NEW — layer-1 e2e: full pass (SC-001)
+├── test_intake_scenario_drawer.py      # NEW — mis-filed row fails loaded (SC-002),
+│                                        #        unmappable field declared (SC-004)
+├── test_intake_runtime_contract.py     # NEW — intake runtime-valid clauses (SC-008)
+├── test_scenario_no_fork.py            # NEW — structural: no per-source branch,
+│                                        #        ≥2 scenarios over one path (SC-003)
+├── test_failure_path_record.py         # NEW — stub op → completed failing record (SC-007)
+├── test_observation_scenario_golden.py # NEW — observation verdict unchanged (SC-006/C-004)
+└── test_live_trial_intake.py           # NEW — live_trial-marked layer-2 run (SC-005)
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+> Exact WP-to-file ownership is decided by `/spec-kitty.tasks`; the tree above is the
+> intended shape, not a lane assignment.
 
-## Complexity Tracking
+## Phase 0 — Outline & Research
 
-*Fill ONLY if Charter Check has violations that must be justified*
+See [research.md](research.md). It resolves: the `Scenario` shape and how the grader
+is generalized without a per-source branch; the exact intake runtime-valid clause set
+(grounded in `IntakeBatch.validate()`); how `loaded` boundary truth is read per drawer;
+the alien-source format + manifest schema; the stub-operator failure path; and how the
+observation regression is pinned. No `[NEEDS CLARIFICATION]` remain — the two product
+forks (scope, alien source) were settled at specify; the architecture forks were
+settled in the Engineering Alignment.
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+## Phase 1 — Design & Contracts
+
+- [data-model.md](data-model.md) — `Scenario`, `DrawerGradingStrategy`, alien-source
+  manifest, captured intake provenance, the (unchanged) three-rule verdict.
+- [contracts/](contracts/) — `scenario-contract.md`, `intake-runtime-contract.md`,
+  `drawer-grading-contract.md`, `alien-source-and-manifest-contract.md`.
+- [quickstart.md](quickstart.md) — run layer 1 (default suite), the failure-path test,
+  and layer 2 (opt-in, local Ollama).
+
+## Complexity / risk notes
+
+- **Highest risk: regressing observation grading** while generalizing `grade()`.
+  Mitigation: capture a golden observation verdict from current `master` first, then
+  refactor until it is reproduced byte-for-byte (C-004 test is written before the
+  refactor lands).
+- **Second risk: a sneaky per-drawer branch** creeping into the shared path.
+  Mitigation: a structural test (`test_scenario_no_fork.py`) that fails if the shared
+  grade path names a drawer/scenario, plus the ≥2-scenarios-over-one-path assertion.
+- **Containment:** the alien source + manifest are synthetic; the manifest is never on
+  any operator-visible path (C-005); layer 2 stays behind the marker and the local-only
+  guard.
+
+## Branch contract (restated)
+
+- Current branch at plan start: **master**
+- Planning/base branch: **master**
+- Final merge target: **master**
+- `branch_matches_target`: **true**
+
+## STOP
+
+Planning ends here (Phase 1). Work packages are generated by `/spec-kitty.tasks`.
