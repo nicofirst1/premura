@@ -12,8 +12,8 @@ subtasks:
 - T007
 - T008
 - T030
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "19145"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "25691"
 history:
 - timestamp: '2026-06-05T12:36:09Z'
   action: created
@@ -149,3 +149,4 @@ Implement: `spec-kitty agent action implement WP02 --agent <name>`
 
 - 2026-06-05T13:14:50Z – claude:opus:python-implementer:implementer – shell_pid=19145 – Started implementation via action command
 - 2026-06-05T13:21:36Z – claude:opus:python-implementer:implementer – shell_pid=19145 – Ready for review: intake runtime checker (3 clauses) + stage-tagged runner; 14 WP02 tests pass, observation regression green
+- 2026-06-05T13:22:05Z – claude:opus:python-reviewer:reviewer – shell_pid=25691 – Started review via action command
