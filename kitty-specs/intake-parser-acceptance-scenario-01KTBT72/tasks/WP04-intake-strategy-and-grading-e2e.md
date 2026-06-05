@@ -21,8 +21,8 @@ subtasks:
 - T014
 - T015
 - T016
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "37614"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "43966"
 history:
 - timestamp: '2026-06-05T12:36:09Z'
   action: created
@@ -126,3 +126,4 @@ Implement: `spec-kitty agent action implement WP04 --agent <name>`
 
 - 2026-06-05T13:33:55Z – claude:opus:python-implementer:implementer – shell_pid=37614 – Started implementation via action command
 - 2026-06-05T13:39:45Z – claude:opus:python-implementer:implementer – shell_pid=37614 – Ready for review: intake IntakeStrategy (boundary truth over intake tables, WP02 runtime delegate, manifest gap reconcile) + scenario_registry.all_scenarios() (observation+intake) + layer-1 happy-path e2e (full three-rule pass via generic grade, no intake branch; observation golden still green)
+- 2026-06-05T13:40:13Z – claude:opus:python-reviewer:reviewer – shell_pid=43966 – Started review via action command
