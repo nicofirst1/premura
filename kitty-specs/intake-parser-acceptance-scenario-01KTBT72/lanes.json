@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "mission_slug": "intake-parser-acceptance-scenario-01KTBT72",
+  "mission_id": "01KTBT72S3D3251XDMS4XG26F7",
+  "mission_branch": "kitty/mission-intake-parser-acceptance-scenario-01KTBT72",
+  "target_branch": "master",
+  "lanes": [
+    {
+      "lane_id": "lane-a",
+      "wp_ids": [
+        "WP01",
+        "WP02",
+        "WP03",
+        "WP04",
+        "WP05",
+        "WP06",
+        "WP07"
+      ],
+      "write_scope": [
+        "src/premura/harness/grader.py",
+        "src/premura/harness/intake_contract_check.py",
+        "src/premura/harness/intake_strategy.py",
+        "src/premura/harness/live_trial.py",
+        "src/premura/harness/live_trial_ollama.py",
+        "src/premura/harness/scenario.py",
+        "src/premura/harness/scenario_registry.py",
+        "src/premura/harness/self_reconcile.py",
+        "tests/fixtures/intake_scenario/**",
+        "tests/test_failure_path_record.py",
+        "tests/test_intake_reconcile_renamed.py",
+        "tests/test_intake_runtime_contract.py",
+        "tests/test_intake_scenario_drawer.py",
+        "tests/test_intake_scenario_grading.py",
+        "tests/test_live_trial_intake.py",
+        "tests/test_observation_scenario_golden.py",
+        "tests/test_scenario_drawer_targets.py",
+        "tests/test_scenario_no_fork.py"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "artifact-rendering"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    }
+  ],
+  "computed_at": "2026-06-05T12:42:40.289087+00:00",
+  "computed_from": "dependency_graph+ownership",
+  "planning_artifact_wps": [],
+  "collapse_report": {
+    "events": [
+      {
+        "wp_a": "WP04",
+        "wp_b": "WP01",
+        "rule": "dependency",
+        "evidence": "WP04 depends on WP01"
+      },
+      {
+        "wp_a": "WP04",
+        "wp_b": "WP02",
+        "rule": "dependency",
+        "evidence": "WP04 depends on WP02"
+      },
+      {
+        "wp_a": "WP04",
+        "wp_b": "WP03",
+        "rule": "dependency",
+        "evidence": "WP04 depends on WP03"
+      },
+      {
+        "wp_a": "WP05",
+        "wp_b": "WP04",
+        "rule": "dependency",
+        "evidence": "WP05 depends on WP04"
+      },
+      {
+        "wp_a": "WP06",
+        "wp_b": "WP01",
+        "rule": "dependency",
+        "evidence": "WP06 depends on WP01"
+      },
+      {
+        "wp_a": "WP07",
+        "wp_b": "WP03",
+        "rule": "dependency",
+        "evidence": "WP07 depends on WP03"
+      }
+    ],
+    "total_merges": 6,
+    "independent_wps_collapsed": 0,
+    "by_rule": {
+      "dependency": 6
+    }
+  }
+}
