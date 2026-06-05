@@ -136,3 +136,4 @@ Implement: `spec-kitty agent action implement WP05 --agent <name>`
 ## Activity Log
 
 - 2026-06-05T14:01:00Z – claude:opus:python-implementer:implementer – shell_pid=64981 – Started implementation via action command
+- 2026-06-05T14:09:52Z – claude:opus:python-implementer:implementer – shell_pid=64981 – Ready for review: intake edge-case e2es (T017-T020) + structural no-fork guard (T021); 23 passed incl. observation golden + WP04 happy-path
