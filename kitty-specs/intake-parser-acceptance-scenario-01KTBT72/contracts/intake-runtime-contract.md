@@ -27,6 +27,24 @@ emitted-metric surface; it has nutrition/supplement events, `source_descriptors`
 `runtime_valid = (no violations)`; `violations` is a sorted list of `"<clause>: <detail>"`
 strings (same shape as the observation result, feeding the unchanged verdict schema).
 
+### Evidence inputs (the producer/consumer seam — both in WP02)
+
+The checker is the **consumer**; the in-sandbox runner is the **producer**, and both live in
+WP02 so there is no cross-WP gap. The runner emits its outcome in the **existing** envelope
+fields — `status` (`"ok"`/`"error"`) and a **stage-tagged `error`** string — so **no new
+envelope key** is added and the frozen `ingest-outcome-envelope.schema.json`
+(`additionalProperties:false`) is unchanged:
+
+| Clause | Witnessed by |
+|---|---|
+| `parser_imports_and_parses` | `status=="ok"`, or `error` whose stage ≠ `parse` |
+| `batch_validates` | `error` whose stage ≠ `validate` (the runner now calls `IntakeBatch.validate()` explicitly — today it does not) |
+| `persisted_without_raising` | `error` whose stage ≠ `persist` |
+
+Error stages are `"parse: …"` / `"validate: …"` / `"persist: …"`. The runner is harness code
+witnessing the operator's batch — not a parser self-report. WP06 (provenance) and WP07
+(probe) only carry `status`/`error` through; they do not define this seam.
+
 ### Where intake declared/emitted lives (the named evidence surface)
 
 Observation's `declared_equals_emitted` compares **canonical metric keys**. `IntakeBatch`

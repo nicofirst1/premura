@@ -48,20 +48,25 @@ Three responsibilities, each a pure function over captured evidence + warehouse:
 coupling lives in the in-sandbox **probe** (`_PROBE_TEMPLATE`), which is generalized to
 the scenario's target drawer (D9 / drawer-grading-contract.md), not in the reconciler.
 
-## Captured provenance (CHANGED — widened, transport only)
+## Captured provenance (CHANGED — minimal, transport only)
 
 Today's `_CapturedProvenance` is observation-shaped (`rows_inserted`,
-`declared_metrics`, `emitted_metric_ids`, `unmapped_metrics`, `skipped_rows`). Widen so
-the runner envelope can also carry the intake surface:
+`declared_metrics`, `emitted_metric_ids`, `unmapped_metrics`, `skipped_rows`,
+`ingest_run_ok`). The **only** addition needed is the stage-tagged failure detail:
 
-| Field | Type | Drawer |
+| Field | Type | Role |
 |---|---|---|
-| `rows_inserted` | `int` | both |
-| `declared_metrics` / `emitted_metric_ids` | `list[str]` | observation |
-| `nutrition_dedupe_keys` / `supplement_dedupe_keys` | `list[str]` | intake |
-| `source_descriptor_ids` | `list[str]` | intake (descriptor completeness) |
-| `unmapped_metrics` | `list[str]` | both (declared gaps) |
-| `skipped_rows` | `list[SkippedRow]` | both (declared gaps) |
+| `rows_inserted` | `int` | observation `loaded` support (unchanged) |
+| `declared_metrics` / `emitted_metric_ids` | `list[str]` | observation `runtime_valid` (unchanged) |
+| `unmapped_metrics` / `skipped_rows` | `list[str]` / `list[SkippedRow]` | `honest_about_gaps` for both drawers (already present) |
+| `ingest_run_ok` | `bool` | `status=="ok"` (unchanged) |
+| `error` (NEW) | `str \| None` | the **stage-tagged** runner error (`parse:`/`validate:`/`persist:`) |
+
+**No `nutrition_dedupe_keys` / `supplement_dedupe_keys` / `source_descriptor_ids`** — those
+were a wrong earlier guess. Intake `loaded` reads the **warehouse** intake tables (WP04
+boundary truth); intake `honest_about_gaps` reads `unmapped_metrics`/`skipped_rows`; intake
+`runtime_valid` grades `status` + the stage-tagged `error`. The **producer** of the
+stage-tagged error is the WP02 runner change (`ingest_runner.py`); WP06 only carries it.
 
 > Provenance is **captured evidence to verify**, never trusted self-report (FR-005). The
 > grader still recomputes `loaded` from the warehouse and `honest_about_gaps` from the
