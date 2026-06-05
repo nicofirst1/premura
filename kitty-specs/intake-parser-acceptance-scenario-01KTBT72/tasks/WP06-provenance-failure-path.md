@@ -15,6 +15,8 @@ subtasks:
 - T024
 - T025
 - T026
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "47182"
 history:
 - timestamp: '2026-06-05T12:36:09Z'
   action: created
@@ -118,3 +120,7 @@ graded record even when a parser fails to import/parse (FR-009), and type-widen
 
 Plan/base **master** → merge **master**; worktree per `lanes.json` lane. Depends on WP01.
 Implement: `spec-kitty agent action implement WP06 --agent <name>`
+
+## Activity Log
+
+- 2026-06-05T13:42:57Z – claude:opus:python-implementer:implementer – shell_pid=47182 – Started implementation via action command
