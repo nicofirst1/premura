@@ -11,11 +11,11 @@ own. Tests are first-class here (this mission *is* a test harness).
 
 | ID | Description | WP | Parallel |
 |---|---|---|---|
-| T001 | Capture golden observation verdict (pre-refactor baseline) | WP01 |  |
-| T002 | Define `Scenario` + `DrawerGradingStrategy` protocol + registry primitives | WP01 |  |
-| T003 | Implement the observation `DrawerGradingStrategy` (wraps today's logic) | WP01 |  |
-| T004 | Refactor `grade()` to compute rules via the strategy (no per-drawer branch) | WP01 |  |
-| T005 | Golden-verdict regression test (observation byte-identical) | WP01 |  |
+| T001 | Capture golden observation verdict (pre-refactor baseline) | WP01 |  | [D] |
+| T002 | Define `Scenario` + `DrawerGradingStrategy` protocol + registry primitives | WP01 |  | [D] |
+| T003 | Implement the observation `DrawerGradingStrategy` (wraps today's logic) | WP01 |  | [D] |
+| T004 | Refactor `grade()` to compute rules via the strategy (no per-drawer branch) | WP01 |  | [D] |
+| T005 | Golden-verdict regression test (observation byte-identical) | WP01 |  | [D] |
 | T006 | Implement `check_intake_runtime_contract` over the IntakeBatch surface | WP02 | [P] |
 | T007 | Return a `ContractCheckResult`-shaped result (sorted violations) | WP02 | [P] |
 | T008 | Test intake runtime clauses + clause names/count match contract | WP02 | [P] |
@@ -65,11 +65,11 @@ with no per-drawer branch, and prove the observation verdict is unchanged byte-f
 **Independent test**: the golden observation verdict reproduces exactly after the refactor.
 **Prompt**: [tasks/WP01-scenario-abstraction-and-grader.md](tasks/WP01-scenario-abstraction-and-grader.md) · ~320 lines
 
-- [ ] T001 Capture golden observation verdict (pre-refactor baseline) (WP01)
-- [ ] T002 Define `Scenario` + `DrawerGradingStrategy` protocol + registry primitives (WP01)
-- [ ] T003 Implement the observation `DrawerGradingStrategy` (wraps today's logic) (WP01)
-- [ ] T004 Refactor `grade()` to compute rules via the strategy (no per-drawer branch) (WP01)
-- [ ] T005 Golden-verdict regression test (observation byte-identical) (WP01)
+- [x] T001 Capture golden observation verdict (pre-refactor baseline) (WP01)
+- [x] T002 Define `Scenario` + `DrawerGradingStrategy` protocol + registry primitives (WP01)
+- [x] T003 Implement the observation `DrawerGradingStrategy` (wraps today's logic) (WP01)
+- [x] T004 Refactor `grade()` to compute rules via the strategy (no per-drawer branch) (WP01)
+- [x] T005 Golden-verdict regression test (observation byte-identical) (WP01)
 
 **Dependencies**: none. **Risks**: regressing observation grading (mitigated by T001→T005).
 
