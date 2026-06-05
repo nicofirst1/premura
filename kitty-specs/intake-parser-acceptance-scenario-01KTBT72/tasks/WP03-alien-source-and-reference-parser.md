@@ -14,8 +14,8 @@ subtasks:
 - T009
 - T010
 - T011
-agent: "claude:opus:python-implementer:implementer"
-shell_pid: "28776"
+agent: "claude:opus:python-reviewer:reviewer"
+shell_pid: "33571"
 history:
 - timestamp: '2026-06-05T12:36:09Z'
   action: created
@@ -118,3 +118,4 @@ Implement: `spec-kitty agent action implement WP03 --agent <name>`
 
 - 2026-06-05T13:24:39Z – claude:opus:python-implementer:implementer – shell_pid=28776 – Started implementation via action command
 - 2026-06-05T13:29:05Z – claude:opus:python-implementer:implementer – shell_pid=28776 – Ready for review: alien intake fixture + grader-only manifest + reference parser; parses to valid IntakeBatch, declares note gap, persists, intake runtime contract passes
+- 2026-06-05T13:29:36Z – claude:opus:python-reviewer:reviewer – shell_pid=33571 – Started review via action command
