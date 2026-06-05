@@ -1,7 +1,7 @@
 {
-  "event_count": 37,
-  "last_event_id": "01KTC22Y2E4QNH5E20NYDP8BB2",
-  "materialized_at": "2026-06-05T14:13:10.862814+00:00",
+  "event_count": 39,
+  "last_event_id": "01KTC2407ZDD34P4CA3C3DCH12",
+  "materialized_at": "2026-06-05T14:13:45.855120+00:00",
   "mission_number": "",
   "mission_slug": "intake-parser-acceptance-scenario-01KTBT72",
   "mission_type": "software-dev",
@@ -12,9 +12,9 @@
     "claimed": 0,
     "done": 0,
     "for_review": 0,
-    "in_progress": 0,
+    "in_progress": 1,
     "in_review": 0,
-    "planned": 1
+    "planned": 0
   },
   "work_packages": {
     "WP01": {
@@ -60,11 +60,11 @@
       "last_transition_at": "2026-06-05T14:00:22.747315+00:00"
     },
     "WP07": {
-      "actor": "finalize-tasks",
+      "actor": "claude:opus:python-implementer:implementer",
       "force_count": 1,
-      "lane": "planned",
-      "last_event_id": "01KTBWX6RWXYZH42J6RGAXBG9C",
-      "last_transition_at": "2026-06-05T12:42:40.284479+00:00"
+      "lane": "in_progress",
+      "last_event_id": "01KTC2407ZDD34P4CA3C3DCH12",
+      "last_transition_at": "2026-06-05T14:13:45.855120+00:00"
     }
   }
 }

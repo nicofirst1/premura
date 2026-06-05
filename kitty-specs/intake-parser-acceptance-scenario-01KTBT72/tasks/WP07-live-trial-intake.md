@@ -18,6 +18,8 @@ subtasks:
 - T027
 - T028
 - T029
+agent: "claude:opus:python-implementer:implementer"
+shell_pid: "77537"
 history:
 - timestamp: '2026-06-05T12:36:09Z'
   action: created
@@ -104,3 +106,7 @@ observation-only gate, let the layer-2 entry select the intake scenario, and add
 Plan/base **master** → merge **master**; worktree per `lanes.json` lane. Depends on WP03,
 WP04, WP06.
 Implement: `spec-kitty agent action implement WP07 --agent <name>`
+
+## Activity Log
+
+- 2026-06-05T14:13:45Z – claude:opus:python-implementer:implementer – shell_pid=77537 – Started implementation via action command
