@@ -38,9 +38,9 @@ own. Tests are first-class here (this mission *is* a test harness).
 | T024 | Failure path persists a completed failing record on import/parse failure | WP06 |  | [D] |
 | T025 | Type-widen `self_reconcile` (`IngestBatch \| IntakeBatch`) | WP06 |  | [D] |
 | T026 | `StubBrokenParserOperator` + deterministic failure-path test | WP06 |  | [D] |
-| T027 | Generalize `_PROBE_TEMPLATE` off its observation-only gate | WP07 |  |
-| T028 | Layer-2 entry selects the intake scenario; records run/model ids | WP07 |  |
-| T029 | `live_trial`-marked intake test (prints score, never asserts pass) | WP07 |  |
+| T027 | Generalize `_PROBE_TEMPLATE` off its observation-only gate | WP07 |  | [D] |
+| T028 | Layer-2 entry selects the intake scenario; records run/model ids | WP07 |  | [D] |
+| T029 | `live_trial`-marked intake test (prints score, never asserts pass) | WP07 |  | [D] |
 
 ## Dependency graph
 
@@ -162,9 +162,9 @@ entry select the intake scenario, and add the `live_trial`-marked intake test.
 **Independent test**: with local Ollama, the intake scenario runs end-to-end and prints a verdict.
 **Prompt**: [tasks/WP07-live-trial-intake.md](tasks/WP07-live-trial-intake.md) · ~260 lines
 
-- [ ] T027 Generalize `_PROBE_TEMPLATE` off its observation-only gate (WP07)
-- [ ] T028 Layer-2 entry selects the intake scenario; records run/model ids (WP07)
-- [ ] T029 `live_trial`-marked intake test (prints score, never asserts pass) (WP07)
+- [x] T027 Generalize `_PROBE_TEMPLATE` off its observation-only gate (WP07)
+- [x] T028 Layer-2 entry selects the intake scenario; records run/model ids (WP07)
+- [x] T029 `live_trial`-marked intake test (prints score, never asserts pass) (WP07)
 
 **Dependencies**: WP03, WP04, WP06. **Risks**: a non-local backend leaking data (guarded by the inherited `OLLAMA_URL` check).
 
