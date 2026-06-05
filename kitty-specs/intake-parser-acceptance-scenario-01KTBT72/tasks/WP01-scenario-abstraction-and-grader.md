@@ -20,8 +20,8 @@ subtasks:
 - T003
 - T004
 - T005
-shell_pid: "3359"
-agent: "claude:opus:python-implementer:implementer"
+shell_pid: "15113"
+agent: "claude:opus:python-reviewer:reviewer"
 history:
 - timestamp: '2026-06-05T12:36:09Z'
   action: created
@@ -153,3 +153,4 @@ allocated per the computed lane in `lanes.json`. Implement with:
 
 - 2026-06-05T12:57:51Z – claude:opus:python-implementer:implementer – shell_pid=3359 – Assigned agent via action command
 - 2026-06-05T13:10:01Z – claude:opus:python-implementer:implementer – shell_pid=3359 – Ready for review: scenario abstraction + drawer-parametric grader; observation golden byte-identical; 1003 passed (not live_trial)
+- 2026-06-05T13:10:34Z – claude:opus:python-reviewer:reviewer – shell_pid=15113 – Started review via action command
