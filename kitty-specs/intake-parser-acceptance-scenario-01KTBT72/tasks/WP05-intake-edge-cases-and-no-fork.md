@@ -36,9 +36,15 @@ tags: []
 
 ## Objective
 
-Prove every spec-named intake edge case with a **real end-to-end** harness run (drop →
-parse → load → grade), not a component-level assertion (D7), plus the structural
-no-fork / ≥2-scenarios property.
+Prove the **four deterministic** spec-named intake edge cases this WP owns — mis-filed row,
+unmappable field, renamed-but-consumed field, intake-only vs both — each with a **real
+end-to-end** harness run (drop → parse → load → grade), not a component-level assertion (D7),
+plus the structural no-fork / ≥2-scenarios property.
+
+> **Ownership boundary (review fix).** This WP does **not** own the fifth spec-named edge
+> case, "live model produces a malformed parser." Its *deterministic* failure path is owned by
+> **WP06** (`test_failure_path_record.py`, stub operator) and its *live* form by **WP07**
+> (`test_live_trial_intake.py`). Do not duplicate it here.
 
 ## Context
 
@@ -69,13 +75,23 @@ no-fork / ≥2-scenarios property.
 2. Variant B **silently drops** `note` (doesn't load it, doesn't declare it) → assert
    `honest_about_gaps` **false** (silent drop detected by manifest reconcile, FR-005).
 
-### T019 — Renamed-but-consumed column is accounted
+### T019 — Renamed-but-consumed column is accounted (two distinct controls)
+
+> **Two different controls — assert each separately (review fix).** `self_reconcile` is
+> manifest-blind: it counts a column accounted iff it is in `MAPPED_SOURCE_COLUMNS` **or**
+> declared as a gap. The grader's `honest_about_gaps` is a different check: manifest-derived
+> truth vs (loaded ∪ declared). The renamed-but-consumed column must pass **both**, and the
+> test asserts them **independently**, not as a blended "one of these passed".
 
 **Steps** (`tests/test_intake_reconcile_renamed.py`):
 1. The reference parser consumes `logged_at_us` under a different internal name (the event
-   timestamp). Assert the self-reconciliation / honesty reconcile counts `logged_at_us` as
-   **accounted** (consumed), **not** as an unaccounted/silent-drop column.
-2. This is the spec edge case "renamed-but-consumed field"; prove it end-to-end.
+   timestamp) and lists it in `MAPPED_SOURCE_COLUMNS`.
+2. **Control A — `self_reconcile`:** assert `logged_at_us` is in `accounted` (because it is in
+   `MAPPED_SOURCE_COLUMNS`) and **not** in `unaccounted`.
+3. **Control B — grader `honest_about_gaps`:** assert the grader does **not** flag
+   `logged_at_us` as a silent-drop (it is loaded/consumed per the manifest), and the rule passes.
+4. Both controls are exercised end-to-end (real sandbox→grade); this is the spec edge case
+   "renamed-but-consumed field".
 
 ### T020 — Intake-only vs both drawer targets
 

@@ -4,7 +4,7 @@
 **Branch**: master (planning base) → merges into master
 **Spec**: [spec.md](spec.md) · **Plan**: [plan.md](plan.md)
 
-7 work packages, 29 subtasks. Each WP is independently implementable and green on its
+7 work packages, 30 subtasks. Each WP is independently implementable and green on its
 own. Tests are first-class here (this mission *is* a test harness).
 
 ## Subtask Index (reference table — not a tracking surface)
@@ -19,6 +19,7 @@ own. Tests are first-class here (this mission *is* a test harness).
 | T006 | Implement `check_intake_runtime_contract` over the IntakeBatch surface | WP02 | [P] |
 | T007 | Return a `ContractCheckResult`-shaped result (sorted violations) | WP02 | [P] |
 | T008 | Test intake runtime clauses + clause names/count match contract | WP02 | [P] |
+| T030 | Runner witnesses intake parse/validate/persist (stage-tagged error) | WP02 |  |
 | T009 | Author `alien_intake.csv` (meals+supplements, epoch-µs, foreign cols) | WP03 | [P] |
 | T010 | Author `alien_intake_manifest.yaml` (grader-only ground truth) | WP03 | [P] |
 | T011 | Implement `reference_intake_parser.py` (+ `MAPPED_SOURCE_COLUMNS`) | WP03 | [P] |
@@ -83,8 +84,9 @@ not the full parser-review contract, and not a fake canonical-metric mirror.
 - [ ] T006 Implement `check_intake_runtime_contract` over the IntakeBatch surface (WP02)
 - [ ] T007 Return a `ContractCheckResult`-shaped result (sorted violations) (WP02)
 - [ ] T008 Test intake runtime clauses + clause names/count match contract (WP02)
+- [ ] T030 Runner witnesses intake parse/validate/persist; emits stage-tagged error (WP02)
 
-**Dependencies**: none. **Risks**: drifting toward the full review contract (guarded by T008).
+**Dependencies**: none. **Risks**: drifting toward the full review contract (guarded by T008). Owns the producer (runner) + consumer (checker) of the runtime-evidence seam so it is internal to one WP.
 
 ## WP03 — Alien source + manifest + reference intake parser (fixtures)
 
@@ -119,8 +121,10 @@ layer-1 full-pass end-to-end run.
 
 ## WP05 — Intake drawer + edge-case end-to-end suite
 
-**Goal**: End-to-end fixtures for every spec-named intake edge case + the structural
-no-fork / ≥2-scenarios proof.
+**Goal**: End-to-end fixtures for the **four deterministic** spec-named intake edge cases this
+WP owns (mis-filed row, unmappable field, renamed-but-consumed, intake-only vs both) + the
+structural no-fork / ≥2-scenarios proof. The fifth edge case ("malformed parser") is owned by
+WP06 (deterministic) and WP07 (live), not here.
 **Priority**: P1.
 **Independent test**: the five e2e/structural tests pass deterministically, offline.
 **Prompt**: [tasks/WP05-intake-edge-cases-and-no-fork.md](tasks/WP05-intake-edge-cases-and-no-fork.md) · ~340 lines

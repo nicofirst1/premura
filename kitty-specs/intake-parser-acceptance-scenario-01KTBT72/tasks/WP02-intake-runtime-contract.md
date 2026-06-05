@@ -11,6 +11,7 @@ subtasks:
 - T006
 - T007
 - T008
+- T030
 history:
 - timestamp: '2026-06-05T12:36:09Z'
   action: created
@@ -19,6 +20,7 @@ authoritative_surface: src/premura/harness/intake_contract_check.py
 execution_mode: code_change
 owned_files:
 - src/premura/harness/intake_contract_check.py
+- src/premura/harness/ingest_runner.py
 - tests/test_intake_runtime_contract.py
 tags: []
 ---
@@ -46,9 +48,22 @@ full parser-review contract, and **not** a fake canonical-metric mirror (FR-010)
 
 ## Subtasks
 
+> **Seam pinned (review fix).** The checker's *evidence* and its *producer* both live in
+> this WP, so there is no cross-WP gap. The checker consumes a captured **runner outcome**:
+> the envelope's existing `status` (`"ok"`/`"error"`) plus a **stage-tagged `error`** string
+> (`"parse: …"` / `"validate: …"` / `"persist: …"`). No new envelope field, no change to the
+> frozen session-log-substrate envelope schema — `status`/`error` are already allowed keys.
+> Clause→evidence mapping:
+> - `parser_imports_and_parses` ← `status=="ok"` OR `error` stage ≠ `parse` (a `parse:` error fails it)
+> - `batch_validates` ← `error` stage ≠ `validate` (a `validate:` error fails it)
+> - `persisted_without_raising` ← `error` stage ≠ `persist` (a `persist:` error fails it)
+> WP06 (provenance) and WP07 (probe) merely *carry* `status`/`error` through for the live and
+> failure paths; they do not define this seam.
+
 ### T006 — Implement `check_intake_runtime_contract`
 
-**Purpose**: The three bounded intake clauses.
+**Purpose**: The three bounded intake clauses, computed from the captured runner outcome
+(`status` + stage-tagged `error`) above.
 
 **Steps** (new `src/premura/harness/intake_contract_check.py`):
 1. `clause parser_imports_and_parses` — given the operator's parser is already run and a
@@ -86,8 +101,32 @@ full parser-review contract, and **not** a fake canonical-metric mirror (FR-010)
    `declared_exist_in_dim_metric` / `no_derived_emitted` clause (guards against drifting
    toward the observation or full-review contract).
 
+### T030 — Runner witnesses intake parse/validate/persist (the evidence producer)
+
+**Purpose**: Make the in-sandbox runner *witness* the three intake outcomes so the checker
+has real evidence — today the runner persists intake **without calling `validate()`**, so
+`batch_validates` is unwitnessed (`src/premura/harness/ingest_runner.py:90-97`).
+
+**Steps** (`src/premura/harness/ingest_runner.py`, additive — observation path unchanged):
+1. When the parser yields intake, wrap the in-sandbox steps so each stage is witnessed and a
+   failure sets `status="error"` with a **stage-tagged** `error`:
+   - parse/normalize failure → `error="parse: <detail>"`;
+   - call `intake.validate()` explicitly; on `ValueError` → `error="validate: <detail>"`;
+   - `persist_intake_batch` failure → `error="persist: <detail>"`.
+2. On success keep `status="ok"` and the existing intake fields (`unmapped_metrics`,
+   `skipped_rows`). **No new top-level envelope key** — reuse `status`/`error` so the frozen
+   `ingest-outcome-envelope.schema.json` (additionalProperties:false) still conforms and
+   `tests/test_sandbox.py` stays green.
+3. The runner is harness code witnessing the operator's batch — this is *not* trusting a
+   parser self-report (the parser never sets these; the harness does).
+
+**Validation**: a parse-stage, validate-stage, and persist-stage failure each produce the
+correct stage-tagged `error`; a clean intake run yields `status="ok"`.
+
 ## Definition of Done
 
+- [ ] The runner explicitly calls `intake.validate()` and emits stage-tagged `error`
+      (`parse:`/`validate:`/`persist:`) on failure; observation path + envelope schema unchanged.
 - [ ] `check_intake_runtime_contract` exists, returns `ContractCheckResult`, three clauses only.
 - [ ] Clause names/count match [contracts/intake-runtime-contract.md](../contracts/intake-runtime-contract.md).
 - [ ] All T008 tests pass; `ruff` + `mypy` clean.

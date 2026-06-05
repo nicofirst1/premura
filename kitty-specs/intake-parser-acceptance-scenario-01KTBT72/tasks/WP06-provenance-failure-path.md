@@ -51,15 +51,22 @@ graded record even when a parser fails to import/parse (FR-009), and type-widen
 
 ## Subtasks
 
-### T022 — Widen captured provenance (transport only)
+### T022 — Carry the intake runtime evidence through provenance (transport only)
+
+> **Seam owned by WP02, consumed here.** The intake runtime evidence is the envelope's
+> `status` + **stage-tagged `error`** (`parse:`/`validate:`/`persist:`) emitted by the WP02
+> runner change. This WP only *carries* it. The earlier draft's
+> `nutrition_dedupe_keys`/`supplement_dedupe_keys`/`source_descriptor_ids` are **not needed** —
+> `loaded` reads the warehouse directly and `honest_about_gaps` reads
+> `unmapped_metrics`/`skipped_rows` (already in the envelope).
 
 **Steps** (`live_trial.py`):
-1. Extend the captured-provenance structure so the runner envelope can carry the intake
-   surface alongside the observation surface: `nutrition_dedupe_keys`,
-   `supplement_dedupe_keys`, `source_descriptor_ids`, plus the shared `unmapped_metrics` /
-   `skipped_rows`. Keep observation fields unchanged.
-2. This is **captured evidence to verify**, never trusted self-report (FR-005) — the grader
-   still recomputes truth from the warehouse + manifest.
+1. Extend `_CapturedProvenance` to carry the envelope's `error` string alongside the existing
+   `ingest_run_ok` (= `status=="ok"`), so the live and failure paths can see the stage-tagged
+   failure detail. Keep all observation fields unchanged.
+2. This is **captured evidence to verify**, never trusted self-report (FR-005) — `loaded` and
+   `honest_about_gaps` are still recomputed from the warehouse + manifest; only `runtime_valid`
+   grades the captured runner outcome (as observation already does with `ingest_run_ok`).
 
 ### T023 — Drive a `Scenario`; pass strategy to `grade()`
 
