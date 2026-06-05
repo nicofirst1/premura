@@ -34,7 +34,19 @@ Three responsibilities, each a pure function over captured evidence + warehouse:
   `check_runtime_contract`, current honesty reconcile. (C-004: golden verdict preserved.)
 - **Intake strategy**: nutrition/supplement tables for boundary truth (D4);
   `check_intake_runtime_contract` for the runtime check (D3); manifest reconcile over the
-  intake declared-gap surface (`unmapped_metrics` / `skipped_rows`).
+  intake declared-gap surface (`unmapped_metrics` / `skipped_rows`). The intake
+  `runtime_valid` evidence seam is `source_descriptors` / event `source_id` / event
+  `dedupe_key` via `IntakeBatch.validate()` (there is **no** canonical declared/emitted
+  *metric* surface on `IntakeBatch` — see intake-runtime-contract.md).
+
+## self_reconcile (CHANGED — type only)
+
+`self_reconcile(source_path, batch, mapped_columns)` consults **only**
+`batch.unmapped_metrics` and `batch.skipped_rows[*].raw_field` — both present on
+`IngestBatch` **and** `IntakeBatch`. Widen its accepted type to `IngestBatch | IntakeBatch`
+(or a small `HasDeclaredGaps` protocol); **no logic change**. The observation-only
+coupling lives in the in-sandbox **probe** (`_PROBE_TEMPLATE`), which is generalized to
+the scenario's target drawer (D9 / drawer-grading-contract.md), not in the reconciler.
 
 ## Captured provenance (CHANGED — widened, transport only)
 

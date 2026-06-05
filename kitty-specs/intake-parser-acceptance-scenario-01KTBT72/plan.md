@@ -87,13 +87,21 @@ src/premura/harness/
 ├── grader.py            # CHANGED — grade() becomes drawer-parametric via the
 │                        #           scenario's injected strategy; observation
 │                        #           behavior preserved (golden verdict)
-├── intake_contract_check.py  # NEW — check_intake_runtime_contract (the bounded
-│                        #             intake runtime-valid clause set)
+├── intake_contract_check.py  # NEW — check_intake_runtime_contract over IntakeBatch's
+│                        #             real surface: source_descriptors vs event
+│                        #             source_id + dedupe_key (via validate()) + persist;
+│                        #             NO canonical declared/emitted metric clause (D3)
+├── self_reconcile.py    # CHANGED (type only) — accept IngestBatch | IntakeBatch; it
+│                        #             already consults only .unmapped_metrics +
+│                        #             .skipped_rows, which both batches expose (D9)
 ├── live_trial.py        # CHANGED — drive a Scenario (observation or intake); capture
 │                        #           intake provenance; failure path persists a record
-├── live_trial_ollama.py # CHANGED — layer-2 entry can select the intake scenario
-└── (sandbox.py, ingest_runner.py, self_reconcile.py, scoreboard.py — REUSED as-is
-    where possible; minimal additive change only if provenance widening requires it)
+├── live_trial_ollama.py # CHANGED — generalize the in-sandbox self-reconcile PROBE
+│                        #           (_PROBE_TEMPLATE) off its observation-only gate:
+│                        #           keep the scenario's batch (not discard intake),
+│                        #           require that batch type, apply the drawer's
+│                        #           non-empty check, reconcile via the same gate (D9)
+└── (sandbox.py, ingest_runner.py, scoreboard.py — REUSED as-is; additive only)
 
 tests/fixtures/intake_scenario/        # NEW — synthetic, obviously-fake
 ├── alien_intake.csv                    #   the alien meals+supplements source
@@ -104,6 +112,14 @@ tests/
 ├── test_intake_scenario_grading.py     # NEW — layer-1 e2e: full pass (SC-001)
 ├── test_intake_scenario_drawer.py      # NEW — mis-filed row fails loaded (SC-002),
 │                                        #        unmappable field declared (SC-004)
+├── test_intake_reconcile_renamed.py    # NEW — e2e: a consumed-but-renamed source column
+│                                        #        (logged_at_us -> event timestamp) is
+│                                        #        ACCOUNTED, not flagged unaccounted
+│                                        #        (spec edge case "renamed-but-consumed")
+├── test_scenario_drawer_targets.py     # NEW — e2e: parser returns intake-ONLY is graded
+│                                        #        on the intake drawer; parser returns
+│                                        #        BOTH is graded on each target drawer
+│                                        #        (spec edge case "intake-only vs both")
 ├── test_intake_runtime_contract.py     # NEW — intake runtime-valid clauses (SC-008)
 ├── test_scenario_no_fork.py            # NEW — structural: no per-source branch,
 │                                        #        ≥2 scenarios over one path (SC-003)

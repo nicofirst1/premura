@@ -30,6 +30,22 @@ schema. It obtains all drawer-specific behavior from the scenario's
   grader's verdict byte-for-byte over the committed fixture
   (`test_observation_scenario_golden.py`; C-004 / SC-006).
 
+## Live-trial self-reconciliation is drawer-aware too (FR-008)
+
+The layer-2 self-reconciliation gate must produce the **same** structured record for an
+intake run as for an observation run. Two pieces:
+
+- **The in-sandbox probe (`_PROBE_TEMPLATE`)** is today observation-only — it discards
+  intake, requires an observation batch, and fails on zero `measurements`. It MUST be
+  generalized to the scenario's target drawer: keep the scenario's batch (do not discard
+  intake), require that batch type, apply the drawer's non-empty check (intake → ≥1
+  nutrition/supplement event), and feed that batch to `self_reconcile`.
+- **`self_reconcile`** changes by **type only** — it already consults solely
+  `batch.unmapped_metrics` and `batch.skipped_rows[*].raw_field`, which `IntakeBatch` also
+  exposes, so it accepts `IngestBatch | IntakeBatch` with no logic change.
+- The gate stays **manifest-blind** (C-005): mapped columns come from the parser's
+  module-level `MAPPED_SOURCE_COLUMNS`, never inferred from the manifest.
+
 ## Verdict schema
 
 Unchanged: `{ passed, rules: { loaded, runtime_valid: {passed, violations}, honest_about_gaps } }`,

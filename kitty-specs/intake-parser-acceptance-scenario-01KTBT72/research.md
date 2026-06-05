@@ -46,29 +46,41 @@ refactored grader must reproduce it byte-for-byte (`test_observation_scenario_go
 ## D3 — Intake `runtime_valid` clause set (FR-010, SC-008)
 
 **Decision.** `check_intake_runtime_contract` enforces the analogue of the observation
-clauses, defined against `IntakeBatch` (which has **no** `metric_id` / `dim_metric` /
-`emitted_metrics`; it has `nutrition_events`, `supplement_events`, `source_descriptors`,
-`unmapped_metrics`, `skipped_rows`, and a `validate()`):
+clauses, defined against `IntakeBatch`. **Named evidence surface (the High-1 fix):**
+`IntakeBatch` (`src/premura/parsers/base.py:282-330`) has `nutrition_events`,
+`supplement_events`, `source_descriptors`, per-event `source_id` + `dedupe_key`,
+`unmapped_metrics`, `skipped_rows`, and `validate()` — and **no** `declared_metrics` /
+`emitted_metric_ids` / `dim_metric` (those exist only on `IngestBatch`). So the intake
+runtime clause set is:
 
 1. **`parser_imports_and_parses`** — the operator's parser module imports and `parse()`
    returns an `IntakeBatch` (or a `ParseOutput` carrying one) **without raising**.
-2. **`batch_validates`** — `IntakeBatch.validate()` passes: every event's `source_id`
-   has a matching `source_descriptor`, and there are **no duplicate dedupe_keys** within
-   nutrition or supplement events.
+2. **`batch_validates`** — `IntakeBatch.validate()` passes: every event `source_id` is
+   covered by a declared `source_descriptor`, and there are **no duplicate `dedupe_key`s**
+   within nutrition or supplement events.
 3. **`persisted_without_raising`** — `persist_intake_batch` loads the batch without
-   raising (the analogue of the observation `produced_batch_without_raising` clause).
+   raising (the analogue of observation `produced_batch_without_raising`).
+
+**Where declared/emitted lives for intake (explicit).** Observation's
+`declared_equals_emitted` compares *canonical metric keys*. Intake has no such keys, so
+that clause has **no intake counterpart by design**. The truthful analogue is on the
+**source dimension**: the *declared* set is `source_descriptors`, the *emitted* set is
+the `source_id`s actually used on events, and `validate()` enforces declared-covers-emitted
+plus `dedupe_key` uniqueness. The seam carrying intake declared/emitted is therefore
+`IntakeBatch.source_descriptors` / event `source_id` / event `dedupe_key` — not a new
+primitive, and not a forced canonical-metric mirror.
 
 **Observation clauses stay** exactly as `check_runtime_contract` defines them
 (grounded, verbatim): `no_derived_emitted`, `declared_equals_emitted`,
 `declared_exist_in_dim_metric`, `produced_batch_without_raising`.
 
-**Rationale.** The observation clauses key on a metric/`dim_metric` surface that intake
-does not have, so verbatim reuse is impossible; the intake clauses are the same *kind*
-of bounded runtime check over the intake batch's own integrity surface. Crucially this
-is **not** the full parser-review `CONTRACT.md` (the D5 drift FR-010 guards).
+**Rationale.** The observation clauses key on a metric/`dim_metric` surface intake does
+not have; mirroring them would invent a fake canonical-key surface. The intake clauses
+are the same *kind* of bounded runtime check over intake's real integrity surface.
+Crucially this is **not** the full parser-review `CONTRACT.md` (the D5 drift FR-010 guards).
 
-**Spec↔code agreement (FR-010).** `test_intake_runtime_contract.py` asserts the clause
-*names/count* match the spec list, so the spec cannot silently drift from the checker.
+**Spec↔code agreement (FR-010 / SC-008).** `test_intake_runtime_contract.py` asserts the
+clause *names/count* match the spec list, so the spec cannot silently drift from the checker.
 
 ## D4 — `loaded` boundary truth per drawer (FR-006)
 
@@ -145,7 +157,41 @@ remains the sole session-log writer.
 needs the intake review-metadata to reconcile declared gaps, but provenance stays
 *captured evidence to check*, never *trusted self-report* (FR-005).
 
+## D9 — Generalize the in-sandbox self-reconciliation probe (FR-008, High-2 fix)
+
+**Decision.** The in-sandbox probe (`_PROBE_TEMPLATE` in `live_trial_ollama.py:287-322`)
+is the **observation-only self-reconciliation gate**: it `normalize_parse_output(...)`,
+**discards `_intake`**, *requires* an observation batch, fails on zero `measurements`,
+reads `MAPPED_SOURCE_COLUMNS`, and runs `self_reconcile(source, batch, mapped)`. This
+mission **generalizes the probe to the scenario's target drawer**:
+
+- keep the batch the scenario targets (for intake, do **not** discard the intake batch);
+- require the scenario's batch type (intake → an `IntakeBatch`), not always observation;
+- apply the drawer's non-empty check (intake → ≥1 nutrition/supplement event, not
+  `measurements`);
+- feed that batch + its `MAPPED_SOURCE_COLUMNS` to `self_reconcile`.
+
+**`self_reconcile` itself is widened by TYPE only.** It is typed `IngestBatch`
+(`self_reconcile.py:69-113`) but consults **only** `batch.unmapped_metrics` and
+`batch.skipped_rows[*].raw_field` — both of which `IntakeBatch` also exposes. So it
+becomes `IngestBatch | IntakeBatch` (or a small `HasDeclaredGaps` protocol); no logic
+change. The observation-only coupling that must change is the **probe**, not the
+reconciler.
+
+**Parser convention.** The reference intake parser and the layer-2 cheap-model parser
+both expose a module-level `MAPPED_SOURCE_COLUMNS` (the columns they consumed), exactly
+as the observation parsers do; the gate never infers it from the batch (C-005 — it stays
+manifest-blind).
+
+**Rationale.** FR-008 requires the **same** structured self-reconciliation record shape
+for intake runs. The reconciler already generalizes for free; the observation-only gate
+is in the probe, and naming it here prevents the "minimal additive change" wording from
+hiding a real generalization during implementation (the exact seam-capability drift the
+audit method warns about).
+
 ## Open questions
 
 None. The two product forks (scope; alien source) were resolved at specify; the
-architecture forks were resolved in the Engineering Alignment and grounded above.
+architecture forks were resolved in the Engineering Alignment and grounded above; the
+two review High items (intake declared/emitted evidence seam — D3; intake self-reconcile
+probe ownership — D9) are pinned to named primitives.
