@@ -20,9 +20,9 @@ own. Tests are first-class here (this mission *is* a test harness).
 | T007 | Return a `ContractCheckResult`-shaped result (sorted violations) | WP02 | [D] |
 | T008 | Test intake runtime clauses + clause names/count match contract | WP02 | [D] |
 | T030 | Runner witnesses intake parse/validate/persist (stage-tagged error) | WP02 |  | [D] |
-| T009 | Author `alien_intake.csv` (meals+supplements, epoch-µs, foreign cols) | WP03 | [P] |
-| T010 | Author `alien_intake_manifest.yaml` (grader-only ground truth) | WP03 | [P] |
-| T011 | Implement `reference_intake_parser.py` (+ `MAPPED_SOURCE_COLUMNS`) | WP03 | [P] |
+| T009 | Author `alien_intake.csv` (meals+supplements, epoch-µs, foreign cols) | WP03 | [D] |
+| T010 | Author `alien_intake_manifest.yaml` (grader-only ground truth) | WP03 | [D] |
+| T011 | Implement `reference_intake_parser.py` (+ `MAPPED_SOURCE_COLUMNS`) | WP03 | [D] |
 | T012 | Intake boundary-truth reader (intake tables) | WP04 |  |
 | T013 | Intake gap reconciler (manifest vs loaded∪declared) | WP04 |  |
 | T014 | Assemble the intake `DrawerGradingStrategy` | WP04 |  |
@@ -96,9 +96,9 @@ ground-truth manifest, and a known-good reference intake parser (layer-1 operato
 **Independent test**: the reference parser parses the alien source and `validate()`s.
 **Prompt**: [tasks/WP03-alien-source-and-reference-parser.md](tasks/WP03-alien-source-and-reference-parser.md) · ~240 lines
 
-- [ ] T009 Author `alien_intake.csv` (meals+supplements, epoch-µs, foreign cols) (WP03)
-- [ ] T010 Author `alien_intake_manifest.yaml` (grader-only ground truth) (WP03)
-- [ ] T011 Implement `reference_intake_parser.py` (+ `MAPPED_SOURCE_COLUMNS`) (WP03)
+- [x] T009 Author `alien_intake.csv` (meals+supplements, epoch-µs, foreign cols) (WP03)
+- [x] T010 Author `alien_intake_manifest.yaml` (grader-only ground truth) (WP03)
+- [x] T011 Implement `reference_intake_parser.py` (+ `MAPPED_SOURCE_COLUMNS`) (WP03)
 
 **Dependencies**: none. **Risks**: manifest leaking onto an operator path (C-005) — keep it grader-only.
 
