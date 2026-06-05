@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
     from pathlib import Path
 
-    from premura.parsers.base import IngestBatch
+    from premura.parsers.base import IngestBatch, IntakeBatch
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,7 +68,7 @@ def _read_source_columns(source_path: Path) -> list[str]:
 
 def self_reconcile(
     source_path: Path,
-    batch: IngestBatch,
+    batch: IngestBatch | IntakeBatch,
     mapped_columns: Iterable[str],
 ) -> SelfReconciliationResult:
     """Check that every raw source column is mapped or declared (FR-003 / C-005).
@@ -76,9 +76,11 @@ def self_reconcile(
     Args:
         source_path: the source artifact. Its header/structure is the ground set
             of raw columns — read here, NOT inferred from the parser's behaviour.
-        batch: the parser's own :class:`~premura.parsers.base.IngestBatch`. Only
-            its declared gaps are consulted: ``unmapped_metrics`` and each
-            ``skipped_rows`` entry's ``raw_field``.
+        batch: the parser's own :class:`~premura.parsers.base.IngestBatch` **or**
+            :class:`~premura.parsers.base.IntakeBatch`. Only its declared gaps are
+            consulted: ``unmapped_metrics`` and each ``skipped_rows`` entry's
+            ``raw_field`` — both fields are present on either batch type, so the
+            gate is drawer-agnostic with **no logic change** (FR-008 / D9).
         mapped_columns: the source columns the parser consumed to emit its
             metrics. An **explicit** caller input (the WP03 operator supplies it,
             tests pass it directly); the gate never infers it from the batch.

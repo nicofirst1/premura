@@ -1,0 +1,7 @@
+logged_at_us,kind,item,qty,qty_uom,note
+1705324500000000,meal,Zorblax Morning Mash,2.0,oz,obviously fake test food
+1705324500000000,meal,Glonk Berry Cluster,180,Cal,paired with the mash
+1705324800000000,supp,Sunbeam D3 Capsule,2000,IU,taken with breakfast
+1705340700000000,meal,Nebula Noodle Bowl,420,Cal,synthetic lunch entry
+1705359600000000,supp,Bulkroot Creatine Scoop,5000,mcg,pre-workout dose
+1705379400000000,meal,Midnight Glow Snack,90,Cal,crosses local midnight on purpose

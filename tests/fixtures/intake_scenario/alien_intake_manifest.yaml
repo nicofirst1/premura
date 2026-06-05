@@ -1,0 +1,41 @@
+# GRADER-ONLY — never expose to an operator (C-005).
+#
+# This is the boundary truth the grader reconciles a parser's run against. It is
+# read ONLY by grader/test code; it MUST NOT be copied into the operator sandbox
+# tree, embedded in any operator prompt, or otherwise reachable by the operator.
+# The reference parser never reads this file — it earns each mapping on its own.
+#
+# Ground truth for tests/fixtures/intake_scenario/alien_intake.csv. Per source
+# column: which drawer it belongs to (always `intake` for this meals+supplements
+# source), the canonical home it should resolve to (null = no canonical home, an
+# intended declared gap), and the expected outcome (`loaded` vs `declared_gap`).
+source: alien_intake.csv
+source_local_tz: America/New_York
+columns:
+  - source_column: logged_at_us
+    drawer: intake
+    canonical_home: event_timestamp
+    expected_outcome: loaded
+  - source_column: kind
+    drawer: intake
+    canonical_home: event_kind
+    expected_outcome: loaded
+  - source_column: item
+    drawer: intake
+    canonical_home: item_label
+    expected_outcome: loaded
+  - source_column: qty
+    drawer: intake
+    canonical_home: quantity_value
+    expected_outcome: loaded
+  - source_column: qty_uom
+    drawer: intake
+    canonical_home: quantity_unit
+    expected_outcome: loaded
+  # The `note` column is free text with no canonical home in the intake seam.
+  # The reference parser must DECLARE it as a gap (unmapped_metrics), never drop
+  # it silently. This is the SC-004 declared-gap case.
+  - source_column: note
+    drawer: intake
+    canonical_home: null
+    expected_outcome: declared_gap

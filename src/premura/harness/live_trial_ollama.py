@@ -60,6 +60,7 @@ from premura.harness.live_trial import (
     Operator,
 )
 from premura.harness.sandbox import Sandbox
+from premura.harness.scenario import Scenario, observation_scenario
 from premura.harness.scoreboard import (
     LiveTrialRunRecord,
     ScoreboardEntry,
@@ -106,7 +107,7 @@ _MAPPED_COLUMNS_CONST = "MAPPED_SOURCE_COLUMNS"
 # The contract surface a real operator has from CONTRACT.md + base.py. This is
 # the contract, NOT the reference parser and NOT the manifest — the model never
 # sees the answer key (C-005).
-_CONTRACT_PROMPT = f"""\
+_OBSERVATION_CONTRACT_PROMPT = f"""\
 You are writing a Premura parser plugin. Output ONE Python module, nothing else.
 
 Target API (importable in the sandbox):
@@ -155,6 +156,65 @@ RULES (decision tree, in order, per source column):
 Emit exactly one heart_rate Measurement per data row that has a bpm value.
 Give each Measurement a stable source_uuid like f"{{source_kind}}:{{timestamp}}".
 Parse the ISO timestamp to a tz-naive UTC datetime.
+
+Output ONLY the python module source. No markdown, no prose, no code fences.
+"""
+
+# The intake-drawer contract surface. Same posture as the observation prompt: it
+# is the CONTRACT (IntakeBatch + the intake input dataclasses), NEVER the
+# reference parser and NEVER the grader-only manifest (C-005). The model gets the
+# loadable-row shape, the gap-declaration rule, and the self-reconcile honesty
+# rule — the same three rules grade observation and intake; only the loadable
+# shape differs (FR-007 / D9).
+_INTAKE_CONTRACT_PROMPT = f"""\
+You are writing a Premura intake parser plugin. Output ONE Python module, nothing else.
+
+Target API (importable in the sandbox):
+    from premura.parsers.base import (
+        IntakeBatch, ParseOutput, SourceDescriptor, SkippedRow,
+        NutritionIntakeInput, NutritionItemInput, NutritionQuantityInput,
+        SupplementIntakeInput, SupplementItemInput, SupplementDoseInput,
+    )
+
+This is the INTAKE seam (meals + supplements), NOT the observation seam: emit an
+IntakeBatch (carried inside a ParseOutput), never measurements / heart_rate rows.
+
+IntakeBatch(dataclass) fields you set:
+    source_descriptors: dict[str, SourceDescriptor],
+    nutrition_events: list[NutritionIntakeInput],
+    supplement_events: list[SupplementIntakeInput],
+    unmapped_metrics: list[str], skipped_rows: list[SkippedRow]
+    method: .validate() (call before returning)
+A meal row -> NutritionIntakeInput(source_id, source_kind, start_utc, local_tz,
+    dedupe_key, items=[NutritionItemInput(item_label, quantities=[
+    NutritionQuantityInput(quantity_key, value_num, unit)])]).
+A supplement row -> SupplementIntakeInput(source_id, source_kind, ts_utc, local_tz,
+    dedupe_key, items=[SupplementItemInput(product_label, doses=[
+    SupplementDoseInput(amount_num, unit)])]).
+SourceDescriptor(source_id, source_kind, app_name=...) — EVERY event source_id
+    MUST have a matching source_descriptors entry, or validate() raises.
+SkippedRow(raw_field: str, reason: str) — use raw_field for a declared-gap COLUMN.
+
+Your class MUST be named exactly:
+    class {_PARSER_ATTR}:
+        source_kind: str = "<short stable source id>"
+        language_hint: str | None = None
+        def declares_metrics(self) -> list[str]: ...   # intake has none -> return []
+        def parse(self, path: Path) -> ParseOutput: ... # ParseOutput(intake=batch)
+
+You MUST also expose, at MODULE level, the list of raw source COLUMN NAMES your
+parser actually consumed to emit intake events:
+    {_MAPPED_COLUMNS_CONST}: list[str] = [...]
+
+RULES (decision tree, in order, per source column):
+  1. Consume a column to fill an intake event (timestamp, kind, item label,
+     quantity value, quantity unit) and add it to {_MAPPED_COLUMNS_CONST}.
+  2. A column with no canonical intake home (e.g. free-text commentary) MUST NOT
+     be invented. Declare its raw COLUMN NAME in unmapped_metrics (or as a
+     SkippedRow.raw_field). NEVER silently drop a column: EVERY column in the
+     source header must be either in {_MAPPED_COLUMNS_CONST} or declared as a gap.
+  3. Give each event a stable, unique dedupe_key.
+  4. Call result.validate() before returning ParseOutput(intake=result).
 
 Output ONLY the python module source. No markdown, no prose, no code fences.
 """
@@ -263,6 +323,76 @@ def _normalize_class_name(code: str) -> str:
     return code
 
 
+@dataclass(frozen=True, slots=True)
+class _DrawerProbe:
+    """The scenario-derived drawer specifics the in-sandbox probe + operator need.
+
+    This is the bounded *rubric* (guide-don't-enumerate, D9) that generalizes the
+    probe off its observation-only gate. Each field is the SAME role for every
+    drawer — only the loadable-row shape differs:
+
+    * ``contract_prompt`` — the contract surface the operator authors against
+      (observation measurements vs intake events). Never the manifest (C-005).
+    * ``batch_selector`` — the expression (over the ``(observation, intake)`` tuple
+      from ``normalize_parse_output``) that picks THIS drawer's batch in the probe.
+    * ``nonempty_check`` — the drawer's "produced at least one loadable row" check
+      (observation: ``batch.measurements``; intake: ``len(batch)``), evaluated in
+      the probe over the selected ``batch``.
+    * ``missing_msg`` / ``empty_msg`` — the probe's assertion messages.
+    * ``goal`` — the driver's PHI-safe goal sentence for this drawer (the human's
+      intent the operator authors toward).
+
+    A new drawer is added by registering one of these in ``_DRAWER_PROBES`` keyed
+    by its scenario name — appending to a list, never forking the probe body.
+    """
+
+    contract_prompt: str
+    batch_selector: str
+    nonempty_check: str
+    missing_msg: str
+    empty_msg: str
+    goal: str
+
+
+# The drawer-probe rubric: scenario name -> its :class:`_DrawerProbe`. Adding a
+# new acceptance drawer is registering an entry here (the guide-don't-enumerate
+# surface), NOT adding an ``if drawer:`` branch to the probe or the operator.
+_DRAWER_PROBES: dict[str, _DrawerProbe] = {
+    "observation": _DrawerProbe(
+        contract_prompt=_OBSERVATION_CONTRACT_PROMPT,
+        batch_selector="observation",
+        nonempty_check="batch.measurements",
+        missing_msg="parser emitted no observation batch",
+        empty_msg="parser emitted zero measurements",
+        goal="ingest the heart-rate category from the dropped Fitbit CSV",
+    ),
+    "intake_alien": _DrawerProbe(
+        contract_prompt=_INTAKE_CONTRACT_PROMPT,
+        batch_selector="intake",
+        nonempty_check="len(batch) > 0",
+        missing_msg="parser emitted no intake batch",
+        empty_msg="parser emitted zero intake events",
+        goal="ingest the meals and supplements from the dropped intake journal",
+    ),
+}
+
+
+def _resolve_drawer_probe(scenario: Scenario) -> _DrawerProbe:
+    """Resolve a scenario to its drawer-probe spec via the rubric (no per-drawer fork).
+
+    The single lookup that makes the operator + probe scenario-parametric: it reads
+    the rubric keyed by ``scenario.name``. An unregistered scenario is a missing
+    rubric entry (a named, explicit follow-up), never a silent observation default.
+    """
+    try:
+        return _DRAWER_PROBES[scenario.name]
+    except KeyError as exc:
+        raise KeyError(
+            f"no live-trial drawer probe registered for scenario {scenario.name!r}; "
+            f"register one in _DRAWER_PROBES (known: {sorted(_DRAWER_PROBES)})"
+        ) from exc
+
+
 @dataclass(slots=True)
 class _GateOutcome:
     """Result of gating one generated parser inside the sandbox.
@@ -284,6 +414,13 @@ class _GateOutcome:
 # runs the WP01 self_reconcile gate IN the sandbox (so the real, manifest-blind
 # WP01 code judges it). It prints a single JSON object on stdout. It never reads
 # the fixture manifest (C-005) — only the source artifact + the parser's batch.
+#
+# The body is DRAWER-DRIVEN, not observation-hardcoded (D9): the two drawer
+# specifics — which side of ``normalize_parse_output`` carries the batch and the
+# drawer's non-empty check — are filled in from the scenario's :class:`_DrawerProbe`
+# rubric (``{batch_selector}`` / ``{nonempty_check}``). The self_reconcile gate is
+# drawer-agnostic already (it reads ``unmapped_metrics`` / ``skipped_rows``, both
+# present on either batch type), so it is reached identically for every drawer.
 _PROBE_TEMPLATE = """\
 import json
 import sys
@@ -306,15 +443,15 @@ try:
     import premura.parsers.{module_attr} as _mod
 
     # A parser may return a bare IngestBatch (observation-only) or a ParseOutput
-    # carrying observation and/or intake; normalize to the observation batch the
-    # self-reconcile gate operates on (FR-007 union shape).
-    observation, _intake = normalize_parse_output(_Parser().parse(Path({source!r})))
-    if observation is None:
-        raise AssertionError("parser emitted no observation batch")
-    batch = observation
+    # carrying observation and/or intake; normalize to the (observation, intake)
+    # union, then pick the batch for THIS scenario's target drawer (FR-007 shape).
+    observation, intake = normalize_parse_output(_Parser().parse(Path({source!r})))
+    batch = {batch_selector}
+    if batch is None:
+        raise AssertionError({missing_msg!r})
     batch.validate()
-    if not batch.measurements:
-        raise AssertionError("parser emitted zero measurements")
+    if not ({nonempty_check}):
+        raise AssertionError({empty_msg!r})
     mapped = list(getattr(_mod, {mapped_const!r}, []))
     recon = self_reconcile(Path({source!r}), batch, mapped)
     result["ok"] = True
@@ -338,23 +475,30 @@ print(json.dumps(result))
 """
 
 
-def _gate_parser(sandbox_src: Path, source: Path) -> _GateOutcome:
+def _gate_parser(sandbox_src: Path, source: Path, probe: _DrawerProbe) -> _GateOutcome:
     """Import/parse/validate the generated parser AND run the WP01 self-reconcile gate.
 
     Runs in a subprocess rooted at the sandbox ``src`` so it imports the sandbox
     copy of premura and the operator's installed parser. Both checks are
     manifest-blind: only the source artifact + the parser's own batch are read
-    (C-005). Returns a :class:`_GateOutcome` whose ``feedback`` carries the parse
-    error and/or the verbatim ``unaccounted`` columns for the next retry.
+    (C-005). ``probe`` supplies the scenario's drawer specifics (which batch side
+    to gate, the non-empty check) so the SAME gate runs for observation or intake
+    with no per-drawer branch (D9). Returns a :class:`_GateOutcome` whose
+    ``feedback`` carries the parse error and/or the verbatim ``unaccounted``
+    columns for the next retry.
     """
-    probe = _PROBE_TEMPLATE.format(
+    probe_src = _PROBE_TEMPLATE.format(
         module_attr=_PARSER_MODULE.split(".")[-1],
         attr=_PARSER_ATTR,
         mapped_const=_MAPPED_COLUMNS_CONST,
         source=str(source),
+        batch_selector=probe.batch_selector,
+        nonempty_check=probe.nonempty_check,
+        missing_msg=probe.missing_msg,
+        empty_msg=probe.empty_msg,
     )
     with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False, encoding="utf-8") as handle:
-        handle.write(probe)
+        handle.write(probe_src)
         probe_path = handle.name
     env = {
         "PYTHONPATH": str(sandbox_src),
@@ -443,12 +587,18 @@ class OllamaOperator:
         *,
         model: str = DEFAULT_MODEL,
         max_tries: int = MAX_TRIES,
+        probe: _DrawerProbe | None = None,
     ) -> None:
         self.source = source
         self.model_id = model
         self.max_tries = max_tries
         self.tries_used = 0
         self.attempts: list[AttemptRecord] = []
+        # The scenario's drawer probe drives the contract prompt the operator
+        # authors against AND the in-sandbox gate's batch/non-empty check. Default
+        # to observation so existing callers/tests are unchanged (C-004); the
+        # intake entry passes the intake probe (D9). No per-drawer branch here.
+        self.probe = probe if probe is not None else _DRAWER_PROBES["observation"]
 
     @property
     def first_attempt_code(self) -> str:
@@ -464,7 +614,8 @@ class OllamaOperator:
         """Author a parser into the sandbox, gated and retried (NFR-003 / C-005)."""
         sample = "\n".join(self.source.read_text(encoding="utf-8").splitlines()[:8])
         base_prompt = (
-            f"{_CONTRACT_PROMPT}\n\nGOAL: {goal}\n\nDATA SAMPLE ({self.source.name}):\n{sample}\n"
+            f"{self.probe.contract_prompt}\n\nGOAL: {goal}\n\n"
+            f"DATA SAMPLE ({self.source.name}):\n{sample}\n"
         )
         dest = sandbox.root / _PARSER_DEST_RELPATH
         sandbox_src = sandbox.root / "src"
@@ -476,7 +627,7 @@ class OllamaOperator:
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text(code, encoding="utf-8")
 
-            outcome = _gate_parser(sandbox_src, self.source)
+            outcome = _gate_parser(sandbox_src, self.source, self.probe)
             self.attempts.append(
                 AttemptRecord(
                     index=attempt,
@@ -521,19 +672,24 @@ class _FixedCodeOperator:
 
 
 class OllamaDriver:
-    """Cheap-model driver: a fixed heart-rate goal and a canned answer.
+    """Cheap-model driver: a fixed scenario goal and a canned answer.
 
     Implements the :class:`~premura.harness.live_trial.Driver` protocol. Records
     a driver ``model_id`` but does NOT call a frontier model (FR-008; the canned
     driver is the DIRECTIVE_036 outside-boundary substitute for #10's frontier
-    driver).
+    driver). ``goal`` defaults to the observation heart-rate goal so existing
+    callers are unchanged (C-004); the intake entry passes the scenario's intake
+    goal so the driver is scenario-derived, not hardcoded to one drawer (FR-007).
     """
 
-    def __init__(self, *, model: str = DEFAULT_MODEL) -> None:
+    _DEFAULT_GOAL = "ingest the heart-rate category from the dropped Fitbit CSV"
+
+    def __init__(self, *, model: str = DEFAULT_MODEL, goal: str | None = None) -> None:
         self.model_id = f"canned-driver:{model}"
+        self._goal = goal if goal is not None else self._DEFAULT_GOAL
 
     def goal(self) -> str:
-        return "ingest the heart-rate category from the dropped Fitbit CSV"
+        return self._goal
 
     def respond(self, question: str) -> str:  # noqa: ARG002 - canned for the cheap driver
         return "proceed"
@@ -544,15 +700,38 @@ class OllamaDriver:
 # --------------------------------------------------------------------------- #
 
 
-def is_synthetic_source(source: Path) -> bool:
-    """True iff ``source`` resolves to the committed synthetic fixture (T013/FR-012).
+def _committed_synthetic_sources() -> set[Path]:
+    """Resolved paths of every registered scenario's committed synthetic source.
 
-    The single decision point for whether a run persists: only the committed
-    synthetic CSV is synthetic; ANY other source is treated as real and records
-    nothing. WP05 exercises this helper directly.
+    The bounded set of "safe to persist" sources is whatever the scenario registry
+    declares (guide-don't-enumerate): a new acceptance source becomes synthetic by
+    registering its scenario, not by editing this guard. The observation CSV is
+    kept explicitly so the synthetic decision is unchanged even before the registry
+    import resolves.
+    """
+    from premura.harness.scenario_registry import all_scenarios
+
+    sources: set[Path] = set()
+    for path in (_SYNTHETIC_CSV, *(s.source_path for s in all_scenarios())):
+        try:
+            sources.add(path.resolve())
+        except OSError:
+            continue
+    return sources
+
+
+def is_synthetic_source(source: Path) -> bool:
+    """True iff ``source`` is a committed synthetic scenario source (T013/FR-012).
+
+    The single decision point for whether a run persists: only a committed
+    synthetic scenario source is synthetic; ANY other source (a real local dump, a
+    temp copy at a different path) is treated as real and records nothing. WP05
+    exercises this helper directly. Scenario-derived so the intake scenario's
+    committed alien CSV persists the same way the observation CSV does, with no
+    per-source branch (FR-007).
     """
     try:
-        return source.resolve() == _SYNTHETIC_CSV.resolve()
+        return source.resolve() in _committed_synthetic_sources()
     except OSError:
         return False
 
@@ -582,8 +761,14 @@ def _grade_one(
     driver: OllamaDriver,
     source: Path,
     repo_root: Path,
+    scenario: Scenario,
 ) -> LiveTrialResult:
-    """Run one parser through the unchanged slice-one machinery + grader (NFR-006)."""
+    """Run one parser through the unchanged slice-one machinery + grader (NFR-006).
+
+    ``scenario`` is threaded into the WP06 scenario-parametric run path so the SAME
+    machinery grades the run against the selected acceptance source via the
+    scenario's injected strategy — no per-source branch here (NFR-005).
+    """
     return live_trial.run_live_trial_with_log(
         LiveTrialConfig(),
         driver=driver,
@@ -591,17 +776,19 @@ def _grade_one(
         repo_root=repo_root,
         parser_attr=_PARSER_ATTR,
         source=source,
+        scenario=scenario,
     )
 
 
 def run_live_trial_ollama(
     *,
     model: str = DEFAULT_MODEL,
-    source: Path = _SYNTHETIC_CSV,
+    source: Path | None = None,
     max_tries: int = MAX_TRIES,
     repo_root: Path = _REPO_ROOT,
     operator: OllamaOperator | None = None,
     keep_sandboxes: bool = False,
+    scenario: Scenario | None = None,
 ) -> LiveTrialOutcome:
     """Drive one Ollama-backed live trial end-to-end (T013/T014; FR-001..014).
 
@@ -609,16 +796,31 @@ def run_live_trial_ollama(
     :class:`OllamaOperator`): WP05 passes a deterministic fake operator so the
     end-to-end path runs in the default suite without a model server.
 
+    ``scenario`` selects which acceptance source the cheap model authors a parser
+    for and is graded against; it defaults to the observation scenario so existing
+    callers are unchanged (C-004). Passing the intake scenario makes the SAME path
+    run the intake trial — the operator authors an intake parser, the in-sandbox
+    probe gates the intake batch, and the WP06 scenario-parametric run path grades
+    it via the intake strategy. No per-scenario branch (FR-007 / NFR-005). The
+    drawer specifics (contract prompt, probe batch/non-empty check, driver goal)
+    all come from the scenario's :class:`_DrawerProbe` rubric entry.
+
+    ``source`` defaults to the scenario's committed synthetic source; callers may
+    override it (the local real-dump follow-up passes a non-synthetic path, which
+    records nothing).
+
     Flow:
 
     1. Run the FINAL parser via :func:`live_trial.run_live_trial_with_log` (reuse,
        don't fork) — its verdict is the authority (FR-004).
     2. Independently grade **attempt 1** (un-nagged) through the same unchanged
        machinery + grader (FR-014).
-    3. Assemble a :class:`~premura.harness.scoreboard.LiveTrialRunRecord` and, for
-       a SYNTHETIC source only, persist it + append the scoreboard (WP02). A real
-       source records nothing — the no-persist decision is made here and enforced
-       by WP02's guard (FR-012 / C-003 / NFR-002).
+    3. Assemble a :class:`~premura.harness.scoreboard.LiveTrialRunRecord` recording
+       ``run_kind="live_trial"`` + the ``operator_model`` / ``driver_model``
+       identities (so tiers compare, FR-007) and, for a SYNTHETIC source only,
+       persist it + append the scoreboard (WP02). A real source records nothing —
+       the no-persist decision is made here and enforced by WP02's guard
+       (FR-012 / C-003 / NFR-002).
 
     Returns a :class:`LiveTrialOutcome`. If the default operator cannot reach the
     model server, returns ``LiveTrialOutcome(model_unavailable=True)`` (it does
@@ -629,23 +831,33 @@ def run_live_trial_ollama(
     always tears both sandboxes down regardless of this flag, so no real local
     data is left on disk (FR-004 / NFR-002 / NFR-004).
     """
+    if scenario is None:
+        scenario = observation_scenario()
+    probe = _resolve_drawer_probe(scenario)
+    if source is None:
+        source = scenario.source_path
+
     if operator is None:
         if not ollama_available():
             return LiveTrialOutcome(model_unavailable=True)
-        operator = OllamaOperator(source, model=model, max_tries=max_tries)
+        operator = OllamaOperator(source, model=model, max_tries=max_tries, probe=probe)
 
-    driver = OllamaDriver(model=model)
+    driver = OllamaDriver(model=model, goal=probe.goal)
 
     # (1) Final run — the authority verdict (reuses the unchanged machinery).
     try:
-        final_result = _grade_one(operator, driver=driver, source=source, repo_root=repo_root)
+        final_result = _grade_one(
+            operator, driver=driver, source=source, repo_root=repo_root, scenario=scenario
+        )
     except OllamaUnavailableError:
         return LiveTrialOutcome(model_unavailable=True)
 
     # (2) Independently grade attempt 1 (un-nagged) with the SAME grader.
     first_code = operator.first_attempt_code
     first_operator = _FixedCodeOperator(first_code, model=operator.model_id)
-    first_result = _grade_one(first_operator, driver=driver, source=source, repo_root=repo_root)
+    first_result = _grade_one(
+        first_operator, driver=driver, source=source, repo_root=repo_root, scenario=scenario
+    )
 
     final_verdict: Verdict = final_result.verdict
     first_verdict: Verdict = first_result.verdict

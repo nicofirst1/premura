@@ -70,6 +70,7 @@ from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 from premura.harness import open_sandbox_warehouse_for_grading
 from premura.harness.grader import grade
 from premura.harness.sandbox import Sandbox, build_sandbox, install_parser
+from premura.harness.scenario import Scenario, observation_scenario
 from premura.session_log import store
 
 if TYPE_CHECKING:
@@ -157,7 +158,25 @@ class LiveTrialConfig:
 
 @dataclass(slots=True)
 class _CapturedProvenance:
-    """Captured ingest evidence assembled from the runner envelope (transport only)."""
+    """Captured ingest evidence assembled from the runner envelope (transport only).
+
+    Every field is *captured measured evidence* or a *parser claim* the strategy
+    reconciles — never a precomputed rule verdict (FR-005). The observation fields
+    are unchanged; ``produced`` and ``error`` are the **intake runtime-evidence
+    seam** the harness carries so the injected
+    :class:`~premura.harness.intake_strategy.IntakeStrategy` reads real captured
+    values (not ``getattr`` fallbacks) when an intake scenario is driven:
+
+    * ``error`` — the runner envelope's **stage-tagged** failure detail
+      (``parse:`` / ``validate:`` / ``persist:``), surfaced by the WP02 runner
+      change; ``None`` on success. The intake checker reads it as the
+      ``persisted_without_raising`` violation message.
+    * ``produced`` — the produced :class:`~premura.parsers.base.IntakeBatch` when
+      the run path holds it in-process; ``None`` across the subprocess boundary and
+      for the observation drawer (whose strategy never reads it). Transport only:
+      the grader recomputes ``loaded`` from the warehouse and ``honest_about_gaps``
+      from the manifest regardless (FR-005).
+    """
 
     declared_metrics: Sequence[str]
     emitted_metric_ids: Sequence[str]
@@ -165,6 +184,8 @@ class _CapturedProvenance:
     skipped_rows: Sequence[dict[str, Any]]
     rows_inserted: int
     ingest_run_ok: bool
+    error: str | None = None
+    produced: Any = None
 
 
 @dataclass(slots=True)
@@ -316,9 +337,61 @@ def _run_ingest_subprocess(
         check=False,
     )
     if not proc.stdout:
-        raise RuntimeError(f"ingest runner produced no envelope; stderr={proc.stderr}")
-    envelope: dict[str, Any] = json.loads(proc.stdout)
+        # The runner crashed before emitting its envelope (e.g. an unimportable
+        # parser module the subprocess could not even start, or an interpreter-level
+        # abort). The harness MUST still reach a completed, persisted, gradeable
+        # FAIL — never raise before a record exists (FR-009; the session-log-substrate
+        # RCA). Synthesize a stage-tagged ``parse:`` error envelope so the failure
+        # path persists a record exactly like a caught parser raise.
+        return _synthetic_error_envelope(parser_spec, proc.stderr)
+    try:
+        envelope: dict[str, Any] = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        # Garbled stdout is likewise a runner failure, not a reason to abort before
+        # a record exists; synthesize the same gradeable FAIL envelope (FR-009).
+        return _synthetic_error_envelope(parser_spec, proc.stderr or proc.stdout)
     return envelope
+
+
+def _synthetic_error_envelope(parser_spec: str, detail: str) -> dict[str, Any]:
+    """Build an error envelope for a runner that produced no usable stdout (FR-009).
+
+    Shape-identical to the runner's own error envelope (the same keys the happy
+    path emits, all arrays present-and-empty) so the downstream provenance write +
+    grading proceed unchanged. The ``error.message`` is stage-tagged ``parse:`` so
+    the intake checker witnesses the broken stage; the harness never trusts it as a
+    verdict (FR-005). The detail is truncated to stay PHI-safe and bounded.
+    """
+    parser_kind = parser_spec.split(":", 1)[1] if ":" in parser_spec else parser_spec
+    message = (detail or "ingest runner produced no envelope").strip()
+    return {
+        "status": "error",
+        "error": {"kind": "RunnerNoEnvelope", "message": f"parse: {message[:500]}"},
+        "parser_kind": parser_kind,
+        "batch_id": None,
+        "load_stats": None,
+        "declared_metrics": [],
+        "emitted_metric_ids": [],
+        "unmapped_metrics": [],
+        "skipped_rows": [],
+    }
+
+
+def _envelope_error_detail(envelope: dict[str, Any]) -> str | None:
+    """Extract the runner's stage-tagged error message (transport only).
+
+    The runner's ``error`` is ``None`` on success or an object
+    ``{"kind", "message"}`` whose ``message`` carries the stage tag
+    (``parse:`` / ``validate:`` / ``persist:``). We carry that message verbatim so
+    the intake checker can witness which stage broke; we never re-tag or trust it.
+    """
+    error = envelope.get("error")
+    if isinstance(error, dict):
+        message = error.get("message")
+        return str(message) if message is not None else None
+    if isinstance(error, str):
+        return error
+    return None
 
 
 def _captured_provenance(envelope: dict[str, Any]) -> _CapturedProvenance:
@@ -331,13 +404,15 @@ def _captured_provenance(envelope: dict[str, Any]) -> _CapturedProvenance:
         skipped_rows=list(envelope["skipped_rows"]),
         rows_inserted=int(load_stats.get("rows_inserted", 0)),
         ingest_run_ok=envelope["status"] == "ok",
+        error=_envelope_error_detail(envelope),
+        produced=None,
     )
 
 
-def _load_manifest(repo_root: Path) -> dict[str, Any]:
+def _load_manifest(manifest_path: Path) -> dict[str, Any]:
     import yaml  # type: ignore[import-untyped]
 
-    return yaml.safe_load((repo_root / _MANIFEST).read_text(encoding="utf-8"))
+    return yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
 
 
 @dataclass(slots=True)
@@ -358,6 +433,7 @@ def _drive_live_trial(
     parser_attr: str,
     source: Path | None,
     keep_sandbox: bool,
+    scenario: Scenario | None = None,
 ) -> LiveTrialResult:
     """Core seam flow: same machinery as the repeatable check, operator-edited.
 
@@ -378,14 +454,23 @@ def _drive_live_trial(
        committed seam test; the real dump only in the local follow-up), recorded as
        the verdict-bearing ``ingest_run`` step.
     5. Grade against the sandbox warehouse (opened read-only AFTER the runner closed
-       its writable handle) + the committed manifest (WP05). Persist provenance with
-       ``contract_pass`` = the GRADER's recomputed ``runtime_valid`` (FR-065).
+       its writable handle) + the scenario's committed manifest (WP05), driven through
+       the GENERIC :func:`grade` with the **scenario's injected strategy** — no
+       per-source branch (NFR-005). Persist provenance with ``contract_pass`` = the
+       GRADER's recomputed ``runtime_valid`` (FR-065).
     6. :func:`store.finish_session`; tear the sandbox down unless ``keep_sandbox``
        (NFR-004); return the result.
+
+    ``scenario`` selects which acceptance source the run is graded against. It
+    defaults to the observation scenario so existing callers/tests are unchanged
+    (C-004); passing the intake scenario makes the SAME path grade an intake run via
+    the injected :class:`~premura.harness.intake_strategy.IntakeStrategy`.
     """
     repo_root = repo_root.resolve()
-    manifest = _load_manifest(repo_root)
-    ingest_source = source if source is not None else (repo_root / _SYNTHETIC_CSV)
+    if scenario is None:
+        scenario = observation_scenario()
+    manifest = _load_manifest(scenario.manifest_path)
+    ingest_source = source if source is not None else scenario.source_path
     goal = driver.goal()
 
     sandbox = build_sandbox(repo_root)
@@ -472,6 +557,7 @@ def _drive_live_trial(
                 provenance=provenance,
                 warehouse_conn=warehouse_conn,
                 fixture_manifest=manifest,
+                strategy=scenario.strategy,
             )
         finally:
             warehouse_conn.close()
@@ -519,6 +605,7 @@ def run_live_trial(
     repo_root: Path,
     parser_attr: str,
     source: Path | None = None,
+    scenario: Scenario | None = None,
 ) -> Verdict:
     """Drive one live trial end-to-end and return the grader verdict (FR-030/FR-031).
 
@@ -537,9 +624,14 @@ def run_live_trial(
         repo_root: the clean clone to sandbox.
         parser_attr: the parser class/factory attribute the operator's installed
             module exposes (the runner resolves ``<module>:<attr>``).
-        source: the dropped data to ingest; defaults to the committed SYNTHETIC
-            fixture (never the real dump). The real-dump follow-up passes a path
-            under ``config.source_dir`` locally — never in a committed test (C-003).
+        source: the dropped data to ingest; defaults to the scenario's committed
+            SYNTHETIC source (never the real dump). The real-dump follow-up passes a
+            path under ``config.source_dir`` locally — never in a committed test
+            (C-003).
+        scenario: the acceptance :class:`~premura.harness.scenario.Scenario` the run
+            is graded against; its ``strategy`` is injected into the generic
+            ``grade()`` (no per-source branch, NFR-005). Defaults to the observation
+            scenario so existing callers are unchanged (C-004).
 
     Returns:
         The grader :data:`Verdict` (no ids/timestamps).
@@ -552,6 +644,7 @@ def run_live_trial(
         parser_attr=parser_attr,
         source=source,
         keep_sandbox=False,
+        scenario=scenario,
     ).verdict
 
 
@@ -563,12 +656,17 @@ def run_live_trial_with_log(
     repo_root: Path,
     parser_attr: str,
     source: Path | None = None,
+    scenario: Scenario | None = None,
 ) -> LiveTrialResult:
     """Like :func:`run_live_trial` but KEEPS the sandbox and returns its log path.
 
     Used by the seam test to assert on the harness-written session/provenance rows
     (run_kind, operator_model/driver_model). Production never keeps the sandbox.
     The caller is responsible for tearing the kept sandbox down (NFR-004).
+
+    ``scenario`` is threaded through to :func:`_drive_live_trial` so the kept-log
+    path can be graded against any registered acceptance source (defaults to
+    observation; C-004).
     """
     return _drive_live_trial(
         config,
@@ -578,6 +676,7 @@ def run_live_trial_with_log(
         parser_attr=parser_attr,
         source=source,
         keep_sandbox=True,
+        scenario=scenario,
     )
 
 

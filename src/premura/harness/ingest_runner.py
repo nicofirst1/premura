@@ -42,6 +42,25 @@ _EMPTY_ENVELOPE: dict[str, Any] = {
 }
 
 
+class _StagedError(Exception):
+    """An intake-stage failure tagged with which stage broke.
+
+    The runner *witnesses* the operator's intake batch through three stages —
+    ``parse`` / ``validate`` / ``persist`` — so a failure tells the grader which
+    stage broke. The tag rides in the existing envelope ``error`` object's
+    ``message`` as a ``"<stage>: <detail>"`` string, so the frozen
+    ``ingest-outcome-envelope.schema.json`` (``additionalProperties:false``) is
+    unchanged — no new top-level key. The intake runtime checker
+    (:func:`premura.harness.intake_contract_check.check_intake_runtime_contract`)
+    reads ``status`` + this stage tag as its evidence.
+    """
+
+    def __init__(self, stage: str, cause: BaseException) -> None:
+        self.stage = stage
+        self.cause = cause
+        super().__init__(f"{stage}: {cause}")
+
+
 def _load_parser(spec: str) -> tuple[str, Any]:
     """Import ``module.path:ClassOrFactory`` and instantiate it.
 
@@ -87,14 +106,32 @@ def run(*, source: Path, parser_spec: str, warehouse: Path) -> dict[str, Any]:
         # A parser may return a bare IngestBatch (observation-only, today's
         # parsers) or a ParseOutput carrying observation and/or intake; the
         # single dispatch helper routes each to its seam (FR-007).
-        observation, intake = normalize_parse_output(parser.parse(source))
+        #
+        # parse stage — a raise here (parser.parse or normalize dispatch) is the
+        # `parse:` intake stage; tag it so the grader knows the shape was wrong.
+        try:
+            observation, intake = normalize_parse_output(parser.parse(source))
+        except Exception as exc:  # noqa: BLE001 - witnessing the parse stage
+            raise _StagedError("parse", exc) from exc
 
         conn = duck.initialize(warehouse)
         try:
             if intake is not None:
-                # Intake never travels the observation loader; it persists
-                # through its own home, exactly as the CLI/harness do.
-                persist_intake_batch(conn, intake)
+                # The runner WITNESSES intake through its own stages so the intake
+                # runtime checker has real evidence (it is harness code grading the
+                # operator's batch, never a parser self-report). validate() is
+                # called explicitly — today the runner persisted without it, so
+                # `batch_validates` was unwitnessed.
+                try:
+                    intake.validate()
+                except Exception as exc:  # noqa: BLE001 - witnessing the validate stage
+                    raise _StagedError("validate", exc) from exc
+                try:
+                    # Intake never travels the observation loader; it persists
+                    # through its own home, exactly as the CLI/harness do.
+                    persist_intake_batch(conn, intake)
+                except Exception as exc:  # noqa: BLE001 - witnessing the persist stage
+                    raise _StagedError("persist", exc) from exc
 
             if observation is not None:
                 # The runner owns the warehouse provenance fields; attach if the
@@ -131,6 +168,22 @@ def run(*, source: Path, parser_spec: str, warehouse: Path) -> dict[str, Any]:
                 unmapped_metrics=list(intake.unmapped_metrics) if intake else [],
                 skipped_rows=_skipped_rows_payload(intake) if intake else [],
             )
+        return envelope
+    except _StagedError as exc:
+        # A witnessed intake stage failed. The error message carries the stage
+        # tag (`parse:`/`validate:`/`persist:`); the checker reads it as evidence.
+        # `kind` reports the underlying exception type for human triage.
+        envelope.update(
+            status="error",
+            parser_kind=parser_kind,
+            error={"kind": type(exc.cause).__name__, "message": str(exc)},
+        )
+        envelope["declared_metrics"] = []
+        envelope["emitted_metric_ids"] = []
+        envelope["unmapped_metrics"] = []
+        envelope["skipped_rows"] = []
+        envelope["batch_id"] = None
+        envelope["load_stats"] = None
         return envelope
     except Exception as exc:  # noqa: BLE001 - the runner's job is to capture any raise
         envelope.update(
