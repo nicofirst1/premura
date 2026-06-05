@@ -23,11 +23,11 @@ own. Tests are first-class here (this mission *is* a test harness).
 | T009 | Author `alien_intake.csv` (meals+supplements, epoch-µs, foreign cols) | WP03 | [D] |
 | T010 | Author `alien_intake_manifest.yaml` (grader-only ground truth) | WP03 | [D] |
 | T011 | Implement `reference_intake_parser.py` (+ `MAPPED_SOURCE_COLUMNS`) | WP03 | [D] |
-| T012 | Intake boundary-truth reader (intake tables) | WP04 |  |
-| T013 | Intake gap reconciler (manifest vs loaded∪declared) | WP04 |  |
-| T014 | Assemble the intake `DrawerGradingStrategy` | WP04 |  |
-| T015 | `scenario_registry.py` — observation + intake → `all_scenarios()` | WP04 |  |
-| T016 | Layer-1 happy-path e2e: reference parser → full three-rule pass | WP04 |  |
+| T012 | Intake boundary-truth reader (intake tables) | WP04 |  | [D] |
+| T013 | Intake gap reconciler (manifest vs loaded∪declared) | WP04 |  | [D] |
+| T014 | Assemble the intake `DrawerGradingStrategy` | WP04 |  | [D] |
+| T015 | `scenario_registry.py` — observation + intake → `all_scenarios()` | WP04 |  | [D] |
+| T016 | Layer-1 happy-path e2e: reference parser → full three-rule pass | WP04 |  | [D] |
 | T017 | e2e: mis-filed intake row → `loaded` fails | WP05 | [P] |
 | T018 | e2e: unmappable field → declared gap (not silent drop) | WP05 | [P] |
 | T019 | e2e: renamed-but-consumed column → accounted | WP05 | [P] |
@@ -111,11 +111,11 @@ layer-1 full-pass end-to-end run.
 **Independent test**: reference parser over the alien source → full three-rule pass.
 **Prompt**: [tasks/WP04-intake-strategy-and-grading-e2e.md](tasks/WP04-intake-strategy-and-grading-e2e.md) · ~360 lines
 
-- [ ] T012 Intake boundary-truth reader (intake tables) (WP04)
-- [ ] T013 Intake gap reconciler (manifest vs loaded∪declared) (WP04)
-- [ ] T014 Assemble the intake `DrawerGradingStrategy` (WP04)
-- [ ] T015 `scenario_registry.py` — observation + intake → `all_scenarios()` (WP04)
-- [ ] T016 Layer-1 happy-path e2e: reference parser → full three-rule pass (WP04)
+- [x] T012 Intake boundary-truth reader (intake tables) (WP04)
+- [x] T013 Intake gap reconciler (manifest vs loaded∪declared) (WP04)
+- [x] T014 Assemble the intake `DrawerGradingStrategy` (WP04)
+- [x] T015 `scenario_registry.py` — observation + intake → `all_scenarios()` (WP04)
+- [x] T016 Layer-1 happy-path e2e: reference parser → full three-rule pass (WP04)
 
 **Dependencies**: WP01, WP02, WP03. **Risks**: a per-drawer branch creeping into the shared path (the structural guard lands later in the edge-case suite).
 
