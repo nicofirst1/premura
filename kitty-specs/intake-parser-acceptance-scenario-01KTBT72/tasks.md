@@ -33,11 +33,11 @@ own. Tests are first-class here (this mission *is* a test harness).
 | T019 | e2e: renamed-but-consumed column → accounted | WP05 | [P] |
 | T020 | e2e: intake-only vs both drawer targets | WP05 | [P] |
 | T021 | structural: no per-source branch + ≥2 scenarios over one path | WP05 | [P] |
-| T022 | Widen captured provenance to carry the intake surface (transport) | WP06 |  |
-| T023 | `live_trial` run path drives a `Scenario`; pass strategy to `grade()` | WP06 |  |
-| T024 | Failure path persists a completed failing record on import/parse failure | WP06 |  |
-| T025 | Type-widen `self_reconcile` (`IngestBatch \| IntakeBatch`) | WP06 |  |
-| T026 | `StubBrokenParserOperator` + deterministic failure-path test | WP06 |  |
+| T022 | Widen captured provenance to carry the intake surface (transport) | WP06 |  | [D] |
+| T023 | `live_trial` run path drives a `Scenario`; pass strategy to `grade()` | WP06 |  | [D] |
+| T024 | Failure path persists a completed failing record on import/parse failure | WP06 |  | [D] |
+| T025 | Type-widen `self_reconcile` (`IngestBatch \| IntakeBatch`) | WP06 |  | [D] |
+| T026 | `StubBrokenParserOperator` + deterministic failure-path test | WP06 |  | [D] |
 | T027 | Generalize `_PROBE_TEMPLATE` off its observation-only gate | WP07 |  |
 | T028 | Layer-2 entry selects the intake scenario; records run/model ids | WP07 |  |
 | T029 | `live_trial`-marked intake test (prints score, never asserts pass) | WP07 |  |
@@ -146,11 +146,11 @@ type-widen `self_reconcile`.
 **Independent test**: a stub broken-parser operator yields a completed, persisted, failing record.
 **Prompt**: [tasks/WP06-provenance-failure-path.md](tasks/WP06-provenance-failure-path.md) · ~320 lines
 
-- [ ] T022 Widen captured provenance to carry the intake surface (transport) (WP06)
-- [ ] T023 `live_trial` run path drives a `Scenario`; pass strategy to `grade()` (WP06)
-- [ ] T024 Failure path persists a completed failing record on import/parse failure (WP06)
-- [ ] T025 Type-widen `self_reconcile` (`IngestBatch | IntakeBatch`) (WP06)
-- [ ] T026 `StubBrokenParserOperator` + deterministic failure-path test (WP06)
+- [x] T022 Widen captured provenance to carry the intake surface (transport) (WP06)
+- [x] T023 `live_trial` run path drives a `Scenario`; pass strategy to `grade()` (WP06)
+- [x] T024 Failure path persists a completed failing record on import/parse failure (WP06)
+- [x] T025 Type-widen `self_reconcile` (`IngestBatch | IntakeBatch`) (WP06)
+- [x] T026 `StubBrokenParserOperator` + deterministic failure-path test (WP06)
 
 **Dependencies**: WP01. **Risks**: the failure path crashing before a record exists (the RCA this guards).
 
