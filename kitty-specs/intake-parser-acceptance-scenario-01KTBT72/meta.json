@@ -6,5 +6,7 @@
   "mission_slug": "intake-parser-acceptance-scenario-01KTBT72",
   "mission_type": "software-dev",
   "slug": "intake-parser-acceptance-scenario-01KTBT72",
-  "target_branch": "master"
+  "target_branch": "master",
+  "vcs": "git",
+  "vcs_locked_at": "2026-06-05T12:57:49.987899+00:00"
 }
