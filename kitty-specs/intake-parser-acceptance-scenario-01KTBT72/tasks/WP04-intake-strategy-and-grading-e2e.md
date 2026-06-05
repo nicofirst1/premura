@@ -125,3 +125,4 @@ Implement: `spec-kitty agent action implement WP04 --agent <name>`
 ## Activity Log
 
 - 2026-06-05T13:33:55Z – claude:opus:python-implementer:implementer – shell_pid=37614 – Started implementation via action command
+- 2026-06-05T13:39:45Z – claude:opus:python-implementer:implementer – shell_pid=37614 – Ready for review: intake IntakeStrategy (boundary truth over intake tables, WP02 runtime delegate, manifest gap reconcile) + scenario_registry.all_scenarios() (observation+intake) + layer-1 happy-path e2e (full three-rule pass via generic grade, no intake branch; observation golden still green)
