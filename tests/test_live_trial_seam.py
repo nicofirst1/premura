@@ -88,6 +88,20 @@ def _read_steps(session_log_path: Path) -> list[tuple[str, str | None, str]]:
         conn.close()
 
 
+def _read_live_trial_attempts(session_log_path: Path) -> list[tuple[int, bool, str | None]]:
+    conn = duckdb.connect(str(session_log_path), read_only=True)
+    try:
+        return conn.execute(
+            """
+            SELECT attempt_index, self_reconciliation_passed, parser_error
+            FROM log_live_trial_attempt
+            ORDER BY attempt_index
+            """
+        ).fetchall()
+    finally:
+        conn.close()
+
+
 # --------------------------------------------------------------------------- #
 # T027 — the fake-operator seam drives end-to-end to a verdict (FR-030/FR-031).
 # --------------------------------------------------------------------------- #
@@ -349,3 +363,22 @@ def test_real_model_wiring_is_closed_followup() -> None:
     src = Path(live_trial.__file__).read_text(encoding="utf-8")
     for forbidden in ("import anthropic", "import openai", "from anthropic", "from openai"):
         assert forbidden not in src
+
+
+def test_live_trial_attempt_log_starts_empty_for_fake_operator() -> None:
+    """Non-Ollama seam runs do not invent per-attempt rows the operator never produced."""
+    operator = ReferenceParserOperator(parser_src=GOOD_PARSER)
+    result = live_trial.run_live_trial_with_log(
+        LiveTrialConfig(),
+        driver=ScriptedDriver(),
+        operator=operator,
+        repo_root=REPO_ROOT,
+        parser_attr="GoodFitbitHrParser",
+    )
+    log_path = result.session_log_path
+    try:
+        assert _read_live_trial_attempts(log_path) == []
+    finally:
+        import shutil
+
+        shutil.rmtree(log_path.parent.parent, ignore_errors=True)

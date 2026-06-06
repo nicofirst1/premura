@@ -63,6 +63,8 @@ reads the real dump.
 
 from __future__ import annotations
 
+import importlib
+import importlib.util
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
@@ -409,6 +411,37 @@ def _captured_provenance(envelope: dict[str, Any]) -> _CapturedProvenance:
     )
 
 
+def _captured_intake_batch(
+    sandbox: Sandbox,
+    *,
+    source: Path,
+    parser_attr: str,
+) -> Any:
+    """Re-parse inside the parent to recover the produced intake batch for grading.
+
+    The ingest runner crosses a JSON-only subprocess seam, so an intake-only run's
+    produced ``IntakeBatch`` is otherwise lost before the grader sees it. For the
+    live-trial path we re-import the operator-authored parser from the sandboxed
+    tree after the runner finishes and closed its writer handles, then normalize
+    its ``parse()`` output locally. This keeps the frozen ingest envelope untouched
+    while restoring the evidence the intake runtime checker needs.
+    """
+    from premura.parsers.base import normalize_parse_output
+
+    module_path = sandbox.root / _PARSER_DEST_RELPATH
+    spec = importlib.util.spec_from_file_location(_PARSER_MODULE, module_path)
+    if spec is None or spec.loader is None:
+        return None
+    module = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(module)
+        parser = getattr(module, parser_attr)()
+        _observation, intake = normalize_parse_output(parser.parse(source))
+        return intake
+    except Exception:  # noqa: BLE001 - transport-only evidence recovery
+        return None
+
+
 def _load_manifest(manifest_path: Path) -> dict[str, Any]:
     import yaml  # type: ignore[import-untyped]
 
@@ -546,6 +579,12 @@ def _drive_live_trial(
         )
 
         provenance = _captured_provenance(envelope)
+        if scenario.name == "intake_alien":
+            provenance.produced = _captured_intake_batch(
+                sandbox,
+                source=ingest_source,
+                parser_attr=parser_attr,
+            )
 
         # (5) Grade against the sandbox warehouse (read-only, AFTER the runner closed).
         #     On the failure path the operator's parser raised before any warehouse

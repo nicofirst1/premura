@@ -35,6 +35,7 @@ import duckdb
 
 from premura.config import REPO_ROOT
 from premura.harness.intake_strategy import IntakeStrategy
+from premura.harness.scenario_registry import all_scenarios
 from premura.parsers.base import (
     IntakeBatch,
     SourceDescriptor,
@@ -106,6 +107,20 @@ class StubBrokenParserOperator:
         dest = sandbox.root / _PARSER_DEST_RELPATH
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(_BROKEN_PARSER_CODE, encoding="utf-8")
+
+
+class StubReferenceIntakeOperator:
+    """Deterministic fake operator that installs the committed intake reference parser."""
+
+    model_id: str = "fake-operator:intake-reference-parser"
+
+    def operate(self, sandbox: Sandbox, goal: str) -> None:  # noqa: ARG002 - goal unused
+        intake_parser = (
+            REPO_ROOT / "tests" / "fixtures" / "intake_scenario" / "reference_intake_parser.py"
+        )
+        dest = sandbox.root / _PARSER_DEST_RELPATH
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(intake_parser.read_text(encoding="utf-8"), encoding="utf-8")
 
 
 class _ScriptedDriver:
@@ -258,6 +273,43 @@ def test_captured_provenance_carries_intake_runtime_surface() -> None:
     )
     assert provenance.produced is None
     assert provenance.error is None
+
+
+def test_intake_live_trial_reference_parser_keeps_runtime_valid_true() -> None:
+    """The real live-trial path preserves the produced IntakeBatch for grading."""
+    intake_scenario = next(s for s in all_scenarios() if s.name == "intake_alien")
+    result = _run_with_log(
+        _LiveTrialConfig(),
+        driver=_ScriptedDriver(),
+        operator=StubReferenceIntakeOperator(),
+        repo_root=REPO_ROOT,
+        parser_attr="AlienIntakeReferenceParser",
+        source=intake_scenario.source_path,
+        scenario=intake_scenario,
+    )
+    log_path = result.session_log_path
+    try:
+        assert result.verdict["passed"] is True
+        assert result.verdict["rules"]["runtime_valid"]["passed"] is True
+
+        conn = duckdb.connect(str(log_path), read_only=True)
+        try:
+            ingest_step = conn.execute(
+                "SELECT step_id FROM log_step WHERE tool_name = 'ingest_run'"
+            ).fetchone()
+            assert ingest_step is not None
+            prov = conn.execute(
+                "SELECT contract_pass FROM log_ingest_provenance WHERE step_id = ?",
+                [ingest_step[0]],
+            ).fetchone()
+            assert prov is not None
+            assert prov[0] is True
+        finally:
+            conn.close()
+    finally:
+        import shutil
+
+        shutil.rmtree(log_path.parent.parent, ignore_errors=True)
 
 
 def test_intake_strategy_reads_real_captured_values_not_getattr_default() -> None:

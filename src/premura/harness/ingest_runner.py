@@ -129,7 +129,7 @@ def run(*, source: Path, parser_spec: str, warehouse: Path) -> dict[str, Any]:
                 try:
                     # Intake never travels the observation loader; it persists
                     # through its own home, exactly as the CLI/harness do.
-                    persist_intake_batch(conn, intake)
+                    intake_stats = persist_intake_batch(conn, intake)
                 except Exception as exc:  # noqa: BLE001 - witnessing the persist stage
                     raise _StagedError("persist", exc) from exc
 
@@ -165,6 +165,13 @@ def run(*, source: Path, parser_spec: str, warehouse: Path) -> dict[str, Any]:
             envelope.update(
                 status="ok",
                 error=None,
+                load_stats={
+                    "rows_inserted": (intake_stats.events_inserted if intake is not None else 0),
+                    "rows_skipped_dup": (
+                        intake_stats.events_skipped_dup if intake is not None else 0
+                    ),
+                    "rows_skipped_priority": 0,
+                },
                 unmapped_metrics=list(intake.unmapped_metrics) if intake else [],
                 skipped_rows=_skipped_rows_payload(intake) if intake else [],
             )

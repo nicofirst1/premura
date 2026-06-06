@@ -68,7 +68,7 @@ def test_init_schema_idempotent(tmp_path: Path) -> None:
         row[0]
         for row in conn.execute("SELECT table_name FROM information_schema.tables").fetchall()
     }
-    assert {"log_session", "log_step", "log_ingest_provenance"} <= tables
+    assert {"log_session", "log_step", "log_ingest_provenance", "log_live_trial_attempt"} <= tables
     conn.close()
 
 
@@ -434,6 +434,57 @@ def test_contract_pass_is_caller_supplied(tmp_path: Path) -> None:
     ).fetchone()
     ro.close()
     assert val is not None and bool(val[0]) is False
+
+
+def test_live_trial_attempt_round_trip(tmp_path: Path) -> None:
+    """FR-008: per-attempt self-reconciliation telemetry persists in the session log."""
+    log_path = tmp_path / "session_log.duckdb"
+    conn = _open_initialized(log_path)
+    sid = store.open_session(
+        conn,
+        operator_model="cheap-op",
+        driver_model="cheap-driver",
+        premura_version="0.3.0",
+        isolation_tag="iso-attempt",
+        run_kind="live_trial",
+    )
+
+    class _Recon:
+        passed = False
+        source_columns = ["logged_at_us", "note"]
+        accounted = frozenset({"logged_at_us"})
+        unaccounted = ["note"]
+
+    attempt_id = store.record_live_trial_attempt(
+        conn,
+        session_id=sid,
+        attempt_index=1,
+        self_reconciliation=_Recon(),
+        parser_error="parse: synthetic parser failure",
+    )
+    conn.close()
+
+    ro = store.connect(log_path, read_only=True)
+    row = ro.execute(
+        """
+        SELECT attempt_id, attempt_index, self_reconciliation_passed,
+               source_columns_json, accounted_json, unaccounted_json, parser_error
+        FROM log_live_trial_attempt
+        WHERE session_id = ?
+        ORDER BY attempt_index
+        """,
+        [sid],
+    ).fetchone()
+    ro.close()
+
+    assert row is not None
+    assert row[0] == attempt_id
+    assert row[1] == 1
+    assert bool(row[2]) is False
+    assert json.loads(row[3]) == ["logged_at_us", "note"]
+    assert json.loads(row[4]) == ["logged_at_us"]
+    assert json.loads(row[5]) == ["note"]
+    assert row[6] == "parse: synthetic parser failure"
 
 
 # ---------------------------------------------------------------------------

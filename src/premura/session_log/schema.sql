@@ -97,3 +97,25 @@ CREATE TABLE IF NOT EXISTS log_ingest_provenance (
 );
 -- (step_id is the PRIMARY KEY, so it is already indexed for the
 -- fetch-provenance-by-step lookup; no separate index is needed.)
+
+-- ----------------------------------------------------------------------------
+-- log_live_trial_attempt — per-attempt cheap-model telemetry owned by the harness.
+--
+-- Persists the operator's self-reconciliation result and parser import/parse
+-- failure detail for each attempt under a live-trial session. This keeps the
+-- attempt log durable in the session-log file rather than only on the returned
+-- in-memory object (FR-008), while preserving the harness as the sole writer.
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS log_live_trial_attempt (
+    attempt_id                   VARCHAR PRIMARY KEY,
+    session_id                   VARCHAR NOT NULL REFERENCES log_session(session_id),
+    attempt_index                INTEGER NOT NULL,
+    self_reconciliation_passed   BOOLEAN NOT NULL,
+    source_columns_json          VARCHAR NOT NULL,
+    accounted_json               VARCHAR NOT NULL,
+    unaccounted_json             VARCHAR NOT NULL,
+    parser_error                 VARCHAR,
+    UNIQUE(session_id, attempt_index)
+);
+CREATE INDEX IF NOT EXISTS ix_live_trial_attempt_session
+    ON log_live_trial_attempt(session_id, attempt_index);

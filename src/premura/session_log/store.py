@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import importlib.resources as resources
 import json
+from dataclasses import asdict, is_dataclass
 from typing import TYPE_CHECKING, Protocol
 
 import duckdb
@@ -81,6 +82,22 @@ class LoadStatsLike(Protocol):
     rows_inserted: int
     rows_skipped_dup: int
     rows_skipped_priority: int
+
+
+class SelfReconciliationLike(Protocol):
+    """Structured self-reconciliation telemetry for one live-trial attempt."""
+
+    @property
+    def passed(self) -> bool: ...
+
+    @property
+    def source_columns(self) -> object: ...
+
+    @property
+    def accounted(self) -> object: ...
+
+    @property
+    def unaccounted(self) -> object: ...
 
 
 # ---------------------------------------------------------------------------
@@ -278,6 +295,55 @@ def record_ingest_provenance(
             bool(contract_pass),
         ],
     )
+
+
+def _json_ready_sequence(value: object) -> list[object]:
+    """Normalize list/tuple/set/frozenset payloads to a JSON-serializable list."""
+    if isinstance(value, (list, tuple)):
+        seq = list(value)
+    elif isinstance(value, (set, frozenset)):
+        seq = sorted(value)
+    else:
+        seq = [value]
+
+    normalized: list[object] = []
+    for item in seq:
+        if is_dataclass(item) and not isinstance(item, type):
+            normalized.append(asdict(item))
+        else:
+            normalized.append(item)
+    return normalized
+
+
+def record_live_trial_attempt(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    session_id: str,
+    attempt_index: int,
+    self_reconciliation: SelfReconciliationLike,
+    parser_error: str | None,
+) -> str:
+    """Insert one durable cheap-model attempt telemetry row (FR-008)."""
+    attempt_id = _mint_id()
+    conn.execute(
+        """
+        INSERT INTO log_live_trial_attempt
+            (attempt_id, session_id, attempt_index, self_reconciliation_passed,
+             source_columns_json, accounted_json, unaccounted_json, parser_error)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        [
+            attempt_id,
+            session_id,
+            int(attempt_index),
+            bool(self_reconciliation.passed),
+            json.dumps(_json_ready_sequence(self_reconciliation.source_columns)),
+            json.dumps(_json_ready_sequence(self_reconciliation.accounted)),
+            json.dumps(_json_ready_sequence(self_reconciliation.unaccounted)),
+            parser_error,
+        ],
+    )
+    return attempt_id
 
 
 def finish_session(conn: duckdb.DuckDBPyConnection, *, session_id: str) -> None:

@@ -852,6 +852,20 @@ def run_live_trial_ollama(
     except OllamaUnavailableError:
         return LiveTrialOutcome(model_unavailable=True)
 
+    final_log_path = final_result.session_log_path
+    log_conn = live_trial.store.connect(final_log_path)
+    try:
+        for attempt in operator.attempts:
+            live_trial.store.record_live_trial_attempt(
+                log_conn,
+                session_id=final_result.session_id,
+                attempt_index=attempt.index,
+                self_reconciliation=attempt.self_reconciliation,
+                parser_error=attempt.parser_error,
+            )
+    finally:
+        log_conn.close()
+
     # (2) Independently grade attempt 1 (un-nagged) with the SAME grader.
     first_code = operator.first_attempt_code
     first_operator = _FixedCodeOperator(first_code, model=operator.model_id)
