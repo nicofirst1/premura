@@ -12,6 +12,8 @@ subtasks:
 - T019
 - T020
 - T021
+agent: "claude:fable:implementer:implementer"
+shell_pid: "80123"
 history:
 - date: '2026-06-11T14:19:42Z'
   action: created
@@ -151,3 +153,7 @@ implied as part of this mission.
   the CHANGELOG entry (with the audit link), not retold in STATUS and ROADMAP.
 - This WP has no code to test; the quality gates are reading gates. Run
   `uv run pytest -q` anyway to confirm a docs-only diff (zero test deltas).
+
+## Activity Log
+
+- 2026-06-11T19:08:04Z – claude:fable:implementer:implementer – shell_pid=80123 – Started implementation via action command
