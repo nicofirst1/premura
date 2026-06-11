@@ -399,3 +399,96 @@ def test_scenario_for_manifest_grades_via_observation_strategy(tmp_path) -> None
     # the gap_set must equal the full set of manifest columns (sorted).
     drops = scenario.strategy.gap_set(manifest, _Prov(), BoundaryTruth(0, frozenset()))
     assert drops == sorted(fixture.csv_columns)
+
+
+# --------------------------------------------------------------------------- #
+# FR-7 CLI entry — generate/validate/write + honest exit codes.
+# --------------------------------------------------------------------------- #
+
+
+def test_cli_writes_pair_and_returns_zero(tmp_path, capsys) -> None:
+    """FR-7: --seed/--out generates, writes, prints paths + summary, exits 0."""
+    from premura.harness.fixture_gen import _main
+
+    rc = _main(["--seed", "42", "--out", str(tmp_path), "--rows", "6"])
+    assert rc == 0
+
+    csvs = list(tmp_path.glob("*.csv"))
+    manifests = list(tmp_path.glob("*.manifest.yaml"))
+    assert len(csvs) == 1
+    assert len(manifests) == 1
+    # row_count honored (header + 6 data rows).
+    assert len(csvs[0].read_text(encoding="utf-8").splitlines()) == 7
+
+    out = capsys.readouterr().out
+    assert str(csvs[0]) in out
+    assert str(manifests[0]) in out
+    # One-line summary names drawer, source, column count, mappable/gap split.
+    assert "observation" in out
+    assert "mappable" in out
+
+
+def test_cli_same_seed_byte_identical(tmp_path) -> None:
+    """FR-1 via CLI: the same --seed writes byte-identical CSV + manifest."""
+    from premura.harness.fixture_gen import _main
+
+    a, b = tmp_path / "a", tmp_path / "b"
+    assert _main(["--seed", "100", "--out", str(a)]) == 0
+    assert _main(["--seed", "100", "--out", str(b)]) == 0
+    csv_a = next(a.glob("*.csv")).read_bytes()
+    csv_b = next(b.glob("*.csv")).read_bytes()
+    man_a = next(a.glob("*.manifest.yaml")).read_bytes()
+    man_b = next(b.glob("*.manifest.yaml")).read_bytes()
+    assert csv_a == csv_b
+    assert man_a == man_b
+
+
+def test_cli_unknown_drawer_returns_nonzero(tmp_path, capsys) -> None:
+    """FR-7: a failure (unknown drawer) returns a nonzero exit code, no crash."""
+    from premura.harness.fixture_gen import _main
+
+    rc = _main(["--seed", "1", "--drawer", "intake", "--out", str(tmp_path)])
+    assert rc != 0
+
+
+def test_cli_refuses_overwrite_returns_nonzero(tmp_path) -> None:
+    """FR-7 / FR-6: writing twice to the same dir without --overwrite fails loudly."""
+    from premura.harness.fixture_gen import _main
+
+    assert _main(["--seed", "7", "--out", str(tmp_path)]) == 0
+    assert _main(["--seed", "7", "--out", str(tmp_path)]) != 0
+
+
+# --------------------------------------------------------------------------- #
+# Acceptance — the whole story end to end (spec acceptance clause).
+# --------------------------------------------------------------------------- #
+
+
+def test_end_to_end_spec_in_pair_out_validated_written_adapted(tmp_path) -> None:
+    """Acceptance: spec -> validated pair -> written -> Scenario -> byte-identical.
+
+    Mirrors the mission acceptance clause: a spec generates a validated fixture
+    pair, written to a temp dir, adapted to a Scenario the harness accepts, with
+    byte-identical regeneration from the same seed.
+    """
+    from premura.harness.fixture_gen import scenario_for, write_fixture
+    from premura.harness.scenario import Scenario
+
+    spec = FixtureSpec(seed=2027, row_count=10)
+    fixture = generate_fixture(spec)  # generated + self-validated
+    validate_fixture(fixture)  # explicit re-validation, no raise
+
+    out = tmp_path / "run"
+    written = write_fixture(fixture, out)
+    assert written.csv_path.is_file()
+    assert written.manifest_path.is_file()
+    assert written.marker_path.is_file()
+
+    scenario = scenario_for(written)
+    assert isinstance(scenario, Scenario)
+    assert scenario.source_path == written.csv_path
+
+    # Byte-identical regeneration from the same seed.
+    regenerated = generate_fixture(spec)
+    assert regenerated.csv_text == fixture.csv_text
+    assert regenerated.manifest_text == fixture.manifest_text

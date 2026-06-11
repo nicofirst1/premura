@@ -43,6 +43,7 @@ Module API: :func:`generate_fixture`, :func:`validate_fixture`,
 
 from __future__ import annotations
 
+import argparse
 import csv
 import io
 import random
@@ -676,6 +677,78 @@ def is_generated_synthetic_source(source: Path) -> bool:
         return False
 
 
+# --------------------------------------------------------------------------- #
+# CLI entry (FR-7). Mirrors live_trial_ollama._main(): honest exit codes, never
+# raises into a test.
+# --------------------------------------------------------------------------- #
+
+
+def _build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="python -m premura.harness.fixture_gen",
+        description=(
+            "Generate a deterministic synthetic vendor fixture (CSV + grader-only "
+            "manifest) for the acceptance harness. Synthetic only: fabricated source "
+            "name, invented values, canonical metrics drawn from the committed "
+            "registry seed."
+        ),
+    )
+    parser.add_argument("--seed", type=int, required=True, help="deterministic seed (required)")
+    parser.add_argument(
+        "--drawer",
+        default="observation",
+        help="drawer strategy id (default: observation; unknown ids fail loudly)",
+    )
+    parser.add_argument(
+        "--out",
+        type=Path,
+        required=True,
+        help="output directory; the pair lands ONLY here, never in tests/fixtures/",
+    )
+    parser.add_argument(
+        "--rows",
+        type=int,
+        default=_DEFAULT_ROWS,
+        help=f"data-row count (default: {_DEFAULT_ROWS})",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="overwrite an existing pair in --out (default: refuse)",
+    )
+    return parser
+
+
+def _main(argv: Sequence[str] | None = None) -> int:
+    """CLI: generate -> validate -> write; print paths + a one-line summary (FR-7).
+
+    Returns 0 on success, nonzero on any failure (unknown drawer, overwrite
+    refusal, validation miss). Never raises into a caller (NFR-1), mirroring
+    ``live_trial_ollama._main``.
+    """
+    args = _build_arg_parser().parse_args(argv)
+    try:
+        fixture = generate_fixture(
+            FixtureSpec(seed=args.seed, drawer=args.drawer, row_count=args.rows)
+        )
+        written = write_fixture(fixture, args.out, overwrite=args.overwrite)
+    except (UnknownDrawerError, FileExistsError, ValueError) as exc:
+        print(f"fixture generation failed: {type(exc).__name__}: {exc}")
+        return 1
+
+    n_mappable = len(fixture.mappable_fields)
+    n_gap = len(fixture.gap_fields)
+    print(f"csv:      {written.csv_path}")
+    print(f"manifest: {written.manifest_path}")
+    print(
+        f"summary:  drawer={args.drawer} source={fixture.source_name} "
+        f"columns={len(fixture.csv_columns)} "
+        f"mappable={n_mappable} gap={n_gap} "
+        f"ts_encoding={fixture.timestamp_encoding} seed={args.seed}"
+    )
+    return 0
+
+
 __all__ = [
     "SYNTHETIC_MARKER_NAME",
     "DrawerStrategy",
@@ -691,3 +764,7 @@ __all__ = [
     "validate_fixture",
     "write_fixture",
 ]
+
+
+if __name__ == "__main__":
+    raise SystemExit(_main())
