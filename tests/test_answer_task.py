@@ -220,3 +220,31 @@ def test_same_seed_yields_same_verdict(tmp_path: Path) -> None:
     v_a = grade_answer(spec_a, _honest_answer(db_a, spec_a), warehouse_analytical_surface(db_a))
     v_b = grade_answer(spec_b, _honest_answer(db_b, spec_b), warehouse_analytical_surface(db_b))
     assert v_a.to_dict() == v_b.to_dict()
+
+
+# --------------------------------------------------------------------------- #
+# FR-7 — CLI: honest operator, one-line summary, honest exit codes.
+# --------------------------------------------------------------------------- #
+
+
+def test_cli_runs_honest_trial_and_exits_zero(capsys: pytest.CaptureFixture[str]) -> None:
+    from premura.harness.answer_task import _main
+
+    code = _main(["--seed", "7"])
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "verdict=PASS" in out
+    assert "kind=level_shift" in out
+    # The summary names the analyzed metric and per-check results.
+    spec = question_spec_for(_KIND, seed=7)
+    assert spec.metric_id in out
+    assert "honesty=" in out and "grounding=" in out and "refusal_fidelity=" in out
+
+
+def test_cli_unknown_kind_exits_nonzero(capsys: pytest.CaptureFixture[str]) -> None:
+    from premura.harness.answer_task import _main
+
+    code = _main(["--seed", "1", "--question-kind", "no_such_kind"])
+    out = capsys.readouterr().out
+    assert code != 0
+    assert "no_such_kind" in out

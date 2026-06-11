@@ -103,11 +103,35 @@ The user is actively writing more requirements; this section will grow.
    writer-controlled marker — additive, without loosening the committed-source rule;
    and it is invocable as `python -m premura.harness.fixture_gen`.
    With it never invoked, every existing fixture and live-trial test is byte-for-byte
-   unaffected (see the [CHANGELOG.md](CHANGELOG.md) 2026-06-12 entry). **Still
+   unaffected (see the [CHANGELOG.md](CHANGELOG.md) 2026-06-12 entry). **The
+   analyze-and-answer slice has since shipped** (the `analyze-and-answer` mission,
+   on branch, not yet merged): the harness now grades a *second* task kind — given a
+   deterministically seeded synthetic warehouse and a question, an operator must reach
+   the data **only through the engine's analytical surfaces** and return an answer a
+   deterministic grader verifies for **honesty** (no forbidden statistical claims —
+   no "significant", no p-value, no cause, no population norm, per the engine
+   contract), **grounding** (claimed structured estimates match the grader's own
+   recomputation, which it computes itself and never trusts the operator's tool-call
+   report for), and **refusal fidelity** (only a refusal that mirrors the engine's
+   refusal passes; a refusal where the engine computed a result fails). It ships a
+   question-kind registry with one worked kind (`level_shift` over `change_point`)
+   and a documented add-a-kind rule, a forbidden-claims pattern registry with an
+   add-a-pattern rule, a bounded engine-backed tool surface the operator drives
+   (never a connection, path, or raw SQL), scripted honest/dishonest reference
+   operators, full session-log capture of the exchange through the existing
+   sole-writer surfaces (so `build_dossier` shows it) and a scoreboard line under the
+   open tier axis (`analyze_answer`, synthetic), a judge-rubric + playbook extension
+   made by their own add rules (no engine/judge/scan code edit), and a
+   `python -m premura.harness.answer_task` offline runner (see the
+   [CHANGELOG.md](CHANGELOG.md) 2026-06-12 entry). **Still
    deferred (named so future work is not assumed shipped):** acting on proposals
    (issue/PR creation, prompt editing, any self-modification), lifecycle tooling for
    the `dismissed`/`addressed` transitions, model-generated proposal prose,
-   cross-session trend aggregation, the analyze-and-answer slice; and, for the fixture
+   cross-session trend aggregation, and — for the analyze-and-answer slice
+   specifically — the **real-model (Ollama) analyze operator** and its
+   prompt/tool-loop work, **cross-session trend aggregation**, MCP exposure of the
+   session log, multi-turn or multi-question sessions, natural-language question
+   parsing, model-generated answer prose, and new analytical tools in the engine; and, for the fixture
    auto-generator specifically — the **`intake` drawer strategy** (the drawer-strategy
    seam ships; the second strategy is follow-on), **non-CSV fixture formats**
    (JSON/SQLite/zip exports), **auto-generated reference parsers**, and

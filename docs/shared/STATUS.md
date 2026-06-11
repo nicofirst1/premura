@@ -120,7 +120,16 @@ The pinned inventory test is `tests/test_mcp_server.py`.
   committed registry, byte-identical per seed, recognized synthetic by the harness's
   persistence gate via a writer-controlled marker (additive, not a loosening) — so
   the harness is no longer limited to its two handwritten fixtures (on branch, not
-  yet merged).
+  yet merged). The harness now grades a **second task kind, analyze-and-answer**
+  (`premura.harness.answer_task`, runnable as `python -m premura.harness.answer_task`):
+  over a deterministically seeded synthetic warehouse an operator answers a question
+  through a bounded engine-backed analytical surface (no connection/path/SQL), and a
+  deterministic grader recomputes ground truth itself to band honesty (no forbidden
+  statistical claims), grounding, and refusal fidelity; the exchange is captured
+  through the sole-writer session log and a scoreboard line under the open
+  `analyze_answer` tier — one worked question-kind (`level_shift`) behind an
+  add-a-kind registry, with the real-model analyze operator and cross-session
+  aggregation named-deferred (on branch, not yet merged).
 - **Runtime build-and-use boundary**: an agent may build a parser and use it
   immediately on the operator's own data with no reviewer; only a
   contribute-back PR is reviewed. Pinned by

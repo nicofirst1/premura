@@ -657,6 +657,78 @@ def grade_answer(
     return AnswerVerdict(passed=passed, checks=checks, ground_truth=truth)
 
 
+# --------------------------------------------------------------------------- #
+# CLI entry (FR-7). Mirrors fixture_gen._main / live_trial_ollama._main: honest
+# exit codes, one-line summary, never raises into a caller.
+# --------------------------------------------------------------------------- #
+
+
+def _build_arg_parser() -> Any:
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        prog="python -m premura.harness.answer_task",
+        description=(
+            "Run one offline analyze-and-answer trial with the scripted honest "
+            "operator against a deterministically seeded synthetic sandbox warehouse; "
+            "print a one-line summary and exit nonzero on any failed check."
+        ),
+    )
+    parser.add_argument("--seed", type=int, required=True, help="deterministic seed (required)")
+    parser.add_argument(
+        "--question-kind",
+        default="level_shift",
+        help="question-kind id (default: level_shift; unknown ids fail loudly)",
+    )
+    return parser
+
+
+def _main(argv: Sequence[str] | None = None) -> int:
+    """CLI: seed a temp sandbox, run the honest trial, print a summary (FR-7).
+
+    Returns 0 when every grader check passes, nonzero on any failure (unknown kind,
+    or a check that did not pass). Never raises into a caller — mirrors the m5
+    ``fixture_gen._main`` pattern. The sandbox warehouse + session log + scoreboard
+    land ONLY in a temporary directory that is removed on exit (synthetic-only,
+    nothing persists under the repo).
+    """
+    import tempfile
+
+    args = _build_arg_parser().parse_args(argv)
+
+    # Imported here to keep the contract/grader core importable without the seam.
+    # Import the error from its canonical module path too: when this file runs as
+    # ``python -m premura.harness.answer_task`` it is loaded as BOTH ``__main__`` and
+    # ``premura.harness.answer_task``, so the local ``UnknownQuestionKindError`` is a
+    # different class object than the one the seam raises — catch the canonical one.
+    from premura.harness.answer_task import UnknownQuestionKindError as _UnknownKind
+    from premura.harness.answer_trial import HonestAnswerOperator, run_answer_trial
+
+    with tempfile.TemporaryDirectory(prefix="premura-answer-cli-") as tmp:
+        tmp_dir = Path(tmp)
+        try:
+            result = run_answer_trial(
+                seed=args.seed,
+                question_kind=args.question_kind,
+                operator=HonestAnswerOperator(),
+                warehouse_path=tmp_dir / "warehouse.duckdb",
+                session_log_path=tmp_dir / "session_log.duckdb",
+                scoreboard_path=tmp_dir / "scoreboard.jsonl",
+            )
+        except _UnknownKind as exc:
+            print(f"answer trial failed: {type(exc).__name__}: {exc}")
+            return 1
+
+    verdict = result.verdict
+    checks = " ".join(f"{c.name}={'PASS' if c.passed else 'FAIL'}" for c in verdict.checks)
+    print(
+        f"summary:  kind={result.spec.kind} metric={result.spec.metric_id} "
+        f"verdict={'PASS' if verdict.passed else 'FAIL'} "
+        f"({checks}) seed={args.seed}"
+    )
+    return 0 if verdict.passed else 1
+
+
 __all__ = [
     "AnalyticalSurface",
     "AnswerOutcome",
@@ -671,5 +743,10 @@ __all__ = [
     "list_question_kinds",
     "question_spec_for",
     "scan_forbidden_claims",
+    "seed_synthetic_series",
     "warehouse_analytical_surface",
 ]
+
+
+if __name__ == "__main__":
+    raise SystemExit(_main())

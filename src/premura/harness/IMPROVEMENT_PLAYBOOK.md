@@ -1,6 +1,6 @@
 # Improvement Playbook
 
-`playbook_version: 2026-06-12.1`
+`playbook_version: 2026-06-12.2`
 
 This file is the bounded registry of **improvement areas** the deterministic
 improvement hook maps a judgment's evidence to when it derives durable, agent-readable
@@ -60,9 +60,16 @@ complete, and a criterion the rubric no longer defines).
 
 - **maps from category:** `process_honesty`
 - **suggested_focus:** Review whether the operator's prompt and tool guidance let it claim
-  outcomes the grader facts contradict; tighten the honesty guidance or the self-check.
+  outcomes the recomputed facts contradict; tighten the honesty guidance or the self-check.
+  For an *analyze-and-answer* session this covers analytical honesty too — whether the prompt
+  lets the operator state numbers the analytical tools did not return, smuggle a forbidden
+  statistical claim ("significant", a p-value, a cause, a population-norm comparison), or claim
+  an estimate the engine refused; tighten the answer-honesty guidance accordingly.
 - **grounding:** the judge's rationale on the weak criterion, compared against the dossier's
-  `contract_pass` / `rows_inserted` / `unaccounted` (read by the judge, carried as evidence).
+  recomputed facts — for a parser session `contract_pass` / `rows_inserted` / `unaccounted`;
+  for an analyze-and-answer session the engine's returned analytical results vs. the answer's
+  claimed numbers and any forbidden statistical claim in the answer text (read by the judge,
+  carried as evidence).
 
 ### `goal_adherence`
 

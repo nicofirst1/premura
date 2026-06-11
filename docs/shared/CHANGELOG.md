@@ -8,6 +8,76 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-06-12 — Analyze-and-answer slice (`analyze-and-answer`) — on branch, not yet merged
+
+Written pre-merge (overnight solo mission on `overnight/m6-analyze-and-answer`);
+the post-merge close-out flips tense and records the merge. The acceptance harness
+graded exactly one task shape — "build an honest parser." The product's real
+end-to-end promise is "here's my data → load it → analyze it → answer my question,"
+and nothing exercised or audited the second half. This mission teaches the harness a
+**second task kind**: given a deterministically seeded synthetic warehouse and a
+question, an operator must reach the data **only through the engine's analytical
+surfaces** and return an answer a deterministic grader can verify for honesty and
+grounding. Everything is captured in the session log through the existing
+sole-writer surfaces, so the exchange is judged and improvable like a parser session.
+
+- **Contract + deterministic grader (`premura.harness.answer_task`).** A
+  `QuestionSpec` declares which registered engine analytical surface a question-kind
+  calls and with what canonical parameters, renders the human question, and selects
+  its metric **deterministically from the seed** out of the policy-covered,
+  `dim_metric`-resident, analyzable metrics — never a metric id hardcoded in code.
+  `AnswerOutcome` carries the final answer text, the claimed estimates as
+  **structured** values, and tool-call provenance; a refusing operator carries a
+  structured refusal instead. `grade_answer` **recomputes ground truth itself**
+  through the same engine surface (a poisoned tool-call report cannot fool it) and
+  bands three checks, each naming itself on failure: **honesty** (no forbidden
+  statistical claim in the answer text — driven by a forbidden-claims pattern
+  registry sourced from the engine contract's prohibitions: "significant"/
+  significance, p-values, causal language, population-norm comparisons),
+  **grounding** (claimed structured estimates match the recomputation within the
+  kind's tolerance — never numbers parsed out of prose), and **refusal fidelity**
+  (only a refusal mirroring the engine's refusal passes; a refusal where the engine
+  computed a result fails).
+- **A level above (guide, don't enumerate).** Question kinds and forbidden-claim
+  patterns are registries with documented add rules; the core never branches on a
+  kind id, there is no enumerated question list and no hardcoded metric id, and an
+  unknown kind fails loudly. Tonight exactly one kind ships — `level_shift` over the
+  `change_point` analytical tool.
+- **Seam + capture (`premura.harness.answer_trial`).** `run_answer_trial` seeds a
+  synthetic warehouse deterministically (synthetic by construction — fabricated
+  source, invented values, a registry metric), hands the operator a **bounded
+  analytical surface** wrapping the engine's registered analytical surfaces over that
+  warehouse (the operator never receives a connection, path, or raw SQL), collects
+  and grades the answer, captures the question + answer exchange through the existing
+  sole-writer session-log surfaces (`open_session` / `record_step` / `record_turn` /
+  `finish_session`, no schema change), so `build_dossier` shows it, and appends one
+  scoreboard line under the existing **open tier axis** with the `analyze_answer`
+  tier value, marked synthetic. `AnswerOperator` is a small protocol; the mission
+  ships a scripted **honest** reference operator (drives the real surface, answers
+  from its results, mirrors a refusal honestly) and a scripted **dishonest** contrast
+  operator (fabricates estimates and/or emits forbidden claims). End-to-end tests
+  cover the honest pass and all four spec-named edge cases.
+- **Rubric + playbook extension by their own rules.** `JUDGE_RUBRIC.md` gains an
+  analytical-honesty criterion (`analytical-claims-match-engine`) under the existing
+  closed `process_honesty` category with a `rubric_version` bump, and
+  `IMPROVEMENT_PLAYBOOK.md`'s `process_honesty` area is extended to cover analytical
+  honesty with a `playbook_version` bump. Because criterion/area semantics are
+  document-owned and never appear in code, this required **no engine, judge, or scan
+  code edit** — a test confirms the rubric/playbook parsers accept the extended
+  documents unchanged and the new criterion maps to an existing area.
+- **CLI.** `python -m premura.harness.answer_task --seed N [--question-kind K]` runs
+  the offline trial end to end with the scripted honest operator against a temp
+  sandbox, prints a one-line summary (kind, metric, verdict with per-check results),
+  and exits nonzero on any failed check — mirroring the m5 CLI pattern.
+- **Deferred, named so it is not assumed shipped:** the real-model (Ollama) analyze
+  operator and its prompt/tool-loop work, cross-session trend aggregation, MCP
+  exposure of the session log, multi-turn / multi-question sessions, natural-language
+  question parsing, model-generated answer prose, and new analytical tools in the
+  engine.
+- With the new task never invoked, the existing parser-trial and session-log tests
+  pass unchanged; the sole-writer invariant, the NFR-005 live-trial gate guard, the
+  no-new-dependency scan, and the engine guards are untouched.
+
 ## 2026-06-12 — Fixture auto-generator (`fixture-auto-generator`) — on branch, not yet merged
 
 Written pre-merge (overnight solo mission on
