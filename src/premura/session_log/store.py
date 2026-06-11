@@ -77,6 +77,23 @@ STEP_KINDS: frozenset[str] = frozenset({"agent_turn", "model_call", "tool_call"}
 # extend the vocab test, in this module only; do not enumerate per-tier roles.
 TURN_ROLES: frozenset[str] = frozenset({"system", "user", "assistant", "tool"})
 
+# judge-ai m3 FR-1 — the two closed judgment vocabularies, validated at this
+# boundary seam (same style as the vocabularies above). They are DESCRIPTIVE only:
+# no numeric scores and no pass/fail language confusable with the mechanical
+# grader verdict (NFR-6). The rule for extending either is the existing one — add
+# the value here and extend the vocab test, in this module only.
+#
+# JUDGMENT_STATUSES is the honesty axis: a judgment attempt is always recorded,
+# and ``unparseable`` / ``model_unavailable`` say so plainly rather than being
+# dropped or faked.
+JUDGMENT_STATUSES: frozenset[str] = frozenset({"complete", "unparseable", "model_unavailable"})
+
+# CRITERION_BANDS is the assessment axis: every criterion's band AND the optional
+# overall band are validated against this set. The criterion IDS themselves are
+# rubric-owned data (FR-3) and are deliberately NOT enumerated here — code
+# validates bands and records whatever criterion ids the rubric defined.
+CRITERION_BANDS: frozenset[str] = frozenset({"strong", "adequate", "weak", "not_applicable"})
+
 
 class LoadStatsLike(Protocol):
     """The three loader-MEASURED ints :func:`record_ingest_provenance` reads.
@@ -402,6 +419,76 @@ def record_turn(
         ],
     )
     return turn_id
+
+
+def record_judgment(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    session_id: str,
+    judge_model: str,
+    rubric_version: str,
+    status: str,
+    criteria: dict[str, dict[str, object]],
+    overall_band: str | None = None,
+    rationale: str | None = None,
+    raw_output: str | None = None,
+) -> str:
+    """Insert one ``log_judgment`` row and return its ``judgment_id`` (FR-1).
+
+    Records exactly one AI-judge verdict over a recorded session. ``status`` is
+    validated against :data:`JUDGMENT_STATUSES` and every band — each criterion's
+    ``band`` and the optional ``overall_band`` — against :data:`CRITERION_BANDS`,
+    at this boundary (same style as ``result_status`` / ``role``); an
+    out-of-vocabulary value raises :class:`ValueError` rather than being silently
+    stored. The criterion *ids* are NOT enumerated here — they belong to the
+    rubric (FR-3); ``criteria`` is stored verbatim as a JSON object mapping
+    criterion id -> ``{band, rationale}``.
+
+    The judge can never alter ``contract_pass``, the scoreboard, or the trial
+    verdict: this writes a separate, additive ``log_judgment`` row only. A
+    judgment attempt is always recorded honestly — on ``unparseable`` /
+    ``model_unavailable`` the caller passes an empty ``criteria`` and
+    ``overall_band=None`` while ``raw_output`` preserves what the model actually
+    said (if anything). The harness is the sole writer (FR-021 / NFR-1).
+
+    The bands are DESCRIPTIVE only (NFR-6): no numeric scores, no language
+    confusable with the mechanical grader verdict.
+    """
+    if status not in JUDGMENT_STATUSES:
+        raise ValueError(f"status must be one of {sorted(JUDGMENT_STATUSES)!r}, got {status!r}.")
+    for criterion_id, entry in criteria.items():
+        band = entry.get("band")
+        if band not in CRITERION_BANDS:
+            raise ValueError(
+                f"criterion {criterion_id!r} band must be one of "
+                f"{sorted(CRITERION_BANDS)!r}, got {band!r}."
+            )
+    if overall_band is not None and overall_band not in CRITERION_BANDS:
+        raise ValueError(
+            f"overall_band must be one of {sorted(CRITERION_BANDS)!r} or None, "
+            f"got {overall_band!r}."
+        )
+    judgment_id = _mint_id()
+    conn.execute(
+        """
+        INSERT INTO log_judgment
+            (judgment_id, session_id, judged_at, judge_model, rubric_version,
+             status, criteria_json, overall_band, rationale, raw_output)
+        VALUES (?, ?, now(), ?, ?, ?, ?, ?, ?, ?)
+        """,
+        [
+            judgment_id,
+            session_id,
+            judge_model,
+            rubric_version,
+            status,
+            json.dumps(criteria),
+            overall_band,
+            rationale,
+            raw_output,
+        ],
+    )
+    return judgment_id
 
 
 def finish_session(conn: duckdb.DuckDBPyConnection, *, session_id: str) -> None:

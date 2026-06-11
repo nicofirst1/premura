@@ -74,8 +74,40 @@ def test_init_schema_idempotent(tmp_path: Path) -> None:
         "log_ingest_provenance",
         "log_live_trial_attempt",
         "log_turn",
+        "log_judgment",
     } <= tables
     conn.close()
+
+
+def test_init_schema_idempotent_against_existing_file(tmp_path: Path) -> None:
+    """NFR-4: re-initializing a pre-existing on-disk log is a no-op, not a raise.
+
+    The judge-AI schema change is additive (``CREATE TABLE IF NOT EXISTS``):
+    opening a log file written by an earlier process and re-applying the schema
+    must add the new ``log_judgment`` table without disturbing existing rows.
+    """
+    log_path = tmp_path / "session_log.duckdb"
+    conn = _open_initialized(log_path)
+    sid = _new_session(conn)
+    conn.close()
+
+    # Re-open the SAME on-disk file in a fresh connection and re-apply the schema.
+    reopened = store.connect(log_path)
+    store.init_schema(reopened)  # idempotent against the existing file
+    # The pre-existing session row is intact and log_judgment is now usable.
+    count = reopened.execute("SELECT COUNT(*) FROM log_session").fetchone()
+    assert count is not None and count[0] == 1
+    jid = store.record_judgment(
+        reopened,
+        session_id=sid,
+        judge_model="m",
+        rubric_version="v1",
+        status="complete",
+        criteria={"process-honesty": {"band": "strong", "rationale": "ok"}},
+        overall_band="strong",
+    )
+    assert jid
+    reopened.close()
 
 
 def test_own_file_separate_from_warehouse_and_trace(tmp_path: Path) -> None:
@@ -651,6 +683,180 @@ def test_record_turn_nullable_step_and_optionals(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Judgment surface (judge-ai m3 FR-1)
+# ---------------------------------------------------------------------------
+
+
+def test_record_judgment_round_trip(tmp_path: Path) -> None:
+    """FR-1: a complete judgment replays from the log alone with its criteria JSON.
+
+    The judgment is what the future improvement hook reads; a round-trip through
+    the file is the contract. ``criteria`` is a mapping of rubric criterion id →
+    ``{band, rationale}`` stored as JSON; ``overall_band`` and ``rationale`` are
+    optional descriptive fields (NFR-6: descriptive bands, no scores).
+    """
+    log_path = tmp_path / "session_log.duckdb"
+    conn = _open_initialized(log_path)
+    sid = _new_session(conn)
+
+    criteria = {
+        "process-honesty": {"band": "strong", "rationale": "claims match grader facts"},
+        "tool-use-economy": {"band": "adequate", "rationale": "a couple of wasted reads"},
+    }
+    judgment_id = store.record_judgment(
+        conn,
+        session_id=sid,
+        judge_model="qwen2.5-coder:7b",
+        rubric_version="2026-06-11.1",
+        status="complete",
+        criteria=criteria,
+        overall_band="strong",
+        rationale="worked toward the goal and was honest about gaps",
+        raw_output='{"criteria": {...}}',
+    )
+    conn.close()
+
+    ro = store.connect(log_path, read_only=True)
+    row = ro.execute(
+        """
+        SELECT judgment_id, session_id, judge_model, rubric_version, status,
+               criteria_json, overall_band, rationale, raw_output
+        FROM log_judgment
+        WHERE session_id = ?
+        """,
+        [sid],
+    ).fetchone()
+    ro.close()
+
+    assert row is not None
+    assert row[0] == judgment_id
+    assert row[1] == sid
+    assert row[2] == "qwen2.5-coder:7b"
+    assert row[3] == "2026-06-11.1"
+    assert row[4] == "complete"
+    assert json.loads(row[5]) == criteria
+    assert row[6] == "strong"
+    assert row[7] == "worked toward the goal and was honest about gaps"
+    assert row[8] == '{"criteria": {...}}'
+
+
+def test_judgment_status_vocab(tmp_path: Path) -> None:
+    """FR-1: status is the fixed JUDGMENT_STATUSES vocabulary; others raise.
+
+    Mirrors the ``result_status`` / ``run_kind`` / ``role`` boundary checks: an
+    out-of-vocabulary status is rejected at the store seam, never silently stored.
+    """
+    conn = _open_initialized(tmp_path / "session_log.duckdb")
+    sid = _new_session(conn)
+    assert store.JUDGMENT_STATUSES == frozenset({"complete", "unparseable", "model_unavailable"})
+    for status in sorted(store.JUDGMENT_STATUSES):
+        # complete carries criteria; the honest error states carry none.
+        criteria = (
+            {"process-honesty": {"band": "strong", "rationale": "ok"}}
+            if status == "complete"
+            else {}
+        )
+        jid = store.record_judgment(
+            conn,
+            session_id=sid,
+            judge_model="m",
+            rubric_version="v1",
+            status=status,
+            criteria=criteria,
+            overall_band="strong" if status == "complete" else None,
+        )
+        assert jid  # accepted
+    with pytest.raises(ValueError, match="status"):
+        store.record_judgment(
+            conn,
+            session_id=sid,
+            judge_model="m",
+            rubric_version="v1",
+            status="passed",  # confusable with the grader verdict — NOT allowed
+            criteria={},
+        )
+    conn.close()
+
+
+def test_judgment_band_vocab(tmp_path: Path) -> None:
+    """FR-1: every criterion band and the overall band are validated against
+    CRITERION_BANDS; an out-of-vocabulary band raises. Criterion IDS are NOT
+    enumerated in code — they belong to the rubric (FR-3)."""
+    conn = _open_initialized(tmp_path / "session_log.duckdb")
+    sid = _new_session(conn)
+    assert store.CRITERION_BANDS == frozenset({"strong", "adequate", "weak", "not_applicable"})
+    # An arbitrary (rubric-owned) criterion id is accepted; the band is checked.
+    for band in sorted(store.CRITERION_BANDS):
+        jid = store.record_judgment(
+            conn,
+            session_id=sid,
+            judge_model="m",
+            rubric_version="v1",
+            status="complete",
+            criteria={"an-arbitrary-rubric-id": {"band": band, "rationale": "ok"}},
+            overall_band=band,
+        )
+        assert jid
+    # A bad band inside criteria is rejected.
+    with pytest.raises(ValueError, match="band"):
+        store.record_judgment(
+            conn,
+            session_id=sid,
+            judge_model="m",
+            rubric_version="v1",
+            status="complete",
+            criteria={"process-honesty": {"band": "excellent", "rationale": "no"}},
+        )
+    # A bad overall_band is rejected too.
+    with pytest.raises(ValueError, match="band"):
+        store.record_judgment(
+            conn,
+            session_id=sid,
+            judge_model="m",
+            rubric_version="v1",
+            status="complete",
+            criteria={"process-honesty": {"band": "strong", "rationale": "ok"}},
+            overall_band="great",
+        )
+    conn.close()
+
+
+def test_judgment_error_status_is_honest(tmp_path: Path) -> None:
+    """FR-1: on an error status the row is honest — empty criteria, NULL
+    overall_band, and raw_output preserves whatever the model actually said."""
+    log_path = tmp_path / "session_log.duckdb"
+    conn = _open_initialized(log_path)
+    sid = _new_session(conn)
+    store.record_judgment(
+        conn,
+        session_id=sid,
+        judge_model="m",
+        rubric_version="v1",
+        status="unparseable",
+        criteria={},
+        overall_band=None,
+        rationale=None,
+        raw_output="the model said something that did not parse",
+    )
+    conn.close()
+
+    ro = store.connect(log_path, read_only=True)
+    row = ro.execute(
+        """
+        SELECT status, criteria_json, overall_band, raw_output
+        FROM log_judgment WHERE session_id = ?
+        """,
+        [sid],
+    ).fetchone()
+    ro.close()
+    assert row is not None
+    assert row[0] == "unparseable"
+    assert json.loads(row[1]) == {}
+    assert row[2] is None
+    assert row[3] == "the model said something that did not parse"
+
+
+# ---------------------------------------------------------------------------
 # Single writer (FR-021 / NFR-008)
 # ---------------------------------------------------------------------------
 
@@ -683,6 +889,18 @@ def test_single_writer(tmp_path: Path) -> None:
         content="synthetic single-writer probe turn",
     )
     assert writer_turn
+    # Judgments are written only through this sole writable connection (NFR-1):
+    # record one so the cross-process lock below also guards log_judgment.
+    writer_judgment = store.record_judgment(
+        writer,
+        session_id=sid,
+        judge_model="probe-model",
+        rubric_version="v1",
+        status="complete",
+        criteria={"process-honesty": {"band": "strong", "rationale": "probe"}},
+        overall_band="strong",
+    )
+    assert writer_judgment
 
     # A second OS process opening the same file read-write must be rejected while
     # the harness holds the writable connection (the subprocess runner is denied a
@@ -717,6 +935,11 @@ def test_single_writer(tmp_path: Path) -> None:
         "SELECT COUNT(*) FROM log_turn WHERE session_id = ?", [sid]
     ).fetchone()
     assert turn_count is not None and turn_count[0] == 1
+    # The judgment written through the sole writer is durable too (NFR-1).
+    judgment_count = reader.execute(
+        "SELECT COUNT(*) FROM log_judgment WHERE session_id = ?", [sid]
+    ).fetchone()
+    assert judgment_count is not None and judgment_count[0] == 1
     reader.close()
 
 

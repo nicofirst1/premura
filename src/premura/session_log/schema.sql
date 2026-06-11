@@ -155,3 +155,45 @@ CREATE TABLE IF NOT EXISTS log_turn (
 );
 -- Walk a session's transcript in order.
 CREATE INDEX IF NOT EXISTS ix_turn_session ON log_turn(session_id, turn_index);
+
+-- ----------------------------------------------------------------------------
+-- log_judgment — one row per AI-judge invocation over a recorded session
+-- (judge-ai mission m3). The mechanical grader judges a run with `contract_pass`
+-- (in log_ingest_provenance) and the scoreboard records pass/fail; the AI judge
+-- evaluates the run's *process* against a versioned rubric and persists a
+-- structured, DESCRIPTIVE verdict here. It can NEVER alter `contract_pass`, the
+-- scoreboard, or the trial verdict — this is a separate, additive table the judge
+-- only writes into through the sole-writer harness surface (store.record_judgment).
+--
+--   * status is a fixed vocabulary {complete, unparseable, model_unavailable}
+--     (JUDGMENT_STATUSES), validated at the store boundary. A judgment attempt is
+--     always recorded honestly: on unparseable / model_unavailable, criteria_json
+--     is an empty object, overall_band is NULL, and raw_output preserves what the
+--     model actually said (if anything).
+--   * criteria_json is a JSON object mapping rubric criterion id -> {band,
+--     rationale}. The criterion IDS are rubric-owned data, NEVER enumerated in
+--     code; each band is validated against CRITERION_BANDS at the store boundary.
+--   * overall_band / each criterion band ∈ {strong, adequate, weak,
+--     not_applicable} (CRITERION_BANDS) — DESCRIPTIVE bands only: no numeric
+--     scores, no pass/fail language confusable with the mechanical grader verdict
+--     (NFR-6).
+--   * rubric_version pins which rubric produced the judgment (FR-3: a new
+--     criterion bumps the rubric version; no schema or store change is needed).
+--
+-- raw_output / rationale carry full model text; the session log is the local,
+-- PHI-bearing store per ADR 0011 / NFR-002 — no code path syncs or exports it.
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS log_judgment (
+    judgment_id    VARCHAR PRIMARY KEY,  -- ULID string (python-ulid)
+    session_id     VARCHAR NOT NULL REFERENCES log_session(session_id),
+    judged_at      TIMESTAMP NOT NULL,   -- nondeterministic wall-clock; not graded
+    judge_model    VARCHAR NOT NULL,     -- the local model that produced the judgment
+    rubric_version VARCHAR NOT NULL,     -- which rubric version produced it (FR-3)
+    status         VARCHAR NOT NULL,     -- {complete, unparseable, model_unavailable}
+    criteria_json  VARCHAR NOT NULL,     -- {criterion_id: {band, rationale}} (JSON)
+    overall_band   VARCHAR,              -- nullable; {strong, adequate, weak, not_applicable}
+    rationale      VARCHAR,              -- nullable; the judge's overall rationale
+    raw_output     VARCHAR               -- nullable; verbatim model output (honest record)
+);
+-- Fetch a session's judgments.
+CREATE INDEX IF NOT EXISTS ix_judgment_session ON log_judgment(session_id);
