@@ -35,9 +35,9 @@
 | T016 | E2E edge fixtures: regression-across-turns, malformed call, manifest refusal, no-parser | WP05 | | [D] |
 | T017 | E2E outcome edges: `model_unavailable`, `tool_calls_unsupported`, real-source no-persist | WP05 | | [D] |
 | T018 | Gated `live_trial`-marked real-model test module | WP05 | | [D] |
-| T019 | CHANGELOG entry for the tool-loop tier | WP06 | [P] |
-| T020 | STATUS.md update (honest pre-merge tense) | WP06 | |
-| T021 | ROADMAP reconciliation: tier work no longer "parked behind the gate" | WP06 | |
+| T019 | CHANGELOG entry for the tool-loop tier | WP06 | [D] |
+| T020 | STATUS.md update (honest pre-merge tense) | WP06 | | [D] |
+| T021 | ROADMAP reconciliation: tier work no longer "parked behind the gate" | WP06 | | [D] |
 
 ## Phase 1 — Foundational (parallel-safe)
 
@@ -140,9 +140,9 @@ describe its own merge; the orchestrator's post-merge close-out flips tense).
 pre-merge status and no stale "parked behind the intake gate" language.
 **Dependencies**: WP04 (describes what exists).
 
-- [ ] T019 CHANGELOG entry (WP06)
-- [ ] T020 STATUS.md update, pre-merge tense (WP06)
-- [ ] T021 ROADMAP reconciliation (WP06)
+- [x] T019 CHANGELOG entry (WP06)
+- [x] T020 STATUS.md update, pre-merge tense (WP06)
+- [x] T021 ROADMAP reconciliation (WP06)
 
 ## Parallelization
 
