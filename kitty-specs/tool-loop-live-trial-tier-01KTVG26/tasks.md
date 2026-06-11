@@ -32,9 +32,9 @@
 | T013 | `ToolLoopOperator`: agent loop, turn accounting, registry dispatch, gate integration | WP04 | | [D] |
 | T014 | `run_live_trial_tool_loop`: first/final grading, `ToolLoopOutcome`, tier persistence | WP04 | | [D] |
 | T015 | CLI `_main` (exit codes 0/2/3), `__all__`, module docstring boundaries | WP04 | | [D] |
-| T016 | E2E edge fixtures: regression-across-turns, malformed call, manifest refusal, no-parser | WP05 | |
-| T017 | E2E outcome edges: `model_unavailable`, `tool_calls_unsupported`, real-source no-persist | WP05 | |
-| T018 | Gated `live_trial`-marked real-model test module | WP05 | |
+| T016 | E2E edge fixtures: regression-across-turns, malformed call, manifest refusal, no-parser | WP05 | | [D] |
+| T017 | E2E outcome edges: `model_unavailable`, `tool_calls_unsupported`, real-source no-persist | WP05 | | [D] |
+| T018 | Gated `live_trial`-marked real-model test module | WP05 | | [D] |
 | T019 | CHANGELOG entry for the tool-loop tier | WP06 | [P] |
 | T020 | STATUS.md update (honest pre-merge tense) | WP06 | |
 | T021 | ROADMAP reconciliation: tier work no longer "parked behind the gate" | WP06 | |
@@ -125,9 +125,9 @@ end-to-end in the default suite (no model server); the real-model module is
 skipped by default and runnable locally.
 **Dependencies**: WP04.
 
-- [ ] T016 E2E edge fixtures: regression, malformed call, manifest refusal, no-parser (WP05)
-- [ ] T017 E2E outcome edges: unavailable, unsupported, real-source no-persist (WP05)
-- [ ] T018 Gated `live_trial` real-model test module (WP05)
+- [x] T016 E2E edge fixtures: regression, malformed call, manifest refusal, no-parser (WP05)
+- [x] T017 E2E outcome edges: unavailable, unsupported, real-source no-persist (WP05)
+- [x] T018 Gated `live_trial` real-model test module (WP05)
 
 ### WP06 — Live-doc sync (pre-merge tense)
 
