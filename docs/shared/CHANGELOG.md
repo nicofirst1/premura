@@ -8,6 +8,72 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-06-11 — Judge AI (`judge-ai`) — on branch, not yet merged
+
+Written pre-merge (overnight solo mission on `overnight/m3-judge-ai`); the
+post-merge close-out flips tense and records the merge. The live-trial harness
+grades a run *mechanically* — the grader recomputes `contract_pass` from
+warehouse facts and the scoreboard records pass/fail — but nothing evaluated the
+operator's *process*: whether it worked toward the goal, used its tools
+economically, recovered from failures, or claimed things the grader facts
+contradict. The session log already held everything needed to judge that (steps,
+provenance, per-attempt telemetry, and — since `conversation-turn-capture` — the
+full transcript), but nothing read it. This mission adds an AI judge: a
+harness-side evaluator that assembles a read-only dossier of a recorded session,
+asks a **local** model to assess it against a bounded rubric, and persists the
+structured judgment back through the same sole-writer surface.
+
+- **Judgment store surface (`log_judgment`).** A new additive `log_judgment`
+  table plus `record_judgment(...)` and two closed vocabularies validated at the
+  store boundary like the existing ones: `JUDGMENT_STATUSES`
+  (`{complete, unparseable, model_unavailable}`) and `CRITERION_BANDS`
+  (`{strong, adequate, weak, not_applicable}`). `criteria` is a mapping of
+  rubric criterion id → `{band, rationale}` stored as JSON; every band is
+  validated, but the criterion **ids are rubric-owned data, never enumerated in
+  code**. A judgment attempt is always recorded honestly — on
+  `unparseable` / `model_unavailable` the criteria are empty, `overall_band` is
+  NULL, and `raw_output` preserves what the model actually said. The bands are
+  **descriptive only**: no numeric scores, no language confusable with the
+  mechanical grader verdict. The schema change is `CREATE TABLE IF NOT EXISTS`,
+  so `init_schema` stays idempotent against existing local files.
+- **Read-only session dossier.** A `premura.session_log.dossier` read surface
+  assembles one session into a judge-readable dossier — session metadata, the
+  grader's recomputed facts (`contract_pass`, row counts), per-attempt
+  telemetry, and the full transcript in `turn_index` order — opening the log
+  **strictly read-only** so the judge (and the future improvement hook) never
+  reach into tables ad hoc and never write the log. A session with no recorded
+  turns says so explicitly rather than failing.
+- **Bounded rubric, a level above.** The judge's criteria live in a versioned
+  rubric document packaged with the harness (`JUDGE_RUBRIC.md`, precedent: the
+  research-trace-audit skill's `AUDIT_RUBRIC.md`) with four **closed** criterion
+  categories — process honesty, goal adherence, tool-use economy, failure
+  recovery — **plus the explicit rule for adding a criterion**: edit the rubric
+  (id, question, band grounding) and bump `rubric_version`; no schema or store
+  change is ever needed. Code never enumerates the criteria; it validates bands
+  and records whatever criterion ids the rubric defined.
+- **Judge core.** `premura.harness.judge.judge_session(...)` builds the prompt
+  from dossier + rubric, calls a local model through an injectable transport seam
+  (same pattern as the tool-loop `Transport`; the default reuses the existing
+  local-only Ollama path verbatim, so the PHI-bearing prompt can never leave the
+  machine), parses and validates the verdict, retries a malformed response a
+  bounded number of times, and persists exactly one `log_judgment` row per
+  invocation with the honest status. The judge *evaluates* the grader's facts but
+  can never alter them — `contract_pass`, the scoreboard, and the trial verdict
+  are out of its write reach.
+- **Harness wiring, opt-in, default OFF.** The cheap-model live-trial run gains an
+  opt-in post-run judge step (`judge_run=False` by default) that runs after the
+  final session is recorded. Judge failure of any kind — model unavailable,
+  unparseable output, or a bug — never changes the trial verdict and never raises
+  out of the harness; it lands as an honest `log_judgment` status row, or (if even
+  recording fails) a logged warning. Pinned by a regression test.
+- **Containment unchanged.** Only the harness writes `log_judgment` (pinned by the
+  single-writer test); the dossier opens the log read-only; committed tests are
+  fully offline with a scripted transport (any real-model test would carry the
+  `live_trial` marker); synthetic fixtures only; no new third-party dependency.
+
+Mission detail:
+[`docs/building/planning/judge-ai.md`](../building/planning/judge-ai.md).
+
 ## 2026-06-11 — Conversation-turn capture (`conversation-turn-capture`) — on branch, not yet merged
 
 Written pre-merge (overnight solo mission on

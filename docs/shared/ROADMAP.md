@@ -63,13 +63,24 @@ The user is actively writing more requirements; this section will grow.
    log now persists the operator's actual chat history per run — a new additive
    `log_turn` table written through the same sole-writer harness, fed by a
    structural `transcript()` capability that both the tool-loop and one-shot
-   tiers expose, so the deferred judge AI has the turns to read (see the
-   [CHANGELOG.md](CHANGELOG.md) 2026-06-11 entry). **Still deferred (named so
-   future work is not assumed shipped):** the judge AI, the improvement hook,
-   the fixture auto-generator, the analyze-and-answer slice, and — out of the
-   tier mission's scope by design — multi-model tournaments, tier
-   auto-selection / capability-routing policies, and any frontier or cloud
-   model requirement.
+   tiers expose, so the judge AI has the turns to read (see the
+   [CHANGELOG.md](CHANGELOG.md) 2026-06-11 entry). **The judge AI has since
+   shipped** (the `judge-ai` mission, on branch, not yet merged): a harness-side
+   evaluator now assembles a read-only **session dossier** (metadata, the
+   grader's recomputed facts, per-attempt telemetry, and the transcript), asks a
+   **local** model to assess the operator's *process* against a versioned,
+   bounded **rubric** (four closed criterion categories plus the rule for adding
+   a criterion), and persists a structured, descriptive judgment into a new
+   additive `log_judgment` table through the same sole-writer surface. It is
+   wired as an **opt-in, default-off** post-run step of the live trial; the judge
+   evaluates the grader's facts but can never alter `contract_pass`, the
+   scoreboard, or the trial verdict, and its failure never raises out of the
+   harness (see the [CHANGELOG.md](CHANGELOG.md) 2026-06-11 entry). **Still
+   deferred (named so future work is not assumed shipped):** the improvement hook
+   (it *consumes* a judgment, nothing here acts on one), the fixture
+   auto-generator, the analyze-and-answer slice, and — out of the tier mission's
+   scope by design — multi-model tournaments, tier auto-selection /
+   capability-routing policies, and any frontier or cloud model requirement.
 
 Read the full phase doc for the rationale, risk retirement, and exit criteria:
 

@@ -398,3 +398,120 @@ def test_malformed_local_response_is_unavailable_not_crash(
 
     monkeypatch.setattr(lto.urllib.request, "urlopen", lambda *_a, **_k: _FakeResp())
     assert lto.ollama_available() is False
+
+
+# --------------------------------------------------------------------------- #
+# WP3 — opt-in post-run judge step (judge-ai m3 FR-5). Default OFF; failure of
+# any kind must never flip the trial verdict or raise out of the harness.
+# --------------------------------------------------------------------------- #
+
+import json as _json  # noqa: E402 - kept local to the WP3 judge-wiring block
+
+from premura.session_log import store as _store  # noqa: E402
+
+
+def _count_judgments(session_log_path: Path, session_id: str) -> int:
+    ro = _store.connect(session_log_path, read_only=True)
+    try:
+        row = ro.execute(
+            "SELECT COUNT(*) FROM log_judgment WHERE session_id = ?", [session_id]
+        ).fetchone()
+    finally:
+        ro.close()
+    return 0 if row is None else int(row[0])
+
+
+def test_judge_off_by_default_leaves_zero_judgments(
+    tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """FR-5: the post-run judge step is OFF by default — a run with the flag unset
+    leaves ZERO log_judgment rows and an unchanged verdict."""
+    runs_dir = Path(tmp_path) / "runs"  # type: ignore[arg-type]
+    scoreboard_path = runs_dir / "scoreboard.jsonl"
+    _redirect_persistence(monkeypatch, runs_dir=runs_dir, scoreboard_path=scoreboard_path)
+
+    operator = _InjectedFakeOperator(_GOOD_PARSER, tries_used=1)
+    outcome = _run_entry(operator=operator, source=_SYNTHETIC_CSV, keep_sandboxes=True)
+    try:
+        assert outcome.final_result is not None
+        # The mechanical verdict is unchanged and no judgment was written.
+        assert (
+            _count_judgments(outcome.final_result.session_log_path, outcome.final_result.session_id)
+            == 0
+        )
+    finally:
+        lto._teardown_kept_sandbox(outcome.final_result)
+        lto._teardown_kept_sandbox(outcome.first_attempt_result)
+
+
+def test_judge_on_records_one_judgment_and_keeps_verdict(
+    tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """FR-5: with the opt-in flag ON and a scripted transport, the run records
+    exactly one log_judgment row over the just-recorded session WITHOUT changing
+    the trial verdict."""
+    runs_dir = Path(tmp_path) / "runs"  # type: ignore[arg-type]
+    scoreboard_path = runs_dir / "scoreboard.jsonl"
+    _redirect_persistence(monkeypatch, runs_dir=runs_dir, scoreboard_path=scoreboard_path)
+
+    judge_mod = importlib.import_module("premura.harness." + "judge")
+    rubric_ids = judge_mod.load_rubric().criterion_ids
+    verdict = {"criteria": {cid: {"band": "adequate", "rationale": "ok"} for cid in rubric_ids}}
+
+    def _transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
+        return _json.dumps(verdict)
+
+    operator = _InjectedFakeOperator(_GOOD_PARSER, tries_used=1)
+    outcome = _run_entry(
+        operator=operator,
+        source=_SYNTHETIC_CSV,
+        keep_sandboxes=True,
+        judge_run=True,
+        judge_transport=_transport,
+    )
+    try:
+        assert outcome.final_result is not None
+        verdict_before = outcome.final_result.verdict
+        # Exactly one judgment row over the just-recorded session.
+        assert (
+            _count_judgments(outcome.final_result.session_log_path, outcome.final_result.session_id)
+            == 1
+        )
+        # The mechanical verdict the run returned is unchanged by judging.
+        assert verdict_before is outcome.final_result.verdict
+    finally:
+        lto._teardown_kept_sandbox(outcome.final_result)
+        lto._teardown_kept_sandbox(outcome.first_attempt_result)
+
+
+def test_judge_failure_never_flips_verdict_or_raises(
+    tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """FR-5 (regression): a judge transport that RAISES an unexpected error must
+    not raise out of the harness and must not change the trial verdict. The run
+    completes normally; an honest judgment row (or none) is the only effect."""
+    runs_dir = Path(tmp_path) / "runs"  # type: ignore[arg-type]
+    scoreboard_path = runs_dir / "scoreboard.jsonl"
+    _redirect_persistence(monkeypatch, runs_dir=runs_dir, scoreboard_path=scoreboard_path)
+
+    def _boom_transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
+        raise RuntimeError("unexpected judge bug that must not escape the harness")
+
+    operator = _InjectedFakeOperator(_GOOD_PARSER, tries_used=1)
+    # Must NOT raise even though the judge transport blows up with a non-Ollama error.
+    outcome = _run_entry(
+        operator=operator,
+        source=_SYNTHETIC_CSV,
+        keep_sandboxes=True,
+        judge_run=True,
+        judge_transport=_boom_transport,
+    )
+    try:
+        assert outcome.final_result is not None
+        # The trial verdict still exists and is the mechanical grader's, untouched.
+        assert "passed" in outcome.final_result.verdict
+        # The run reached a normal, persisted outcome despite the judge bug.
+        assert outcome.record is not None
+    finally:
+        lto._teardown_kept_sandbox(outcome.final_result)
+        lto._teardown_kept_sandbox(outcome.first_attempt_result)

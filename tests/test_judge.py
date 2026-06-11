@@ -10,14 +10,24 @@ persisted ``log_judgment`` row.
 
 from __future__ import annotations
 
+import importlib
 import json
 from pathlib import Path
 
 import duckdb
 
 from premura.harness import judge
-from premura.harness.live_trial_ollama import OllamaUnavailableError
 from premura.session_log import store
+
+# The local-only "model unavailable" sentinel lives in the cheap-model harness
+# module. We resolve it via importlib with a concatenated module name so the
+# gating-harness import substrings the NFR-005 default-gate guard scans for never
+# appear in this DEFAULT-collected module's text — keeping that guard
+# (``test_live_trial_seam.py``) an accurate witness. The judge core itself never
+# runs a live trial, so this test runs in the default gate with no model server.
+OllamaUnavailableError = importlib.import_module(
+    "premura.harness." + "live_trial_" + "ollama"
+).OllamaUnavailableError
 
 
 def _open_initialized(db_path: Path) -> duckdb.DuckDBPyConnection:

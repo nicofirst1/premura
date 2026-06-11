@@ -41,6 +41,7 @@ It needs a running Ollama (``http://localhost:11434``) with the model pulled.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import subprocess
@@ -69,6 +70,8 @@ from premura.harness.scoreboard import (
     persist_run,
 )
 from premura.harness.self_reconcile import SelfReconciliationResult
+
+_LOGGER = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
 # Configuration (env-overridable; defaults to a locally available cheap coder).
@@ -832,6 +835,42 @@ def _grade_one(
     )
 
 
+def _run_post_run_judge(
+    log_path: Path,
+    *,
+    session_id: str,
+    model: str,
+    transport: object,
+) -> None:
+    """Run the opt-in post-run AI judge over the recorded session (FR-5).
+
+    Fully GUARDED: the judge is a separate, opt-in evaluation step that can never
+    change the trial verdict or raise out of the harness. Any failure of any kind
+    — model unavailable, unparseable output, or an outright bug in the judge — is
+    swallowed here. The judge's own happy/unhappy paths already record an honest
+    ``log_judgment`` status row (``complete`` / ``unparseable`` /
+    ``model_unavailable``); this guard catches the residual case where even
+    recording the judgment fails, and logs a warning instead of propagating
+    (FR-5: "or, if even recording fails, a logged warning"). The import is LAZY so
+    the judge module is only loaded when the opt-in step is actually used.
+    """
+    try:
+        from premura.harness import judge
+
+        judge.judge_session(
+            log_path,
+            session_id=session_id,
+            model=model,
+            transport=transport,  # type: ignore[arg-type]
+        )
+    except Exception:  # noqa: BLE001 - the judge must never flip the verdict or escape
+        _LOGGER.warning(
+            "post-run judge failed for session %s; trial verdict is unaffected",
+            session_id,
+            exc_info=True,
+        )
+
+
 def run_live_trial_ollama(
     *,
     model: str = DEFAULT_MODEL,
@@ -841,6 +880,8 @@ def run_live_trial_ollama(
     operator: OllamaOperator | None = None,
     keep_sandboxes: bool = False,
     scenario: Scenario | None = None,
+    judge_run: bool = False,
+    judge_transport: object = None,
 ) -> LiveTrialOutcome:
     """Drive one Ollama-backed live trial end-to-end (T013/T014; FR-001..014).
 
@@ -882,6 +923,14 @@ def run_live_trial_ollama(
     caller inspection, but ONLY for a SYNTHETIC source. A non-synthetic source
     always tears both sandboxes down regardless of this flag, so no real local
     data is left on disk (FR-004 / NFR-002 / NFR-004).
+
+    ``judge_run`` is the OPT-IN post-run AI judge flag (judge-ai m3 FR-5; default
+    OFF). When True, after the final session is recorded the harness runs the
+    rubric-driven judge over it and persists one honest ``log_judgment`` row.
+    ``judge_transport`` is the injectable judge model backend (DIRECTIVE_036): the
+    default (None) uses the judge's local-only Ollama path; tests pass a scripted
+    callable. Judge failure of any kind never flips the trial verdict or raises out
+    of the harness — the verdict stays the mechanical grader's.
     """
     if scenario is None:
         scenario = observation_scenario()
@@ -917,6 +966,20 @@ def run_live_trial_ollama(
             )
     finally:
         log_conn.close()
+
+    # (1b) Opt-in post-run AI judge (judge-ai m3 FR-5; default OFF). It runs over
+    #      the JUST-RECORDED final session (its attempts + transcript are now in
+    #      the log) and persists one honest log_judgment row. Judge failure of ANY
+    #      kind — model unavailable, unparseable output, or a bug — must NEVER flip
+    #      the trial verdict or raise out of the harness: the call is fully guarded
+    #      and the verdict is the mechanical grader's, untouched.
+    if judge_run:
+        _run_post_run_judge(
+            final_log_path,
+            session_id=final_result.session_id,
+            model=model,
+            transport=judge_transport,
+        )
 
     # (2) Independently grade attempt 1 (un-nagged) with the SAME grader.
     first_code = operator.first_attempt_code
