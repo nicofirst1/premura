@@ -75,6 +75,7 @@ def test_init_schema_idempotent(tmp_path: Path) -> None:
         "log_live_trial_attempt",
         "log_turn",
         "log_judgment",
+        "log_improvement",
     } <= tables
     conn.close()
 
@@ -901,6 +902,20 @@ def test_single_writer(tmp_path: Path) -> None:
         overall_band="strong",
     )
     assert writer_judgment
+    # Improvement proposals are written only through this sole writable connection
+    # (NFR-1): record one so the cross-process lock below also guards log_improvement.
+    writer_improvement = store.record_improvement(
+        writer,
+        session_id=sid,
+        judgment_id=writer_judgment,
+        criterion_id="process-honesty",
+        area="process_honesty",
+        summary="probe proposal",
+        evidence="probe evidence",
+        playbook_version="v1",
+        status="open",
+    )
+    assert writer_improvement
 
     # A second OS process opening the same file read-write must be rejected while
     # the harness holds the writable connection (the subprocess runner is denied a
@@ -940,6 +955,11 @@ def test_single_writer(tmp_path: Path) -> None:
         "SELECT COUNT(*) FROM log_judgment WHERE session_id = ?", [sid]
     ).fetchone()
     assert judgment_count is not None and judgment_count[0] == 1
+    # The improvement proposal written through the sole writer is durable too (NFR-1).
+    improvement_count = reader.execute(
+        "SELECT COUNT(*) FROM log_improvement WHERE session_id = ?", [sid]
+    ).fetchone()
+    assert improvement_count is not None and improvement_count[0] == 1
     reader.close()
 
 

@@ -197,3 +197,47 @@ CREATE TABLE IF NOT EXISTS log_judgment (
 );
 -- Fetch a session's judgments.
 CREATE INDEX IF NOT EXISTS ix_judgment_session ON log_judgment(session_id);
+
+-- ----------------------------------------------------------------------------
+-- log_improvement — one row per durable improvement PROPOSAL the improvement
+-- hook (mission m4) derives from a judgment. The judge (m3) writes a structured
+-- verdict into log_judgment but nothing consumes it; the improvement hook reads
+-- those verdicts (plus the rubric for criterion→category lookup) and persists
+-- agent-readable proposals here — "the operator keeps failing this criterion;
+-- look at the prompt's guidance" — so a maintainer agent or the human can decide
+-- what to change. The hook PROPOSES; it never acts, never edits prompts/harness/
+-- rubrics/skills, and NEVER changes a run's verdict. This is a separate, additive
+-- table written only through the sole-writer harness surface
+-- (store.record_improvement), exactly like log_judgment.
+--
+--   * criterion_id is NULLABLE — opaque, rubric-owned data (never enumerated in
+--     code). It is NULL for judgment-level proposals (e.g. a non-complete judgment
+--     status) and the rubric criterion id for criterion-level proposals.
+--   * area is a playbook-owned id (IMPROVEMENT_PLAYBOOK.md). Code never hardcodes
+--     area semantics; it parses the playbook and records whatever area the playbook
+--     maps the judgment evidence to (the same altitude as the rubric's criterion ids).
+--   * status is a fixed vocabulary {open, dismissed, addressed} (PROPOSAL_STATUSES),
+--     validated at the store boundary. This mission only ever writes 'open'; the
+--     other statuses exist now so a later lifecycle mission needs no schema
+--     migration.
+--   * playbook_version pins which playbook produced the proposal — the same
+--     versioning idiom as log_judgment.rubric_version (a new area bumps the
+--     playbook version; no schema or store change is needed).
+--
+-- summary / evidence carry agent-readable prose; the session log is the local,
+-- PHI-bearing store per ADR 0011 / NFR-002 — no code path syncs or exports it.
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS log_improvement (
+    improvement_id   VARCHAR PRIMARY KEY,  -- ULID string (python-ulid)
+    session_id       VARCHAR NOT NULL REFERENCES log_session(session_id),
+    judgment_id      VARCHAR NOT NULL REFERENCES log_judgment(judgment_id),
+    created_at       TIMESTAMP NOT NULL,   -- nondeterministic wall-clock; not graded
+    criterion_id     VARCHAR,              -- nullable; opaque rubric-owned id (NULL = judgment-level)
+    area             VARCHAR NOT NULL,     -- playbook-owned area id (IMPROVEMENT_PLAYBOOK.md)
+    summary          VARCHAR NOT NULL,     -- agent-readable proposal summary
+    evidence         VARCHAR NOT NULL,     -- the grounding the proposal carries
+    playbook_version VARCHAR NOT NULL,     -- which playbook version produced it
+    status           VARCHAR NOT NULL      -- {open, dismissed, addressed} (PROPOSAL_STATUSES)
+);
+-- Fetch a session's improvement proposals.
+CREATE INDEX IF NOT EXISTS ix_improvement_session ON log_improvement(session_id);

@@ -94,6 +94,17 @@ JUDGMENT_STATUSES: frozenset[str] = frozenset({"complete", "unparseable", "model
 # validates bands and records whatever criterion ids the rubric defined.
 CRITERION_BANDS: frozenset[str] = frozenset({"strong", "adequate", "weak", "not_applicable"})
 
+# improvement-hook m4 FR-1 — the closed improvement-proposal lifecycle vocabulary,
+# validated at this boundary seam (same style as the vocabularies above). The
+# improvement hook only ever writes ``open``; ``dismissed`` / ``addressed`` exist
+# now so a later lifecycle mission can transition a proposal with NO schema
+# migration. The rule for extending it is the existing one — add the value here
+# and extend the vocab test, in this module only. The proposal *area* ids are
+# playbook-owned data (FR-3) and are deliberately NOT enumerated here, exactly as
+# the criterion ids are rubric-owned: code validates the closed status vocabulary
+# and records whatever area the playbook defined.
+PROPOSAL_STATUSES: frozenset[str] = frozenset({"open", "dismissed", "addressed"})
+
 
 class LoadStatsLike(Protocol):
     """The three loader-MEASURED ints :func:`record_ingest_provenance` reads.
@@ -489,6 +500,83 @@ def record_judgment(
         ],
     )
     return judgment_id
+
+
+def _require_non_empty(value: str, *, field: str) -> str:
+    """Reject a blank/whitespace-only field at the store seam (FR-1)."""
+    if not value or not value.strip():
+        raise ValueError(f"{field} must be a non-empty string, got {value!r}.")
+    return value
+
+
+def record_improvement(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    session_id: str,
+    judgment_id: str,
+    criterion_id: str | None,
+    area: str,
+    summary: str,
+    evidence: str,
+    playbook_version: str,
+    status: str,
+) -> str:
+    """Insert one ``log_improvement`` row and return its ``improvement_id`` (FR-1).
+
+    Records exactly one durable improvement PROPOSAL the improvement hook derived
+    from a judgment. ``status`` is validated against :data:`PROPOSAL_STATUSES` and
+    ``summary`` / ``evidence`` / ``area`` must be non-empty, at this boundary (same
+    style as ``result_status`` / ``role`` / judgment ``status``); an out-of-
+    vocabulary or blank value raises :class:`ValueError` rather than being silently
+    stored. The referenced ``session_id`` and ``judgment_id`` must already exist —
+    a dangling reference is rejected here (and also by the table's FKs) so a
+    proposal can never point at a session or judgment the log does not carry.
+
+    ``criterion_id`` is NULLABLE and opaque (rubric-owned data, never enumerated in
+    code): NULL for a judgment-level proposal, the rubric criterion id otherwise.
+    ``area`` is a playbook-owned id — code never hardcodes area semantics; it
+    records whatever area the playbook mapped the evidence to. This mission only
+    ever writes ``"open"``; the other statuses exist so a later lifecycle mission
+    needs no schema migration. The harness is the sole writer (FR-021 / NFR-1).
+    """
+    if status not in PROPOSAL_STATUSES:
+        raise ValueError(f"status must be one of {sorted(PROPOSAL_STATUSES)!r}, got {status!r}.")
+    _require_non_empty(area, field="area")
+    _require_non_empty(summary, field="summary")
+    _require_non_empty(evidence, field="evidence")
+
+    session_row = conn.execute(
+        "SELECT 1 FROM log_session WHERE session_id = ?", [session_id]
+    ).fetchone()
+    if session_row is None:
+        raise ValueError(f"no session {session_id!r} in this session log")
+    judgment_row = conn.execute(
+        "SELECT 1 FROM log_judgment WHERE judgment_id = ?", [judgment_id]
+    ).fetchone()
+    if judgment_row is None:
+        raise ValueError(f"no judgment {judgment_id!r} in this session log")
+
+    improvement_id = _mint_id()
+    conn.execute(
+        """
+        INSERT INTO log_improvement
+            (improvement_id, session_id, judgment_id, created_at, criterion_id,
+             area, summary, evidence, playbook_version, status)
+        VALUES (?, ?, ?, now(), ?, ?, ?, ?, ?, ?)
+        """,
+        [
+            improvement_id,
+            session_id,
+            judgment_id,
+            criterion_id,
+            area,
+            summary,
+            evidence,
+            playbook_version,
+            status,
+        ],
+    )
+    return improvement_id
 
 
 def finish_session(conn: duckdb.DuckDBPyConnection, *, session_id: str) -> None:
