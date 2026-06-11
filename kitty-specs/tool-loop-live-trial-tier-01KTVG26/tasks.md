@@ -24,10 +24,10 @@
 | T005 | Failing fixture test: renamed-field-absorbing parser FAILS `self_reconcile` (SC-007) | WP02 | [P] |
 | T006 | Sharpen renamed-field declared-gap line in the observation contract prompt | WP02 | |
 | T007 | Sharpen the same line in the intake contract prompt; one-shot suites stay green | WP02 | |
-| T008 | Failing tests: chat-client error mapping, tool-registry bounds, brief invariants | WP03 | [P] |
-| T009 | Chat client `_ollama_chat` (stdlib, local-only guard, `num_ctx`) + `ToolCallsUnsupportedError` | WP03 | |
-| T010 | `ToolRegistration` + registry + `read_context`/`write_parser`/`run_ingest` handlers | WP03 | |
-| T011 | Brief assembler (single function; budget check fails loudly, never truncates) | WP03 | |
+| T008 | Failing tests: chat-client error mapping, tool-registry bounds, brief invariants | WP03 | [D] |
+| T009 | Chat client `_ollama_chat` (stdlib, local-only guard, `num_ctx`) + `ToolCallsUnsupportedError` | WP03 | | [D] |
+| T010 | `ToolRegistration` + registry + `read_context`/`write_parser`/`run_ingest` handlers | WP03 | | [D] |
+| T011 | Brief assembler (single function; budget check fails loudly, never truncates) | WP03 | | [D] |
 | T012 | Failing loop tests via injectable fake chat backend (happy path, gate feedback, cap) | WP04 | |
 | T013 | `ToolLoopOperator`: agent loop, turn accounting, registry dispatch, gate integration | WP04 | |
 | T014 | `run_live_trial_tool_loop`: first/final grading, `ToolLoopOutcome`, tier persistence | WP04 | |
@@ -86,10 +86,10 @@ every required API class name and no one-shot-only output directive; oversized
 brief raises instead of truncating — all without a model server.
 **Dependencies**: none.
 
-- [ ] T008 Failing tests: client error mapping, registry bounds, brief invariants (WP03)
-- [ ] T009 Chat client + `ToolCallsUnsupportedError` + `num_ctx` pinning (WP03)
-- [ ] T010 `ToolRegistration` + registry + three bounded handlers (WP03)
-- [ ] T011 Brief assembler with loud budget check (WP03)
+- [x] T008 Failing tests: client error mapping, registry bounds, brief invariants (WP03)
+- [x] T009 Chat client + `ToolCallsUnsupportedError` + `num_ctx` pinning (WP03)
+- [x] T010 `ToolRegistration` + registry + three bounded handlers (WP03)
+- [x] T011 Brief assembler with loud budget check (WP03)
 
 ## Phase 2 — The loop
 
