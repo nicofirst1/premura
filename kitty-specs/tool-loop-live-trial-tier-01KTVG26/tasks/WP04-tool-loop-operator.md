@@ -21,8 +21,8 @@ subtasks:
 - T013
 - T014
 - T015
-agent: "claude:fable:implementer:implementer"
-shell_pid: "40987"
+agent: "claude:fable:reviewer:reviewer"
+shell_pid: "57356"
 history:
 - date: '2026-06-11T14:19:42Z'
   action: created
@@ -272,3 +272,4 @@ exits 2 cleanly with no Ollama running (manual check, not a committed test).
 
 - 2026-06-11T18:12:47Z – claude:fable:implementer:implementer – shell_pid=40987 – Started implementation via action command
 - 2026-06-11T18:29:25Z – claude:fable:implementer:implementer – shell_pid=40987 – Ready for review: ToolLoopOperator + run_live_trial_tool_loop landed on lane-a (23df59f); 8 default-suite fake-backend tests; full suite 1100 passed; CLI exit-2 manually verified
+- 2026-06-11T18:30:04Z – claude:fable:reviewer:reviewer – shell_pid=57356 – Started review via action command
