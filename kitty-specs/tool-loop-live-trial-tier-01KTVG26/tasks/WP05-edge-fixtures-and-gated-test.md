@@ -16,8 +16,8 @@ subtasks:
 - T016
 - T017
 - T018
-agent: "claude:fable:implementer:implementer"
-shell_pid: "64107"
+agent: "claude:fable:reviewer:reviewer"
+shell_pid: "75366"
 history:
 - date: '2026-06-11T14:19:42Z'
   action: created
@@ -190,3 +190,4 @@ runs or skips cleanly. Gates: ruff + format + mypy on owned files.
 
 - 2026-06-11T18:38:59Z – claude:fable:implementer:implementer – shell_pid=64107 – Started implementation via action command
 - 2026-06-11T18:59:24Z – claude:fable:implementer:implementer – shell_pid=64107 – Ready for review: e2e fixtures for all spec-named edge cases (regression, manifest misuse, malformed, no-parser, intake drawer, unavailable/unsupported, real-source no-persist) + SC-004 subprocess collection pin + gated real-model module (ran locally vs qwen2.5-coder:7b: honest cap-exhausted FAILs on both scenarios). Default suite 1109 passed; ruff/format/mypy clean; tests-only diff cebc91c.
+- 2026-06-11T18:59:58Z – claude:fable:reviewer:reviewer – shell_pid=75366 – Started review via action command
