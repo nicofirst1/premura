@@ -50,9 +50,12 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from importlib import resources
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import yaml  # type: ignore[import-untyped]
+
+from premura.harness.scenario import ObservationStrategy, Scenario
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -107,6 +110,9 @@ class GeneratedFixture:
             warning header (FR-4).
         source_fields: the enumerated columns + their canonical metric (or None).
         timestamp_encoding: the id of the chosen timestamp encoding (telemetry).
+        timestamp_column: the header name of the structural timestamp column —
+            the one column :func:`validate_fixture` decodes in
+            ``timestamp_encoding`` (FR-5). It is a null-metric column (a gap).
     """
 
     spec: FixtureSpec
@@ -115,6 +121,7 @@ class GeneratedFixture:
     manifest_text: str
     source_fields: tuple[SourceField, ...]
     timestamp_encoding: str
+    timestamp_column: str
 
     @property
     def csv_columns(self) -> list[str]:
@@ -287,6 +294,7 @@ class _DrawerOutput:
 
     columns: list[_GenColumn]
     timestamp_encoding: str
+    timestamp_column: str
 
 
 class DrawerStrategy:
@@ -362,7 +370,9 @@ class _ObservationStrategy(DrawerStrategy):
             cells = [str(rng.randint(0, 100)) for _ in range(row_count)]
             columns.append(_GenColumn(name=transform(token), canonical_metric=None, cells=cells))
 
-        return _DrawerOutput(columns=columns, timestamp_encoding=encoding.id)
+        return _DrawerOutput(
+            columns=columns, timestamp_encoding=encoding.id, timestamp_column=ts_name
+        )
 
     @staticmethod
     def _value_cell(rng: random.Random, metric: _RegistryMetric) -> str:
@@ -467,23 +477,217 @@ def generate_fixture(spec: FixtureSpec) -> GeneratedFixture:
         manifest_text=manifest_text,
         source_fields=source_fields,
         timestamp_encoding=encoding_id,
+        timestamp_column=drawer_output.timestamp_column,
     )
     validate_fixture(fixture)
     return fixture
 
 
+_ENCODINGS_BY_ID: dict[str, _TimestampEncoding] = {e.id: e for e in _TIMESTAMP_ENCODINGS}
+
+
 def validate_fixture(fixture: GeneratedFixture) -> None:
-    """Placeholder — full ground-truth invariant checks land in WP2 (FR-5)."""
-    return None
+    """Enforce the ground-truth invariants; raise ``ValueError`` on the first miss.
+
+    The grader's honesty rail depends on these holding (FR-5). Checked, in order:
+
+    1. Every CSV column appears **exactly once** in the manifest's source fields.
+    2. Non-null canonical metrics are **unique** (the D6 distinct-metric rule) and
+       each **exists in the committed metric registry** seed (so the warehouse can
+       witness it as loaded).
+    3. There is **at least one mappable** column and **at least one null-metric**
+       (declared-gap) column — a fixture with no decoy or no mapped column is not a
+       fair honesty challenge.
+    4. The CSV carries exactly ``row_count`` data rows, and every cell in the
+       declared structural **timestamp column** decodes in the declared encoding.
+
+    :func:`generate_fixture` runs this before returning, so an invalid fixture can
+    never escape the generator.
+    """
+    reader = csv.reader(io.StringIO(fixture.csv_text))
+    rows = list(reader)
+    if not rows:
+        raise ValueError("fixture CSV is empty")
+    header = rows[0]
+    data_rows = rows[1:]
+
+    manifest_names = [f.name for f in fixture.source_fields]
+
+    # (1) Every CSV column appears exactly once in the manifest, and vice versa.
+    if sorted(header) != sorted(manifest_names) or len(manifest_names) != len(set(manifest_names)):
+        raise ValueError(
+            "each CSV column must appear exactly once in the manifest source_fields; "
+            f"header={header!r} manifest={manifest_names!r}"
+        )
+
+    # (2) Distinct, registry-resident canonical metrics.
+    metrics = [f.canonical_metric for f in fixture.source_fields if f.canonical_metric is not None]
+    if len(metrics) != len(set(metrics)):
+        raise ValueError(f"canonical metrics must be unique (duplicate found): {metrics!r}")
+    registry = registry_metric_ids()
+    for metric in metrics:
+        if metric not in registry:
+            raise ValueError(
+                f"canonical metric {metric!r} is not in the committed metric registry seed"
+            )
+
+    # (3) At least one mappable AND at least one null-metric column.
+    if not metrics:
+        raise ValueError("fixture has no mappable column (>=1 required)")
+    if not any(f.canonical_metric is None for f in fixture.source_fields):
+        raise ValueError("fixture has no null-metric (declared-gap) column (>=1 required)")
+
+    # (4) Exactly row_count data rows, all timestamps decodable in the encoding.
+    if len(data_rows) != fixture.spec.row_count:
+        raise ValueError(
+            f"CSV has {len(data_rows)} data rows, expected row_count={fixture.spec.row_count}"
+        )
+    encoding = _ENCODINGS_BY_ID.get(fixture.timestamp_encoding)
+    if encoding is None:
+        raise ValueError(f"unknown timestamp encoding {fixture.timestamp_encoding!r}")
+    if fixture.timestamp_column not in header:
+        raise ValueError(
+            f"declared timestamp column {fixture.timestamp_column!r} is not a CSV column"
+        )
+    ts_index = header.index(fixture.timestamp_column)
+    for i, row in enumerate(data_rows):
+        cell = row[ts_index]
+        try:
+            encoding.parse(cell)
+        except (ValueError, OverflowError, OSError) as exc:
+            raise ValueError(
+                f"row {i} timestamp {cell!r} does not decode in encoding "
+                f"{fixture.timestamp_encoding!r}: {exc}"
+            ) from exc
+
+
+# --------------------------------------------------------------------------- #
+# Disk writer + scenario adapter (FR-6).
+# --------------------------------------------------------------------------- #
+
+#: The writer marks a generated-fixture output directory with this sentinel file
+#: so the harness can recognize a generated source as SYNTHETIC (scoreboard-
+#: persistable) by an EXPLICIT writer-controlled marker — never by loosening the
+#: committed-source rule for arbitrary or real operator paths (FR-6).
+SYNTHETIC_MARKER_NAME = ".premura_synthetic_fixture"
+
+
+@dataclass(frozen=True)
+class WrittenFixture:
+    """A generated fixture pair on disk (FR-6).
+
+    Attributes:
+        fixture: the in-memory fixture that was written.
+        csv_path: the written CSV file.
+        manifest_path: the written grader-only manifest file.
+        marker_path: the writer-controlled synthetic marker (FR-6) — its presence
+            beside ``csv_path`` is what makes the run scoreboard-persistable.
+    """
+
+    fixture: GeneratedFixture
+    csv_path: Path
+    manifest_path: Path
+    marker_path: Path
+
+
+def write_fixture(
+    fixture: GeneratedFixture, out_dir: Path, *, overwrite: bool = False
+) -> WrittenFixture:
+    """Write the CSV + manifest pair (plus the synthetic marker) under ``out_dir``.
+
+    Refuses to overwrite an existing CSV or manifest unless ``overwrite=True``
+    (FR-6). Output lands ONLY where the caller points ``out_dir`` — never silently
+    into ``tests/fixtures/`` (NFR-3). Re-validates before writing so a hand-built
+    invalid fixture can never reach disk.
+    """
+    validate_fixture(fixture)
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    csv_path = out_dir / f"{fixture.source_name}.csv"
+    manifest_path = out_dir / f"{fixture.source_name}.manifest.yaml"
+    marker_path = out_dir / SYNTHETIC_MARKER_NAME
+
+    for path in (csv_path, manifest_path):
+        if path.exists() and not overwrite:
+            raise FileExistsError(
+                f"refusing to overwrite existing {path}; pass overwrite=True to replace"
+            )
+
+    csv_path.write_text(fixture.csv_text, encoding="utf-8")
+    manifest_path.write_text(fixture.manifest_text, encoding="utf-8")
+    # The marker is data-free: its mere presence is the synthetic witness (FR-6).
+    marker_path.write_text(
+        "# Synthetic generated-fixture marker (premura.harness.fixture_gen).\n"
+        "# Presence of this file marks the sibling CSV as a generated synthetic\n"
+        "# source, recognized by the harness as scoreboard-persistable.\n",
+        encoding="utf-8",
+    )
+    return WrittenFixture(
+        fixture=fixture,
+        csv_path=csv_path,
+        manifest_path=manifest_path,
+        marker_path=marker_path,
+    )
+
+
+#: Sentinel ``reference_parser`` for a generated scenario. A generated fixture has
+#: NO committed known-good reference parser (auto-generating one is deferred / out
+#: of scope), and the live-trial entry never dereferences this field (the operator
+#: authors its own parser). It is set to this explicit sentinel so the
+#: scripted-install repeatable-check path, which WOULD need a real reference parser,
+#: fails honestly rather than silently using the wrong parser.
+_NO_REFERENCE_PARSER = "premura.harness.fixture_gen:_no_generated_reference_parser"
+
+
+def scenario_for(written: WrittenFixture) -> Scenario:
+    """Adapt a written generated fixture to a :class:`Scenario` the harness accepts.
+
+    Yields an observation-drawer scenario wired to the written CSV + manifest pair
+    and the shared :class:`ObservationStrategy` — the SAME strategy that grades the
+    committed observation fixture, so the generated source is graded by unchanged
+    code (FR-6 / NFR-5). The scenario name is derived from the synthetic source
+    name so two generated scenarios are distinguishable.
+
+    ``reference_parser`` is the :data:`_NO_REFERENCE_PARSER` sentinel: a generated
+    fixture ships no known-good reference parser (out of scope), and the live-trial
+    entry — where the operator authors the parser — never reads this field.
+    """
+    return Scenario(
+        name=f"generated:{written.fixture.source_name}",
+        source_path=written.csv_path,
+        manifest_path=written.manifest_path,
+        reference_parser=_NO_REFERENCE_PARSER,
+        strategy=ObservationStrategy(),
+    )
+
+
+def is_generated_synthetic_source(source: Path) -> bool:
+    """True iff ``source`` sits beside a writer-controlled synthetic marker (FR-6).
+
+    The explicit, writer-controlled synthetic witness: a generated fixture is
+    synthetic because :func:`write_fixture` dropped :data:`SYNTHETIC_MARKER_NAME`
+    in its directory — NOT because of anything about the path itself. A real
+    operator dump (no marker beside it) is therefore never recognized here, so the
+    committed-source synthetic rule is not loosened for arbitrary or real paths.
+    """
+    try:
+        return (source.resolve().parent / SYNTHETIC_MARKER_NAME).is_file()
+    except OSError:
+        return False
 
 
 __all__ = [
+    "SYNTHETIC_MARKER_NAME",
     "DrawerStrategy",
     "FixtureSpec",
     "GeneratedFixture",
     "SourceField",
     "UnknownDrawerError",
+    "WrittenFixture",
     "generate_fixture",
+    "is_generated_synthetic_source",
     "registry_metric_ids",
+    "scenario_for",
     "validate_fixture",
+    "write_fixture",
 ]
