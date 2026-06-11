@@ -8,6 +8,35 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-06-11 — Tool-loop live-trial tier (`tool-loop-live-trial-tier-01KTVG26`) — in progress, not yet merged
+
+Written pre-merge (this mission's own doc-sync work package runs before the
+merge); the post-merge close-out flips tense and records the merge. The mission
+adds a second, separately-scored way of running the cheap-model live trial: a
+**multiturn, tool-using loop** over the same sandbox / ingest-runner / grader /
+scoreboard machinery, recorded as its own tier (`tier="tool_loop"`) alongside —
+never replacing — the constrained one-shot floor, so the maintainer agent can
+compare "one constrained shot" vs "tools and turns" per operator model.
+
+- **Corrected premise.** It implements the
+  [2026-06-04 follow-up audit](../history/audits/2026-06-04-live-trial-tool-loop-14b-followup.md)'s
+  reversal: the earlier spike measured **harness context quality**, not a model
+  capability floor — a capable local model passes when handed one coherent
+  brief. So this tier is context-plumbing hardening plus a headroom
+  measurement above the floor, not a capability remedy.
+- **Sharpened renamed-field declared-gap rule.** A source column the operator
+  consumes to populate a renamed output field (e.g. a `timestamp` column
+  consumed as the UTC timestamp) must be declared accounted or be an explicit
+  gap; a consumed-but-undeclared column fails self-reconciliation. The rule is
+  now stated explicitly in the contract text shown to the operator in both
+  tiers and pinned by a fixture test.
+- **Containment unchanged.** Local-only model endpoint, synthetic-only
+  persistence (a run over real data records nothing), and the `live_trial`
+  marker — the tier can never block CI.
+
+Mission detail:
+[`kitty-specs/tool-loop-live-trial-tier-01KTVG26/`](../../kitty-specs/tool-loop-live-trial-tier-01KTVG26/spec.md).
+
 ## 2026-06-11 — Tag hygiene: `v1.0.0` retagged as `v0.1.0` (audit R6)
 
 The first local-ingest pipeline's restore point (commit `538aaf1`) was tagged

@@ -148,7 +148,10 @@ RULES (decision tree, in order, per source column):
      flag, or has no canonical metric MUST NOT be invented as a metric. Declare
      its raw COLUMN NAME in unmapped_metrics (or as a SkippedRow.raw_field).
      NEVER silently drop a column: EVERY column in the source header must be
-     either in {_MAPPED_COLUMNS_CONST} or declared as a gap.
+     either in {_MAPPED_COLUMNS_CONST} or declared as a gap. A column you
+     CONSUME under any output name (e.g. a timestamp column you parse into
+     ts_utc) is still a consumed column: add it to {_MAPPED_COLUMNS_CONST}.
+     Renaming is not declaring.
   3. declares_metrics() MUST equal the set of metric_ids you actually emit.
   4. Never emit a metric_id starting with "derived:".
   5. Call result.validate() before returning the batch.
@@ -213,6 +216,9 @@ RULES (decision tree, in order, per source column):
      be invented. Declare its raw COLUMN NAME in unmapped_metrics (or as a
      SkippedRow.raw_field). NEVER silently drop a column: EVERY column in the
      source header must be either in {_MAPPED_COLUMNS_CONST} or declared as a gap.
+     A column you CONSUME under any output name (e.g. a timestamp column you
+     parse into an event timestamp) is still a consumed column: add it to
+     {_MAPPED_COLUMNS_CONST}. Renaming is not declaring.
   3. Give each event a stable, unique dedupe_key.
   4. Call result.validate() before returning ParseOutput(intake=result).
 

@@ -175,15 +175,16 @@ def test_current_floor_first_vs_final_and_reaches(tmp_path: Path) -> None:
 
     floor = current_floor(read_scoreboard(path=board))
 
-    assert floor["model-a"]["runs"] == 2
-    assert floor["model-a"]["first_attempt_pass_runs"] == 1
-    assert floor["model-a"]["final_pass_runs"] == 2
-    assert floor["model-a"]["reaches_final_pass"] is True
-    assert floor["model-a"]["last_ts"] == "2026-06-03T00:01:00Z"
+    # Tier-less entries group under (model, "one_shot") (legacy default).
+    assert floor[("model-a", "one_shot")]["runs"] == 2
+    assert floor[("model-a", "one_shot")]["first_attempt_pass_runs"] == 1
+    assert floor[("model-a", "one_shot")]["final_pass_runs"] == 2
+    assert floor[("model-a", "one_shot")]["reaches_final_pass"] is True
+    assert floor[("model-a", "one_shot")]["last_ts"] == "2026-06-03T00:01:00Z"
 
-    assert floor["model-b"]["runs"] == 1
-    assert floor["model-b"]["reaches_final_pass"] is False
-    assert floor["model-b"]["final_pass_runs"] == 0
+    assert floor[("model-b", "one_shot")]["runs"] == 1
+    assert floor[("model-b", "one_shot")]["reaches_final_pass"] is False
+    assert floor[("model-b", "one_shot")]["final_pass_runs"] == 0
 
 
 def test_scoreboard_entry_json_roundtrip() -> None:
@@ -192,3 +193,187 @@ def test_scoreboard_entry_json_roundtrip() -> None:
 
     obj = json.loads(entry.to_json_line())
     assert ScoreboardEntry.from_json(obj) == entry
+
+
+# --- WP01: tier axis (FR-007, SC-002, C-002, contract §5) ---------------------
+
+
+def test_entry_default_tier_is_one_shot() -> None:
+    """Constructing an entry without `tier` defaults to "one_shot" (keeps the
+    untouched one-shot writer correct)."""
+    entry = _entry("2026-06-03T00:00:00Z")
+    assert entry.tier == "one_shot"
+
+
+def test_record_default_tier_is_one_shot() -> None:
+    """`LiveTrialRunRecord` default `tier` is "one_shot" (both tiers are live trials)."""
+    record = LiveTrialRunRecord(
+        operator_model="qwen2.5-coder:7b",
+        driver_model="driver:1",
+        attempts_used=1,
+        first_attempt_verdict=_verdict(True),
+        final_verdict=_verdict(True),
+    )
+    assert record.run_kind == "live_trial"
+    assert record.tier == "one_shot"
+
+
+def test_to_json_line_includes_tier() -> None:
+    """An explicit tier is serialized under the "tier" key (parse, don't string-match)."""
+    import json
+
+    entry = ScoreboardEntry(
+        ts="2026-06-03T00:00:00Z",
+        operator_model="qwen2.5-coder:7b",
+        driver_model="driver:1",
+        attempts_used=2,
+        first_attempt_pass=False,
+        final_pass=True,
+        tier="tool_loop",
+    )
+    obj = json.loads(entry.to_json_line())
+    assert obj["tier"] == "tool_loop"
+
+
+def test_from_json_legacy_line_defaults_to_one_shot() -> None:
+    """A parsed object with no `tier` key reconstructs as tier="one_shot" (contract §5)."""
+    legacy = {
+        "ts": "2026-06-03T00:00:00Z",
+        "operator_model": "qwen2.5-coder:7b",
+        "driver_model": "driver:1",
+        "attempts_used": 1,
+        "first_attempt_pass": False,
+        "final_pass": True,
+    }
+    entry = ScoreboardEntry.from_json(legacy)
+    assert entry.tier == "one_shot"
+
+
+def test_from_json_roundtrips_tier_when_present() -> None:
+    import json
+
+    entry = ScoreboardEntry(
+        ts="2026-06-03T00:00:00Z",
+        operator_model="qwen2.5-coder:7b",
+        driver_model="driver:1",
+        attempts_used=2,
+        first_attempt_pass=True,
+        final_pass=True,
+        tier="tool_loop",
+    )
+    assert ScoreboardEntry.from_json(json.loads(entry.to_json_line())) == entry
+
+
+def test_read_scoreboard_mixes_legacy_and_tool_loop_lines(tmp_path: Path) -> None:
+    """A JSONL with one tier-less legacy line and one tool_loop line returns both
+    entries with the right tiers (write via path kwarg; never touch data/)."""
+    board = tmp_path / "scoreboard.jsonl"
+    legacy_line = (
+        '{"attempts_used": 1, "driver_model": "driver:1", "final_pass": true, '
+        '"first_attempt_pass": false, "operator_model": "model-a", '
+        '"ts": "2026-06-03T00:00:00Z"}'
+    )
+    tool_loop_entry = ScoreboardEntry(
+        ts="2026-06-03T00:01:00Z",
+        operator_model="model-a",
+        driver_model="driver:1",
+        attempts_used=3,
+        first_attempt_pass=False,
+        final_pass=True,
+        tier="tool_loop",
+    )
+    board.write_text(legacy_line + "\n" + tool_loop_entry.to_json_line() + "\n", encoding="utf-8")
+
+    read = read_scoreboard(path=board)
+    assert [e.tier for e in read] == ["one_shot", "tool_loop"]
+
+
+def test_current_floor_groups_by_model_and_tier(tmp_path: Path) -> None:
+    """The same model under both tiers yields two distinct floor rows; a legacy
+    (tier-less) entry lands under (model, "one_shot") (SC-002)."""
+    board = tmp_path / "scoreboard.jsonl"
+    legacy_line = (
+        '{"attempts_used": 1, "driver_model": "driver:1", "final_pass": true, '
+        '"first_attempt_pass": false, "operator_model": "model-a", '
+        '"ts": "2026-06-03T00:00:00Z"}'
+    )
+    board.write_text(legacy_line + "\n", encoding="utf-8")
+    append_scoreboard(
+        ScoreboardEntry(
+            ts="2026-06-03T00:01:00Z",
+            operator_model="model-a",
+            driver_model="driver:1",
+            attempts_used=3,
+            first_attempt_pass=False,
+            final_pass=True,
+            tier="tool_loop",
+        ),
+        path=board,
+    )
+
+    floor = current_floor(read_scoreboard(path=board))
+
+    assert ("model-a", "one_shot") in floor
+    assert ("model-a", "tool_loop") in floor
+    assert floor[("model-a", "one_shot")]["runs"] == 1
+    assert floor[("model-a", "tool_loop")]["runs"] == 1
+
+
+def test_format_floor_renders_both_tier_labels() -> None:
+    """The rendered table contains both tier labels on separate lines (SC-002)."""
+    from premura.harness.scoreboard import _format_floor
+
+    floor = current_floor(
+        [
+            ScoreboardEntry(
+                ts="2026-06-03T00:00:00Z",
+                operator_model="model-a",
+                driver_model="driver:1",
+                attempts_used=1,
+                first_attempt_pass=False,
+                final_pass=True,
+                tier="one_shot",
+            ),
+            ScoreboardEntry(
+                ts="2026-06-03T00:01:00Z",
+                operator_model="model-a",
+                driver_model="driver:1",
+                attempts_used=3,
+                first_attempt_pass=False,
+                final_pass=True,
+                tier="tool_loop",
+            ),
+        ]
+    )
+    rendered = _format_floor(floor)
+    one_shot_lines = [ln for ln in rendered.splitlines() if "one_shot" in ln]
+    tool_loop_lines = [ln for ln in rendered.splitlines() if "tool_loop" in ln]
+    assert len(one_shot_lines) == 1
+    assert len(tool_loop_lines) == 1
+
+
+def test_one_shot_writer_call_shape_serializes_one_shot() -> None:
+    """Mirror how the untouched one-shot writer builds the record/entry today
+    (no `tier` argument) and assert the serialized line carries
+    "tier": "one_shot" (C-002, NFR-004)."""
+    import json
+
+    # Call shape: keyword construction with no tier argument, as the one-shot
+    # writer does. We do not import the private writer; we mirror its call.
+    record = LiveTrialRunRecord(
+        operator_model="qwen2.5-coder:7b",
+        driver_model="driver:1",
+        attempts_used=2,
+        first_attempt_verdict=_verdict(False),
+        final_verdict=_verdict(True),
+    )
+    entry = ScoreboardEntry(
+        ts="2026-06-03T00:00:00Z",
+        operator_model=record.operator_model,
+        driver_model=record.driver_model,
+        attempts_used=record.attempts_used,
+        first_attempt_pass=record.first_attempt_verdict["passed"],
+        final_pass=record.final_verdict["passed"],
+    )
+    assert record.tier == "one_shot"
+    assert json.loads(entry.to_json_line())["tier"] == "one_shot"

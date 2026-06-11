@@ -103,7 +103,11 @@ The pinned inventory test is `tests/test_mcp_server.py`.
   (`src/premura/skills/research-trace-audit/`).
 - **Session-log substrate + live trial**: local session-log store, contract
   checker, sandbox runner, deterministic grader, hardened local-only
-  cheap-model live-trial seam (`live_trial` marker, never in CI).
+  cheap-model live-trial seam (`live_trial` marker, never in CI). The trial
+  now has two tiers in the codebase: the shipped constrained one-shot floor,
+  and a multiturn tool-loop tier **in progress on the
+  `tool-loop-live-trial-tier-01KTVG26` mission lanes (not yet merged)** —
+  detail in `kitty-specs/tool-loop-live-trial-tier-01KTVG26/`.
 - **Runtime build-and-use boundary**: an agent may build a parser and use it
   immediately on the operator's own data with no reviewer; only a
   contribute-back PR is reviewed. Pinned by

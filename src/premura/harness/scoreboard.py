@@ -64,6 +64,12 @@ class LiveTrialRunRecord:
     ``session_log.duckdb`` and the final ``verdict.json`` in the run dir. The
     verdicts are the slice-one grader :data:`Verdict` dicts; ``run_kind`` is the
     slice-one schema tag.
+
+    ``tier`` is the comparison axis FR-007 introduces: ``"one_shot"`` is the
+    constrained floor probe, ``"tool_loop"`` the multiturn tool tier. ``run_kind``
+    stays ``"live_trial"`` for both because both ARE live trials; ``tier`` is the
+    open string axis they are compared on (it is not a closed set — do not add a
+    whitelist).
     """
 
     operator_model: str
@@ -72,6 +78,7 @@ class LiveTrialRunRecord:
     first_attempt_verdict: Verdict
     final_verdict: Verdict
     run_kind: str = "live_trial"
+    tier: str = "one_shot"
 
 
 @dataclass(slots=True)
@@ -80,6 +87,11 @@ class ScoreboardEntry:
 
     ``first_attempt_pass`` / ``final_pass`` are the top-level ``verdict["passed"]``
     of attempt 1 (un-nagged) and the final attempt respectively.
+
+    ``tier`` is the comparison axis FR-007 introduces (``"one_shot"`` floor vs
+    ``"tool_loop"``). It is an open string axis; a line written without it parses
+    back as ``"one_shot"`` so every pre-existing scoreboard line stays valid and
+    the file is never rewritten (contract §5).
     """
 
     ts: str
@@ -88,6 +100,7 @@ class ScoreboardEntry:
     attempts_used: int
     first_attempt_pass: bool
     final_pass: bool
+    tier: str = "one_shot"
 
     def to_json_line(self) -> str:
         """Serialize to a single, independently-parseable JSON line (no newline)."""
@@ -99,13 +112,18 @@ class ScoreboardEntry:
                 "attempts_used": self.attempts_used,
                 "first_attempt_pass": self.first_attempt_pass,
                 "final_pass": self.final_pass,
+                "tier": self.tier,
             },
             sort_keys=True,
         )
 
     @classmethod
     def from_json(cls, obj: dict[str, Any]) -> ScoreboardEntry:
-        """Reconstruct an entry from a parsed JSON object."""
+        """Reconstruct an entry from a parsed JSON object.
+
+        A missing ``tier`` key defaults to ``"one_shot"`` so every pre-existing
+        (tier-less) scoreboard line parses unchanged (contract §5).
+        """
         return cls(
             ts=str(obj["ts"]),
             operator_model=str(obj["operator_model"]),
@@ -113,6 +131,7 @@ class ScoreboardEntry:
             attempts_used=int(obj["attempts_used"]),
             first_attempt_pass=bool(obj["first_attempt_pass"]),
             final_pass=bool(obj["final_pass"]),
+            tier=str(obj.get("tier", "one_shot")),
         )
 
 
@@ -198,22 +217,29 @@ def read_scoreboard(*, path: Path = SCOREBOARD_PATH) -> list[ScoreboardEntry]:
     return entries
 
 
-def current_floor(entries: list[ScoreboardEntry]) -> dict[str, dict[str, Any]]:
-    """Compute the capability floor per operator-model tier (FR-011).
+def current_floor(
+    entries: list[ScoreboardEntry],
+) -> dict[tuple[str, str], dict[str, Any]]:
+    """Compute the capability floor per ``(operator_model, tier)`` (FR-011/FR-007).
 
-    Groups by ``operator_model`` and reports, per tier::
+    Groups by the ``(operator_model, tier)`` pair so the constrained one-shot
+    floor and the tool-loop tier for the same model are reported side by side and
+    never overwrite each other (SC-002). The tier is whatever the entry carries —
+    legacy (tier-less) rows arrive as ``"one_shot"`` from
+    :meth:`ScoreboardEntry.from_json`; the grouping rule does not enumerate a
+    fixed tier set. Reports per group::
 
         {runs, final_pass_runs, first_attempt_pass_runs, last_ts,
          reaches_final_pass}
 
-    ``reaches_final_pass`` is true iff at least one run for that tier reached a
+    ``reaches_final_pass`` is true iff at least one run for that group reached a
     passing final verdict. The first-attempt vs final counts expose how the
-    retry loop lifts a tier over its un-nagged starting point (FR-014).
+    retry loop lifts a group over its un-nagged starting point (FR-014).
     """
-    floor: dict[str, dict[str, Any]] = {}
+    floor: dict[tuple[str, str], dict[str, Any]] = {}
     for entry in entries:
-        tier = floor.setdefault(
-            entry.operator_model,
+        group = floor.setdefault(
+            (entry.operator_model, entry.tier),
             {
                 "runs": 0,
                 "final_pass_runs": 0,
@@ -222,27 +248,33 @@ def current_floor(entries: list[ScoreboardEntry]) -> dict[str, dict[str, Any]]:
                 "reaches_final_pass": False,
             },
         )
-        tier["runs"] += 1
+        group["runs"] += 1
         if entry.final_pass:
-            tier["final_pass_runs"] += 1
-            tier["reaches_final_pass"] = True
+            group["final_pass_runs"] += 1
+            group["reaches_final_pass"] = True
         if entry.first_attempt_pass:
-            tier["first_attempt_pass_runs"] += 1
-        tier["last_ts"] = entry.ts  # entries are append-ordered; last wins
+            group["first_attempt_pass_runs"] += 1
+        group["last_ts"] = entry.ts  # entries are append-ordered; last wins
     return floor
 
 
-def _format_floor(floor: dict[str, dict[str, Any]]) -> str:
-    """Render a compact per-tier floor table for the CLI (quickstart.md)."""
+def _format_floor(floor: dict[tuple[str, str], dict[str, Any]]) -> str:
+    """Render a compact per-``(model, tier)`` floor table for the CLI (quickstart.md).
+
+    Rows are sorted by ``(operator_model, tier)`` for deterministic output.
+    """
     if not floor:
         return "scoreboard empty — no live-trial runs recorded yet."
 
-    header = f"{'operator_model':<28} {'runs':>5} {'first✓':>7} {'final✓':>7} {'floor':>6}  last_ts"
+    header = (
+        f"{'operator_model':<28} {'tier':<10} {'runs':>5} {'first✓':>7} "
+        f"{'final✓':>7} {'floor':>6}  last_ts"
+    )
     lines = [header, "-" * len(header)]
-    for model in sorted(floor):
-        t = floor[model]
+    for model, tier in sorted(floor):
+        t = floor[(model, tier)]
         lines.append(
-            f"{model:<28} {t['runs']:>5} {t['first_attempt_pass_runs']:>7} "
+            f"{model:<28} {tier:<10} {t['runs']:>5} {t['first_attempt_pass_runs']:>7} "
             f"{t['final_pass_runs']:>7} {('yes' if t['reaches_final_pass'] else 'no'):>6}  "
             f"{t['last_ts']}"
         )

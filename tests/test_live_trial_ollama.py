@@ -33,6 +33,50 @@ lto = importlib.import_module(_MODULE_NAME)
 
 _RULE_KEYS = {"loaded", "runtime_valid", "honest_about_gaps"}
 
+# FR-009's stable anchor phrase: both drawer contract prompts must state the
+# renamed-field declared-gap rule (a column consumed under any output name is
+# still a consumed column). Substring-pinned, not full-prompt-pinned.
+_RENAMED_FIELD_CLAUSE = "Renaming is not declaring."
+
+# The Target API class names each drawer contract prompt already carries; the
+# renamed-field sharpening must not displace them (SC-006 anchor for WP03).
+_OBSERVATION_API_NAMES = ("IngestBatch", "Measurement", "SourceDescriptor", "SkippedRow")
+_INTAKE_API_NAMES = (
+    "IntakeBatch",
+    "ParseOutput",
+    "SourceDescriptor",
+    "SkippedRow",
+    "NutritionIntakeInput",
+    "NutritionItemInput",
+    "NutritionQuantityInput",
+    "SupplementIntakeInput",
+    "SupplementItemInput",
+    "SupplementDoseInput",
+)
+
+
+def test_both_drawer_prompts_state_the_renamed_field_rule() -> None:
+    """FR-009 (WP02): the rule is STATED in both drawer briefs, drawer-agnostic.
+
+    Default-suite (no model, no network): pure prompt-constant invariants.
+    Asserts the renamed-field clause is present, the mapped-columns constant is
+    named inside the clause's rule, and every Target API class name each prompt
+    already carries is still there.
+    """
+    observation = lto._OBSERVATION_CONTRACT_PROMPT
+    intake = lto._INTAKE_CONTRACT_PROMPT
+
+    for prompt in (observation, intake):
+        assert _RENAMED_FIELD_CLAUSE in prompt
+        # The clause must direct the consumed column into the mapped set.
+        clause_region = prompt[: prompt.index(_RENAMED_FIELD_CLAUSE)]
+        assert lto._MAPPED_COLUMNS_CONST in clause_region
+
+    for name in _OBSERVATION_API_NAMES:
+        assert name in observation, f"observation prompt lost API name {name!r}"
+    for name in _INTAKE_API_NAMES:
+        assert name in intake, f"intake prompt lost API name {name!r}"
+
 
 def _assert_well_formed(verdict: dict[str, object]) -> None:
     """A verdict carries the three rules and a boolean ``passed`` (no PASS assertion)."""

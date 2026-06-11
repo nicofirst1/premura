@@ -52,13 +52,18 @@ The user is actively writing more requirements; this section will grow.
    (`live-trial-follow-up-hardening`, 2026-06-04) closed the seam's deferred
    real-model factories for real, added structured per-attempt telemetry,
    enforced the local-only model backend in code, and added an opt-in,
-   synthetic-only retained-sandbox inspection mode. **Still deferred (named so
-   future work is not assumed shipped):** a [tool-using / multiturn operator
-   tier](../building/planning/tool-loop-live-trial-tier.md) (parked behind intake
-   source-adaptation; premise corrected by the
-   [14B follow-up audit](../history/audits/2026-06-04-live-trial-tool-loop-14b-followup.md)),
-   conversation-turn capture, the judge AI, the improvement hook, the fixture
-   auto-generator, and the analyze-and-answer slice.
+   synthetic-only retained-sandbox inspection mode. The [tool-using / multiturn
+   operator tier](../building/planning/tool-loop-live-trial-tier.md) is **no
+   longer parked**: its queue gate (intake source-adaptation) cleared
+   2026-06-11, and the tier is specified, planned, and in implementation as
+   mission `tool-loop-live-trial-tier-01KTVG26` (on mission lanes, not yet
+   merged — what it adds is recorded in the [CHANGELOG.md](CHANGELOG.md)
+   2026-06-11 entry). **Still deferred (named so future work is not assumed
+   shipped):** conversation-turn capture, the judge AI, the improvement hook,
+   the fixture auto-generator, the analyze-and-answer slice, and — out of the
+   tier mission's scope by design — multi-model tournaments, tier
+   auto-selection / capability-routing policies, and any frontier or cloud
+   model requirement.
 
 Read the full phase doc for the rationale, risk retirement, and exit criteria:
 
