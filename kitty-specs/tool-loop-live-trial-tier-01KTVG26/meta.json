@@ -1,10 +1,12 @@
 {
   "created_at": "2026-06-11T14:06:04.184742+00:00",
-  "friendly_name": "tool loop live trial tier",
+  "friendly_name": "Tool-loop live-trial tier",
   "mission_id": "01KTVG26W1FWKR738ZA7VY39K8",
   "mission_number": null,
   "mission_slug": "tool-loop-live-trial-tier-01KTVG26",
   "mission_type": "software-dev",
   "slug": "tool-loop-live-trial-tier-01KTVG26",
-  "target_branch": "master"
+  "source_description": "Promotion of the parked draft docs/building/planning/tool-loop-live-trial-tier.md: a multiturn, tool-using live-trial tier over the shipped harness machinery, gated behind the now-shipped intake source-adaptation mission.",
+  "target_branch": "master",
+  "vcs": "git"
 }

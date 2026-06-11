@@ -1,11 +1,12 @@
-# Tool-loop live-trial tier — mission spec (draft, parked)
+# Tool-loop live-trial tier — mission spec (draft, promoted)
 
-> **Status: DRAFT, parked.** This is a scoping spec, not an active mission. Per the
-> [14B tool-loop follow-up audit](../../history/audits/2026-06-04-live-trial-tool-loop-14b-followup.md),
-> tier work sits **behind** the operator-visible intake **source-adaptation**
-> mission (ROADMAP §"Profile and intake", item 1). Promote this to a Spec-Kitty
-> mission only once that gate clears. It is recorded now so the corrected premise
-> and design are durable, not so it is implemented next.
+> **Status: PROMOTED 2026-06-11.** The queue gate cleared (intake
+> source-adaptation shipped, first real vendor parser merged 2026-06-11) and this
+> draft was promoted via `/spec-kitty.specify` to mission
+> `tool-loop-live-trial-tier-01KTVG26` — the authoritative spec is now
+> [`kitty-specs/tool-loop-live-trial-tier-01KTVG26/spec.md`](../../../kitty-specs/tool-loop-live-trial-tier-01KTVG26/spec.md).
+> This document remains as the historical scoping record (corrected premise and
+> design rationale); do not extend it.
 
 > **Read first:** [`DOCTRINE.md`](../../shared/DOCTRINE.md) (agent-first; design a
 > level above) and the
