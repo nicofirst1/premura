@@ -16,7 +16,8 @@ subtasks:
 - T002
 - T003
 - T004
-shell_pid: '98836'
+shell_pid: "98836"
+agent: "claude:opus:implementer:implementer"
 history:
 - date: '2026-06-11T14:19:42Z'
   action: created
@@ -171,3 +172,7 @@ assume it.
   rewrites existing lines.
 - Do NOT add a tier enum/whitelist — the tier is an open string axis (rule,
   not enumeration; DOCTRINE).
+
+## Activity Log
+
+- 2026-06-11T16:32:21Z – claude:opus:implementer:implementer – shell_pid=98836 – Assigned agent via action command
