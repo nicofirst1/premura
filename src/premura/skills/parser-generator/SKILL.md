@@ -52,7 +52,7 @@ source*, not when they are debugging an existing one. Concrete cues:
 - "Add a parser for <vendor>" / "support <wearable>" / "ingest <app>'s
   export".
 - A new file format showing up in `data/inbox/` that none of the existing
-  parsers (`hc`, `garmin`, `saa`, `bmt`) handle.
+  parsers (`hc`, `garmin`, `saa`, `bmt`, `lab`, `mfp`) handle.
 - The user pastes a sample export and asks "what would this look like as a
   parser?".
 

@@ -21,7 +21,7 @@ uv run hpipe install-launchd             # macOS scheduled run on day 1 @ 10:00
 
 ```
 hpipe bootstrap                     # setup readiness (on a fresh clone use `uv run hpipe bootstrap`; setup only — no ingest/upload)
-hpipe ingest [--source all|hc|garmin|saa|bmt|lab] [PATH]
+hpipe ingest [--source all|hc|garmin|saa|bmt|lab|mfp] [PATH]
 hpipe status
 hpipe export --month YYYY-MM        # snapshot + tarball staged raws, age-encrypt
 hpipe upload --month YYYY-MM        # OPT-IN rclone push (not run automatically)

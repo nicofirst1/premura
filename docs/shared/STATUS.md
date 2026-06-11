@@ -16,7 +16,9 @@
 ## TL;DR
 
 **Pre-`v1` foundation — historical tag `v1.0.0` exists, but the product line is
-treated as `v0.x`.** The four-source ingest pipeline is operational; the DuckDB
+treated as `v0.x`.** The ingest pipeline is operational across the four
+observation sources (Health Connect, Garmin GDPR, Sleep as Android, BMT) plus
+the MyFitnessPal nutrition-intake source; the DuckDB
 warehouse holds ~3.5 years of data including the Garmin-only metrics that
 motivated the project (HRV rMSSD overnight, stress, training load/readiness,
 VO₂ max, skin temperature, hydration, sleep score, respiration). Re-ingest is
