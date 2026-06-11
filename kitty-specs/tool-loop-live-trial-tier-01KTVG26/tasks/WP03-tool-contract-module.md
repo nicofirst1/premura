@@ -19,6 +19,8 @@ subtasks:
 - T009
 - T010
 - T011
+agent: "claude:opus:implementer:implementer"
+shell_pid: "24168"
 history:
 - date: '2026-06-11T14:19:42Z'
   action: created
@@ -251,3 +253,7 @@ pytest -q`, `ruff check` + `ruff format --check`, `mypy`.
   do NOT copy their bodies (NFR-004). If the import feels wrong, the
   alternative is promoting them to public in those files — which you do not
   own; flag it rather than fork it.
+
+## Activity Log
+
+- 2026-06-11T17:46:53Z – claude:opus:implementer:implementer – shell_pid=24168 – Started implementation via action command
