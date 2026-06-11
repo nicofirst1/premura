@@ -28,10 +28,10 @@
 | T009 | Chat client `_ollama_chat` (stdlib, local-only guard, `num_ctx`) + `ToolCallsUnsupportedError` | WP03 | | [D] |
 | T010 | `ToolRegistration` + registry + `read_context`/`write_parser`/`run_ingest` handlers | WP03 | | [D] |
 | T011 | Brief assembler (single function; budget check fails loudly, never truncates) | WP03 | | [D] |
-| T012 | Failing loop tests via injectable fake chat backend (happy path, gate feedback, cap) | WP04 | |
-| T013 | `ToolLoopOperator`: agent loop, turn accounting, registry dispatch, gate integration | WP04 | |
-| T014 | `run_live_trial_tool_loop`: first/final grading, `ToolLoopOutcome`, tier persistence | WP04 | |
-| T015 | CLI `_main` (exit codes 0/2/3), `__all__`, module docstring boundaries | WP04 | |
+| T012 | Failing loop tests via injectable fake chat backend (happy path, gate feedback, cap) | WP04 | | [D] |
+| T013 | `ToolLoopOperator`: agent loop, turn accounting, registry dispatch, gate integration | WP04 | | [D] |
+| T014 | `run_live_trial_tool_loop`: first/final grading, `ToolLoopOutcome`, tier persistence | WP04 | | [D] |
+| T015 | CLI `_main` (exit codes 0/2/3), `__all__`, module docstring boundaries | WP04 | | [D] |
 | T016 | E2E edge fixtures: regression-across-turns, malformed call, manifest refusal, no-parser | WP05 | |
 | T017 | E2E outcome edges: `model_unavailable`, `tool_calls_unsupported`, real-source no-persist | WP05 | |
 | T018 | Gated `live_trial`-marked real-model test module | WP05 | |
@@ -106,10 +106,10 @@ end-to-end over the synthetic fixture: tools dispatched, gate feedback loops,
 cap respected, two verdicts recorded, scoreboard line `tier="tool_loop"`.
 **Dependencies**: WP01, WP03.
 
-- [ ] T012 Failing loop tests via injectable fake chat backend (WP04)
-- [ ] T013 `ToolLoopOperator` loop + turn accounting + gate integration (WP04)
-- [ ] T014 `run_live_trial_tool_loop` + `ToolLoopOutcome` + tier persistence (WP04)
-- [ ] T015 CLI `_main` exit codes + module surface (WP04)
+- [x] T012 Failing loop tests via injectable fake chat backend (WP04)
+- [x] T013 `ToolLoopOperator` loop + turn accounting + gate integration (WP04)
+- [x] T014 `run_live_trial_tool_loop` + `ToolLoopOutcome` + tier persistence (WP04)
+- [x] T015 CLI `_main` exit codes + module surface (WP04)
 
 ## Phase 3 — Whole-story acceptance
 
