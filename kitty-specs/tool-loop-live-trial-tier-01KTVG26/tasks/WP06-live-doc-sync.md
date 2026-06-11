@@ -12,8 +12,8 @@ subtasks:
 - T019
 - T020
 - T021
-agent: "claude:fable:implementer:implementer"
-shell_pid: "80123"
+agent: "claude:fable:reviewer:reviewer"
+shell_pid: "84373"
 history:
 - date: '2026-06-11T14:19:42Z'
   action: created
@@ -158,3 +158,4 @@ implied as part of this mission.
 
 - 2026-06-11T19:08:04Z – claude:fable:implementer:implementer – shell_pid=80123 – Started implementation via action command
 - 2026-06-11T19:15:24Z – claude:fable:implementer:implementer – shell_pid=80123 – Ready for review: live docs synced in pre-merge tense (CHANGELOG entry, STATUS two-tier bullet, ROADMAP unparked + out-of-scope kept future); docs-only diff, 1109 tests pass
+- 2026-06-11T19:15:50Z – claude:fable:reviewer:reviewer – shell_pid=84373 – Started review via action command
