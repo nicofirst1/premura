@@ -284,6 +284,106 @@ def test_happy_path_records_tier_tagged_result(
 
 
 # --------------------------------------------------------------------------- #
+# m2 FR-3 — transcript() maps the final conversation 1:1 to TurnLike items.
+# --------------------------------------------------------------------------- #
+
+
+def test_transcript_maps_final_conversation(
+    persistence_paths: tuple[Path, Path],
+) -> None:
+    """FR-3: ``transcript()`` reflects the final conversation, system prompt included.
+
+    After a read → write → verify → done run the operator's transcript replays
+    the system brief and every assistant/tool turn in order; tool-result turns
+    carry the ``tool_name`` of the call they answered; roles pass through to the
+    chat-API vocabulary.
+    """
+    fake = FakeChatBackend(
+        [
+            _reply_with_calls(_tool_call("read_context", {"path": str(_SYNTHETIC_CSV.resolve())})),
+            _reply_with_calls(_tool_call("write_parser", {"code": _good_parser_code()})),
+            _reply_with_calls(_tool_call("run_ingest", {})),
+            _DONE_REPLY,
+        ]
+    )
+    operator = ltl.ToolLoopOperator(_SYNTHETIC_CSV, chat=fake)
+
+    _run_entry(operator=operator, source=_SYNTHETIC_CSV)
+
+    turns = list(operator.transcript())
+    roles = [t.role for t in turns]
+
+    # The system brief leads; the conversation is system + assistant/tool turns.
+    assert roles[0] == "system"
+    assert set(roles) <= {"system", "user", "assistant", "tool"}
+
+    # Three assistant tool-call turns + one final assistant "done" turn.
+    assert roles.count("assistant") == 4
+    # Three tool-result turns, one per executed tool call.
+    assert roles.count("tool") == 3
+
+    # The tool-result turns carry the tool_name of the call they answered, in order.
+    tool_names = [t.tool_name for t in turns if t.role == "tool"]
+    assert tool_names == ["read_context", "write_parser", "run_ingest"]
+
+    # The last turn is the final assistant message (final-state, FR-3).
+    assert turns[-1].role == "assistant"
+    assert turns[-1].content == "done"
+
+
+def test_tool_loop_transcript_persists_to_session_log(
+    persistence_paths: tuple[Path, Path],
+) -> None:
+    """FR-5: the harness persists the tool-loop transcript as log_turn rows.
+
+    End-to-end through the unchanged kept-log harness path: a kept
+    synthetic run leaves ordered ``log_turn`` rows that replay the operator's
+    conversation, keyed to the session's root ``agent_turn`` step (FR-1 link),
+    with tool-result turns carrying their ``tool_name``.
+    """
+    import duckdb
+
+    fake = FakeChatBackend(
+        [
+            _reply_with_calls(_tool_call("read_context", {"path": str(_SYNTHETIC_CSV.resolve())})),
+            _reply_with_calls(_tool_call("write_parser", {"code": _good_parser_code()})),
+            _reply_with_calls(_tool_call("run_ingest", {})),
+            _DONE_REPLY,
+        ]
+    )
+    operator = ltl.ToolLoopOperator(_SYNTHETIC_CSV, chat=fake)
+
+    outcome = _run_entry(operator=operator, source=_SYNTHETIC_CSV, keep_sandboxes=True)
+
+    assert outcome.final_result is not None
+    log_path = outcome.final_result.session_log_path
+    try:
+        conn = duckdb.connect(str(log_path), read_only=True)
+        try:
+            rows = conn.execute(
+                "SELECT turn_index, role, tool_name, step_id FROM log_turn ORDER BY turn_index"
+            ).fetchall()
+            root = conn.execute("SELECT step_id FROM log_step WHERE kind = 'agent_turn'").fetchone()
+        finally:
+            conn.close()
+        assert root is not None
+        # Persisted turns replay the operator's transcript 1:1, in order.
+        expected = operator.transcript()
+        assert [r[1] for r in rows] == [t.role for t in expected]
+        assert [r[0] for r in rows] == list(range(len(expected)))
+        # Tool-result turns carry their tool_name; all link to the root step.
+        assert [r[2] for r in rows if r[1] == "tool"] == [
+            "read_context",
+            "write_parser",
+            "run_ingest",
+        ]
+        assert {r[3] for r in rows} == {root[0]}
+    finally:
+        ltl._teardown_kept_sandbox(outcome.final_result)
+        ltl._teardown_kept_sandbox(outcome.first_attempt_result)
+
+
+# --------------------------------------------------------------------------- #
 # T012 — First-snapshot (FR-006): the FIRST write_parser body grades independently.
 # --------------------------------------------------------------------------- #
 

@@ -26,7 +26,9 @@ live trial is the local follow-up, never part of the default suite.
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import duckdb
 import jsonschema
@@ -38,6 +40,10 @@ from premura.harness.live_trial import (
     ReferenceParserOperator,
     ScriptedDriver,
 )
+from premura.harness.sandbox import install_parser
+
+if TYPE_CHECKING:
+    from premura.harness.sandbox import Sandbox
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "session_log"
 GOOD_PARSER = FIXTURE_DIR / "parsers" / "good_fitbit_hr.py"
@@ -378,6 +384,196 @@ def test_live_trial_attempt_log_starts_empty_for_fake_operator() -> None:
     log_path = result.session_log_path
     try:
         assert _read_live_trial_attempts(log_path) == []
+    finally:
+        import shutil
+
+        shutil.rmtree(log_path.parent.parent, ignore_errors=True)
+
+
+# --------------------------------------------------------------------------- #
+# Conversation-turn capture (m2 FR-2 / FR-5) — the transcript seam + harness
+# persistence. An operator that exposes ``transcript()`` after ``operate()`` gets
+# its conversation persisted as ordered ``log_turn`` rows by the harness (the SOLE
+# log writer, FR-021 / NFR-1); the capability is detected STRUCTURALLY (no registry
+# of tiers). Operators without it behave exactly as before. Capture failure on an
+# otherwise-successful run surfaces as an ``error``-status step, never an exception
+# that flips the verdict. Synthetic fixtures only (C-003).
+# --------------------------------------------------------------------------- #
+
+_PARSER_DEST_RELPATH = "src/premura/parsers/_live_trial_parser.py"
+
+
+@dataclass
+class _Turn:
+    """A minimal structural :class:`~premura.harness.live_trial.TurnLike` value."""
+
+    role: str
+    content: str
+    tool_name: str | None = None
+    model: str | None = None
+    token_count: int | None = None
+
+
+@dataclass
+class _TranscriptOperator:
+    """A fake operator that installs the reference parser AND exposes a transcript.
+
+    Models a tier that converses: ``operate`` does the sandbox edit (like
+    :class:`ReferenceParserOperator`) and records a canned conversation that
+    ``transcript()`` returns afterward, so the harness has turns to persist.
+    """
+
+    parser_src: Path
+    model_id: str = "fake-operator:transcript"
+    _turns: list[_Turn] = field(default_factory=list)
+
+    def operate(self, sandbox: Sandbox, goal: str) -> None:
+        install_parser(sandbox, self.parser_src, _PARSER_DEST_RELPATH)
+        self._turns = [
+            _Turn(role="system", content=f"You are an operator. goal: {goal}"),
+            _Turn(role="assistant", content="here is the parser", tool_name="write_parser"),
+            _Turn(role="tool", content="parser written", tool_name="write_parser"),
+            _Turn(role="assistant", content="done", model=self.model_id, token_count=7),
+        ]
+
+    def transcript(self) -> list[_Turn]:
+        return list(self._turns)
+
+
+@dataclass
+class _RaisingTranscriptOperator:
+    """A fake operator whose ``transcript()`` raises — capture must not flip verdict."""
+
+    parser_src: Path
+    model_id: str = "fake-operator:bad-transcript"
+
+    def operate(self, sandbox: Sandbox, goal: str) -> None:  # noqa: ARG002 - goal unused
+        install_parser(sandbox, self.parser_src, _PARSER_DEST_RELPATH)
+
+    def transcript(self) -> list[_Turn]:
+        raise RuntimeError("synthetic transcript-capture failure")
+
+
+def _read_turns(session_log_path: Path) -> list[tuple[str | None, int, str, str, str | None]]:
+    conn = duckdb.connect(str(session_log_path), read_only=True)
+    try:
+        return conn.execute(
+            """
+            SELECT step_id, turn_index, role, content, tool_name
+            FROM log_turn ORDER BY turn_index
+            """
+        ).fetchall()
+    finally:
+        conn.close()
+
+
+def test_transcript_operator_persists_turns_in_order() -> None:
+    """FR-5: the harness persists the operator's transcript as ordered log_turn rows.
+
+    The turns replay in conversation order, carry the operator's optional
+    telemetry, and link to the run's root ``agent_turn`` step (FR-1's step_id link).
+    """
+    operator = _TranscriptOperator(parser_src=GOOD_PARSER)
+    result = live_trial.run_live_trial_with_log(
+        LiveTrialConfig(),
+        driver=ScriptedDriver(),
+        operator=operator,
+        repo_root=REPO_ROOT,
+        parser_attr="GoodFitbitHrParser",
+    )
+    log_path = result.session_log_path
+    try:
+        # The run still reached its normal verdict.
+        assert result.verdict["passed"] is True
+
+        turns = _read_turns(log_path)
+        assert [(r[2], r[3]) for r in turns] == [
+            (
+                "system",
+                "You are an operator. goal: ingest the heart-rate category from the dropped dump",
+            ),
+            ("assistant", "here is the parser"),
+            ("tool", "parser written"),
+            ("assistant", "done"),
+        ]
+        assert [r[1] for r in turns] == [0, 1, 2, 3]
+        # tool_name carried through on the tool-bearing turns.
+        assert turns[1][4] == "write_parser"
+        assert turns[2][4] == "write_parser"
+
+        # Every turn links to the single root agent_turn step (FR-1 step_id link).
+        conn = duckdb.connect(str(log_path), read_only=True)
+        try:
+            root = conn.execute("SELECT step_id FROM log_step WHERE kind = 'agent_turn'").fetchone()
+            assert root is not None
+        finally:
+            conn.close()
+        assert {r[0] for r in turns} == {root[0]}
+    finally:
+        import shutil
+
+        shutil.rmtree(log_path.parent.parent, ignore_errors=True)
+
+
+def test_no_capability_operator_leaves_zero_turns() -> None:
+    """FR-2: a transcript-less operator behaves exactly as before (no log_turn rows)."""
+    operator = ReferenceParserOperator(parser_src=GOOD_PARSER)
+    result = live_trial.run_live_trial_with_log(
+        LiveTrialConfig(),
+        driver=ScriptedDriver(),
+        operator=operator,
+        repo_root=REPO_ROOT,
+        parser_attr="GoodFitbitHrParser",
+    )
+    log_path = result.session_log_path
+    try:
+        assert result.verdict["passed"] is True
+        conn = duckdb.connect(str(log_path), read_only=True)
+        try:
+            count = conn.execute("SELECT COUNT(*) FROM log_turn").fetchone()
+            assert count is not None and count[0] == 0
+        finally:
+            conn.close()
+    finally:
+        import shutil
+
+        shutil.rmtree(log_path.parent.parent, ignore_errors=True)
+
+
+def test_capture_failure_does_not_flip_verdict() -> None:
+    """FR-5: a raising transcript() yields a recorded error step, not an exception.
+
+    The run still returns its PASS verdict and a finished session; the capture
+    failure surfaces as an ``error``-status step, never an aborted run.
+    """
+    operator = _RaisingTranscriptOperator(parser_src=GOOD_PARSER)
+    result = live_trial.run_live_trial_with_log(
+        LiveTrialConfig(),
+        driver=ScriptedDriver(),
+        operator=operator,
+        repo_root=REPO_ROOT,
+        parser_attr="GoodFitbitHrParser",
+    )
+    log_path = result.session_log_path
+    try:
+        # The verdict is unchanged — capture failure cannot flip the run.
+        assert result.verdict["passed"] is True
+
+        conn = duckdb.connect(str(log_path), read_only=True)
+        try:
+            # No turns landed (capture failed before any write).
+            turns = conn.execute("SELECT COUNT(*) FROM log_turn").fetchone()
+            assert turns is not None and turns[0] == 0
+            # The failure is recorded as an error-status step.
+            err = conn.execute(
+                "SELECT COUNT(*) FROM log_step WHERE result_status = 'error'"
+            ).fetchone()
+            assert err is not None and err[0] >= 1
+            # The session was still finished, not aborted.
+            finished = conn.execute("SELECT finished_at FROM log_session").fetchone()
+            assert finished is not None and finished[0] is not None
+        finally:
+            conn.close()
     finally:
         import shutil
 

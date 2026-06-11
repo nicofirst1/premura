@@ -124,6 +124,23 @@ def resolve_max_turns() -> int:
 # --------------------------------------------------------------------------- #
 
 
+@dataclass(slots=True)
+class _ToolLoopTurn:
+    """One captured chat turn — a structural ``live_trial.TurnLike`` (m2 FR-3).
+
+    Maps a single entry of the operator's final ``messages`` history to the
+    transcript-seam protocol: ``role`` / ``content`` plus the optional per-turn
+    telemetry the harness persists. ``model`` is the operator's model id;
+    ``tool_name`` is set on tool-result turns, ``None`` otherwise.
+    """
+
+    role: str
+    content: str
+    tool_name: str | None = None
+    model: str | None = None
+    token_count: int | None = None
+
+
 class ToolLoopOperator:
     """Multiturn tool-using operator implementing the ``live_trial.Operator`` protocol.
 
@@ -176,6 +193,11 @@ class ToolLoopOperator:
         self.turns_used = 0
         self.first_parser_code = ""
         self.attempts: list[AttemptRecord] = []
+        #: The final chat history of the last :meth:`operate` run — the system
+        #: brief plus every assistant/tool/user turn, in order. ``transcript()``
+        #: maps it 1:1 to :class:`live_trial.TurnLike` items for the harness to
+        #: persist post-run (m2 FR-3). Empty until the loop runs.
+        self.messages: list[dict] = []
         #: The sandbox the last trial ran in — kept so the entry point can tear it
         #: down when an error propagates out of ``operate`` mid-conversation.
         self.last_sandbox: Sandbox | None = None
@@ -206,6 +228,9 @@ class ToolLoopOperator:
 
         brief = assemble_brief(self.probe, goal=goal, source=self.source, num_ctx=self.num_ctx)
         messages: list[dict] = [{"role": "system", "content": brief}]
+        # Expose the live chat history so transcript() reflects the FINAL state of
+        # the conversation regardless of which exit the loop takes (m2 FR-3).
+        self.messages = messages
 
         for turn in range(1, self.max_turns + 1):
             self.turns_used = turn
@@ -254,6 +279,26 @@ class ToolLoopOperator:
         # entry point — a deterministic FAIL is a legitimate capability-floor
         # finding, never an exception (FR-005 / SC-005).
 
+    def transcript(self) -> list[_ToolLoopTurn]:
+        """Map the final chat history 1:1 to :class:`live_trial.TurnLike` items (FR-3).
+
+        Reflects the FINAL state of the conversation — the system brief and every
+        assistant / tool / user turn captured during the last :meth:`operate`, in
+        order. Roles pass through to the chat-API vocabulary; a tool-result turn
+        carries the ``tool_name`` of the call it answered (the ``name`` field the
+        loop tagged onto it). The operator never writes the log — the harness reads
+        this and persists it post-run (FR-021 inheritance).
+        """
+        return [
+            _ToolLoopTurn(
+                role=str(message.get("role") or ""),
+                content=str(message.get("content") or ""),
+                model=self.model_id,
+                tool_name=(str(message["name"]) if message.get("name") else None),
+            )
+            for message in self.messages
+        ]
+
     def _execute_tool_call(
         self,
         call: dict,
@@ -283,6 +328,7 @@ class ToolLoopOperator:
             known = ", ".join(sorted(registry))
             return {
                 "role": "tool",
+                "name": name,
                 "content": (
                     f"UNKNOWN tool {name!r}. This turn was consumed; "
                     f"the only available tools are: {known}."
@@ -292,6 +338,7 @@ class ToolLoopOperator:
         if args is None:
             return {
                 "role": "tool",
+                "name": name,
                 "content": (
                     f"MALFORMED arguments for tool {name!r}: expected a JSON object. "
                     "This turn was consumed; pass arguments matching the tool's schema."
@@ -302,7 +349,9 @@ class ToolLoopOperator:
         # write_parser call's body becomes the first complete parser.
         if name == _PARSER_WRITER_TOOL and not self.first_parser_code:
             self.first_parser_code = str(args.get("code", ""))
-        return {"role": "tool", "content": result}
+        # The tool name rides on the tool-result message (chat-API ``name`` field)
+        # so transcript() can attribute the result turn to its call (m2 FR-3).
+        return {"role": "tool", "name": name, "content": result}
 
 
 def _normalize_tool_args(raw: object) -> dict | None:
