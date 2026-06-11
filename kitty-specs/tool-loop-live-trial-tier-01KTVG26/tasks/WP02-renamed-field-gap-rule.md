@@ -183,3 +183,4 @@ behavioral diffs (prompt text constants and tests are the entire diff).
 ## Activity Log
 
 - 2026-06-11T18:12:58Z – claude:fable:implementer:implementer – shell_pid=41176 – Assigned agent via action command
+- 2026-06-11T18:23:42Z – claude:fable:implementer:implementer – shell_pid=41176 – Ready for review: FR-009 proven by committed fixture test (gate already enforced it, no self_reconcile.py edit); both drawer prompts state the renamed-field rule; prompt-invariant test pins clause + API names
