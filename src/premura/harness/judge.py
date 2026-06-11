@@ -80,19 +80,30 @@ class Rubric:
     the rubric is the single source of the id set, so adding a criterion is a
     rubric edit (and a ``rubric_version`` bump), never a code change. The full
     ``text`` is what the judge serves the model so the model bands the right ids.
+    ``criterion_categories`` maps each criterion id to its closed category, parsed
+    from the same headings + their ``- **category:** `…``` line — the single place
+    criterion→category is read (the improvement hook reuses this, not a second
+    parser).
     """
 
     version: str
     criterion_ids: tuple[str, ...]
     text: str
+    criterion_categories: dict[str, str] = field(default_factory=dict)
+
+    def category_of(self, criterion_id: str) -> str | None:
+        """The closed category of ``criterion_id``, or None if the rubric omits it."""
+        return self.criterion_categories.get(criterion_id)
 
 
 def load_rubric() -> Rubric:
-    """Load the packaged judge rubric: its version + criterion ids (FR-3).
+    """Load the packaged judge rubric: version, criterion ids, categories (FR-3).
 
-    Parses ``rubric_version`` and the ``### `<id>``` criterion headings out of the
-    bundled ``JUDGE_RUBRIC.md``. Code never hardcodes the criterion ids; this read
-    is the single place they enter the judge.
+    Parses ``rubric_version``, the ``### `<id>``` criterion headings, and each
+    criterion's ``- **category:** `<category>``` line out of the bundled
+    ``JUDGE_RUBRIC.md``. Code never hardcodes the criterion ids or their
+    categories; this read is the single place they enter the harness (the judge
+    and, reusing this same parser, the improvement hook).
     """
     import importlib.resources as resources
 
@@ -105,7 +116,22 @@ def load_rubric() -> Rubric:
     criterion_ids = tuple(re.findall(r"^###\s+`([a-z0-9-]+)`", text, re.MULTILINE))
     if not criterion_ids:
         raise ValueError(f"{_RUBRIC_FILE} defines no criteria")
-    return Rubric(version=version, criterion_ids=criterion_ids, text=text)
+    # Each criterion heading is followed by a "- **category:** `<category>`" line.
+    # Parse them positionally: a heading binds to the first category line after it.
+    categories: dict[str, str] = {}
+    for match in re.finditer(
+        r"^###\s+`([a-z0-9-]+)`(.*?)(?=^###\s+`|\Z)", text, re.MULTILINE | re.DOTALL
+    ):
+        cid, body = match.group(1), match.group(2)
+        cat_match = re.search(r"\*\*category:\*\*\s*`([a-z0-9_]+)`", body)
+        if cat_match:
+            categories[cid] = cat_match.group(1)
+    return Rubric(
+        version=version,
+        criterion_ids=criterion_ids,
+        text=text,
+        criterion_categories=categories,
+    )
 
 
 def _default_transport(prompt: str, *, model: str) -> str:
