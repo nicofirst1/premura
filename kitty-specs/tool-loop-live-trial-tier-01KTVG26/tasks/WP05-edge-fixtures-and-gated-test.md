@@ -16,6 +16,8 @@ subtasks:
 - T016
 - T017
 - T018
+agent: "claude:fable:implementer:implementer"
+shell_pid: "64107"
 history:
 - date: '2026-06-11T14:19:42Z'
   action: created
@@ -183,3 +185,7 @@ runs or skips cleanly. Gates: ruff + format + mypy on owned files.
   absence, charter fidelity gate).
 - If any fixture exposes a WP04 bug: REJECT WP04 / flag it with the failing
   fixture attached; do not patch production from this WP (ownership).
+
+## Activity Log
+
+- 2026-06-11T18:38:59Z – claude:fable:implementer:implementer – shell_pid=64107 – Started implementation via action command
