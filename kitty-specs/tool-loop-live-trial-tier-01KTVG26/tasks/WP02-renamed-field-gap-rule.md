@@ -15,7 +15,8 @@ subtasks:
 - T005
 - T006
 - T007
-shell_pid: '41176'
+shell_pid: "41176"
+agent: "claude:fable:implementer:implementer"
 history:
 - date: '2026-06-11T14:19:42Z'
   action: created
@@ -178,3 +179,7 @@ behavioral diffs (prompt text constants and tests are the entire diff).
 - Reviewer: confirm prompt edits are inside the two prompt constants only —
   any other diff in `live_trial_ollama.py` is scope creep against C-002.
 - The fixture CSV is synthetic and committed — no PHI concerns (C-001 holds).
+
+## Activity Log
+
+- 2026-06-11T18:12:58Z – claude:fable:implementer:implementer – shell_pid=41176 – Assigned agent via action command
