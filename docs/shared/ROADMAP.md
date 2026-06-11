@@ -58,8 +58,14 @@ The user is actively writing more requirements; this section will grow.
    2026-06-11, and the tier is specified, planned, and in implementation as
    mission `tool-loop-live-trial-tier-01KTVG26` (on mission lanes, not yet
    merged — what it adds is recorded in the [CHANGELOG.md](CHANGELOG.md)
-   2026-06-11 entry). **Still deferred (named so future work is not assumed
-   shipped):** conversation-turn capture, the judge AI, the improvement hook,
+   2026-06-11 entry). **Conversation-turn capture has since landed** (the
+   `conversation-turn-capture` mission, on branch, not yet merged): the session
+   log now persists the operator's actual chat history per run — a new additive
+   `log_turn` table written through the same sole-writer harness, fed by a
+   structural `transcript()` capability that both the tool-loop and one-shot
+   tiers expose, so the deferred judge AI has the turns to read (see the
+   [CHANGELOG.md](CHANGELOG.md) 2026-06-11 entry). **Still deferred (named so
+   future work is not assumed shipped):** the judge AI, the improvement hook,
    the fixture auto-generator, the analyze-and-answer slice, and — out of the
    tier mission's scope by design — multi-model tournaments, tier
    auto-selection / capability-routing policies, and any frontier or cloud

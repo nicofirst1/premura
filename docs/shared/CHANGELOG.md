@@ -8,6 +8,47 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-06-11 — Conversation-turn capture (`conversation-turn-capture`) — on branch, not yet merged
+
+Written pre-merge (overnight solo mission on
+`overnight/m2-conversation-turn-capture`); the post-merge close-out flips tense
+and records the merge. The session log already recorded the *shape* of a
+live-trial run (the step tree, per-attempt telemetry); this mission persists the
+*conversation* — the operator's actual chat history — so the deferred judge AI
+has the turns to read. The transcript lived only in Python memory and was
+discarded when a run ended; it is now flushed to the session log post-run by the
+harness, which remains the **sole writer**.
+
+- **Store surface (`log_turn`).** A new additive `log_turn` table plus
+  `record_turn(...)` and a fixed `TURN_ROLES` vocabulary
+  (`{system, user, assistant, tool}`, the chat-API role standard) validated at
+  the store boundary like the existing `result_status` / `run_kind` vocabularies.
+  `turn_index` is the 0-based transcript position; `(session_id, turn_index)` is
+  unique; `step_id` is a nullable link to the `log_step` node the turn occurred
+  under (the run's root `agent_turn`). `content` is full turn content — the
+  session log is the local, PHI-bearing store per ADR 0011, and no code path
+  syncs or exports it. The schema change is `CREATE TABLE IF NOT EXISTS`, so
+  `init_schema` stays idempotent against existing local files.
+- **Transcript seam (a level above).** The live-trial seam defines a structural
+  `TurnLike` protocol and an optional operator capability: any operator that
+  exposes `transcript()` after `operate()` gets its turns persisted by the
+  harness. The harness detects the capability **structurally** (no registry of
+  tiers, no per-tier capture code); operators without it behave exactly as
+  before (zero `log_turn` rows, unchanged verdict). Capture failure on an
+  otherwise-successful run surfaces as a recorded `error`-status step, never an
+  exception that flips the run verdict.
+- **Both tiers feed the seam.** The tool-loop operator maps its final chat
+  history 1:1 to `TurnLike` items (roles pass through; tool-result turns carry
+  their `tool_name`); the one-shot operator exposes its final prompt/response
+  exchange as a two-turn (`user` prompt, `assistant` response) transcript — so
+  the judge AI reads every tier through the same surface.
+- **Containment unchanged.** Only the harness writes `log_turn` (pinned by the
+  single-writer test); synthetic fixtures only, never real transcripts; no new
+  third-party dependency.
+
+Mission detail:
+[`docs/building/planning/conversation-turn-capture.md`](../building/planning/conversation-turn-capture.md).
+
 ## 2026-06-11 — Tool-loop live-trial tier (`tool-loop-live-trial-tier-01KTVG26`) — in progress, not yet merged
 
 Written pre-merge (this mission's own doc-sync work package runs before the

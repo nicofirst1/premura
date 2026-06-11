@@ -571,6 +571,23 @@ class AttemptRecord:
 # --------------------------------------------------------------------------- #
 
 
+@dataclass(slots=True)
+class _OneShotTurn:
+    """One captured turn — a structural ``live_trial.TurnLike`` (m2 FR-4).
+
+    The one-shot tier's exchange maps to two of these (a ``user`` prompt turn and
+    an ``assistant`` response turn). ``role`` / ``content`` plus the optional
+    per-turn telemetry the harness persists; ``model`` is the operator's model id
+    on the response turn.
+    """
+
+    role: str
+    content: str
+    tool_name: str | None = None
+    model: str | None = None
+    token_count: int | None = None
+
+
 class OllamaOperator:
     """Cheap-model operator: drives a local model to author a parser into the sandbox.
 
@@ -600,6 +617,12 @@ class OllamaOperator:
         self.max_tries = max_tries
         self.tries_used = 0
         self.attempts: list[AttemptRecord] = []
+        #: The FINAL prompt/response exchange of the last :meth:`operate` run —
+        #: the prompt sent to the model and the model's raw response. ``transcript()``
+        #: maps it to a two-turn conversation for the harness to persist (m2 FR-4).
+        #: Empty strings until the loop runs.
+        self.last_prompt = ""
+        self.last_response = ""
         # The scenario's drawer probe drives the contract prompt the operator
         # authors against AND the in-sandbox gate's batch/non-empty check. Default
         # to observation so existing callers/tests are unchanged (C-004); the
@@ -616,6 +639,24 @@ class OllamaOperator:
         """Whether the FINAL attempt passed the self-reconcile gate."""
         return bool(self.attempts) and self.attempts[-1].self_reconciliation.passed
 
+    def transcript(self) -> list[_OneShotTurn]:
+        """Expose the final prompt/response exchange as a two-turn transcript (FR-4).
+
+        The one-shot tier has a single (final) prompt -> response exchange; this
+        maps it to the SAME ``transcript()`` surface every other tier exposes so
+        the judge AI reads all tiers uniformly: a ``user`` turn carrying the
+        prompt the graded parser came from, then an ``assistant`` turn carrying
+        the model's raw response (the operator's model id on the response turn).
+        The operator never writes the log — the harness persists this post-run
+        (FR-021 inheritance). Empty until :meth:`operate` has run.
+        """
+        if not self.last_response:
+            return []
+        return [
+            _OneShotTurn(role="user", content=self.last_prompt),
+            _OneShotTurn(role="assistant", content=self.last_response, model=self.model_id),
+        ]
+
     def operate(self, sandbox: Sandbox, goal: str) -> None:
         """Author a parser into the sandbox, gated and retried (NFR-003 / C-005)."""
         sample = "\n".join(self.source.read_text(encoding="utf-8").splitlines()[:8])
@@ -629,7 +670,12 @@ class OllamaOperator:
         prompt = base_prompt
         for attempt in range(1, self.max_tries + 1):
             self.tries_used = attempt
-            code = _normalize_class_name(_extract_code(_ollama(prompt, model=self.model_id)))
+            raw_response = _ollama(prompt, model=self.model_id)
+            # Capture the FINAL exchange so transcript() reflects the prompt the
+            # graded parser came from and the model's raw response (m2 FR-4).
+            self.last_prompt = prompt
+            self.last_response = raw_response
+            code = _normalize_class_name(_extract_code(raw_response))
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text(code, encoding="utf-8")
 
