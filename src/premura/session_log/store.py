@@ -70,6 +70,13 @@ RUN_KINDS: frozenset[str] = frozenset({"repeatable_check", "live_trial"})
 # data-model — the fixed step kinds (OTel GenAI tree shape, by hand).
 STEP_KINDS: frozenset[str] = frozenset({"agent_turn", "model_call", "tool_call"})
 
+# FR-1 — the fixed conversation-turn roles, mirroring the chat-API role standard.
+# Validated at this boundary seam (same style as RESULT_STATUSES): an out-of-
+# vocabulary role raises ValueError rather than being silently stored. The rule
+# for extending it is the same as the other vocabularies — add the value here and
+# extend the vocab test, in this module only; do not enumerate per-tier roles.
+TURN_ROLES: frozenset[str] = frozenset({"system", "user", "assistant", "tool"})
+
 
 class LoadStatsLike(Protocol):
     """The three loader-MEASURED ints :func:`record_ingest_provenance` reads.
@@ -344,6 +351,57 @@ def record_live_trial_attempt(
         ],
     )
     return attempt_id
+
+
+def record_turn(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    session_id: str,
+    step_id: str | None,
+    turn_index: int,
+    role: str,
+    content: str,
+    tool_name: str | None = None,
+    model: str | None = None,
+    token_count: int | None = None,
+) -> str:
+    """Insert one ``log_turn`` row and return its ``turn_id`` (FR-1).
+
+    Records a single conversation turn of a live-trial run's transcript. ``role``
+    is validated against the fixed :data:`TURN_ROLES` vocabulary at this boundary
+    (same style as ``result_status``); an out-of-vocabulary value raises
+    :class:`ValueError` rather than being silently stored. ``turn_index`` is the
+    0-based position within the session's transcript and ``(session_id,
+    turn_index)`` is unique — re-using a slot for a session is rejected by the DB
+    constraint. ``step_id`` is nullable and, when set, links the turn to the
+    ``log_step`` node it occurred under (typically the run's root ``agent_turn``).
+    ``content`` carries the full turn content (PHI-bearing, local-only per NFR-002 /
+    ADR 0011); ``tool_name`` / ``model`` / ``token_count`` are optional per-turn
+    telemetry. The harness is the sole writer (FR-021 / NFR-1).
+    """
+    if role not in TURN_ROLES:
+        raise ValueError(f"role must be one of {sorted(TURN_ROLES)!r}, got {role!r}.")
+    turn_id = _mint_id()
+    conn.execute(
+        """
+        INSERT INTO log_turn
+            (turn_id, session_id, step_id, turn_index, role, content,
+             tool_name, model, token_count)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        [
+            turn_id,
+            session_id,
+            step_id,
+            int(turn_index),
+            role,
+            content,
+            tool_name,
+            model,
+            None if token_count is None else int(token_count),
+        ],
+    )
+    return turn_id
 
 
 def finish_session(conn: duckdb.DuckDBPyConnection, *, session_id: str) -> None:

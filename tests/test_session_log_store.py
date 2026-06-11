@@ -68,7 +68,13 @@ def test_init_schema_idempotent(tmp_path: Path) -> None:
         row[0]
         for row in conn.execute("SELECT table_name FROM information_schema.tables").fetchall()
     }
-    assert {"log_session", "log_step", "log_ingest_provenance", "log_live_trial_attempt"} <= tables
+    assert {
+        "log_session",
+        "log_step",
+        "log_ingest_provenance",
+        "log_live_trial_attempt",
+        "log_turn",
+    } <= tables
     conn.close()
 
 
@@ -509,6 +515,17 @@ def test_single_writer(tmp_path: Path) -> None:
     writer = _open_initialized(log_path)
     sid = _new_session(writer)
     assert sid
+    # The transcript table is written only through this sole writable connection
+    # (NFR-1): record a turn so the cross-process lock below also guards log_turn.
+    writer_turn = store.record_turn(
+        writer,
+        session_id=sid,
+        step_id=None,
+        turn_index=0,
+        role="user",
+        content="synthetic single-writer probe turn",
+    )
+    assert writer_turn
 
     # A second OS process opening the same file read-write must be rejected while
     # the harness holds the writable connection (the subprocess runner is denied a
@@ -538,6 +555,9 @@ def test_single_writer(tmp_path: Path) -> None:
     reader = store.connect(log_path, read_only=True)
     count = reader.execute("SELECT COUNT(*) FROM log_session").fetchone()
     assert count is not None and count[0] == 1
+    # The turn written through the sole writer is durable too (NFR-1).
+    turn_count = reader.execute("SELECT COUNT(*) FROM log_turn WHERE session_id = ?", [sid]).fetchone()
+    assert turn_count is not None and turn_count[0] == 1
     reader.close()
 
 

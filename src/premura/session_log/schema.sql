@@ -119,3 +119,39 @@ CREATE TABLE IF NOT EXISTS log_live_trial_attempt (
 );
 CREATE INDEX IF NOT EXISTS ix_live_trial_attempt_session
     ON log_live_trial_attempt(session_id, attempt_index);
+
+-- ----------------------------------------------------------------------------
+-- log_turn — the per-turn transcript of a live-trial run: the operator's actual
+-- conversation history (system prompt + every user/assistant/tool turn), one row
+-- per turn. The session log already records the *shape* of a run (the step tree
+-- in log_step); log_turn records the *conversation* the judge-AI follow-on needs
+-- to read. The harness (the sole writer, FR-021) flushes the transcript post-run.
+--
+--   * turn_index is the 0-based position within the session's transcript; the
+--     (session_id, turn_index) pair is UNIQUE so the ordered transcript cannot
+--     hold a duplicate slot.
+--   * step_id is nullable and, when set, links the turn to the log_step node it
+--     occurred under (typically the run's root agent_turn). It is NOT a hard
+--     FK to keep the table additive and the harness flush order-independent.
+--   * role is a fixed vocabulary {system, user, assistant, tool}, validated at
+--     the store boundary (TURN_ROLES), mirroring the chat-API role standard.
+--   * tool_name / model / token_count are optional per-turn telemetry; nullable.
+--
+-- content stores the full turn content (tool results may quote operator data);
+-- the session log is the local, PHI-bearing store per ADR 0011 and NFR-002 — no
+-- code path syncs or exports it.
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS log_turn (
+    turn_id      VARCHAR PRIMARY KEY,  -- ULID string (python-ulid)
+    session_id   VARCHAR NOT NULL REFERENCES log_session(session_id),
+    step_id      VARCHAR REFERENCES log_step(step_id),  -- nullable link to the step
+    turn_index   INTEGER NOT NULL,     -- 0-based position in the transcript
+    role         VARCHAR NOT NULL,     -- {system, user, assistant, tool} (TURN_ROLES)
+    content      VARCHAR NOT NULL,     -- full turn content (PHI-bearing, local-only)
+    tool_name    VARCHAR,              -- nullable; set on tool-result turns
+    model        VARCHAR,              -- nullable; the model that produced the turn
+    token_count  INTEGER,              -- nullable; optional per-turn telemetry
+    UNIQUE(session_id, turn_index)
+);
+-- Walk a session's transcript in order.
+CREATE INDEX IF NOT EXISTS ix_turn_session ON log_turn(session_id, turn_index);
