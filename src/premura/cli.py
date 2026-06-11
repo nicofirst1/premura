@@ -14,6 +14,7 @@ import shutil
 import sys
 import tarfile
 import time
+import zipfile
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
@@ -39,6 +40,7 @@ from .parsers.bmt import BMTParser
 from .parsers.garmin_gdpr import GarminGDPRParser
 from .parsers.health_connect import HealthConnectParser
 from .parsers.lab_pdf import LabPdfParser
+from .parsers.myfitnesspal import MyFitnessPalParser
 from .parsers.sleep_as_android import SleepAsAndroidParser
 from .store import duck
 from .store.loader import already_ingested, load
@@ -68,6 +70,7 @@ PARSER_REGISTRY: dict[str, tuple[PARSER_FACTORY, str]] = {
     "saa": (SleepAsAndroidParser, "sleep_as_android"),
     "bmt": (BMTParser, "bmt"),
     "lab": (LabPdfParser, "lab_pdf"),
+    "mfp": (MyFitnessPalParser, "myfitnesspal"),
 }
 
 
@@ -78,7 +81,7 @@ PARSER_REGISTRY: dict[str, tuple[PARSER_FACTORY, str]] = {
 
 @app.command()
 def ingest(
-    source: Annotated[str, typer.Option(help="hc | garmin | saa | bmt | lab | all")] = "all",
+    source: Annotated[str, typer.Option(help="hc | garmin | saa | bmt | lab | mfp | all")] = "all",
     path: Annotated[
         Path | None,
         typer.Argument(help="Override file path; defaults to autodiscovery in data/inbox/"),
@@ -161,21 +164,29 @@ def _discover_input(source_key: str) -> Path | None:
     if source_key == "hc":
         candidates = sorted(inbox.glob("*.db"), key=lambda p: p.stat().st_mtime, reverse=True)
     elif source_key == "garmin":
-        candidates = sorted(inbox.glob("*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
+        zips = sorted(inbox.glob("*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
+        candidates = [p for p in zips if not _zip_is_mfp(p)]
     elif source_key in ("saa", "bmt"):
         csvs = sorted(inbox.glob("*.csv"), key=lambda p: p.stat().st_mtime, reverse=True)
         candidates = [p for p in csvs if _csv_kind(p) == source_key]
     elif source_key == "lab":
         candidates = sorted(inbox.glob("*.pdf"), key=lambda p: p.stat().st_mtime, reverse=True)
+    elif source_key == "mfp":
+        zips = sorted(inbox.glob("*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
+        csvs = sorted(inbox.glob("*.csv"), key=lambda p: p.stat().st_mtime, reverse=True)
+        candidates = [p for p in zips if _zip_is_mfp(p)] + [
+            p for p in csvs if _csv_kind(p) == "mfp"
+        ]
     else:
         return None
     return candidates[0] if candidates else None
 
 
 def _csv_kind(path: Path) -> str:
-    """Return 'saa' or 'bmt' by sniffing the first line of a CSV.
+    """Return 'saa', 'mfp', or 'bmt' by sniffing the first line of a CSV.
 
     SAA headers always contain the literal tokens 'Id', 'Tz', 'From', 'To' on row one.
+    A MyFitnessPal nutrition summary always carries 'Date', 'Meal', 'Calories'.
     Everything else is treated as BMT.
     """
     try:
@@ -186,7 +197,18 @@ def _csv_kind(path: Path) -> str:
     cols = {c.strip() for c in first.split(",")}
     if {"Id", "Tz", "From", "To"}.issubset(cols):
         return "saa"
+    if {"Date", "Meal", "Calories"}.issubset(cols):
+        return "mfp"
     return "bmt"
+
+
+def _zip_is_mfp(path: Path) -> bool:
+    """True when a zip looks like a MyFitnessPal file export (vs a Garmin GDPR zip)."""
+    try:
+        with zipfile.ZipFile(path) as zf:
+            return any(Path(m).name.startswith("Nutrition-Summary") for m in zf.namelist())
+    except (OSError, zipfile.BadZipFile):
+        return False
 
 
 # ============================================================================

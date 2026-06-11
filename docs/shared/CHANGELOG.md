@@ -8,6 +8,34 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-06-11 — First real vendor intake parser: MyFitnessPal
+
+The platform-meets-reality milestone the roadmap called for: the first *real*
+vendor export adapted onto the intake path shipped by the
+usable-intake-dimensions mission. `src/premura/parsers/myfitnesspal.py` reads
+the official MyFitnessPal file export (zip of summary CSVs, or the bare
+`Nutrition-Summary-*.csv`) and emits an **intake-only** `ParseOutput` — one
+`NutritionIntakeInput` per (diary date, meal) row with event-level quantities
+(`energy`, `protein`, `fat_*`, `carbohydrate`, …; 17 keys).
+
+- **Two-seam discipline held.** Exercise-Summary (expended kcal — observation
+  meaning, and typically synced *from* the wearable already ingested) is
+  deliberately not emitted: ladder-resolving columns surface as `skipped_rows`
+  with the double-count reason, homeless ones as `vendor:myfitnesspal:*`
+  entries in `unmapped_metrics`. Nothing is dropped silently.
+- **No invented data.** Empty cells are unknown (never zero); the four
+  unit-unlabeled columns (vitamins/calcium/iron) carry `unit=None`; the bare
+  diary date becomes a midnight timestamp with `local_tz=None`, so the
+  resolver's UTC-day fallback reproduces the MyFitnessPal diary date verbatim.
+- **Routing.** Registered as `hpipe ingest --source mfp`; inbox autodiscovery
+  sniffs MFP zips (so the Garmin zip glob skips them) and MFP CSVs (so they no
+  longer fall through to BMT).
+- **Proven on real data (build-and-use, no review).** The operator's real
+  export loaded 37 events; re-ingest is a clean no-op (37 dup-skips);
+  `nutrition_intake_trend` answers `available` over the loaded window with
+  gaps named, not filled. Tests are synthetic-only; no real rows enter the
+  repo.
+
 ## 2026-06-11 — Docs restructure: CHANGELOG + slim STATUS, single-home facts
 
 Issue #21 / audit §5. STATUS.md had become a changelog wearing a snapshot's

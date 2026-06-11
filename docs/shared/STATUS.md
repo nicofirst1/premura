@@ -115,6 +115,7 @@ The pinned inventory test is `tests/test_mcp_server.py`.
 | Garmin GDPR parser | ✅ | UDS, sleepData, healthStatus, BP, hydration, training load/readiness, max-met, summarizedActivities; unknown filenames surfaced in `ingest_run.notes`. |
 | Sleep as Android parser | ✅ | Synthetic-fixture tests; DST-safe per-minute actigraphy walk. |
 | BMT parser | ✅ | Long/wide format detection; per-row units; custom metrics → `bmt_custom:*`. |
+| MyFitnessPal intake parser | ✅ | First real vendor intake source: per-meal nutrition aggregates → intake seam (`hpipe ingest --source mfp`); exercise/measurement columns surfaced as declared gaps, never observation rows. |
 | Loader (batch insert) | ✅ | Polars→DuckDB set-based insert; native-key + cross-source priority dedupe. |
 | CLI (`hpipe`) | ✅ | `bootstrap`, `ingest`, `status`, `export`, `upload`, `doctor` (incl. age-key + backup round-trip checks), `gc`, `run-monthly`, launchd install/uninstall, `install-skills`, `profile-fields` / `profile-record`. |
 | Idempotency | ✅ | sha256 skip in `hp.ingest_run` + `dedupe_key UNIQUE` + intra-batch dedupe. |
