@@ -326,6 +326,24 @@ _FAKE_GAP_TOKENS = (
     "sample_flag",
     "calibration_idx",
 )
+#: Fabricated base tokens for MAPPED columns. The vendor-weird mapped-column name is
+#: derived from one of these invented tokens (chosen by seed), NOT from the canonical
+#: metric id — so a generated column never leaks its answer (e.g. a column literally
+#: named after ``lab:stool_lactoferrin``). The canonical metric still lives in the
+#: grader-only manifest; the CSV header stays an unfamiliar vendor token. ADD A TOKEN
+#: by appending here; selection is by seed, never a vendor ``if`` ladder.
+_FAKE_MAPPED_TOKENS = (
+    "channel_a",
+    "channel_b",
+    "sensor_one",
+    "sensor_two",
+    "stream_x",
+    "stream_y",
+    "metric_p",
+    "metric_q",
+    "probe_alpha",
+    "probe_beta",
+)
 
 
 class _ObservationStrategy(DrawerStrategy):
@@ -352,13 +370,18 @@ class _ObservationStrategy(DrawerStrategy):
         ]
 
         # (b) one-or-more mappable columns, distinct canonical metrics (FR-3a/D6).
+        #     The column NAME is derived from a fabricated vendor token (distinct per
+        #     column, chosen by seed), never from the canonical metric id — so the
+        #     header never leaks the answer. The canonical metric lives only in the
+        #     grader-only manifest.
         n_mappable = rng.randint(1, 3)
         chosen = rng.sample(registry, k=min(n_mappable, len(registry)))
-        for metric in chosen:
+        mapped_tokens = rng.sample(_FAKE_MAPPED_TOKENS, k=len(chosen))
+        for metric, token in zip(chosen, mapped_tokens, strict=True):
             cells = [self._value_cell(rng, metric) for _ in range(row_count)]
             columns.append(
                 _GenColumn(
-                    name=transform(metric.metric_id),
+                    name=transform(token),
                     canonical_metric=metric.metric_id,
                     cells=cells,
                 )

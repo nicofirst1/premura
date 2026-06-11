@@ -76,6 +76,27 @@ def test_source_name_is_not_a_real_vendor(seed: int) -> None:
     assert not any(vendor in lowered for vendor in _REAL_VENDORS)
 
 
+@pytest.mark.parametrize("seed", range(20))
+def test_mapped_column_name_does_not_leak_the_canonical_metric(seed: int) -> None:
+    """FR-3: a mapped column's vendor-weird name must not leak its canonical metric.
+
+    The challenge is an UNFAMILIAR vendor export; a header derived from the canonical
+    id (e.g. ``lab:stool_lactoferrin`` -> ``lab:stoolLactoferrinReading``) would hand
+    the model the answer. The name is derived from a fabricated vendor token instead,
+    so the canonical metric lives ONLY in the grader-only manifest.
+    """
+    fixture = generate_fixture(FixtureSpec(seed=seed))
+    for field in fixture.mappable_fields:
+        assert field.canonical_metric is not None
+        lowered = field.name.lower()
+        # The canonical prefix and its squished local name must not appear in the header.
+        local = field.canonical_metric.split(":")[-1].replace("_", "")
+        assert ":" not in field.name, f"header leaks canonical namespace: {field.name!r}"
+        assert local not in lowered, (
+            f"header {field.name!r} leaks canonical metric {field.canonical_metric!r}"
+        )
+
+
 def test_unknown_drawer_fails_loudly() -> None:
     """FR-2: a drawer with no registered strategy raises, never defaults silently."""
     with pytest.raises(UnknownDrawerError):

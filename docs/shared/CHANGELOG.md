@@ -31,7 +31,10 @@ metrics drawn from the committed registry — never derived from a real export.
   seed-chosen encoding (ISO 8601 / epoch seconds / epoch microseconds), one or more
   mappable columns whose **distinct** canonical metrics are drawn from the committed
   metric registry at generation time (the grader's D6 distinct-metric rule), and at
-  least one declared-gap decoy column with no canonical home (the honesty decoy).
+  least one declared-gap decoy column with no canonical home (the honesty decoy). A
+  mapped column's vendor-weird header is derived from a fabricated vendor token, not
+  from the canonical metric id, so the header never leaks the answer — the canonical
+  metric lives only in the grader-only manifest.
 - **A level above, three registries.** Drawer behaviour, vendor-weird column-name
   weirdness, and timestamp encodings are each a small registry with its add rule
   documented where it lives (NFR-4): a **drawer-strategy** registry keyed by drawer
