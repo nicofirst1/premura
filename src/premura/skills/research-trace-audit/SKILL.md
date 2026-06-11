@@ -28,7 +28,7 @@ You cannot issue a real audit without **both** of these:
 
 1. **The structured Session Disclosure object** from `research_trace_disclosure`
    — the contract object defined by
-   `kitty-specs/session-research-trace-01KSYT4A/contracts/audit-consumer-contract.md`.
+   `docs/building/architecture/AUDIT_CONSUMER_CONTRACT.md`.
    Accept it as JSON-like structured data or a faithfully pasted object. All
    counts come from its **structured fields** —
    `raw_analytical_call_count`, `unique_hypothesis_count` (`N`), `surfaced`,
@@ -120,7 +120,7 @@ mission:
 
 Precedence — three files, three jobs:
 
-- **`kitty-specs/session-research-trace-01KSYT4A/contracts/audit-consumer-contract.md`**
+- **`docs/building/architecture/AUDIT_CONSUMER_CONTRACT.md`**
   — defines the **trace input shape** (the Session Disclosure object and its
   fields).
 - **`AUDIT_RUBRIC.md`** (beside this file) — defines the **audit criteria**.

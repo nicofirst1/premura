@@ -12,7 +12,11 @@ implementing mission (and the audit/trace mission after it) extend it
 consistently instead of re-deciding. The *statistical* choices (which
 coefficient, how to express and widen uncertainty, the paired-sample floor) are
 deliberately **not** settled here; they are delegated to a research
-investigation and will be recorded separately.
+investigation and will be recorded separately. *(Since recorded: the operative
+statistical rules live in
+[`src/premura/engine/CONTRACT.md`](../../../src/premura/engine/CONTRACT.md)
+§`correlate`; the investigation's rationale is the frozen research note
+[`CORRELATE_METHODOLOGY_RESEARCH.md`](../../history/research/CORRELATE_METHODOLOGY_RESEARCH.md).)*
 
 The decisions:
 

@@ -57,6 +57,8 @@ Premura is roughly **agent-first in execution, human-first in purpose** ("~80% f
 
 Building and using a parser for the operator's own data is part of operating an installed Premura: at runtime an agent may build a parser and use it immediately for the operator's own data, with no reviewer. Review enters only if the human consents to contribute that parser back — the PR (the contributor audience above), not the local use, goes through the existing development/review process.
 
+**Single home per shipped-state fact.** A count or inventory of what is shipped (tool counts, signal lists, test totals) has exactly one home — [STATUS.md](STATUS.md) — and every other doc links there instead of restating it; a restated count is a future stale count. Mission narratives are append-only entries in [CHANGELOG.md](CHANGELOG.md); STATUS.md stays a bounded, rewritable snapshot (its line cap is pinned by `tests/test_docs_structure.py`). The self-check, applied whenever a doc is written or reviewed alongside the altitude test above: *does this doc restate a fact that already has a home?*
+
 ## What Premura is not
 
 - Not a dashboard-first product.

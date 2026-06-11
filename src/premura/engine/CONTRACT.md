@@ -312,10 +312,12 @@ admits a window; everything after is pure over the prepared inputs.
 
 `correlate` is the first **multi-input** analytical tool. Its locked
 architecture is design decision note
-[`0008`](../../../docs/building/adr/0008-correlate-pre-registered-lagged-association.md);
-its *statistical* choices (Spearman's rho, the effective-sample-size band, the
+[`0008`](../../../docs/building/adr/0008-correlate-pre-registered-lagged-association.md).
+The *statistical* choices (Spearman's rho, the effective-sample-size band, the
 paired-sample floor, the `common_cause_plausible` key, the lag ceiling) are
-settled in the research note
+normative **here**, in the rules below; the investigation that selected them —
+the rationale, alternatives, and evidence — is recorded in the frozen research
+note
 [`CORRELATE_METHODOLOGY_RESEARCH.md`](../../../docs/history/research/CORRELATE_METHODOLOGY_RESEARCH.md).
 Read both before changing it. The rules that govern any review or extension:
 

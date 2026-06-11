@@ -13,7 +13,7 @@ durable thing; the failure-mode examples are illustrative only.
 ## What grounds every judgment
 
 The audit reads the structured **Session Disclosure** object
-(`kitty-specs/session-research-trace-01KSYT4A/contracts/audit-consumer-contract.md`) and the
+(`docs/building/architecture/AUDIT_CONSUMER_CONTRACT.md`) and the
 **final answer text**. Counts come from the structured fields only:
 `raw_analytical_call_count`, `unique_hypothesis_count` (`N`), `surfaced`, `refusal_breakdown`,
 and the per-call `terminal_status`. The `disclosure_text` field is a convenience rendering and is

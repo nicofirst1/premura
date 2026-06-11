@@ -53,7 +53,8 @@ For the analytical layer specifically, the shortest trustworthy read order is:
 
 ## Live reference
 
-- `shared/STATUS.md` — what is currently true and shipped.
+- `shared/STATUS.md` — what is currently true and shipped: a bounded snapshot and the single home for shipped-state counts.
+- `shared/CHANGELOG.md` — append-only mission-by-mission narratives (what shipped when, and why it looks the way it does).
 - `using/OPERATIONS.md` — operator commands and day-to-day run surface.
 - `shared/ROADMAP.md` — short live narrative of what is next; points to the phase plan instead of restating it.
 - `history/product/ROADMAP_BOOTSTRAP_PLAN.md` — historical record of the first mission-instantiation pass (M1-M3) and its rationale.

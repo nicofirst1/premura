@@ -54,14 +54,14 @@ Premura has already shipped:
 - encryption and opt-in backup flow
 - launchd automation
 - the federated parser plug-in code (`PluginParser`, `IngestBatch`, `dim_metric.yaml` ontology)
-- a real Stage 3 MCP surface — a default agent surface (`premura-mcp`) of twenty validity-gated tools (`list_metrics`, `metric_summary`, six signal-backed tools, two agent-mediated profile-capture tools, the five analytical tools `change_point` / `smoothed_average` / `correlate` / `rolling_mean` / `paired_t_test`, the three session research trace tools `research_trace_open` / `research_trace_mark_surfaced` / `research_trace_disclosure`, and the two PubMed grounding tools `pubmed_search` / `pubmed_fetch`), plus a separate operator surface (`premura-mcp-operator`) of twenty-one that adds the raw `query_warehouse` escape hatch
+- a real Stage 3 MCP surface — a default agent surface (`premura-mcp`) of validity-gated tools (catalog/summary, signal-backed, profile-capture, analytical, session research trace, and PubMed grounding tools), plus a separate operator surface (`premura-mcp-operator`) that adds the raw `query_warehouse` escape hatch; the live tool inventory and counts are in [STATUS.md](../../shared/STATUS.md) §"Shipped surface"
 - the first real Stage 2 behavior — six grounded, freshness-aware signals (current resting HR, resting-HR trend, steps trend, weight trend, deep-sleep vs own baseline, overnight-HRV change around a date) with a contributor contract (`src/premura/engine/CONTRACT.md`); `ui` remains a stub
 - the authoritative profile/intake **meaning contract** (`docs/building/architecture/PROFILE_AND_INTAKE_CONTRACT.md` plus the `docs/building/architecture/contracts/profile_and_intake_*.yaml` surfaces, design decision note `docs/building/adr/0005-profile-and-intake-contract.md`), which fixes where baseline profile context, nutrition intake, and supplement intake live and what they mean
 - the profile/intake **storage seam and first write path** (`implement-profile-and-intake-storage-01KSMWV1`, design decision note `docs/building/adr/0006-profile-intake-storage-and-capture.md`): concrete `hp.*` domain tables (migration `004_profile_intake.sql`), an **agent-mediated bounded profile-capture** path (the closed allowlist in `src/premura/profile_fields.py`, recorded through the default MCP tools `profile_context_supported_fields` / `profile_context_record` and the CLI verbs `hpipe profile-fields` / `hpipe profile-record`), and a normalized idempotent intake load path (`persist_intake_batch`). It ships **no** built-in importer for a specific nutrition/supplement source and **no** profile-dependent Stage 2 answer.
 
 So `engine` and `mcp` are no longer empty stubs: Stage 2 and part of Stage 3 are real for six approved question shapes, and the profile/intake domains now have real storage plus an agent-mediated capture path rather than only a meaning contract. What is still missing is the rest of the v2 payoff:
 
-- the first bounded analytical tool set is now complete — `change_point`, `smoothed_average`, `correlate`, `rolling_mean`, and `paired_t_test`, plus the session research trace / multiplicity disclosure and the follow-on **research trace audit skill** (the interpretation layer over the session research trace), have shipped on the default surface over the bounded analytical contract. The first **PubMed grounding slice** (`pubmed_search` candidates-only + `pubmed_fetch` citeable record) has now shipped too, taking the default surface to twenty tools. The signal selector, the literature-to-warehouse bridge, and broader PubMed tooling (full text, deep analysis, other sources) are the remaining Stage-3 work this slice did not build (`paired_t_test`'s broader condition-label pairing also stays deferred)
+- the first bounded analytical tool set is now complete — `change_point`, `smoothed_average`, `correlate`, `rolling_mean`, and `paired_t_test`, plus the session research trace / multiplicity disclosure and the follow-on **research trace audit skill** (the interpretation layer over the session research trace), have shipped on the default surface over the bounded analytical contract. The first **PubMed grounding slice** (`pubmed_search` candidates-only + `pubmed_fetch` citeable record) has now shipped too (tool counts live in [STATUS.md](../../shared/STATUS.md)). The signal selector, the literature-to-warehouse bridge, and broader PubMed tooling (full text, deep analysis, other sources) are the remaining Stage-3 work this slice did not build (`paired_t_test`'s broader condition-label pairing also stays deferred)
 - broader Stage 2 coverage beyond the seven now-shipped grounded answers (the six descriptive/comparative signals plus BMI, the first cross-domain proof consumer); the seven are non-diagnostic and carry no significance or causation claims. **BMI now ships** as the first cross-domain Stage 2 answer using the input-resolution seam (declared height from profile context plus weight from observation history); age-adjusted interpretation and any further profile-aware signals remain deferred — but now as implementation missions over the shipped resolution seam, not as storage or boundary questions
 - **parser/plugin source adaptation for nutrition and supplements** — the intake tables and load path exist, but turning a specific meal-logging or supplement export into a normalized `IntakeBatch` is unbuilt federated-parser work; there is no built-in importer
 - a first new source class beyond the original wearable/app quartet
@@ -182,7 +182,7 @@ The lab proposal is the first place where Premura becomes more than a wearable d
 > result envelope (estimate + validity metadata + closed confound checklist,
 > including the `common_cause_plausible` key) or a first-class refusal.
 > `engine.list_analytical_tools()` returns exactly these five. See
-> [STATUS.md](../../shared/STATUS.md) §"Stage 3 analytical tools" and design
+> [CHANGELOG.md](../../shared/CHANGELOG.md) (2026-05-30 entries) and design
 > decision note [0008](../adr/0008-correlate-pre-registered-lagged-association.md).
 > The **session research trace / measured multiplicity disclosure** has since
 > shipped too — three default-surface tools (`research_trace_open`,
@@ -200,8 +200,8 @@ The lab proposal is the first place where Premura becomes more than a wearable d
 > default-surface tools, `pubmed_search` (candidates only, never citeable) and
 > `pubmed_fetch` (a citeable record for one exact PMID, with PubMed provenance),
 > over a Premura-owned adapter on NCBI E-utilities with no new HTTP dependency;
-> the default surface is now twenty tools. See [STATUS.md](../../shared/STATUS.md)
-> §"PubMed literature grounding". **Remaining (deferred):** the
+> the live tool inventory and counts are in [STATUS.md](../../shared/STATUS.md)
+> §"Shipped surface". **Remaining (deferred):** the
 > literature-to-warehouse bridge and concept-to-metric mapping (connecting a
 > fetched paper to the operator's own warehouse data), and broader PubMed tooling
 > — full-text retrieval, deep paper analysis, other sources (Europe PMC,
