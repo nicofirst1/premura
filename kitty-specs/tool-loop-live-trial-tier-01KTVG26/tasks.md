@@ -21,9 +21,9 @@
 | T002 | Add `tier` field to `LiveTrialRunRecord` + `ScoreboardEntry` (default `"one_shot"`) | WP01 | | [D] |
 | T003 | Group `current_floor` by `(operator_model, tier)`; tier column in CLI table | WP01 | | [D] |
 | T004 | Back-compat verification: one-shot writer emits `tier="one_shot"`; legacy rows render | WP01 | | [D] |
-| T005 | Failing fixture test: renamed-field-absorbing parser FAILS `self_reconcile` (SC-007) | WP02 | [P] |
-| T006 | Sharpen renamed-field declared-gap line in the observation contract prompt | WP02 | |
-| T007 | Sharpen the same line in the intake contract prompt; one-shot suites stay green | WP02 | |
+| T005 | Failing fixture test: renamed-field-absorbing parser FAILS `self_reconcile` (SC-007) | WP02 | [D] |
+| T006 | Sharpen renamed-field declared-gap line in the observation contract prompt | WP02 | | [D] |
+| T007 | Sharpen the same line in the intake contract prompt; one-shot suites stay green | WP02 | | [D] |
 | T008 | Failing tests: chat-client error mapping, tool-registry bounds, brief invariants | WP03 | [D] |
 | T009 | Chat client `_ollama_chat` (stdlib, local-only guard, `num_ctx`) + `ToolCallsUnsupportedError` | WP03 | | [D] |
 | T010 | `ToolRegistration` + registry + `read_context`/`write_parser`/`run_ingest` handlers | WP03 | | [D] |
@@ -68,9 +68,9 @@ prompts. Wording-only on the one-shot path (C-002).
 one-shot suites green.
 **Dependencies**: none.
 
-- [ ] T005 Failing renamed-field gate fixture test (WP02)
-- [ ] T006 Sharpen observation contract prompt line (WP02)
-- [ ] T007 Sharpen intake contract prompt line; suites stay green (WP02)
+- [x] T005 Failing renamed-field gate fixture test (WP02)
+- [x] T006 Sharpen observation contract prompt line (WP02)
+- [x] T007 Sharpen intake contract prompt line; suites stay green (WP02)
 
 ### WP03 — Tool contract module (chat client, registry, brief)
 
