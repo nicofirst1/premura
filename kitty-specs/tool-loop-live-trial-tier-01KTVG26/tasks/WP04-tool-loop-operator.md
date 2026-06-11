@@ -21,6 +21,8 @@ subtasks:
 - T013
 - T014
 - T015
+agent: "claude:fable:implementer:implementer"
+shell_pid: "40987"
 history:
 - date: '2026-06-11T14:19:42Z'
   action: created
@@ -265,3 +267,7 @@ exits 2 cleanly with no Ollama running (manual check, not a committed test).
   NFR-005).
 - The chat-seam design (injectable backend) is this WP's API decision — keep
   it the same seam WP03's client exposes so WP05's edge tests reuse it.
+
+## Activity Log
+
+- 2026-06-11T18:12:47Z – claude:fable:implementer:implementer – shell_pid=40987 – Started implementation via action command
