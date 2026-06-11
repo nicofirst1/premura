@@ -17,10 +17,10 @@
 
 | ID | Description | WP | Parallel |
 |----|-------------|----|----------|
-| T001 | Failing tests: `tier` round-trip + legacy-line parse on scoreboard records | WP01 | [P] |
-| T002 | Add `tier` field to `LiveTrialRunRecord` + `ScoreboardEntry` (default `"one_shot"`) | WP01 | |
-| T003 | Group `current_floor` by `(operator_model, tier)`; tier column in CLI table | WP01 | |
-| T004 | Back-compat verification: one-shot writer emits `tier="one_shot"`; legacy rows render | WP01 | |
+| T001 | Failing tests: `tier` round-trip + legacy-line parse on scoreboard records | WP01 | [P] | [D] |
+| T002 | Add `tier` field to `LiveTrialRunRecord` + `ScoreboardEntry` (default `"one_shot"`) | WP01 | | [D] |
+| T003 | Group `current_floor` by `(operator_model, tier)`; tier column in CLI table | WP01 | | [D] |
+| T004 | Back-compat verification: one-shot writer emits `tier="one_shot"`; legacy rows render | WP01 | | [D] |
 | T005 | Failing fixture test: renamed-field-absorbing parser FAILS `self_reconcile` (SC-007) | WP02 | [P] |
 | T006 | Sharpen renamed-field declared-gap line in the observation contract prompt | WP02 | |
 | T007 | Sharpen the same line in the intake contract prompt; one-shot suites stay green | WP02 | |
@@ -51,10 +51,10 @@ floor grouped by `(operator_model, tier)`. FR-007 data layer; SC-002.
 without `tier` parses as `one_shot`; floor table shows both tiers side by side.
 **Dependencies**: none.
 
-- [ ] T001 Failing tests: tier round-trip + legacy-line parse (WP01)
-- [ ] T002 Add `tier` to `LiveTrialRunRecord` + `ScoreboardEntry` (WP01)
-- [ ] T003 `current_floor` groups by `(operator_model, tier)`; CLI tier column (WP01)
-- [ ] T004 Back-compat verification: one-shot writes `tier="one_shot"` untouched (WP01)
+- [x] T001 Failing tests: tier round-trip + legacy-line parse (WP01)
+- [x] T002 Add `tier` to `LiveTrialRunRecord` + `ScoreboardEntry` (WP01)
+- [x] T003 `current_floor` groups by `(operator_model, tier)`; CLI tier column (WP01)
+- [x] T004 Back-compat verification: one-shot writes `tier="one_shot"` untouched (WP01)
 
 ### WP02 — Renamed-field declared-gap rule (FR-009)
 
