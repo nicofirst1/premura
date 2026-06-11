@@ -89,13 +89,30 @@ The user is actively writing more requirements; this section will grow.
    edit, and it never changes a run's verdict — and it is wired as an **opt-in,
    default-off** post-run step (`improve_run`, gated on `judge_run`) whose failure
    never raises out of the harness (see the [CHANGELOG.md](CHANGELOG.md)
-   2026-06-12 entry). **Still deferred (named so future work is not assumed
-   shipped):** acting on proposals (issue/PR creation, prompt editing, any
-   self-modification), lifecycle tooling for the `dismissed`/`addressed`
-   transitions, model-generated proposal prose, cross-session trend aggregation,
-   the fixture auto-generator, the analyze-and-answer slice, and — out of the tier
-   mission's scope by design — multi-model tournaments, tier auto-selection /
-   capability-routing policies, and any frontier or cloud model requirement.
+   2026-06-12 entry). **The fixture auto-generator has since shipped** (the
+   `fixture-auto-generator` mission, on branch, not yet merged): a deterministic,
+   seeded, offline generator (`premura.harness.fixture_gen`) now fabricates fresh,
+   never-seen **synthetic** vendor fixtures — a CSV plus its grader-only ground-truth
+   manifest — on demand, so the acceptance harness is no longer limited to its two
+   handwritten fixtures. Same seed → byte-identical pair; canonical metrics are drawn
+   from the committed registry (never hardcoded); the observation challenge is fair
+   by construction (seed-chosen timestamp encoding, distinct mapped metrics, a
+   declared-gap decoy); drawer behaviour / naming weirdness / timestamp encodings are
+   each a registry with a documented add rule; a generated source is recognized
+   synthetic via an explicit writer-controlled marker without loosening the
+   committed-source rule; and it is invocable as `python -m premura.harness.fixture_gen`.
+   With it never invoked, every existing fixture and live-trial test is byte-for-byte
+   unaffected (see the [CHANGELOG.md](CHANGELOG.md) 2026-06-12 entry). **Still
+   deferred (named so future work is not assumed shipped):** acting on proposals
+   (issue/PR creation, prompt editing, any self-modification), lifecycle tooling for
+   the `dismissed`/`addressed` transitions, model-generated proposal prose,
+   cross-session trend aggregation, the analyze-and-answer slice; and, for the fixture
+   auto-generator specifically — the **`intake` drawer strategy** (the drawer-strategy
+   seam ships; the second strategy is follow-on), **non-CSV fixture formats**
+   (JSON/SQLite/zip exports), **auto-generated reference parsers**, and
+   **difficulty-tier / curriculum policies**; and — out of the tier mission's scope by
+   design — multi-model tournaments, tier auto-selection / capability-routing policies,
+   and any frontier or cloud model requirement.
 
 Read the full phase doc for the rationale, risk retirement, and exit criteria:
 

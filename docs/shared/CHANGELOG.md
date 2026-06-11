@@ -8,6 +8,66 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-06-12 — Fixture auto-generator (`fixture-auto-generator`) — on branch, not yet merged
+
+Written pre-merge (overnight solo mission on
+`overnight/m5-fixture-auto-generator`); the post-merge close-out flips tense and
+records the merge. The acceptance harness grades whether a model can build an
+honest parser for an **unfamiliar** vendor export, but it owned exactly two
+handwritten fixtures — a model under trial could simply have memorized
+Fitbit-shaped exports, and two challenges cannot exercise the contract's breadth.
+This mission adds a deterministic, seeded, offline generator that fabricates fresh,
+never-seen synthetic vendor fixtures — a CSV plus its grader-only ground-truth
+manifest — on demand, so the harness can always present a genuinely unfamiliar
+source. Synthetic only: fabricated source names, invented values, canonical
+metrics drawn from the committed registry — never derived from a real export.
+
+- **Deterministic generation core.** `premura.harness.fixture_gen.generate_fixture(
+  spec)` is pure and offline: every random choice flows from
+  `random.Random(spec.seed)`, so the same `FixtureSpec` yields byte-identical CSV
+  and manifest text on every run, on every machine. No model calls, no clock reads,
+  no network, no reads of any operator data path. The generated observation fixture
+  is a fair challenge by construction: a structural timestamp column in a
+  seed-chosen encoding (ISO 8601 / epoch seconds / epoch microseconds), one or more
+  mappable columns whose **distinct** canonical metrics are drawn from the committed
+  metric registry at generation time (the grader's D6 distinct-metric rule), and at
+  least one declared-gap decoy column with no canonical home (the honesty decoy).
+- **A level above, three registries.** Drawer behaviour, vendor-weird column-name
+  weirdness, and timestamp encodings are each a small registry with its add rule
+  documented where it lives (NFR-4): a **drawer-strategy** registry keyed by drawer
+  id (only `observation` ships tonight; an unknown drawer id fails loudly, and
+  adding `intake` later needs no core edit), a **naming-transform** registry, and a
+  **timestamp-encoding** registry. No vendor `if/elif` ladders; no metric list
+  hardcoded in code — metrics come from the registry seed.
+- **Validation, writer, scenario adapter.** `validate_fixture` enforces the
+  ground-truth invariants (every CSV column enumerated exactly once; canonical
+  metrics unique and registry-resident; ≥1 mappable and ≥1 declared-gap column;
+  exactly `row_count` rows, all timestamps decodable in the declared encoding) and
+  runs before `generate_fixture` returns, so an invalid fixture can never escape.
+  `write_fixture` writes the pair (refusing to overwrite unless told) plus an
+  explicit, writer-controlled **synthetic marker**, and `scenario_for` adapts a
+  written pair into a `Scenario` the existing harness accepts unchanged — graded by
+  the same `ObservationStrategy` as the committed fixture. The generated manifest
+  matches the committed observation manifest shape exactly (it carries the
+  GRADER-ONLY header and reads through the same YAML loader), so grader/manifest
+  consumers need no changes.
+- **Synthetic recognition without loosening the rule.** A generated fixture counts
+  as synthetic via the writer-controlled marker beside its CSV — **not** by
+  loosening the harness's committed-source rule, so an arbitrary or real-looking
+  operator path stays non-synthetic (pinned by a test). Generated output lands only
+  where the caller points `--out`, never silently into `tests/fixtures/`; with the
+  generator never invoked, every existing fixture and live-trial test is byte-for-byte
+  unaffected.
+- **CLI.** `python -m premura.harness.fixture_gen --seed N [--drawer observation]
+  [--out DIR] [--rows K] [--overwrite]` generates, validates, writes, and prints the
+  written paths plus a one-line summary (drawer, source name, column count,
+  mappable/gap split, encoding); exit code is nonzero on any failure. Mirrors
+  `live_trial_ollama`'s `_main()`. All new tests run in the default offline suite;
+  no new third-party dependency.
+
+Mission detail:
+[`docs/building/planning/fixture-auto-generator.md`](../building/planning/fixture-auto-generator.md).
+
 ## 2026-06-12 — Improvement hook (`improvement-hook`) — on branch, not yet merged
 
 Written pre-merge (overnight solo mission on `overnight/m4-improvement-hook`); the

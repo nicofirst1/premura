@@ -11,7 +11,7 @@
 >
 > Companion to [SPEC.md](SPEC.md), [CHANGELOG.md](CHANGELOG.md),
 > [ROADMAP.md](ROADMAP.md), [USERJOURNEY.md](../using/USERJOURNEY.md).
-> Snapshot date: **2026-06-11**.
+> Snapshot date: **2026-06-12**.
 
 ## TL;DR
 
@@ -113,7 +113,13 @@ The pinned inventory test is `tests/test_mcp_server.py`.
   operator's process against a versioned rubric into `log_judgment`, and the
   **improvement hook** consumes those judgments to derive durable proposals into
   `log_improvement` via a versioned playbook (it proposes, never acts) — both on
-  branch, not yet merged.
+  branch, not yet merged. A **synthetic fixture auto-generator**
+  (`premura.harness.fixture_gen`, runnable as `python -m premura.harness.fixture_gen`)
+  fabricates fresh, never-seen synthetic vendor fixtures (CSV + grader-only
+  manifest) deterministically from a seed — canonical metrics drawn from the
+  committed registry, byte-identical per seed, recognized synthetic via a
+  writer-controlled marker — so the harness is no longer limited to its two
+  handwritten fixtures (on branch, not yet merged).
 - **Runtime build-and-use boundary**: an agent may build a parser and use it
   immediately on the operator's own data with no reviewer; only a
   contribute-back PR is reviewed. Pinned by
