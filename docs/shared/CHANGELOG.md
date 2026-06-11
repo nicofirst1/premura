@@ -8,6 +8,17 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-06-11 — Tag hygiene: `v1.0.0` retagged as `v0.1.0` (audit R6)
+
+The first local-ingest pipeline's restore point (commit `538aaf1`) was tagged
+`v1.0.0` before the release-line policy settled on `v0.x` until the
+user-facing threshold; that made a bare tag listing sort it as the latest
+release. Retagged `v0.1.0` (the milestone number it actually was — annotated
+tag records the rename) and the old `v1.0.0` deleted locally and on origin.
+Earlier entries and history docs that say "tagged v1.0.0" describe what was
+true when written. Also removed the last stale branch
+(`docs/split-by-audience`, merged) from origin.
+
 ## 2026-06-11 — First real vendor intake parser: MyFitnessPal
 
 The platform-meets-reality milestone the roadmap called for: the first *real*

@@ -11,9 +11,10 @@ through tools. You do not need the planning or history docs to start.
 
 > Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [Doctrine](docs/shared/DOCTRINE.md) · [SPEC](docs/shared/SPEC.md) · [STATUS](docs/shared/STATUS.md) · [Changelog](docs/shared/CHANGELOG.md) · [Stages](docs/building/architecture/STAGES.md) · [Roadmap](docs/shared/ROADMAP.md) · [Full Plan](docs/building/product/FULL_APP_DEVELOPMENT_PLAN.md)
 
-Premura is still pre-`v1`: future release tags use the `v0.x.0` line until all
-four stages form a coherent user-facing path. The historical `v1.0.0` tag is a
-restore point for the first local-ingest pipeline, not the forward version line.
+Premura is still pre-`v1`: release tags use the `v0.x.0` line until all
+four stages form a coherent user-facing path. The `v0.1.0` tag marks the first
+local-ingest pipeline foundation (it briefly carried the name `v1.0.0`;
+retagged 2026-06-11 so the tag listing matches the real version line).
 
 ## Quick start
 

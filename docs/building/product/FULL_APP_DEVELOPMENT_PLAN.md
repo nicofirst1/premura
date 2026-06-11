@@ -17,8 +17,9 @@ This file is not the GitHub backlog and not the first execution plan. It is the 
 
 ## Release Line
 
-Premura is still pre-`v1`. The existing `v1.0.0` tag is a historical restore
-point for the first local-ingest pipeline, not the meaning of `v1` going forward.
+Premura is still pre-`v1`. The first local-ingest pipeline's restore point is
+tagged `v0.1.0` (it briefly carried the name `v1.0.0`; retagged 2026-06-11),
+not the meaning of `v1` going forward.
 From this point on, release tags use the `v0.x.0` line until the product is
 genuinely user-facing: all four stages exist in a coherent path from source
 artifact to agent-mediated analysis to human-facing teaching/interview. `v1.0.0`
@@ -82,7 +83,7 @@ Small v1 residue (real-data SAA validation, project wiki hub page) is not schedu
 
 This plan follows the conventions established in `../../history/product/ROADMAP_BOOTSTRAP_PLAN.md` §"Conventions":
 
-- **Tag-cut on milestone close**: each phase ships as a pre-`v1` milestone (`v0.1`, `v0.2`, …) and closes with a corresponding `git tag` (`v0.1.0`, `v0.2.0`, …). Tags are mandatory restore points, not optional bookkeeping. The already-existing `v1.0.0` tag is legacy/historical; do not continue the `v1` line until the user-facing threshold above is met.
+- **Tag-cut on milestone close**: each phase ships as a pre-`v1` milestone (`v0.1`, `v0.2`, …) and closes with a corresponding `git tag` (`v0.1.0`, `v0.2.0`, …). Tags are mandatory restore points, not optional bookkeeping. The foundation milestone's tag is `v0.1.0` (formerly `v1.0.0`, retagged 2026-06-11); do not start the `v1` line until the user-facing threshold above is met.
 - **Design decision note timing**: design decision notes land *before* missions that introduce a new stage interface or a new public type; *after* missions where the decision is an implementation detail inside an already-approved direction. See `docs/building/adr/0001-ingest-batch-parser-seam.md` for the post-mission template (the folder `docs/building/adr/` is kept for filesystem stability; in prose call them "design decision notes").
 - **Mission title format**: GitHub tracking issues use `[M1]`/`[M2]`/`[M3]` prefixes. New missions in later phases follow the same convention (`[M4]`, `[M5]`, …).
 - **Multi-stage labels**: missions that genuinely span stages carry multiple `stage:*` labels (e.g. M3 carries both `stage:ingest` and `stage:engine`).

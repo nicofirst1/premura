@@ -15,8 +15,9 @@
 
 ## TL;DR
 
-**Pre-`v1` foundation — historical tag `v1.0.0` exists, but the product line is
-treated as `v0.x`.** The ingest pipeline is operational across the four
+**Pre-`v1` foundation — the product line is `v0.x`; the first-pipeline
+restore point is tagged `v0.1.0` (formerly `v1.0.0`, retagged 2026-06-11).**
+The ingest pipeline is operational across the four
 observation sources (Health Connect, Garmin GDPR, Sleep as Android, BMT) plus
 the MyFitnessPal nutrition-intake source; the DuckDB
 warehouse holds ~3.5 years of data including the Garmin-only metrics that
