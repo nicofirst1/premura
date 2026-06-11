@@ -98,9 +98,10 @@ The user is actively writing more requirements; this section will grow.
    from the committed registry (never hardcoded); the observation challenge is fair
    by construction (seed-chosen timestamp encoding, distinct mapped metrics, a
    declared-gap decoy); drawer behaviour / naming weirdness / timestamp encodings are
-   each a registry with a documented add rule; a generated source is recognized
-   synthetic via an explicit writer-controlled marker without loosening the
-   committed-source rule; and it is invocable as `python -m premura.harness.fixture_gen`.
+   each a registry with a documented add rule; the harness's persistence gate
+   (`is_synthetic_source`) recognizes a generated source as synthetic via an explicit
+   writer-controlled marker — additive, without loosening the committed-source rule;
+   and it is invocable as `python -m premura.harness.fixture_gen`.
    With it never invoked, every existing fixture and live-trial test is byte-for-byte
    unaffected (see the [CHANGELOG.md](CHANGELOG.md) 2026-06-12 entry). **Still
    deferred (named so future work is not assumed shipped):** acting on proposals

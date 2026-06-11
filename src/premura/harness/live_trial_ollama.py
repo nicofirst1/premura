@@ -776,19 +776,32 @@ def _committed_synthetic_sources() -> set[Path]:
 
 
 def is_synthetic_source(source: Path) -> bool:
-    """True iff ``source`` is a committed synthetic scenario source (T013/FR-012).
+    """True iff ``source`` is a synthetic scenario source (T013/FR-012; m5 FR-6).
 
-    The single decision point for whether a run persists: only a committed
-    synthetic scenario source is synthetic; ANY other source (a real local dump, a
-    temp copy at a different path) is treated as real and records nothing. WP05
-    exercises this helper directly. Scenario-derived so the intake scenario's
-    committed alien CSV persists the same way the observation CSV does, with no
-    per-source branch (FR-007).
+    The single decision point for whether a run persists. A source is synthetic in
+    exactly two explicit, bounded ways — never by loosening the rule for arbitrary
+    or real operator paths:
+
+    1. It is a committed synthetic scenario source (a real local dump or a temp copy
+       at a different path is treated as real and records nothing). Scenario-derived
+       so the intake scenario's committed alien CSV persists the same way the
+       observation CSV does, with no per-source branch (FR-007).
+    2. It is an auto-generated synthetic fixture (m5 FR-6): it sits beside the
+       writer-controlled synthetic marker that :func:`fixture_gen.write_fixture`
+       drops. The marker check is owned by ``fixture_gen`` and delegated to here, so
+       a generated source persists to the scoreboard while a marker-less real-looking
+       path stays non-synthetic. WP05 / m5 exercise this helper directly.
     """
+    # Local import: fixture_gen depends on harness.scenario (a leaf this module also
+    # imports), so this is acyclic; kept lazy to avoid widening import-time surface.
+    from premura.harness.fixture_gen import is_generated_synthetic_source
+
     try:
-        return source.resolve() in _committed_synthetic_sources()
+        if source.resolve() in _committed_synthetic_sources():
+            return True
     except OSError:
         return False
+    return is_generated_synthetic_source(source)
 
 
 @dataclass(slots=True)

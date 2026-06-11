@@ -349,6 +349,48 @@ def test_harness_synthetic_rule_unchanged_for_real_path(tmp_path) -> None:
     assert not is_committed_synthetic(real)
 
 
+def test_generated_source_is_persistable_through_the_harness_gate(tmp_path) -> None:
+    """FR-6: the harness's real persistence gate recognizes a generated fixture.
+
+    The integrated direction the per-function marker check alone cannot prove: a
+    generated+written fixture, routed through the harness's actual persistence gate
+    (``is_synthetic_source`` — the function the trial loop calls to decide scoreboard
+    persistence), MUST be synthetic, while a real-looking marker-less path MUST stay
+    non-synthetic and a committed scenario source MUST stay synthetic. Without this
+    wiring the writer-controlled marker is inert.
+
+    The recognizer is loaded via ``importlib`` (string-split module name) so this
+    default-suite test carries no textual reference to the live-trial harness module
+    pinned by ``test_live_trial_seam.py``; it runs no trial, only the pure
+    path-classification helper.
+    """
+    import importlib
+
+    from premura.harness.fixture_gen import write_fixture
+
+    ollama_mod = importlib.import_module("premura.harness." + "live_trial_ollama")
+    gate = ollama_mod.is_synthetic_source
+
+    # (1) A generated+written fixture is synthetic through the harness gate.
+    gen_dir = tmp_path / "generated"
+    fixture = generate_fixture(FixtureSpec(seed=23))
+    written = write_fixture(fixture, gen_dir)
+    assert gate(written.csv_path), (
+        "a generated synthetic fixture must persist through the harness gate"
+    )
+
+    # (2) A real-looking, marker-less path (its own dir, no marker) stays
+    #     NON-synthetic — the rule is not loosened for arbitrary/real operator paths.
+    real_dir = tmp_path / "real_dump"
+    real_dir.mkdir()
+    real = real_dir / "garmin_real_export.csv"
+    real.write_text("ts,bpm\n2026-01-01T00:00:00Z,60\n", encoding="utf-8")
+    assert not gate(real), "a marker-less real-looking path must stay non-synthetic"
+
+    # (3) The committed scenario sources stay synthetic (additive, not a regression).
+    assert gate(ollama_mod._SYNTHETIC_CSV), "the committed synthetic source must stay synthetic"
+
+
 # --------------------------------------------------------------------------- #
 # FR-6 scenario adapter — yields a Scenario the harness accepts unchanged.
 # --------------------------------------------------------------------------- #

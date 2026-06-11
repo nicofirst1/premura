@@ -51,10 +51,16 @@ metrics drawn from the committed registry — never derived from a real export.
   matches the committed observation manifest shape exactly (it carries the
   GRADER-ONLY header and reads through the same YAML loader), so grader/manifest
   consumers need no changes.
-- **Synthetic recognition without loosening the rule.** A generated fixture counts
-  as synthetic via the writer-controlled marker beside its CSV — **not** by
-  loosening the harness's committed-source rule, so an arbitrary or real-looking
-  operator path stays non-synthetic (pinned by a test). Generated output lands only
+- **Synthetic recognition without loosening the rule.** The harness's real
+  persistence gate — `live_trial_ollama.is_synthetic_source`, the function the trial
+  loop calls to decide scoreboard persistence — now also recognizes a generated
+  fixture as synthetic by delegating to the writer-controlled marker beside its CSV
+  (`fixture_gen.is_generated_synthetic_source`), so a generated source persists to
+  the scoreboard. This is **additive**: it does not loosen the committed-source
+  rule, so an arbitrary or real-looking marker-less operator path stays non-synthetic
+  (pinned by an integrated test that routes a generated source through the gate while
+  a marker-less path stays non-synthetic and the committed sources stay synthetic).
+  Generated output lands only
   where the caller points `--out`, never silently into `tests/fixtures/`; with the
   generator never invoked, every existing fixture and live-trial test is byte-for-byte
   unaffected.
