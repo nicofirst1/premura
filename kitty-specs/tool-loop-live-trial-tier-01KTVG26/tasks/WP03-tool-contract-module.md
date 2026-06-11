@@ -19,7 +19,7 @@ subtasks:
 - T009
 - T010
 - T011
-agent: "claude:opus:implementer:implementer"
+agent: "claude:opus:reviewer:reviewer"
 shell_pid: "24168"
 history:
 - date: '2026-06-11T14:19:42Z'
@@ -258,3 +258,4 @@ pytest -q`, `ruff check` + `ruff format --check`, `mypy`.
 
 - 2026-06-11T17:46:53Z – claude:opus:implementer:implementer – shell_pid=24168 – Started implementation via action command
 - 2026-06-11T18:02:38Z – claude:opus:implementer:implementer – shell_pid=24168 – Ready for review
+- 2026-06-11T18:10:17Z – claude:opus:reviewer:reviewer – shell_pid=24168 – Contract module: chat client, bounded registry, single-source brief. C-005 holds by construction (allowlist resolves real paths; manifest/traversal/absolute refused as strings); FR-002 whole-file reads; FR-001 one-shot directive stripped structurally; budget overflow raises BriefBudgetError, never truncates; NFR-001 num_ctx pinned on derived /api/chat; NFR-004 imports not copies, ollama file untouched; NFR-005 data-driven registry. 4 gates pass (ruff/format/mypy clean, 1092 passed).
