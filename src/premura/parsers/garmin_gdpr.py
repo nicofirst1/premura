@@ -298,6 +298,8 @@ class GarminGDPRParser:
                 if not isinstance(entry, dict):
                     continue
                 kind = entry.get("type")
+                if not isinstance(kind, str):
+                    continue
                 spec = type_to_metric.get(kind)
                 if spec is None:
                     continue

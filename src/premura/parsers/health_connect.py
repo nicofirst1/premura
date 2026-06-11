@@ -338,16 +338,11 @@ class HealthConnectParser:
         for r in con.execute(q):
             source_id = self._source_id(result, r["app_info_id"], r["device_info_id"])
             uuid_hex = _uuid_hex(r["uuid"])
-            common = {
-                "ts_utc": _ts(r["time"]),
-                "unit": "mmHg",
-                "source_id": source_id,
-                "source_kind": SOURCE_KIND,
-                "local_tz": _offset_str(r["zone_offset"]),
-                "raw_payload": {
-                    "body_position": r["body_position"],
-                    "measurement_location": r["measurement_location"],
-                },
+            ts_utc = _ts(r["time"])
+            local_tz = _offset_str(r["zone_offset"])
+            raw_payload = {
+                "body_position": r["body_position"],
+                "measurement_location": r["measurement_location"],
             }
             if r["systolic"] is not None:
                 result.measurements.append(
@@ -355,7 +350,12 @@ class HealthConnectParser:
                         metric_id="bp_systolic",
                         value_num=float(r["systolic"]),
                         source_uuid=f"{uuid_hex}:sys",
-                        **common,
+                        ts_utc=ts_utc,
+                        unit="mmHg",
+                        source_id=source_id,
+                        source_kind=SOURCE_KIND,
+                        local_tz=local_tz,
+                        raw_payload=raw_payload,
                     )
                 )
             if r["diastolic"] is not None:
@@ -364,7 +364,12 @@ class HealthConnectParser:
                         metric_id="bp_diastolic",
                         value_num=float(r["diastolic"]),
                         source_uuid=f"{uuid_hex}:dia",
-                        **common,
+                        ts_utc=ts_utc,
+                        unit="mmHg",
+                        source_id=source_id,
+                        source_kind=SOURCE_KIND,
+                        local_tz=local_tz,
+                        raw_payload=raw_payload,
                     )
                 )
 

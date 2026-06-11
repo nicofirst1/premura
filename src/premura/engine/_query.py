@@ -294,18 +294,18 @@ def ordered_window(
 
     for idx in range(bucket_count):
         bucket_ts = window_start + (idx * bucket)
-        obs = by_bucket.get(idx)
-        if obs is not None:
+        bucket_obs = by_bucket.get(idx)
+        if bucket_obs is not None:
             points.append(
                 WindowPoint(
-                    ts=obs.ts,
-                    value=obs.value,
+                    ts=bucket_obs.ts,
+                    value=bucket_obs.value,
                     is_imputed=False,
-                    local_tz=obs.local_tz,
+                    local_tz=bucket_obs.local_tz,
                 )
             )
             observed_count += 1
-            carried = obs
+            carried = bucket_obs
             continue
         # No observation in this bucket. Carry forward only under LOCF policy and
         # only while the last observed value is still inside its validity window.
