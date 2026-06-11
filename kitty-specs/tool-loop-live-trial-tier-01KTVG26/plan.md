@@ -133,25 +133,34 @@ kitty-specs/tool-loop-live-trial-tier-01KTVG26/
 ```
 src/premura/harness/
 ├── live_trial.py             # UNCHANGED seam (Operator/Driver protocols, run path)
-├── live_trial_ollama.py      # one-shot tier — behavior unchanged; shared helpers
-│                             #   imported by the new module (no copies)
-├── live_trial_tool_loop.py   # NEW: tool registry, ToolLoopOperator,
-│                             #   run_live_trial_tool_loop, chat client, brief assembly
+├── live_trial_ollama.py      # one-shot tier — behavior unchanged except the
+│                             #   sharpened renamed-field prompt line (FR-009);
+│                             #   shared helpers imported by new modules (no copies)
+├── tool_loop_contract.py     # NEW: chat client (+ToolCallsUnsupportedError),
+│                             #   ToolRegistration + registry + 3 bounded handlers,
+│                             #   brief assembler with loud budget check
+├── live_trial_tool_loop.py   # NEW: ToolLoopOperator (agent loop),
+│                             #   run_live_trial_tool_loop, ToolLoopOutcome, CLI
 ├── scoreboard.py             # tier field on LiveTrialRunRecord/ScoreboardEntry
 │                             #   (back-compatible default "one_shot");
 │                             #   current_floor groups by (model, tier)
 └── self_reconcile.py         # unchanged unless SC-007's test exposes a hole
 
 tests/
-├── test_live_trial_tool_loop.py   # default suite: fake chat backend drives the
-│                                  #   loop end-to-end; edge-case fixtures (D7)
-├── test_scoreboard.py             # extended: tier round-trip + legacy-line parse
-└── (live_trial-marked module/test) # real-model gated run, skipped by default
+├── test_scoreboard.py                    # extended: tier round-trip + legacy parse
+├── test_self_reconcile_renamed_field.py  # NEW: SC-007 fixture (FR-009)
+├── test_tool_loop_contract.py            # NEW: registry bounds, brief invariants
+├── test_live_trial_tool_loop.py          # NEW: fake-backend loop e2e
+├── test_live_trial_tool_loop_edges.py    # NEW: spec edge-case fixtures (D7)
+└── test_live_trial_tool_loop_real.py     # NEW: live_trial-marked, default-excluded
 ```
 
-**Structure Decision**: single-project layout; one new harness module beside
-the one-shot tier it parallels, per the existing seam convention (the WP03
-module pattern). No new packages, stores, or CLI surfaces.
+**Structure Decision**: single-project layout. Refined at `/spec-kitty.tasks`
+(recorded in tasks.md, DIRECTIVE_010): the new code splits into **two**
+modules — `tool_loop_contract.py` (pure, deterministic contract surface:
+client, tool registry, brief) and `live_trial_tool_loop.py` (orchestration:
+loop, outcomes, entry point) — for modularity and disjoint WP ownership. No
+new packages, stores, or CLI surfaces beyond the module `_main`.
 
 ## Complexity Tracking
 
