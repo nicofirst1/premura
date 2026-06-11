@@ -75,11 +75,26 @@ The user is actively writing more requirements; this section will grow.
    wired as an **opt-in, default-off** post-run step of the live trial; the judge
    evaluates the grader's facts but can never alter `contract_pass`, the
    scoreboard, or the trial verdict, and its failure never raises out of the
-   harness (see the [CHANGELOG.md](CHANGELOG.md) 2026-06-11 entry). **Still
-   deferred (named so future work is not assumed shipped):** the improvement hook
-   (it *consumes* a judgment, nothing here acts on one), the fixture
-   auto-generator, the analyze-and-answer slice, and — out of the tier mission's
-   scope by design — multi-model tournaments, tier auto-selection /
+   harness (see the [CHANGELOG.md](CHANGELOG.md) 2026-06-11 entry). **The
+   improvement hook has since shipped** (the `improvement-hook` mission, on branch,
+   not yet merged): a deterministic, rule-based scan now *consumes* those judgments
+   — it reads `log_judgment` rows (plus the rubric for criterion→category lookup),
+   maps each weak band / failed judgment / off-rubric criterion to an improvement
+   area via a versioned, bounded **playbook** (`IMPROVEMENT_PLAYBOOK.md`: one area
+   per closed rubric category plus the two hook-owned areas `harness_reliability`
+   and `rubric_drift`, plus the rule for adding an area), and persists durable,
+   agent-readable **improvement proposals** into a new additive `log_improvement`
+   table through the same sole-writer surface, read back through a strictly
+   read-only surface. It **proposes; it never acts** — no prompt/harness/rubric/skill
+   edit, and it never changes a run's verdict — and it is wired as an **opt-in,
+   default-off** post-run step (`improve_run`, gated on `judge_run`) whose failure
+   never raises out of the harness (see the [CHANGELOG.md](CHANGELOG.md)
+   2026-06-12 entry). **Still deferred (named so future work is not assumed
+   shipped):** acting on proposals (issue/PR creation, prompt editing, any
+   self-modification), lifecycle tooling for the `dismissed`/`addressed`
+   transitions, model-generated proposal prose, cross-session trend aggregation,
+   the fixture auto-generator, the analyze-and-answer slice, and — out of the tier
+   mission's scope by design — multi-model tournaments, tier auto-selection /
    capability-routing policies, and any frontier or cloud model requirement.
 
 Read the full phase doc for the rationale, risk retirement, and exit criteria:

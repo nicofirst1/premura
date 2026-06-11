@@ -871,6 +871,35 @@ def _run_post_run_judge(
         )
 
 
+def _run_post_run_improvement(log_path: Path, *, session_id: str) -> None:
+    """Run the opt-in post-run improvement scan over the recorded session (FR-6).
+
+    Fully GUARDED, exactly like :func:`_run_post_run_judge`: the improvement hook
+    is a separate, opt-in step that can never change the trial verdict or raise out
+    of the harness. The scan is deterministic and consumes the just-recorded
+    ``log_judgment`` rows (it *proposes*; it never acts). Any failure of any kind —
+    a malformed playbook, a bug in the scan, or a write failure — is swallowed here
+    and logged as a warning instead of propagating. On success a one-line count of
+    derived proposals is logged. The import is LAZY so the improvement module is
+    only loaded when the opt-in step is actually used.
+    """
+    try:
+        from premura.harness import improvement
+
+        results = improvement.scan_session(log_path, session_id=session_id)
+        _LOGGER.info(
+            "post-run improvement scan for session %s derived %d proposal(s)",
+            session_id,
+            len(results),
+        )
+    except Exception:  # noqa: BLE001 - the hook must never flip the verdict or escape
+        _LOGGER.warning(
+            "post-run improvement scan failed for session %s; trial verdict is unaffected",
+            session_id,
+            exc_info=True,
+        )
+
+
 def run_live_trial_ollama(
     *,
     model: str = DEFAULT_MODEL,
@@ -882,6 +911,7 @@ def run_live_trial_ollama(
     scenario: Scenario | None = None,
     judge_run: bool = False,
     judge_transport: object = None,
+    improve_run: bool = False,
 ) -> LiveTrialOutcome:
     """Drive one Ollama-backed live trial end-to-end (T013/T014; FR-001..014).
 
@@ -931,7 +961,20 @@ def run_live_trial_ollama(
     default (None) uses the judge's local-only Ollama path; tests pass a scripted
     callable. Judge failure of any kind never flips the trial verdict or raises out
     of the harness — the verdict stays the mechanical grader's.
+
+    ``improve_run`` is the OPT-IN post-run improvement-hook flag (improvement-hook
+    m4 FR-6; default OFF). When ``judge_run`` and ``improve_run`` are both set and
+    the judge produced a judgment, the harness runs the deterministic improvement
+    scan over the recorded session and persists ``log_improvement`` proposals; the
+    scan *proposes*, it never acts, and its failure (like the judge's) never flips
+    the verdict or raises out of the harness. ``improve_run`` WITHOUT ``judge_run``
+    is a loud :class:`ValueError` at entry — the hook has nothing to consume.
     """
+    if improve_run and not judge_run:
+        raise ValueError(
+            "improve_run requires judge_run: the improvement hook consumes the judge's "
+            "judgment, so it has nothing to scan without a judge run."
+        )
     if scenario is None:
         scenario = observation_scenario()
     probe = _resolve_drawer_probe(scenario)
@@ -980,6 +1023,16 @@ def run_live_trial_ollama(
             model=model,
             transport=judge_transport,
         )
+
+    # (1c) Opt-in post-run improvement hook (improvement-hook m4 FR-6; default
+    #      OFF). It runs ONLY when judge_run AND improve_run are both set (the
+    #      entry guard rejects improve_run without judge_run), after the judge has
+    #      recorded its judgment, and derives durable log_improvement proposals
+    #      from the just-recorded judgment. Like the judge, it is fully guarded:
+    #      it *proposes* and never acts, and its failure of ANY kind never flips
+    #      the trial verdict or raises out of the harness.
+    if judge_run and improve_run:
+        _run_post_run_improvement(final_log_path, session_id=final_result.session_id)
 
     # (2) Independently grade attempt 1 (un-nagged) with the SAME grader.
     first_code = operator.first_attempt_code

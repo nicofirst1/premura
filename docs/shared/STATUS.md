@@ -107,7 +107,13 @@ The pinned inventory test is `tests/test_mcp_server.py`.
   now has two tiers in the codebase: the shipped constrained one-shot floor,
   and a multiturn tool-loop tier **in progress on the
   `tool-loop-live-trial-tier-01KTVG26` mission lanes (not yet merged)** —
-  detail in `kitty-specs/tool-loop-live-trial-tier-01KTVG26/`.
+  detail in `kitty-specs/tool-loop-live-trial-tier-01KTVG26/`. Two opt-in
+  post-run steps now stand on the recorded session (both default OFF, both
+  guarded so failure never flips the verdict): the **AI judge** assesses the
+  operator's process against a versioned rubric into `log_judgment`, and the
+  **improvement hook** consumes those judgments to derive durable proposals into
+  `log_improvement` via a versioned playbook (it proposes, never acts) — both on
+  branch, not yet merged.
 - **Runtime build-and-use boundary**: an agent may build a parser and use it
   immediately on the operator's own data with no reviewer; only a
   contribute-back PR is reviewed. Pinned by

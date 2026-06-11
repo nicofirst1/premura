@@ -515,3 +515,149 @@ def test_judge_failure_never_flips_verdict_or_raises(
     finally:
         lto._teardown_kept_sandbox(outcome.final_result)
         lto._teardown_kept_sandbox(outcome.first_attempt_result)
+
+
+# --------------------------------------------------------------------------- #
+# WP3 — opt-in post-run improvement hook (improvement-hook m4 FR-6). Default OFF;
+# guarded like the judge; improve_run without judge_run is a loud ValueError.
+# --------------------------------------------------------------------------- #
+
+from premura.session_log import improvement_read as _improvement_read  # noqa: E402
+
+
+def _count_improvements(session_log_path: Path, session_id: str) -> int:
+    return len(_improvement_read.read_improvements(session_log_path, session_id=session_id))
+
+
+def _weak_verdict_transport(criterion_ids: tuple[str, ...]) -> object:
+    """A scripted judge transport that bands every rubric criterion ``weak`` so the
+    improvement scan has weak evidence to turn into proposals."""
+
+    def _transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
+        verdict = {
+            "criteria": {cid: {"band": "weak", "rationale": "weak"} for cid in criterion_ids},
+            "overall_band": "weak",
+        }
+        return _json.dumps(verdict)
+
+    return _transport
+
+
+def test_improve_off_by_default_leaves_zero_proposals(
+    tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """FR-6: the post-run improvement step is OFF by default — a run with both
+    flags unset leaves ZERO log_improvement rows and an unchanged verdict."""
+    runs_dir = Path(tmp_path) / "runs"  # type: ignore[arg-type]
+    scoreboard_path = runs_dir / "scoreboard.jsonl"
+    _redirect_persistence(monkeypatch, runs_dir=runs_dir, scoreboard_path=scoreboard_path)
+
+    operator = _InjectedFakeOperator(_GOOD_PARSER, tries_used=1)
+    outcome = _run_entry(operator=operator, source=_SYNTHETIC_CSV, keep_sandboxes=True)
+    try:
+        assert outcome.final_result is not None
+        assert (
+            _count_improvements(
+                outcome.final_result.session_log_path, outcome.final_result.session_id
+            )
+            == 0
+        )
+    finally:
+        lto._teardown_kept_sandbox(outcome.final_result)
+        lto._teardown_kept_sandbox(outcome.first_attempt_result)
+
+
+def test_improve_without_judge_is_a_loud_value_error(
+    tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """FR-6: improve_run without judge_run is a loud ValueError at entry — the hook
+    has nothing to consume, so it fails fast rather than silently doing nothing."""
+    runs_dir = Path(tmp_path) / "runs"  # type: ignore[arg-type]
+    scoreboard_path = runs_dir / "scoreboard.jsonl"
+    _redirect_persistence(monkeypatch, runs_dir=runs_dir, scoreboard_path=scoreboard_path)
+
+    operator = _InjectedFakeOperator(_GOOD_PARSER, tries_used=1)
+    with pytest.raises(ValueError, match="judge_run"):
+        _run_entry(
+            operator=operator,
+            source=_SYNTHETIC_CSV,
+            improve_run=True,  # but judge_run is False
+        )
+
+
+def test_improve_on_records_proposals_and_keeps_verdict(
+    tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """FR-6: with judge_run + improve_run both ON and a scripted weak-banding judge,
+    the run records open improvement proposals over the just-recorded session
+    WITHOUT changing the trial verdict, and the proposals read back open."""
+    runs_dir = Path(tmp_path) / "runs"  # type: ignore[arg-type]
+    scoreboard_path = runs_dir / "scoreboard.jsonl"
+    _redirect_persistence(monkeypatch, runs_dir=runs_dir, scoreboard_path=scoreboard_path)
+
+    judge_mod = importlib.import_module("premura.harness." + "judge")
+    rubric_ids = judge_mod.load_rubric().criterion_ids
+    transport = _weak_verdict_transport(rubric_ids)
+
+    operator = _InjectedFakeOperator(_GOOD_PARSER, tries_used=1)
+    outcome = _run_entry(
+        operator=operator,
+        source=_SYNTHETIC_CSV,
+        keep_sandboxes=True,
+        judge_run=True,
+        judge_transport=transport,
+        improve_run=True,
+    )
+    try:
+        assert outcome.final_result is not None
+        verdict_before = outcome.final_result.verdict
+        log_path = outcome.final_result.session_log_path
+        sid = outcome.final_result.session_id
+        # One proposal per weak criterion (every criterion was banded weak).
+        proposals = _improvement_read.read_improvements(log_path, session_id=sid)
+        assert len(proposals) == len(rubric_ids)
+        assert all(p.status == "open" for p in proposals)
+        # The mechanical verdict the run returned is unchanged by the hook.
+        assert verdict_before is outcome.final_result.verdict
+    finally:
+        lto._teardown_kept_sandbox(outcome.final_result)
+        lto._teardown_kept_sandbox(outcome.first_attempt_result)
+
+
+def test_improve_failure_never_flips_verdict_or_raises(
+    tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """FR-6 (regression): a bug in the improvement scan must not raise out of the
+    harness and must not change the trial verdict. The run completes normally."""
+    runs_dir = Path(tmp_path) / "runs"  # type: ignore[arg-type]
+    scoreboard_path = runs_dir / "scoreboard.jsonl"
+    _redirect_persistence(monkeypatch, runs_dir=runs_dir, scoreboard_path=scoreboard_path)
+
+    judge_mod = importlib.import_module("premura.harness." + "judge")
+    rubric_ids = judge_mod.load_rubric().criterion_ids
+    transport = _weak_verdict_transport(rubric_ids)
+
+    improvement_mod = importlib.import_module("premura.harness." + "improvement")
+
+    def _boom_scan(*_a: object, **_k: object) -> object:
+        raise RuntimeError("unexpected improvement bug that must not escape the harness")
+
+    monkeypatch.setattr(improvement_mod, "scan_session", _boom_scan)
+
+    operator = _InjectedFakeOperator(_GOOD_PARSER, tries_used=1)
+    outcome = _run_entry(
+        operator=operator,
+        source=_SYNTHETIC_CSV,
+        keep_sandboxes=True,
+        judge_run=True,
+        judge_transport=transport,
+        improve_run=True,
+    )
+    try:
+        assert outcome.final_result is not None
+        # The trial verdict still exists and is the mechanical grader's, untouched.
+        assert "passed" in outcome.final_result.verdict
+        assert outcome.record is not None
+    finally:
+        lto._teardown_kept_sandbox(outcome.final_result)
+        lto._teardown_kept_sandbox(outcome.first_attempt_result)

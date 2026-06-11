@@ -8,6 +8,71 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-06-12 — Improvement hook (`improvement-hook`) — on branch, not yet merged
+
+Written pre-merge (overnight solo mission on `overnight/m4-improvement-hook`); the
+post-merge close-out flips tense and records the merge. The judge AI (m3) writes a
+structured verdict into `log_judgment`, but nothing consumed it: a weak band or a
+failed judgment was recorded and then ignored. This mission closes that loop one
+step — it turns judgments into durable, agent-readable **improvement proposals**
+("the operator keeps failing `economical-tool-use`; review the prompt's tool
+guidance") so a maintainer agent or the human can decide what to change. The hook
+**proposes; it never acts**: it does not edit prompts, harness code, rubrics, or
+skills, and it never changes a run's verdict.
+
+- **Improvement store surface (`log_improvement`).** A new additive
+  `log_improvement` table plus `record_improvement(...)` and one closed vocabulary
+  validated at the store boundary like the existing ones: `PROPOSAL_STATUSES`
+  (`{open, dismissed, addressed}`). The store rejects an out-of-vocabulary status,
+  a blank `summary`/`evidence`/`area`, or a dangling session/judgment reference.
+  `criterion_id` is nullable and opaque (rubric-owned data, NULL for judgment-level
+  proposals); `area` is **playbook-owned data, never enumerated in code**. This
+  mission only ever writes `"open"`; the other statuses exist now so a later
+  lifecycle mission needs no schema migration. The schema change is `CREATE TABLE
+  IF NOT EXISTS`, so `init_schema` stays idempotent against existing local files.
+- **Read-only judgment + proposal surfaces.** A `premura.session_log.improvement_read`
+  read surface with `read_judgments` (the scan's input) and `read_improvements`
+  (filterable by session and/or status) returning frozen dataclass rows in
+  deterministic order, opening the log **strictly read-only** (same discipline as
+  the m3 dossier) so an agent lists open proposals through it, never via raw SQL,
+  and the harness stays the sole writer.
+- **Versioned playbook, a level above.** The hook's improvement areas live in a
+  versioned `IMPROVEMENT_PLAYBOOK.md` packaged with the harness (mirrors
+  `JUDGE_RUBRIC.md`'s shape) — one area per closed rubric category plus two
+  hook-owned areas (`harness_reliability` for a non-`complete` judgment status,
+  `rubric_drift` for a judged criterion the current rubric no longer defines), each
+  with a `suggested_focus` review pointer and grounding — **plus the explicit rule
+  for adding an area**: edit the doc and bump `playbook_version`; no schema or store
+  change is ever needed. Code never hardcodes area semantics; it parses the doc and
+  fails loudly if the version header or any required area is missing.
+- **Deterministic scan core.** `premura.harness.improvement.scan_session(...)` reads
+  a session's judgments through the read-only surface, looks up each judged
+  criterion's category via the **reused** m3 rubric parser (extended to expose
+  criterion→category — not a second parser), and derives proposals by rule: a
+  criterion banded `weak` → one proposal in its category's area carrying the
+  rationale as evidence; a non-`complete` judgment status → one `harness_reliability`
+  proposal; a judged criterion absent from the current rubric → one `rubric_drift`
+  proposal; `strong`/`adequate`/`not_applicable` produce nothing. Persistence is
+  idempotent on `(judgment_id, criterion_id, area)`: a re-scan writes nothing new and
+  reports each proposal as pre-existing. The scan is **pure and deterministic** — no
+  model calls, no network, no randomness, no clock reads beyond row timestamps — and
+  keys only on the closed store vocabularies + parsed doc structure (no
+  `if criterion_id == ...` ladders).
+- **Harness wiring, opt-in, default OFF.** The cheap-model live-trial run gains an
+  opt-in post-run improvement step (`improve_run=False` by default) that runs after
+  the judge has recorded its judgment. Like the judge step it is fully guarded:
+  hook failure of any kind never changes the trial verdict and never raises out of
+  the harness; it lands as proposals, or a logged warning. `improve_run` WITHOUT
+  `judge_run` is a loud `ValueError` at entry — the hook has nothing to consume.
+  Pinned by a regression test.
+- **Containment unchanged.** Only the harness writes `log_improvement` (pinned by the
+  single-writer test); the read surfaces open the log read-only; committed tests are
+  fully offline and deterministic (synthetic judgments written through the store API,
+  scripted judge transport); synthetic fixtures only; no new third-party dependency.
+
+Mission detail:
+[`docs/building/planning/improvement-hook.md`](../building/planning/improvement-hook.md).
+
 ## 2026-06-11 — Judge AI (`judge-ai`) — on branch, not yet merged
 
 Written pre-merge (overnight solo mission on `overnight/m3-judge-ai`); the
