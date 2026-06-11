@@ -386,7 +386,14 @@ def doctor() -> None:
     add("rclone", upload.is_available(), shutil.which("rclone") or "")
     add("uv", shutil.which("uv") is not None, shutil.which("uv") or "")
     add("warehouse file", settings.warehouse_path.exists(), str(settings.warehouse_path))
-    add("age key", settings.age_key_file.exists(), str(settings.age_key_file))
+    key_detail = str(settings.age_key_file)
+    try:
+        settings.age_key_file.read_bytes()
+        key_ok = True
+    except OSError as exc:
+        key_ok = False
+        key_detail = f"{settings.age_key_file} ({exc.strerror or exc})"
+    add("age key readable", key_ok, key_detail)
     add(
         "age recipients",
         settings.age_recipients_file.exists(),
@@ -398,6 +405,17 @@ def doctor() -> None:
         else None
     )
     add("age recipient fp", bool(fp), fp or "")
+    # Backup story end-to-end: the key on disk must decrypt what the current
+    # recipients file encrypts. Catches a rotated/mismatched pair, not just
+    # missing files.
+    if encrypt.is_available() and key_ok and settings.age_recipients_file.exists():
+        rt_err = encrypt.roundtrip_check(
+            recipients_file=settings.age_recipients_file,
+            identity_file=settings.age_key_file,
+        )
+        add("backup round-trip", rt_err is None, rt_err or "probe encrypt+decrypt byte-identical")
+    else:
+        add("backup round-trip", False, "skipped: age binary, key, or recipients missing")
     if upload.is_available():
         add(
             "rclone remote",

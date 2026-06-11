@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 
@@ -41,6 +42,30 @@ def decrypt_file(input_path: Path, output_path: Path, *, identity_file: Path) ->
     return output_path
 
 
+def roundtrip_check(*, recipients_file: Path, identity_file: Path) -> str | None:
+    """Encrypt+decrypt a tiny probe; returns None on success, a reason on failure.
+
+    Proves the on-disk identity (key) file can decrypt what the current
+    recipients file encrypts — a rotated or mismatched key/recipients pair
+    fails here even when both files exist and are readable.
+    """
+    if not is_available():
+        return "age / age-keygen not installed"
+    probe = b"premura doctor backup round-trip probe\n"
+    with tempfile.TemporaryDirectory(prefix="premura-doctor-") as td:
+        tmp = Path(td)
+        plain = tmp / "probe.txt"
+        plain.write_bytes(probe)
+        try:
+            encrypt_file(plain, tmp / "probe.age", recipients_file=recipients_file)
+            decrypt_file(tmp / "probe.age", tmp / "probe.out", identity_file=identity_file)
+        except AgeError as exc:
+            return str(exc)
+        if (tmp / "probe.out").read_bytes() != probe:
+            return "decrypted probe does not match original"
+    return None
+
+
 def recipient_fingerprint(recipients_file: Path) -> str | None:
     if not recipients_file.is_file():
         return None
@@ -51,4 +76,11 @@ def recipient_fingerprint(recipients_file: Path) -> str | None:
     return None
 
 
-__all__ = ["AgeError", "decrypt_file", "encrypt_file", "is_available", "recipient_fingerprint"]
+__all__ = [
+    "AgeError",
+    "decrypt_file",
+    "encrypt_file",
+    "is_available",
+    "recipient_fingerprint",
+    "roundtrip_check",
+]

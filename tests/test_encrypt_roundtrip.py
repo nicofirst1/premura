@@ -97,3 +97,40 @@ def test_age_unavailable_reports_cleanly(monkeypatch) -> None:
     """`is_available()` returns False when the binaries are not on PATH."""
     monkeypatch.setattr(shutil, "which", lambda _name: None)
     assert encrypt.is_available() is False
+
+
+def test_roundtrip_check_passes_with_matching_pair(tmp_path: Path) -> None:
+    """`roundtrip_check` returns None when the key decrypts what the recipients encrypt."""
+    key_path = tmp_path / "age.key"
+    recipients_path = tmp_path / "recipients.txt"
+    recipient = _generate_keypair(key_path)
+    os.chmod(key_path, 0o600)
+    recipients_path.write_text(recipient + "\n")
+
+    assert encrypt.roundtrip_check(recipients_file=recipients_path, identity_file=key_path) is None
+
+
+def test_roundtrip_check_fails_on_mismatched_key(tmp_path: Path) -> None:
+    """A recipients file rotated away from the on-disk key is reported, not masked."""
+    key_a = tmp_path / "a.key"
+    key_b = tmp_path / "b.key"
+    recipients_a = tmp_path / "recipients_a.txt"
+    rec_a = _generate_keypair(key_a)
+    _generate_keypair(key_b)
+    os.chmod(key_a, 0o600)
+    os.chmod(key_b, 0o600)
+    recipients_a.write_text(rec_a + "\n")
+
+    failure = encrypt.roundtrip_check(recipients_file=recipients_a, identity_file=key_b)
+    assert failure is not None
+    assert "decrypt" in failure.lower()
+
+
+def test_roundtrip_check_reports_missing_age(monkeypatch, tmp_path: Path) -> None:
+    """Without the age binaries the check reports a reason instead of crashing."""
+    monkeypatch.setattr(shutil, "which", lambda _name: None)
+    failure = encrypt.roundtrip_check(
+        recipients_file=tmp_path / "recipients.txt", identity_file=tmp_path / "age.key"
+    )
+    assert failure is not None
+    assert "not installed" in failure
