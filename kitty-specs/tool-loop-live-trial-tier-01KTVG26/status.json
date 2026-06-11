@@ -1,7 +1,7 @@
 {
-  "event_count": 17,
-  "last_event_id": "01KTVY5ZA23NRVCSTZT7DS3DM7",
-  "materialized_at": "2026-06-11T18:12:47.042578+00:00",
+  "event_count": 19,
+  "last_event_id": "01KTVY69B33Y674KNKKSFB8FA1",
+  "materialized_at": "2026-06-11T18:12:57.315876+00:00",
   "mission_number": "",
   "mission_slug": "tool-loop-live-trial-tier-01KTVG26",
   "mission_type": "software-dev",
@@ -12,9 +12,9 @@
     "claimed": 0,
     "done": 0,
     "for_review": 0,
-    "in_progress": 1,
+    "in_progress": 2,
     "in_review": 0,
-    "planned": 3
+    "planned": 2
   },
   "work_packages": {
     "WP01": {
@@ -25,11 +25,11 @@
       "last_transition_at": "2026-06-11T17:44:50.903977+00:00"
     },
     "WP02": {
-      "actor": "finalize-tasks",
+      "actor": "implement-command",
       "force_count": 1,
-      "lane": "planned",
-      "last_event_id": "01KTVHDW34TQS9CQDEH32M5249",
-      "last_transition_at": "2026-06-11T14:29:54.404519+00:00"
+      "lane": "in_progress",
+      "last_event_id": "01KTVY69B33Y674KNKKSFB8FA1",
+      "last_transition_at": "2026-06-11T18:12:57.315876+00:00"
     },
     "WP03": {
       "actor": "claude:opus:reviewer:reviewer",
