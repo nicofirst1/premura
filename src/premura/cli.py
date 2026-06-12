@@ -212,6 +212,87 @@ def _zip_is_mfp(path: Path) -> bool:
 
 
 # ============================================================================
+# inspect
+# ============================================================================
+
+
+def _resolve_source_key(path: Path) -> str | None:
+    """Map a concrete path to the parser source-key ingest would route it to.
+
+    This is the inverse of ``_discover_input``: it reuses the very same routing
+    primitives (`_csv_kind`, `_zip_is_mfp`, extension checks) so inspect and
+    ingest can never disagree about which parser claims a file. Returns ``None``
+    when no parser would claim the path (FR-1.2 / E1.2).
+    """
+    suffix = path.suffix.lower()
+    if suffix == ".db":
+        return "hc"
+    if suffix == ".zip":
+        return "mfp" if _zip_is_mfp(path) else "garmin"
+    if suffix == ".csv":
+        return _csv_kind(path)  # 'saa' | 'mfp' | 'bmt'
+    if suffix == ".pdf":
+        return "lab"
+    return None
+
+
+def _member_names(path: Path, source_key: str) -> list[str]:
+    """Enumerate the routable member names of a source artifact without reading
+    their contents. For zip-based sources the members are the archive entries;
+    for single-file sources the artifact itself is the one member."""
+    if source_key in ("garmin", "mfp") and path.suffix.lower() == ".zip":
+        try:
+            with zipfile.ZipFile(path) as zf:
+                return [info.filename for info in zf.infolist() if not info.is_dir()]
+        except (OSError, zipfile.BadZipFile):
+            return [path.name]
+    return [path.name]
+
+
+@app.command()
+def inspect(
+    path: Annotated[Path, typer.Argument(help="Source artifact to preview routing for")],
+) -> None:
+    """Dry-run routing preview for a source artifact. Reads no contents, writes
+    nothing — the read-only twin of ``ingest`` discovery."""
+    if not path.exists():
+        console.print(f"[red]{path} does not exist[/red]")
+        raise typer.Exit(code=1)
+
+    source_key = _resolve_source_key(path)
+    if source_key is None:
+        console.print(
+            f"[yellow]no parser matched {path.name}; nothing to preview "
+            f"(inspect mirrors ingest discovery, read-only)[/yellow]"
+        )
+        raise typer.Exit(code=0)
+
+    parser_cls, source_kind = PARSER_REGISTRY[source_key]
+    parser = parser_cls()
+
+    preview_fn = getattr(parser, "preview_routing", None)
+    if preview_fn is None:
+        console.print(
+            f"[yellow]parser '{source_kind}' does not support routing preview yet. "
+            f"To add it, expose a preview_routing(member_names) -> RoutingPreview "
+            f"method on the parser.[/yellow]"
+        )
+        raise typer.Exit(code=0)
+
+    members = _member_names(path, source_key)
+    preview = preview_fn(members)
+    console.print(f"[cyan]routing preview[/cyan] {source_kind} :: {path.name}")
+    for member, handler in preview.entries:
+        if handler is None:
+            console.print(f"  {member} -> [yellow]unhandled[/yellow]")
+        else:
+            console.print(f"  {member} -> {handler}")
+    console.print(
+        f"[green]{preview.routed_count} routed, {preview.unhandled_count} unhandled[/green]"
+    )
+
+
+# ============================================================================
 # status
 # ============================================================================
 
