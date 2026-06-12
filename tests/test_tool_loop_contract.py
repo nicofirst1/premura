@@ -235,6 +235,35 @@ def test_read_context_refuses_arbitrary_repo_file(trial_context) -> None:
     assert other.read_text(encoding="utf-8") not in out
 
 
+def test_read_context_serves_bare_allowlisted_name(trial_context) -> None:
+    """First-full-stack-trial fix: the bare NAME the refusal/brief advertise works.
+
+    A bare relative request used to resolve against the harness process CWD and
+    never match the absolute allowlist — the tool refused the very names its own
+    refusal message listed. A bare allowlisted name must resolve by name.
+    """
+    registry = tlc.default_tool_registry()
+    expected = trial_context.source.read_text(encoding="utf-8")
+    out = registry["read_context"].handler({"path": trial_context.source.name}, trial_context)
+    assert out == expected
+    # The other allowlisted names serve by bare name too.
+    contract = registry["read_context"].handler({"path": "CONTRACT.md"}, trial_context)
+    assert "REFUSED" not in contract.splitlines()[0]
+
+
+def test_read_context_bare_name_lookup_stays_bounded(trial_context) -> None:
+    """Name lookup never widens the surface: only EXACT allowlisted names match."""
+    registry = tlc.default_tool_registry()
+    # A bare name NOT on the allowlist still refuses.
+    out = registry["read_context"].handler({"path": "fixture_fields.yaml"}, trial_context)
+    assert out.startswith("REFUSED")
+    # A directory-qualified relative path refuses even when its basename is
+    # allowlisted — only the bare-name and resolved-path forms are served.
+    qualified = f"somewhere/{trial_context.source.name}"
+    out = registry["read_context"].handler({"path": qualified}, trial_context)
+    assert out.startswith("REFUSED")
+
+
 def test_allowlist_has_no_manifest(trial_context) -> None:
     # Assert the allowlist contents directly via the public registry surface.
     names = {p.name for p in trial_context.read_allowlist}

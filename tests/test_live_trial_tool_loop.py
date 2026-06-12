@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import copy
 import importlib
+import json
 from pathlib import Path
 from typing import Any
 
@@ -585,6 +586,223 @@ def test_malformed_tool_arguments_consume_turn_with_corrective_message(
     # A malformed write_parser call must NOT be snapshotted as the first parser.
     assert operator.first_parser_code == ""
     assert outcome.record is not None
+
+
+# --------------------------------------------------------------------------- #
+# Issue #25 — content-borne tool calls are recovered, never silently dropped.
+# --------------------------------------------------------------------------- #
+
+
+def _content_reply(text: str) -> dict:
+    """An assistant reply carrying its tool call(s) as TEXT, no native field."""
+    return {"role": "assistant", "content": text}
+
+
+def test_fenced_json_tool_call_is_recovered_and_executed(
+    persistence_paths: tuple[Path, Path],
+) -> None:
+    """Issue #25: a fenced-JSON call in content dispatches like a native one.
+
+    The script emits the call dialect the qwen2.5-coder family actually
+    produces — a ```json fenced object in the assistant content with no native
+    ``tool_calls`` — for the whole read → write → done run. Before the
+    recovery rule, every one of these turns degraded to a gate round and zero
+    tools ever executed; now the trial must end gate-passed on the written
+    parser.
+    """
+    code = _good_parser_code()
+    fake = FakeChatBackend(
+        [
+            _content_reply(
+                '```json\n{"name": "read_context", "arguments": {"path": "'
+                + str(_SYNTHETIC_CSV.resolve())
+                + '"}}\n```'
+            ),
+            _content_reply(
+                "```json\n"
+                + '{"function": {"name": "write_parser", "arguments": {"code": '
+                + json.dumps(code)
+                + "}}}\n```"
+            ),
+            _DONE_REPLY,
+        ]
+    )
+    operator = ltl.ToolLoopOperator(_SYNTHETIC_CSV, chat=fake)
+
+    outcome = _run_entry(operator=operator, source=_SYNTHETIC_CSV)
+
+    # Both content-borne calls executed: the tool results are in the history.
+    final_messages = _messages_of(fake.requests[-1])
+    tool_results = [m for m in final_messages if m.get("role") == "tool"]
+    assert [m.get("name") for m in tool_results] == ["read_context", "write_parser"]
+    # The recorded assistant turns keep their content verbatim (no fabricated
+    # native tool_calls): transcript honesty.
+    assistant_turns = [m for m in final_messages if m.get("role") == "assistant"]
+    assert all("tool_calls" not in m for m in assistant_turns)
+    # The FIRST recovered write_parser body was snapshotted (FR-006 unchanged).
+    assert operator.first_parser_code == code
+    # The written parser passed the gate: complete record, final PASS.
+    record = outcome.record
+    assert record is not None
+    assert record.final_verdict["passed"] is True
+    assert record.attempts_used == 3
+
+
+def test_bare_json_tool_call_is_recovered(
+    persistence_paths: tuple[Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Issue #25: an unfenced bare-JSON call in content also dispatches."""
+    monkeypatch.setenv("LIVE_TRIAL_MAX_TURNS", "2")
+    fake = FakeChatBackend(
+        [
+            _content_reply(
+                '{"name": "read_context", "arguments": {"path": "'
+                + str(_SYNTHETIC_CSV.resolve())
+                + '"}}'
+            ),
+            _DONE_REPLY,
+        ]
+    )
+    operator = ltl.ToolLoopOperator(_SYNTHETIC_CSV, chat=fake)
+
+    _run_entry(operator=operator, source=_SYNTHETIC_CSV)
+
+    second_messages = _messages_of(fake.requests[1])
+    tool_results = [m for m in second_messages if m.get("role") == "tool"]
+    assert [m.get("name") for m in tool_results] == ["read_context"]
+    # The real source content came back — the model actually saw the file.
+    assert "bpm" in str(tool_results[0]["content"])
+
+
+def test_prose_reply_still_ends_working_phase(
+    persistence_paths: tuple[Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Contract §3 preserved: prose (even with a non-call code block) ends the phase.
+
+    Recovery must reclassify ONLY unambiguous call shapes — a plain-text
+    confirmation, or prose carrying an ordinary (non-call) fenced block, still
+    ends the working phase and triggers the gate exactly as before.
+    """
+    monkeypatch.setenv("LIVE_TRIAL_MAX_TURNS", "2")
+    fake = FakeChatBackend(
+        [
+            _content_reply("Here is my plan:\n```python\nprint('not a tool call')\n```\nAll done."),
+            _DONE_REPLY,
+        ]
+    )
+    operator = ltl.ToolLoopOperator(_SYNTHETIC_CSV, chat=fake)
+
+    outcome = _run_entry(operator=operator, source=_SYNTHETIC_CSV)
+
+    # No tool ever dispatched; the gate ran on turn 1 (its feedback is in the
+    # next request's history as a user message).
+    second_messages = _messages_of(fake.requests[1])
+    assert not [m for m in second_messages if m.get("role") == "tool"]
+    assert [m for m in second_messages if m.get("role") == "user"]
+    assert outcome.record is not None
+
+
+def test_content_tool_calls_recovery_rule_bounds() -> None:
+    """The recovery rule's bounds: call shapes in, everything else out."""
+    extract = ltl._content_tool_calls
+    call = {"name": "run_ingest", "arguments": {}}
+    native = {"function": {"name": "run_ingest", "arguments": {}}}
+
+    # Bare and fenced single objects, both shapes, normalize to the native form.
+    assert extract(json.dumps(call)) == [native]
+    assert extract(f"```json\n{json.dumps(native)}\n```") == [native]
+    # A list of calls recovers all of them, in order.
+    two = [call, {"name": "read_context", "arguments": {"path": "x"}}]
+    assert [c["function"]["name"] for c in extract(json.dumps(two))] == [
+        "run_ingest",
+        "read_context",
+    ]
+    # Out: prose, invalid JSON, JSON without the call shape, empty content.
+    assert extract("the parser is correct now") == []
+    assert extract("```json\n{not json\n```") == []
+    assert extract('{"key": "value"}') == []
+    assert extract("") == []
+
+
+def test_malformed_json_fence_gets_corrective_not_silent_phase_end(
+    persistence_paths: tuple[Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A ```json fence yielding no call is a malformed call: corrective, turn consumed.
+
+    Observed in the verification trial: the model's call JSON carried one bad
+    escape, recovery found nothing, and the turn silently became a gate round.
+    With turns remaining it must instead get the corrective message (contract
+    §3 malformed-call semantics) — the gate must NOT run on that turn. At the
+    cap it falls through to the gate so the trial still ends graded.
+    """
+    monkeypatch.setenv("LIVE_TRIAL_MAX_TURNS", "3")
+    fake = FakeChatBackend(
+        [
+            _content_reply('```json\n{"name": "write_parser", "arguments": {bad}\n```'),
+            _DONE_REPLY,  # phase end: absent-parser gate FAILS, loop continues
+            _DONE_REPLY,  # cap turn: gate fails again, trial ends graded
+        ]
+    )
+    operator = ltl.ToolLoopOperator(_SYNTHETIC_CSV, chat=fake)
+
+    outcome = _run_entry(operator=operator, source=_SYNTHETIC_CSV)
+
+    # Turn 1 consumed by the corrective; the gate never ran on it.
+    second_messages = _messages_of(fake.requests[1])
+    user_msgs = [str(m.get("content")) for m in second_messages if m.get("role") == "user"]
+    assert any("could not be used as a tool call" in m for m in user_msgs)
+    assert not any("harness gate FAILED" in m for m in user_msgs)
+    # The gate only ran on the LATER no-JSON turns (absent-parser round).
+    third_messages = _messages_of(fake.requests[2])
+    gate_msgs = [
+        m
+        for m in third_messages
+        if m.get("role") == "user" and "harness gate FAILED" in str(m.get("content"))
+    ]
+    assert gate_msgs
+    # The trial still ends in a complete graded record at the cap.
+    assert outcome.record is not None
+    assert operator.turns_used == 3
+
+
+# --------------------------------------------------------------------------- #
+# Issue #26 — absent-parser gate rounds feed actionable guidance, no traceback.
+# --------------------------------------------------------------------------- #
+
+
+def test_absent_parser_gate_feedback_is_actionable(
+    persistence_paths: tuple[Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Issue #26: ending the phase with NO parser written gets guidance, not a
+    leaked internal traceback about the harness's own parser import.
+    """
+    monkeypatch.setenv("LIVE_TRIAL_MAX_TURNS", "2")
+    fake = FakeChatBackend([_DONE_REPLY], repeat_last=True)
+    operator = ltl.ToolLoopOperator(_SYNTHETIC_CSV, chat=fake)
+
+    outcome = _run_entry(operator=operator, source=_SYNTHETIC_CSV)
+
+    second_messages = _messages_of(fake.requests[1])
+    feedback = [m for m in second_messages if m.get("role") == "user"]
+    assert feedback, "no gate feedback re-entered the conversation"
+    text = str(feedback[-1]["content"])
+    # Actionable: names the tool to use next.
+    assert "write_parser" in text
+    assert "no parser exists" in text
+    # Never the internal absent-parser import traceback.
+    assert "ModuleNotFoundError" not in text
+    assert "Traceback" not in text
+    # The trial still grades deterministically (SC-005 unchanged).
+    record = outcome.record
+    assert record is not None
+    assert record.final_verdict["passed"] is False
+    # Telemetry stays honest: the attempt carries the explicit absent marker.
+    assert operator.attempts[0].parser_error == "no parser written yet"
+    assert operator.attempts[0].self_reconciliation.passed is False
 
 
 # --------------------------------------------------------------------------- #

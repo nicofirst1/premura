@@ -294,28 +294,45 @@ class ToolRegistration:
 def _handle_read_context(args: dict, ctx: TrialContext) -> str:
     """Return the WHOLE content of an allowlisted file; refuse anything else.
 
-    Resolves the requested path (collapsing ``..`` and symlinks via
-    ``Path.resolve()``) and compares it against the allowlist's resolved real
-    paths. A non-allowlisted path — the manifest, an absolute escape, a
-    traversal, any other repo file — returns a refusal STRING naming the
-    allowlist so the model can self-correct. Never the content, never an
-    exception. Allowlisted files are served whole (no truncation, FR-002).
+    Two ways to name an allowlisted file, nothing in between:
+
+    * a BARE file name (no separators) that exactly matches an allowlisted
+      file's name — the form the brief and the refusal message advertise, and
+      the form a model naturally requests. A bare name must resolve by NAME:
+      resolving it as a path lands on the harness process CWD, which never
+      matches the absolute allowlist, so the tool used to refuse the very
+      names its own refusal listed (first-full-stack-trial finding,
+      2026-06-12 audit);
+    * a full path that, resolved (collapsing ``..`` and symlinks via
+      ``Path.resolve()``), equals an allowlisted file's resolved real path.
+
+    Anything else — the manifest, an absolute escape, a traversal, any other
+    repo file, a directory-qualified relative path — returns a refusal STRING
+    naming the allowlist so the model can self-correct. Never the content,
+    never an exception. Allowlisted files are served whole (no truncation,
+    FR-002).
     """
     requested = str(args.get("path", ""))
-    try:
-        resolved = Path(requested).resolve()
-    except (OSError, RuntimeError):
-        resolved = None
-    if resolved is None or resolved not in set(ctx.read_allowlist):
+    target: Path | None = None
+    if requested and Path(requested).name == requested:
+        target = {p.name: p for p in ctx.read_allowlist}.get(requested)
+    if target is None:
+        try:
+            resolved = Path(requested).resolve()
+        except (OSError, RuntimeError):
+            resolved = None
+        if resolved is not None and resolved in set(ctx.read_allowlist):
+            target = resolved
+    if target is None:
         allowed = ", ".join(p.name for p in ctx.read_allowlist)
         return (
             f"REFUSED: {requested!r} is not a readable context file. "
             f"You may only read these allowlisted files: {allowed}."
         )
     try:
-        return resolved.read_text(encoding="utf-8")
+        return target.read_text(encoding="utf-8")
     except OSError as exc:
-        return f"REFUSED: could not read {resolved.name!r}: {exc}"
+        return f"REFUSED: could not read {target.name!r}: {exc}"
 
 
 def _handle_write_parser(args: dict, ctx: TrialContext) -> str:

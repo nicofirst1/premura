@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -57,6 +58,7 @@ from premura.harness.live_trial_ollama import (
     _DrawerProbe,
     _FixedCodeOperator,
     _gate_parser,
+    _GateOutcome,
     _grade_one,
     _print_verdict,
     _teardown_kept_sandbox,
@@ -72,6 +74,7 @@ from premura.harness.scoreboard import (
     append_scoreboard,
     persist_run,
 )
+from premura.harness.self_reconcile import SelfReconciliationResult
 from premura.harness.tool_loop_contract import (
     ToolCallsUnsupportedError,
     ToolRegistration,
@@ -124,6 +127,103 @@ def resolve_max_turns() -> int:
 # --------------------------------------------------------------------------- #
 
 
+#: Fenced code blocks (```json ... ``` or bare ```), the dialect content-borne
+#: tool calls most often arrive in. Non-greedy so multiple blocks split cleanly.
+_FENCE_RE = re.compile(r"```(?:json)?\s*\n(.*?)```", re.DOTALL)
+
+#: Explicitly ``json``-labeled fences only — the unambiguous "this was meant to
+#: be a tool call" marker the malformed-call corrective keys on. Bare/python
+#: fences stay out: prose with an ordinary code block must still end the phase.
+_JSON_FENCE_RE = re.compile(r"```json\s*\n(.*?)```", re.DOTALL)
+
+#: Corrective fed back when a turn carries a ``json``-labeled fence that yields
+#: no recoverable call (invalid JSON or not a call shape): a malformed call
+#: consumes its turn with a corrective message (contract §3), never a silent
+#: working-phase end.
+_MALFORMED_CONTENT_CALL_MSG = (
+    "Your ```json block could not be used as a tool call (invalid JSON or not a "
+    "call shape). This turn was consumed; re-emit ONE valid JSON object — "
+    '{"name": <tool>, "arguments": {...}} — or reply with plain text and no '
+    "JSON block to finish."
+)
+
+
+def _as_native_call(item: object) -> dict | None:
+    """Normalize one JSON item to the native tool-call shape, or ``None``.
+
+    Accepts the native ``{"function": {"name", "arguments"}}`` wrapper or the
+    bare ``{"name", "arguments"}`` pair (the shape content-borne calls use).
+    The name must be a non-empty string; arguments stay as-is — downstream
+    normalization/validation is :func:`_normalize_tool_args`'s job, exactly as
+    for a native call (a bad ``arguments`` is a malformed call, turn consumed).
+    """
+    if not isinstance(item, dict):
+        return None
+    wrapped = item.get("function")
+    function: dict = wrapped if isinstance(wrapped, dict) else item
+    name = function.get("name")
+    if not isinstance(name, str) or not name or "arguments" not in function:
+        return None
+    return {"function": {"name": name, "arguments": function["arguments"]}}
+
+
+def _content_tool_calls(content: str) -> list[dict]:
+    """Recover tool calls a model emitted as TEXT instead of native ``tool_calls``.
+
+    Some tool-template models (the ``qwen2.5-coder`` family among them — issue
+    #25) write the call as a JSON object in the assistant *content*, fenced or
+    bare, instead of the chat API's native ``tool_calls`` field. Before this
+    recovery, every such turn silently degraded to a gate round and the model
+    never executed a single tool.
+
+    The recovery rule is bounded and format-level, never per-model: each fenced
+    block (and the whole content, when it itself is a JSON value) is parsed; a
+    JSON object shaped like a call — ``{"name", "arguments"}`` or the native
+    ``{"function": {...}}`` wrapper, alone or in a list — is normalized to the
+    native shape. Anything else recovers nothing: plain prose (or prose with
+    non-call code blocks) still ends the working phase (contract §3); recovery
+    only reclassifies a turn that carries an unambiguous call shape.
+    """
+    candidates = _FENCE_RE.findall(content)
+    stripped = content.strip()
+    if stripped.startswith(("{", "[")):
+        candidates.append(stripped)
+    for candidate in candidates:
+        try:
+            payload = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        items = payload if isinstance(payload, list) else [payload]
+        calls = [call for call in (_as_native_call(item) for item in items) if call is not None]
+        if calls:
+            return calls
+    return []
+
+
+def _absent_parser_gate() -> _GateOutcome:
+    """The gate outcome for a working phase that ends with NO parser on disk.
+
+    Running the in-sandbox probe without a parser fails on the harness's own
+    internal import and feeds that traceback back verbatim — telling the model
+    to fix an import it never wrote (issue #26). There is nothing to gate, so
+    this synthesizes the deterministic failure with actionable feedback instead
+    of launching the probe. The self-reconcile payload is the honest empty
+    failure: no columns were accounted for because no parser exists.
+    """
+    return _GateOutcome(
+        passed=False,
+        feedback=(
+            "no parser exists in the sandbox yet, so there is nothing to check. "
+            f"Write your complete parser module with the {_PARSER_WRITER_TOOL} tool, "
+            "then verify it with run_ingest."
+        ),
+        self_reconciliation=SelfReconciliationResult(
+            passed=False, source_columns=[], accounted=frozenset(), unaccounted=[]
+        ),
+        parser_error="no parser written yet",
+    )
+
+
 @dataclass(slots=True)
 class _ToolLoopTurn:
     """One captured chat turn — a structural ``live_trial.TurnLike`` (m2 FR-3).
@@ -155,9 +255,18 @@ class ToolLoopOperator:
 
     * one assistant response = ONE turn, always — a malformed or unknown tool
       call consumes its turn with a corrective tool message fed back;
+    * a response whose CONTENT carries an unambiguous call shape (fenced or
+      bare JSON — :func:`_content_tool_calls`) is a tool turn in the wrong
+      transport and is dispatched like a native one (issue #25), never a
+      working-phase end; a ``json``-labeled fence that yields NO recoverable
+      call is a malformed call — corrective message, turn consumed (with turns
+      remaining; at the cap it falls through to the gate so the trial still
+      ends graded);
     * a response with no tool calls ends the working phase → the manifest-blind
-      self-reconcile gate runs on the parser currently on disk; gate fail with
-      turns remaining feeds the verbatim feedback back and continues;
+      self-reconcile gate runs on the parser currently on disk (no parser yet →
+      the synthesized absent-parser failure with actionable feedback, issue
+      #26); gate fail with turns remaining feeds the verbatim feedback back and
+      continues;
     * gate pass or cap exhausted → the trial ends; the parser-on-disk (or none)
       is what gets graded (FR-005 — the cap always terminates into a graded
       record, never an exception).
@@ -238,9 +347,17 @@ class ToolLoopOperator:
                 messages, model=self.model_id, tools=chat_tools, num_ctx=self.num_ctx
             )
             tool_calls = list(reply.get("tool_calls") or [])
-            assistant: dict = {"role": "assistant", "content": str(reply.get("content") or "")}
+            content = str(reply.get("content") or "")
+            assistant: dict = {"role": "assistant", "content": content}
             if tool_calls:
                 assistant["tool_calls"] = tool_calls
+            else:
+                # Content-borne calls (issue #25): a turn whose content carries
+                # an unambiguous call shape is a tool turn in the wrong
+                # transport, not a working-phase end. The recorded assistant
+                # message keeps the content verbatim (transcript honesty); only
+                # the dispatch sees the recovered native shape.
+                tool_calls = _content_tool_calls(content)
             messages.append(assistant)
 
             if tool_calls:
@@ -250,9 +367,23 @@ class ToolLoopOperator:
                     messages.append(self._execute_tool_call(call, registry, context))
                 continue
 
+            # A ``json``-labeled fence that yielded no call is a MALFORMED
+            # content-borne call, not a working-phase end: it consumes its turn
+            # with a corrective message (contract §3), exactly like a malformed
+            # native call. Without this, a model whose call JSON has one bad
+            # escape silently burns the rest of its turns on gate rounds.
+            if turn < self.max_turns and _JSON_FENCE_RE.search(content):
+                messages.append({"role": "user", "content": _MALFORMED_CONTENT_CALL_MSG})
+                continue
+
             # No tool calls → working phase over for this round: run the
-            # manifest-blind self-reconcile gate on the parser currently on disk.
-            gate = _gate_parser(sandbox_src, self.source, self.probe)
+            # manifest-blind self-reconcile gate on the parser currently on
+            # disk — or, with no parser written yet, the synthesized
+            # absent-parser failure with actionable feedback (issue #26).
+            if parser_dest.exists():
+                gate = _gate_parser(sandbox_src, self.source, self.probe)
+            else:
+                gate = _absent_parser_gate()
             code = parser_dest.read_text(encoding="utf-8") if parser_dest.exists() else ""
             self.attempts.append(
                 AttemptRecord(
@@ -270,7 +401,7 @@ class ToolLoopOperator:
                     {
                         "role": "user",
                         "content": (
-                            f"The harness gate FAILED your current parser:\n{gate.feedback}\n"
+                            f"The harness gate FAILED:\n{gate.feedback}\n"
                             "Fix it with your tools, then reply with no tool calls when done."
                         ),
                     }
