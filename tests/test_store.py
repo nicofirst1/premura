@@ -13,6 +13,7 @@ def test_schema_creates_expected_tables(empty_warehouse):
     ).fetchall()
     names = [r[0] for r in rows]
     assert names == [
+        "condition_episode",
         "dim_metric",
         "dim_source",
         "fact_clinical_note",

@@ -5,12 +5,15 @@ Two entrypoints are provided:
 * **Default surface** (``premura-mcp``, :func:`build_server`) — the agent-safe
   surface.  Exposes the catalog/summary helpers, all six approved Stage 2 signal
   tools, the two parameterized intake signal tools
-  (``supplement_intake_adherence`` / ``nutrition_intake_trend``), the five Stage 3
+  (``supplement_intake_adherence`` / ``nutrition_intake_trend``), the six Stage 3
   analytical tools (``change_point`` / ``smoothed_average`` / ``correlate`` /
-  ``rolling_mean`` / ``paired_t_test``), the bounded agent-mediated profile
-  capture tools, the three session research-trace tools (``research_trace_open``
-  / ``research_trace_mark_surfaced`` / ``research_trace_disclosure``), and the two
-  PubMed grounding tools (``pubmed_search`` / ``pubmed_fetch``) — 22 tools in
+  ``rolling_mean`` / ``paired_t_test`` / ``condition_paired_t_test``), the bounded
+  agent-mediated profile capture tools, the three condition-episode capture tools
+  (``condition_episode_record`` / ``condition_episode_list`` /
+  ``condition_episode_retract``), the three session research-trace tools
+  (``research_trace_open`` / ``research_trace_mark_surfaced`` /
+  ``research_trace_disclosure``), and the two PubMed grounding tools
+  (``pubmed_search`` / ``pubmed_fetch``) — 26 tools in
   total.  ``query_warehouse``
   is intentionally absent; agents should use the signal-backed tools, the
   analytical tools, the trace tools, the PubMed tools, and the catalog helpers
@@ -613,10 +616,10 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
     def condition_paired_t_test(
         metric_id: str,
         condition_label: str,
-        episodes: list[dict[str, str]],
         before_days: int,
         after_days: int,
         expected_direction: str,
+        episodes: list[dict[str, str]] | None = None,
         session_id: str | None = None,
     ) -> dict[str, Any]:
         """Report a condition-label paired difference for one daily metric.
@@ -631,6 +634,15 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
         pair; the per-episode differences (on minus off) are summarized as a mean and
         its dispersion, plus whether the observed direction matches your expectation.
 
+        **Omit ``episodes`` to use the stored declaration:** the warehouse's
+        current closed episodes for this label (recorded earlier via
+        ``condition_episode_record``) are loaded and used as the declared set,
+        and the response carries an ``episodes_source`` disclosure naming the
+        episode ids used. The stored set was declared before this analysis, so
+        the request stays pre-registered; an empty stored set flows into the
+        normal too-few-episodes refusal. Passing ``episodes`` explicitly behaves
+        exactly as before.
+
         It is descriptive only: it never reports a p-value or a "significant"
         verdict; the label is operator-declared, not a verified condition, and only
         splits the windows; and it makes no causal/diagnostic/treatment/
@@ -642,14 +654,33 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
         pre-registered hypothesis in a research session's multiplicity trace;
         without it the tool behaves exactly as before and writes no trace row.
         """
-        return _dispatch_analytical_with_trace(
+        # Resolve the stored declaration BEFORE building the trace request, so
+        # the recorded hypothesis identity carries the actual episode set used
+        # (two calls under different stored states are different hypotheses;
+        # stored-vs-hand-declared of the same set is the same hypothesis).
+        episodes_source: dict[str, Any] | None = None
+        declared = episodes
+        if declared is None:
+            stored = warehouse_server.stored_condition_episodes(
+                condition_label, warehouse_path=warehouse_path
+            )
+            declared = [{"start_day": ep["start_day"], "end_day": ep["end_day"]} for ep in stored]
+            episodes_source = {
+                "kind": "stored_declaration",
+                "condition_label": condition_label,
+                "episode_ids": [ep["episode_id"] for ep in stored],
+                "episodes": declared,
+            }
+        resolved = declared
+
+        payload = _dispatch_analytical_with_trace(
             warehouse_path=warehouse_path,
             tool_name="condition_paired_t_test",
             session_id=session_id,
             request={
                 "metric_id": metric_id,
                 "condition_label": condition_label,
-                "episodes": episodes,
+                "episodes": resolved,
                 "before_days": before_days,
                 "after_days": after_days,
                 "expected_direction": expected_direction,
@@ -657,13 +688,18 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
             dispatch=lambda: warehouse_server.condition_paired_t_test(
                 metric_id,
                 condition_label=condition_label,
-                episodes=episodes,
+                episodes=resolved,
                 before_days=before_days,
                 after_days=after_days,
                 expected_direction=expected_direction,
                 warehouse_path=warehouse_path,
             ),
         )
+        if episodes_source is not None:
+            # Wrapper-layer disclosure only — the engine envelope itself stays
+            # byte-identical with explicit declaration of the same set.
+            payload["episodes_source"] = episodes_source
+        return payload
 
     # --- Agent-mediated profile capture (WP03) --------------------------- #
     # The bounded write path for stable baseline profile facts. These live on
@@ -706,6 +742,78 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
             effective_start_utc=effective_start_utc,
             source_ref=source_ref,
             notes=notes,
+            warehouse_path=warehouse_path,
+        )
+
+    # --- Agent-mediated condition-episode capture ------------------------- #
+    # The warehouse home for operator-declared condition episodes, so off/on
+    # questions (condition_paired_t_test) stop re-declaring episodes per
+    # request. Same posture as profile capture: declarations are recorded, never
+    # verified; corrections supersede with history; withdrawals retract with a
+    # reason; episodes are NEVER auto-detected or suggested from the data. These
+    # live on the DEFAULT agent-safe surface because bounded capture is the
+    # supported agent workflow.
+
+    @mcp.tool()
+    def condition_episode_record(
+        condition_label: str,
+        start_day: str,
+        end_day: str | None = None,
+        supersedes_episode_id: int | None = None,
+        note: str | None = None,
+        source_ref: str | None = None,
+    ) -> dict[str, Any]:
+        """Record one operator-declared condition episode in the warehouse.
+
+        ``condition_label`` is the operator's own word for the condition (any
+        non-empty string — it is recorded, never verified). ``start_day`` /
+        ``end_day`` are local calendar days (``YYYY-MM-DD``); omit ``end_day``
+        while the episode is still ongoing (ongoing episodes are record-keeping
+        only; analyses use closed episodes). Pass ``supersedes_episode_id`` to
+        correct an earlier declaration — the old row stays in history. A
+        declaration that overlaps a current episode of the same label returns
+        ``status='rejected'`` with the reason (supersede or retract the
+        conflicting one instead).
+        """
+        return warehouse_server.record_condition_episode(
+            condition_label,
+            start_day,
+            end_day,
+            supersedes_episode_id=supersedes_episode_id,
+            note=note,
+            source_ref=source_ref,
+            warehouse_path=warehouse_path,
+        )
+
+    @mcp.tool()
+    def condition_episode_list(
+        condition_label: str | None = None,
+        include_history: bool = False,
+    ) -> dict[str, Any]:
+        """List stored condition-episode declarations (current by default).
+
+        Use this to show the operator what is declared before running
+        ``condition_paired_t_test`` without explicit episodes. Filter by
+        ``condition_label``; pass ``include_history=True`` to also see
+        superseded and retracted declarations (the append-only trail).
+        """
+        return warehouse_server.list_condition_episodes(
+            condition_label,
+            include_history=include_history,
+            warehouse_path=warehouse_path,
+        )
+
+    @mcp.tool()
+    def condition_episode_retract(episode_id: int, reason: str) -> dict[str, Any]:
+        """Withdraw one current condition-episode declaration, with a reason.
+
+        The declaration stays in history marked retracted — nothing is deleted.
+        A missing, already-retracted, or superseded ``episode_id`` returns
+        ``status='rejected'`` with the reason rather than a silent success.
+        """
+        return warehouse_server.retract_condition_episode(
+            episode_id,
+            reason,
             warehouse_path=warehouse_path,
         )
 

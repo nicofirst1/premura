@@ -72,19 +72,23 @@ rules: [`src/premura/engine/CONTRACT.md`](../../src/premura/engine/CONTRACT.md).
 
 ### MCP surfaces
 
-- **Default agent surface (`premura-mcp`) — twenty-three tools:** 2
+- **Default agent surface (`premura-mcp`) — twenty-six tools:** 2
   catalog/summary (`list_metrics`, `metric_summary`), 8 signal-backed (table
   above), 2 profile-capture (`profile_context_supported_fields`,
-  `profile_context_record`), 6 analytical, 3 session research trace
-  (`research_trace_open`, `research_trace_mark_surfaced`,
-  `research_trace_disclosure`), 2 PubMed (`pubmed_search` — candidates only,
-  never citeable; `pubmed_fetch` — the only citeable record). No tool on this
-  surface reads `hp.*` directly; the trace tools read only derived `trace.*`
-  rows; the PubMed tools reach only the literature. Signal tools return the
-  four-state envelope (`available` / `missing_input` / `stale_input` /
-  `insufficient_data`) with a structured `missing_input` report a caller can
-  branch on.
-- **Operator surface (`premura-mcp-operator`) — twenty-four tools:** all
+  `profile_context_record`), 3 condition-episode capture
+  (`condition_episode_record`, `condition_episode_list`,
+  `condition_episode_retract` — operator-declared episodes persisted in
+  `hp.condition_episode` so `condition_paired_t_test` can omit `episodes` and
+  use the stored declaration, with an `episodes_source` disclosure), 6
+  analytical, 3 session research trace (`research_trace_open`,
+  `research_trace_mark_surfaced`, `research_trace_disclosure`), 2 PubMed
+  (`pubmed_search` — candidates only, never citeable; `pubmed_fetch` — the
+  only citeable record). No tool on this surface reads `hp.*` directly; the
+  trace tools read only derived `trace.*` rows; the PubMed tools reach only
+  the literature. Signal tools return the four-state envelope (`available` /
+  `missing_input` / `stale_input` / `insufficient_data`) with a structured
+  `missing_input` report a caller can branch on.
+- **Operator surface (`premura-mcp-operator`) — twenty-seven tools:** all
   default tools plus `query_warehouse` (raw SQL escape hatch, no Stage 2
   guarantees). Requires explicit launch acknowledgment (`--ack` /
   `PREMURA_OPERATOR_ACK`).

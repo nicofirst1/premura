@@ -31,6 +31,8 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import duckdb
+
 from .. import engine
 from ..config import settings
 from ..engine import (
@@ -55,13 +57,12 @@ from ..profile_fields import (
     UnsupportedProfileFieldError,
     get_profile_field,
 )
+from ..store import condition_episodes as condition_episodes_store
 from ..store import duck, profile_intake
 from . import pubmed
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-
-    import duckdb
 
 _READ_ONLY_PREFIXES = ("select", "with", "describe", "show")
 _DEFAULT_QUERY_MAX_ROWS = 200
@@ -281,6 +282,172 @@ def _serialize_assertion(
         "source_kind": record.source_kind,
         "supersedes_assertion_id": record.supersedes_assertion_id,
     }
+
+
+# --------------------------------------------------------------------------- #
+# Agent-mediated condition-episode capture.
+#
+# The persistence follow-up the condition_paired_t_test work named-deferred:
+# operator-declared condition episodes get a warehouse home
+# (``hp.condition_episode``, store boundary
+# ``premura.store.condition_episodes``) so off/on questions stop re-declaring
+# episodes per request. Same posture as profile capture: the agent records the
+# operator's declaration; corrections supersede with history; withdrawals
+# retract with a reason; nothing is verified, auto-detected, or deleted. The
+# analytical engine is untouched — stored episodes only feed the same
+# pre-registered request shape a caller could declare by hand.
+# --------------------------------------------------------------------------- #
+
+#: Provenance recorded for episodes written through this agent-mediated surface.
+CONDITION_CAPTURE_SOURCE_KIND = condition_episodes_store.DEFAULT_CONDITION_SOURCE_KIND
+
+
+def record_condition_episode(
+    condition_label: str,
+    start_day: str,
+    end_day: str | None = None,
+    *,
+    supersedes_episode_id: int | None = None,
+    note: str | None = None,
+    source_ref: str | None = None,
+    actor_ref: str | None = None,
+    warehouse_path: Path | None = None,
+) -> dict[str, Any]:
+    """Record one operator-declared condition episode (agent-mediated capture).
+
+    ``start_day`` / ``end_day`` are local calendar days (``YYYY-MM-DD``); omit
+    ``end_day`` for an episode that is still ongoing (ongoing episodes are
+    record-keeping only — the analysis path uses closed episodes). Pass
+    ``supersedes_episode_id`` to correct an existing declaration with full
+    history. A malformed declaration, or one that overlaps a current episode of
+    the same label, comes back as a structured ``rejected`` response with the
+    store boundary's reason — never a silent success and never a stacked
+    overlapping set.
+    """
+    try:
+        start = date.fromisoformat(start_day.strip())
+        end = date.fromisoformat(end_day.strip()) if end_day is not None else None
+    except (ValueError, AttributeError):
+        return {
+            "status": "rejected",
+            "condition_label": condition_label,
+            "reason": "start_day/end_day must be YYYY-MM-DD local calendar days",
+        }
+
+    with _open_warehouse_writable(warehouse_path) as conn:
+        capture_session_id = profile_intake.start_profile_capture_session(
+            conn, actor_kind="agent", actor_ref=actor_ref
+        )
+        try:
+            episode_id = condition_episodes_store.record_condition_episode(
+                conn,
+                condition_label=condition_label,
+                start_day=start,
+                end_day=end,
+                capture_session_id=capture_session_id,
+                source_kind=CONDITION_CAPTURE_SOURCE_KIND,
+                source_ref=source_ref,
+                supersedes_episode_id=supersedes_episode_id,
+                note=note,
+            )
+        except condition_episodes_store.ConditionEpisodeError as exc:
+            return {
+                "status": "rejected",
+                "condition_label": condition_label,
+                "reason": str(exc),
+            }
+        stored = condition_episodes_store.get_condition_episode(conn, episode_id)
+
+    assert stored is not None
+    return {
+        "status": "recorded",
+        "episode": stored.to_dict(),
+        "capture_session_id": capture_session_id,
+        "source_kind": CONDITION_CAPTURE_SOURCE_KIND,
+        "superseded_episode_id": supersedes_episode_id,
+    }
+
+
+def list_condition_episodes(
+    condition_label: str | None = None,
+    *,
+    include_history: bool = False,
+    warehouse_path: Path | None = None,
+) -> dict[str, Any]:
+    """List stored condition-episode declarations (current by default).
+
+    This is how the agent shows the operator what is declared before running an
+    off/on analysis. Pass ``include_history=True`` to include superseded and
+    retracted rows (the append-only trail).
+    """
+    with _open_warehouse(warehouse_path) as conn:
+        try:
+            records = condition_episodes_store.list_condition_episodes(
+                conn,
+                condition_label=condition_label,
+                include_history=include_history,
+            )
+        except duckdb.CatalogException:
+            records = []  # warehouse predates migration 007: nothing stored, definitionally
+    return {
+        "episodes": [record.to_dict() for record in records],
+        "count": len(records),
+        "condition_label": condition_label,
+        "include_history": include_history,
+    }
+
+
+def retract_condition_episode(
+    episode_id: int,
+    reason: str,
+    *,
+    warehouse_path: Path | None = None,
+) -> dict[str, Any]:
+    """Withdraw one current condition-episode declaration with a reason.
+
+    The row stays in history with ``retracted_at`` + the reason. A missing,
+    already-retracted, or superseded id comes back as a structured ``rejected``
+    response — a stale id never looks like a success.
+    """
+    with _open_warehouse_writable(warehouse_path) as conn:
+        try:
+            record = condition_episodes_store.retract_condition_episode(
+                conn, episode_id, reason=reason
+            )
+        except condition_episodes_store.ConditionEpisodeError as exc:
+            return {"status": "rejected", "episode_id": episode_id, "reason": str(exc)}
+    return {"status": "retracted", "episode": record.to_dict()}
+
+
+def stored_condition_episodes(
+    condition_label: str,
+    *,
+    warehouse_path: Path | None = None,
+) -> list[dict[str, Any]]:
+    """The analysis read path: current *closed* stored episodes for one label.
+
+    Returns each episode as the caller-facing ``{"start_day", "end_day"}`` shape
+    (plus its ``episode_id`` for disclosure), ordered by start day — exactly the
+    set ``condition_paired_t_test`` consumes when the caller does not re-declare
+    episodes. Ongoing, superseded, and retracted declarations never appear.
+    """
+    label = _require_condition_label("condition_label", condition_label)
+    with _open_warehouse(warehouse_path) as conn:
+        try:
+            records = condition_episodes_store.closed_episodes_for_label(conn, label)
+        except duckdb.CatalogException:
+            return []  # warehouse predates migration 007: nothing stored, definitionally
+    episodes: list[dict[str, Any]] = []
+    for record in records:
+        assert record.end_day is not None  # closed_episodes_for_label filters ongoing
+        episodes.append(
+            {
+                "episode_id": record.episode_id,
+                "start_day": record.start_day.isoformat(),
+                "end_day": record.end_day.isoformat(),
+            }
+        )
+    return episodes
 
 
 def list_metrics(
@@ -1344,11 +1511,13 @@ def _json_safe(value: object) -> Any:
 
 
 __all__ = [
+    "CONDITION_CAPTURE_SOURCE_KIND",
     "PROFILE_CAPTURE_SOURCE_KIND",
     "change_point",
     "condition_paired_t_test",
     "correlate",
     "hrv_change_around_date",
+    "list_condition_episodes",
     "list_metrics",
     "metric_summary",
     "nutrition_intake_trend",
@@ -1356,13 +1525,16 @@ __all__ = [
     "pubmed_fetch",
     "pubmed_search",
     "query_warehouse",
+    "record_condition_episode",
     "record_profile_context",
     "resting_hr_status",
     "resting_hr_trend",
+    "retract_condition_episode",
     "rolling_mean",
     "sleep_deep_pct_baseline",
     "smoothed_average",
     "steps_trend",
+    "stored_condition_episodes",
     "supplement_intake_adherence",
     "supported_profile_fields",
     "weight_trend",

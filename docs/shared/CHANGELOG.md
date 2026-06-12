@@ -8,6 +8,43 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-06-12 — Condition-episode persistence (roadmap item 2)
+
+The named-deferred follow-up from the analytical-tool work: operator-declared
+condition episodes now have a warehouse home, so off/on questions stop
+re-declaring episodes per request.
+
+- **One home** (migration 007, `hp.condition_episode` + store boundary
+  `premura.store.condition_episodes`): a row is the operator's *assertion on a
+  date* — the label stays operator vocabulary (any non-empty string, never an
+  enum, never a verified condition). Same honesty kit as profile capture:
+  corrections **supersede** with full history, withdrawals **retract** with a
+  reason, nothing is overwritten or deleted. The *current* set per label is
+  kept non-overlapping at the store boundary (a conflicting declaration is a
+  structured rejection pointing at supersede/retract), so the stored set is
+  always analyzable. `end_day` may be omitted (ongoing) for record-keeping;
+  ongoing episodes never enter the analysis read path.
+- **Three capture tools** on the default MCP surface (now twenty-six tools —
+  see STATUS §"MCP surfaces"): `condition_episode_record` /
+  `condition_episode_list` / `condition_episode_retract`, thin wrappers in the
+  profile-capture posture (structured `rejected` responses, capture-session
+  provenance, `source_kind=agent_condition_capture`).
+- **Consumption seam:** `condition_paired_t_test`'s `episodes` parameter is
+  now optional at the MCP boundary. Omitted, the wrapper loads the stored
+  current closed episodes for the label and builds the **same pre-registered
+  engine request** — the envelope is byte-identical to declaring the same set
+  by hand (locked by test), plus a wrapper-layer `episodes_source` disclosure
+  naming the episode ids used. The stored set resolves *before* the research
+  trace records the hypothesis, so the trace identity carries the actual
+  episode set. An empty stored set flows into the normal too-few-episodes
+  refusal. **The engine stayed stateless and untouched** — episodes are never
+  auto-detected, and the label still only splits windows, never names a cause.
+
+Mission ran in the frontier-window mode: confirmed mini-spec, direct
+implementation, independent subagent review, and a real end-to-end exercise on
+a sandboxed warehouse (record via MCP → analyze without re-declaring →
+parity + disclosure verified).
+
 ## 2026-06-12 — AI-chat supplement/medication recall source (#23)
 
 A second intake source, and the first whose "vendor" is an AI assistant: one

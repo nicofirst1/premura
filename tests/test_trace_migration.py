@@ -128,7 +128,8 @@ def test_trace_migration_adds_no_new_hp_provenance_tables(empty_warehouse) -> No
     """
     hp_tables = _schema_tables(empty_warehouse, "hp")
     # Known hp.* homes created by migrations 001 (init), 002 (ontology cols on
-    # dim_metric, no new table), 003 (clinical notes), 004 (profile + intake).
+    # dim_metric, no new table), 003 (clinical notes), 004 (profile + intake),
+    # 007 (condition episodes — a health-fact home, not provenance).
     known_hp = EXISTING_HP_TABLES | {
         "ingest_run",
         "profile_capture_session",
@@ -139,6 +140,7 @@ def test_trace_migration_adds_no_new_hp_provenance_tables(empty_warehouse) -> No
         "supplement_intake_event",
         "supplement_item",
         "supplement_dose",
+        "condition_episode",
     }
     unexpected = hp_tables - known_hp
     assert not unexpected, (

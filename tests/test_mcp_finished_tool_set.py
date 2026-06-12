@@ -73,6 +73,9 @@ _DEFAULT_TOOLS_FINISHED = sorted(
         "nutrition_intake_trend",
         "profile_context_supported_fields",
         "profile_context_record",
+        "condition_episode_record",
+        "condition_episode_list",
+        "condition_episode_retract",
         "change_point",
         "smoothed_average",
         "correlate",
@@ -164,7 +167,7 @@ def test_default_surface_lists_exactly_twenty_tools() -> None:
         server_ = build_server()
         names = sorted(tool.name for tool in await server_.list_tools())
         assert names == _DEFAULT_TOOLS_FINISHED
-        assert len(names) == 23
+        assert len(names) == 26
 
     asyncio.run(run())
 

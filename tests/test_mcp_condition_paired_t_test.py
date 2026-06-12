@@ -137,7 +137,7 @@ def test_default_surface_includes_condition_tool() -> None:
         server_ = build_server()
         names = {tool.name for tool in await server_.list_tools()}
         assert "condition_paired_t_test" in names
-        assert len(names) == 23
+        assert len(names) == 26
 
     asyncio.run(run())
 
