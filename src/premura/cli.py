@@ -1,7 +1,7 @@
 """`hpipe` CLI — entry point for the premura pipeline.
 
-Verbs: bootstrap, ingest, status, export, upload, run-monthly, doctor, gc,
-install-launchd, uninstall-launchd, install-skills.
+Verbs: bootstrap, ingest, inspect, status, export, upload, run-monthly, doctor,
+gc, install-launchd, uninstall-launchd, install-skills.
 """
 
 from __future__ import annotations

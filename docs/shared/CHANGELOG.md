@@ -8,6 +8,41 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-06-12 — Small follow-ups (`small-follow-ups`) — on branch, not yet merged
+
+Written pre-merge (overnight solo mission on `overnight/m7-small-follow-ups`); the
+post-merge close-out flips tense and records the merge. Three small, independent
+roadmap items that close known gaps in the operating surface — they share no code,
+so they shipped as three work packages on one branch.
+
+- **`hp.fact_interval.unit` column (WP3).** STATUS called out "`fact_interval` has
+  no `unit` column; carried in memory only" — and in fact the in-memory
+  `Interval.unit` was *already dropped silently* in `dedupe._interval_frame`, so
+  parser-supplied unit strings never reached the warehouse. Migration
+  `006_interval_unit.sql` (003 was taken) adds a nullable `unit VARCHAR` with an
+  idempotent backfill from `dim_metric.canonical_unit`, and the interval load path
+  populates `unit` for new rows by joining to `dim_metric` — the metric registry is
+  the **single source of unit truth, never a parser string**. The dead in-memory
+  `Interval.unit` field is removed from the dataclass, the dedupe plumbing, and all
+  nine parser construction sites.
+- **`hpipe inspect <path>` (WP1).** A read-only routing-preview verb — the twin of
+  `ingest` discovery. It resolves the parser for a path with the **same** routing
+  primitives `ingest` uses (no second routing table), enumerates archive/file member
+  names without reading their contents, and prints per-member routing plus an
+  "N routed, M unhandled" summary. Routing preview is a **structural parser
+  capability** (`preview_routing(member_names) -> RoutingPreview`, discovered by
+  `hasattr`/Protocol — not a Garmin if-ladder); the Garmin parser implements it by
+  delegating to its existing `_HANDLERS` dispatch so the preview can never drift from
+  ingest. A parser lacking the capability is reported honestly (exit 0, names the rule
+  for adding it). `inspect` opens no warehouse and writes nothing.
+- **`hpipe gc` raw pruning + `--dry-run` (WP2).** gc applies one mtime cutoff to N
+  roots: exports always, and `data/raw/` only with the opt-in `--raw` flag (files AND
+  directories). `--dry-run` previews exactly what would be removed and removes nothing
+  from either root. **Decision (recorded here per FR-2.3):** `--raw` defaults OFF
+  because `run_monthly()` calls `gc(keep=3)` unattended; silently flipping it to delete
+  staged source artifacts — for un-exported files the only local copy — is a human
+  choice, not an overnight one. `run_monthly`'s behavior is unchanged.
+
 ## 2026-06-12 — Analyze-and-answer slice (`analyze-and-answer`) — on branch, not yet merged
 
 Written pre-merge (overnight solo mission on `overnight/m6-analyze-and-answer`);

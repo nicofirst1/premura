@@ -146,7 +146,7 @@ The pinned inventory test is `tests/test_mcp_server.py`.
 | BMT parser | ✅ | Long/wide format detection; per-row units; custom metrics → `bmt_custom:*`. |
 | MyFitnessPal intake parser | ✅ | First real vendor intake source: per-meal nutrition aggregates → intake seam (`hpipe ingest --source mfp`); exercise/measurement columns surfaced as declared gaps, never observation rows. |
 | Loader (batch insert) | ✅ | Polars→DuckDB set-based insert; native-key + cross-source priority dedupe. |
-| CLI (`hpipe`) | ✅ | `bootstrap`, `ingest`, `status`, `export`, `upload`, `doctor` (incl. age-key + backup round-trip checks), `gc`, `run-monthly`, launchd install/uninstall, `install-skills`, `profile-fields` / `profile-record`. |
+| CLI (`hpipe`) | ✅ | `bootstrap`, `ingest`, `inspect` (read-only routing preview), `status`, `export`, `upload`, `doctor` (incl. age-key + backup round-trip checks), `gc` (`--dry-run`, opt-in `--raw`), `run-monthly`, launchd install/uninstall, `install-skills`, `profile-fields` / `profile-record`. |
 | Idempotency | ✅ | sha256 skip in `hp.ingest_run` + `dedupe_key UNIQUE` + intra-batch dedupe. |
 | Export artifact encryption | ✅ | Live round-trip verified 2026-05-21; per-test keypair regression suite; `doctor` re-proves the key/recipients pair on demand. |
 | Drive upload (opt-in) | ⚠️ Code complete, not auto | `hpipe upload` runs only on explicit invocation. |
@@ -185,7 +185,6 @@ exercise_session, sleep_session, daily_wellness, active_kcal.
   `parent_uuid + epoch_millis`; deduped in-batch, invisible in stats. Cosmetic.
 - **Wide-format BMT without `Time`**: timestamps land at 00:00:00 local.
 - **No FIT-file (per-activity stream) ingestion** — out of scope for v1.
-- **`fact_interval` has no `unit` column**; carried in memory only.
 
 ## Setup and operations
 
