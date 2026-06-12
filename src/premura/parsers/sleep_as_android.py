@@ -101,7 +101,6 @@ class SleepAsAndroidParser:
                 start_utc=_to_utc(t_from),
                 end_utc=_to_utc(t_to),
                 metric_id="sleep_session",
-                unit="enum",
                 source_id=source_id,
                 source_kind=SOURCE_KIND,
                 value_text=s.row.get("Comment") or "session",

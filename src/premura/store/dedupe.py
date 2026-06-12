@@ -138,7 +138,6 @@ def _normalize_batch(batch: IngestBatch) -> list[_NormalizedRow]:
                 value_num=interval.value_num,
                 value_text=interval.value_text,
                 raw_payload=interval.raw_payload,
-                unit=interval.unit,
                 end_utc=interval.end_utc,
                 parent_uuid=interval.parent_uuid,
             )

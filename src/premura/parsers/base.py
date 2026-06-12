@@ -51,7 +51,6 @@ class Interval:
     metric_id: str
     source_id: str
     source_kind: str
-    unit: str | None = None
     value_num: float | None = None
     value_text: str | None = None
     local_tz: str | None = None
