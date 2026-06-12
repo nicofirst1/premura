@@ -213,7 +213,9 @@ def _dispatch_analytical_with_trace(
     return payload
 
 
-def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> None:
+def _register_default_tools(
+    mcp: FastMCP, *, warehouse_path: Path | None, session_log_path: Path | None
+) -> None:
     """Register the full agent-safe default tool set on *mcp*.
 
     This is the shared core.  It does NOT include ``query_warehouse`` — that
@@ -867,6 +869,7 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
             outputs_ref=outputs_ref,
             surface_touched=surface_touched,
             reason=reason,
+            session_log_path=session_log_path,
         )
 
     @mcp.tool()
@@ -881,7 +884,10 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
         new evidence and reruns nothing.
         """
         return warehouse_server.answer_audit(
-            draft, session_id=session_id, warehouse_path=warehouse_path
+            draft,
+            session_id=session_id,
+            warehouse_path=warehouse_path,
+            session_log_path=session_log_path,
         )
 
     @mcp.tool()
@@ -903,6 +909,7 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
             draft,
             interprets_health=interprets_health,
             acknowledge_unverified=acknowledge_unverified,
+            session_log_path=session_log_path,
         )
 
     # --- Session research trace (WP03, mission session-research-trace) --------- #
@@ -1025,7 +1032,9 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
         return warehouse_server.pubmed_fetch(pmid)
 
 
-def build_server(*, warehouse_path: Path | None = None) -> FastMCP:
+def build_server(
+    *, warehouse_path: Path | None = None, session_log_path: Path | None = None
+) -> FastMCP:
     """Build the default agent-safe MCP server surface.
 
     Exposes catalog, summary, and the six approved Stage 2 signal tools (all
@@ -1035,6 +1044,10 @@ def build_server(*, warehouse_path: Path | None = None) -> FastMCP:
     profile allowlist (unsupported/derived keys are rejected, not stored).
     ``query_warehouse`` is intentionally excluded — use :func:`build_operator_server`
     to obtain a surface that includes the raw SQL escape hatch.
+
+    ``session_log_path`` redirects the runtime-orchestrator tools' session-log
+    file alongside ``warehouse_path`` so a sandboxed/live-trial server never
+    writes handoffs or audit verdicts into the operator's real session log.
     """
     mcp = FastMCP(
         "premura",
@@ -1045,11 +1058,13 @@ def build_server(*, warehouse_path: Path | None = None) -> FastMCP:
             "allowlist). No raw SQL on this surface."
         ),
     )
-    _register_default_tools(mcp, warehouse_path=warehouse_path)
+    _register_default_tools(mcp, warehouse_path=warehouse_path, session_log_path=session_log_path)
     return mcp
 
 
-def build_operator_server(*, warehouse_path: Path | None = None) -> FastMCP:
+def build_operator_server(
+    *, warehouse_path: Path | None = None, session_log_path: Path | None = None
+) -> FastMCP:
     """Build the operator MCP server surface — lower-guarantee expert mode.
 
     Registers the full default tool set PLUS ``query_warehouse``, the raw SQL
@@ -1070,7 +1085,7 @@ def build_operator_server(*, warehouse_path: Path | None = None) -> FastMCP:
             "it is not safe for autonomous agent consumption."
         ),
     )
-    _register_default_tools(mcp, warehouse_path=warehouse_path)
+    _register_default_tools(mcp, warehouse_path=warehouse_path, session_log_path=session_log_path)
 
     @mcp.tool()
     def query_warehouse(
@@ -1096,7 +1111,9 @@ def build_operator_server(*, warehouse_path: Path | None = None) -> FastMCP:
 
 def main(argv: Sequence[str] | None = None) -> None:
     args = _parse_args(argv, prog="premura-mcp", operator_mode=False)
-    build_server(warehouse_path=args.warehouse_path).run(transport="stdio")
+    build_server(warehouse_path=args.warehouse_path, session_log_path=args.session_log_path).run(
+        transport="stdio"
+    )
 
 
 def main_operator(argv: Sequence[str] | None = None) -> None:
@@ -1110,7 +1127,9 @@ def main_operator(argv: Sequence[str] | None = None) -> None:
             "safe for autonomous agent use without explicit user approval.\n"
             f"To proceed, re-run with --ack, or set {_OPERATOR_ACK_ENV}=1."
         )
-    build_operator_server(warehouse_path=args.warehouse_path).run(transport="stdio")
+    build_operator_server(
+        warehouse_path=args.warehouse_path, session_log_path=args.session_log_path
+    ).run(transport="stdio")
 
 
 def _operator_ack_granted(args: argparse.Namespace) -> bool:
@@ -1151,6 +1170,16 @@ def _parse_args(
         help=(
             "Explicit path to the DuckDB warehouse file. Defaults to "
             "HPIPE_DATA_DIR/duck/health.duckdb."
+        ),
+    )
+    parser.add_argument(
+        "--session-log-path",
+        type=Path,
+        help=(
+            "Explicit path to the session log's own DuckDB file (orchestrator "
+            "handoffs and answer-audit verdicts; never the warehouse). Created "
+            "on first record. Defaults to the warehouse's sibling "
+            "session_log.duckdb."
         ),
     )
     if operator_mode:

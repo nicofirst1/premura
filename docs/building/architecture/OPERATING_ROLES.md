@@ -97,10 +97,15 @@ violating its contract, and the absence of the envelope shows it.
 
 **v1 deterministic checks (the gating core):**
 
-1. A research-trace session exists for the draft and recorded at least the
-   analytical calls the answer rests on (no trace → the draft can only be
-   presented with a prominent *not trace-verified* warning and downgraded,
-   process-language claims — never as a verified health finding).
+1. A research-trace session is named for the draft, exists, and recorded
+   analytical calls (no usable trace → the draft can only be presented with a
+   prominent *not trace-verified* warning and downgraded, process-language
+   claims — never as a verified health finding). Stated honestly: what v1
+   verifies deterministically is that traced analysis happened in the named
+   session — it cannot verify that the draft's *claims* rest on those
+   specific calls. Binding each claim to the recorded calls it rests on is
+   the advisory rubric's territory until promoted, and deterministic
+   claim-to-trace binding is named later-slice work below.
 2. The measured disclosure is computed from trace rows ("K user-facing
    findings among N unique hypotheses examined") and attached by the gate.
 3. Refusals recorded in the session are not hidden: the verdict reports
@@ -119,6 +124,12 @@ its own decision note.
 requires the PubMed tools to record into the research trace first; both land
 together in a later slice. Until then PubMed narration relies on the
 candidate-vs-fetched rule at the tool layer plus the advisory rubric.
+**Claim-to-trace binding** is named alongside it: deterministically tying
+the draft's individual claims to the specific recorded calls they rest on.
+Today check 1 proves only that the named session recorded analytical work —
+an audited draft could in principle cite a session whose calls are unrelated
+to its claims; the advisory rubric is what reads the draft against the trace
+content until binding is promoted by its own decision note.
 
 ## Improvement scan, queue, sharing (specified, later slices)
 

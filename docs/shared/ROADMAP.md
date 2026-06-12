@@ -53,10 +53,12 @@ throughout.
    [0013](../building/adr/0013-operating-roles-promotion-decisions.md); spec:
    [`OPERATING_ROLES.md`](../building/architecture/OPERATING_ROLES.md)).
    Slice 1 (role registry + handoff trace + blocking `answer_audit` /
-   `present_answer` gate) is built on `feat/operating-roles-slice-1` —
-   **pending independent review + one real e2e exercise before merge**.
+   `present_answer` gate) is built on `feat/operating-roles-slice-1`;
+   independent review (two reviewers, 2026-06-12) passed with findings
+   addressed on the branch — **pending one real e2e exercise before merge**.
    Later slices: improvement queue, share packets, PubMed citation binding
-   (needs PubMed trace recording first). Concept lineage: decision note
+   (needs PubMed trace recording first), claim-to-trace binding (the spec's
+   honest v1 scope note). Concept lineage: decision note
    [0010](../building/adr/0010-runtime-orchestrator-and-operating-roles.md).
 4. **Dogfooding as standing practice, not a queue item.** Real monthly
    ingest (the T2 residue above), real questions through the six tools.

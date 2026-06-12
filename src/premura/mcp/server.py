@@ -472,6 +472,23 @@ def _draft_sha256(draft: str) -> str:
     return hashlib.sha256(draft.encode("utf-8")).hexdigest()
 
 
+def _draft_rejection(draft: object) -> str | None:
+    """Why this draft cannot enter the gate, or ``None`` if it can.
+
+    Malformed input comes back as a structured ``rejected`` response (the same
+    shape :func:`orchestrator_handoff` uses), never a raised exception: an
+    agent caller branches on ``status``, it does not parse tracebacks. The
+    UTF-8 probe keeps a lone surrogate from raising inside the sha256 keying.
+    """
+    if not isinstance(draft, str) or not draft.strip():
+        return "draft must be a non-empty string"
+    try:
+        draft.encode("utf-8")
+    except UnicodeEncodeError:
+        return "draft contains characters that cannot be UTF-8 encoded (lone surrogate)"
+    return None
+
+
 @contextmanager
 def _open_session_log(
     session_log_path: Path | None,
@@ -481,6 +498,28 @@ def _open_session_log(
     try:
         session_log_store.init_schema(conn)
         yield conn
+    finally:
+        conn.close()
+
+
+def _latest_verdict_readonly(
+    session_log_path: Path | None, draft_sha256: str
+) -> dict[str, Any] | None:
+    """Look up the newest audit verdict for a draft hash without taking a write lock.
+
+    ``present_answer`` is a pure read, so it must not contend with the
+    session-log harness's writer connection (ADR 0011) nor run DDL. A missing
+    file or a pre-slice-1 session log without the ``log_answer_audit`` table
+    both honestly mean the same thing: no verdict exists for this draft.
+    """
+    path = session_log_path or settings.session_log_path
+    if not Path(path).exists():
+        return None
+    conn = session_log_store.connect(path, read_only=True)
+    try:
+        return session_log_store.latest_answer_audit(conn, draft_sha256=draft_sha256)
+    except duckdb.CatalogException:
+        return None
     finally:
         conn.close()
 
@@ -550,11 +589,14 @@ def answer_audit(
     disclosure and refusal counts are computed from trace rows, never trusted
     from prose (checks 2-3). The verdict is recorded in the session log keyed
     by the draft's sha256 — ``present_answer`` reads exactly that. The audit
-    creates no new evidence and reruns nothing. The AI rubric
-    (research-trace-audit skill) is advisory on top and never gates here.
+    creates no new evidence and reruns nothing, so the warehouse is opened
+    read-only; an unreadable warehouse is an audit failure, not a crash. The
+    AI rubric (research-trace-audit skill) is advisory on top and never gates
+    here. Malformed drafts come back as a structured ``rejected`` response.
     """
-    if not isinstance(draft, str) or not draft.strip():
-        raise ValueError("draft must be a non-empty string")
+    rejection = _draft_rejection(draft)
+    if rejection is not None:
+        return {"status": "rejected", "reason": rejection}
     sha = _draft_sha256(draft)
     failures: list[str] = []
     disclosure_text: str | None = None
@@ -567,22 +609,26 @@ def answer_audit(
             "must name the session its analysis was recorded in"
         )
     else:
-        with _open_warehouse_writable(warehouse_path) as conn:
-            disclosure = trace_service.get_research_disclosure(
-                conn, session_id, include_calls=False
-            )
-        if isinstance(disclosure, trace_service.TraceError):
-            failures.append(f"research-trace session not usable: {disclosure.message}")
-        else:
-            disclosure_text = disclosure.disclosure_text
-            refusal_count = sum(disclosure.refusal_breakdown.values())
-            if disclosure.raw_analytical_call_count == 0:
-                failures.append(
-                    "the session recorded no analytical calls; the draft's claims "
-                    "cannot rest on traced evidence"
+        try:
+            with _open_warehouse(warehouse_path) as conn:
+                disclosure = trace_service.get_research_disclosure(
+                    conn, session_id, include_calls=False
                 )
+        except duckdb.Error as exc:
+            failures.append(f"research-trace session not usable: warehouse not readable ({exc})")
+        else:
+            if isinstance(disclosure, trace_service.TraceError):
+                failures.append(f"research-trace session not usable: {disclosure.message}")
             else:
-                trace_verified = True
+                disclosure_text = disclosure.disclosure_text
+                refusal_count = sum(disclosure.refusal_breakdown.values())
+                if disclosure.raw_analytical_call_count == 0:
+                    failures.append(
+                        "the session recorded no analytical calls; the draft's claims "
+                        "cannot rest on traced evidence"
+                    )
+                else:
+                    trace_verified = True
 
     passed = trace_verified and not failures
     with _open_session_log(session_log_path) as conn:
@@ -625,9 +671,14 @@ def present_answer(
     NOT TRACE-VERIFIED warning and the instruction to downgrade claims to
     process/status language. A non-interpreting draft passes through marked as
     such. A revised draft is a new hash and needs a new audit.
+
+    Presentation is a pure read: the verdict lookup opens the session log
+    read-only (no DDL, no writer-lock contention). Malformed drafts come back
+    as a structured ``rejected`` response.
     """
-    if not isinstance(draft, str) or not draft.strip():
-        raise ValueError("draft must be a non-empty string")
+    rejection = _draft_rejection(draft)
+    if rejection is not None:
+        return {"status": "rejected", "reason": rejection}
     if not interprets_health:
         return {
             "status": "presented",
@@ -638,8 +689,7 @@ def present_answer(
         }
 
     sha = _draft_sha256(draft)
-    with _open_session_log(session_log_path) as conn:
-        verdict = session_log_store.latest_answer_audit(conn, draft_sha256=sha)
+    verdict = _latest_verdict_readonly(session_log_path, sha)
 
     if verdict is None:
         return {
