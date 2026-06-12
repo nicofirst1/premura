@@ -107,10 +107,10 @@ The pinned inventory test is `tests/test_mcp_server.py`.
 - **Session-log substrate + live trial**: local session-log store, contract
   checker, sandbox runner, deterministic grader, hardened local-only
   cheap-model live-trial seam (`live_trial` marker, never in CI). The trial
-  now has two tiers in the codebase: the shipped constrained one-shot floor,
-  and a multiturn tool-loop tier **in progress on the
-  `tool-loop-live-trial-tier-01KTVG26` mission lanes (not yet merged)** —
-  detail in `kitty-specs/tool-loop-live-trial-tier-01KTVG26/`. Two opt-in
+  now has two shipped tiers: the constrained one-shot floor, and the
+  multiturn tool-loop tier (`tool-loop-live-trial-tier-01KTVG26`, merged
+  2026-06-11) — detail in
+  `kitty-specs/tool-loop-live-trial-tier-01KTVG26/`. Two opt-in
   post-run steps now stand on the recorded session (both default OFF, both
   guarded so failure never flips the verdict): the **AI judge** assesses the
   operator's process against a versioned rubric into `log_judgment`, and the

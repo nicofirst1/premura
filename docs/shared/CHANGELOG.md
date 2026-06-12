@@ -8,6 +8,17 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-06-12 — Correction: the tool-loop tier had already merged 2026-06-11
+
+The entry below (and the 2026-06-11 tool-loop entry's header) carried stale
+framing: `tool-loop-live-trial-tier-01KTVG26` did **not** "remain genuinely
+unmerged" — it squash-merged to master 2026-06-11 21:22 (`7d2c6a3`), before
+the overnight release candidate was even built on top of it. The overnight
+missions inherited the stale "in progress, not yet merged" STATUS/ROADMAP
+lines and the post-merge reconciliation propagated them. STATUS and ROADMAP
+now read merged-2026-06-11; per the never-edit-after rule the wrong entries
+stay verbatim and this entry is the correction.
+
 ## 2026-06-12 — `v0.4.0` merged to `master` and tagged — release candidate accepted
 
 Closes the loop the rc entry below opened (that entry and the seven mission

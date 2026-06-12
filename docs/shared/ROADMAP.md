@@ -55,9 +55,9 @@ The user is actively writing more requirements; this section will grow.
    synthetic-only retained-sandbox inspection mode. The [tool-using / multiturn
    operator tier](../building/planning/tool-loop-live-trial-tier.md) is **no
    longer parked**: its queue gate (intake source-adaptation) cleared
-   2026-06-11, and the tier is specified, planned, and in implementation as
-   mission `tool-loop-live-trial-tier-01KTVG26` (on mission lanes, not yet
-   merged — what it adds is recorded in the [CHANGELOG.md](CHANGELOG.md)
+   2026-06-11, and the tier shipped as mission
+   `tool-loop-live-trial-tier-01KTVG26` (merged to master 2026-06-11,
+   `7d2c6a3` — what it adds is recorded in the [CHANGELOG.md](CHANGELOG.md)
    2026-06-11 entry). **Conversation-turn capture has since landed** (the
    `conversation-turn-capture` mission, merged in `v0.4.0`): the session
    log now persists the operator's actual chat history per run — a new additive
