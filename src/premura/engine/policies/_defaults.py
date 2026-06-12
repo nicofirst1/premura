@@ -96,6 +96,35 @@ def _paired_difference_rule(*, caveats: tuple[str, ...]) -> QuestionRule:
     )
 
 
+def _condition_paired_difference_rule(*, caveats: tuple[str, ...]) -> QuestionRule:
+    """The shared, conservative default rule for the condition-paired question (m8).
+
+    The same family-level admissibility/freshness posture as
+    :func:`_paired_difference_rule` — a condition-label before/after comparison is
+    still over a recent daily window — so a family that admits the anchor-date
+    paired difference today admits condition pairing with no new family judgment.
+    The paired unit is a declared on-condition *episode*; the minimum-episode floor
+    and per-episode exclusions are method-level refusals in the tool layer (m8
+    WP2), not a density parameter here. Declarative parameters only.
+    """
+    return QuestionRule(
+        admissibility=Admissibility.ADMISSIBLE,
+        freshness=FreshnessRule(mode=FreshnessMode.CAVEAT_ONLY),
+        sufficiency=SufficiencyRule(
+            min_observations=_PAIRED_DIFFERENCE_MIN_PAIRS,
+            missing_data_behavior=MissingDataBehavior.REJECT,
+        ),
+        required_context=("observed_at",),
+        caveats=(
+            *caveats,
+            "A condition-label paired comparison describes how your own values "
+            "differed between off-label and on-label declared periods; the label "
+            "is operator-declared, not a verified condition, and other factors "
+            "could explain the difference.",
+        ),
+    )
+
+
 def _lagged_association_rule(*, caveats: tuple[str, ...]) -> QuestionRule:
     """The shared, conservative default rule for the lagged-association question.
 
@@ -294,6 +323,9 @@ def _serial_average_short_run(
             QuestionType.MOVING_WINDOW_PATTERN: recent_run_rule,
             QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=serial_caveat),
             QuestionType.PAIRED_DIFFERENCE: _paired_difference_rule(caveats=serial_caveat),
+            QuestionType.CONDITION_PAIRED_DIFFERENCE: _condition_paired_difference_rule(
+                caveats=serial_caveat
+            ),
         },
         examples=(
             PolicyExample(
@@ -371,6 +403,9 @@ def _rolling_recent_pattern(
             QuestionType.MOVING_WINDOW_PATTERN: recent_pattern_rule,
             QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=coverage_caveat),
             QuestionType.PAIRED_DIFFERENCE: _paired_difference_rule(caveats=coverage_caveat),
+            QuestionType.CONDITION_PAIRED_DIFFERENCE: _condition_paired_difference_rule(
+                caveats=coverage_caveat
+            ),
         },
         examples=(
             PolicyExample(
@@ -506,6 +541,9 @@ def _baseline_relative(
             # floor and the association/difference-not-causation caveat.
             QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=()),
             QuestionType.PAIRED_DIFFERENCE: _paired_difference_rule(caveats=()),
+            QuestionType.CONDITION_PAIRED_DIFFERENCE: _condition_paired_difference_rule(
+                caveats=()
+            ),
             QuestionType.HISTORICAL_BASELINE: QuestionRule(
                 admissibility=Admissibility.LIMITED,
                 freshness=FreshnessRule(mode=FreshnessMode.CAVEAT_ONLY),
@@ -584,6 +622,9 @@ def _slow_trajectory_method_sensitive(
             # association/difference-not-causation caveat.
             QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=()),
             QuestionType.PAIRED_DIFFERENCE: _paired_difference_rule(caveats=()),
+            QuestionType.CONDITION_PAIRED_DIFFERENCE: _condition_paired_difference_rule(
+                caveats=()
+            ),
             QuestionType.HISTORICAL_BASELINE: QuestionRule(
                 admissibility=Admissibility.ADMISSIBLE,
                 freshness=FreshnessRule(mode=FreshnessMode.CAVEAT_ONLY),
@@ -663,6 +704,9 @@ def _sparse_lab_analyte_specific(
             QuestionType.MOVING_WINDOW_PATTERN: repeats_required_rule,
             QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=analyte_caveat),
             QuestionType.PAIRED_DIFFERENCE: _paired_difference_rule(caveats=analyte_caveat),
+            QuestionType.CONDITION_PAIRED_DIFFERENCE: _condition_paired_difference_rule(
+                caveats=analyte_caveat
+            ),
         },
         examples=(
             PolicyExample(

@@ -135,6 +135,13 @@ ANALYTICAL_TO_POLICY_QUESTION: Mapping[AnalyticalQuestionType, QuestionType] = M
         # two entries would strand the new tools at input preparation.
         AnalyticalQuestionType.MOVING_WINDOW_PATTERN: QuestionType.MOVING_WINDOW_PATTERN,
         AnalyticalQuestionType.PAIRED_DIFFERENCE: QuestionType.PAIRED_DIFFERENCE,
+        # m8 mission: condition_paired_t_test gates on its OWN first-class policy
+        # question type (its paired unit is a declared on-condition episode, so it
+        # carries an episode-count floor), never on the anchor-date paired shape.
+        # The closed map MUST stay total over AnalyticalQuestionType.
+        AnalyticalQuestionType.CONDITION_PAIRED_DIFFERENCE: (
+            QuestionType.CONDITION_PAIRED_DIFFERENCE
+        ),
     }
 )
 """Closed analytical→policy question map used to drive the evaluator.

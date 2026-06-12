@@ -221,12 +221,16 @@ def test_analytical_question_types_are_the_closed_set() -> None:
     # ``moving_window_pattern`` (rolling_mean) and ``paired_difference``
     # (paired_t_test). Each is a distinct reviewed value so its own
     # coverage/paired-sample sufficiency is never hidden behind another shape.
+    # The m8 mission added ``condition_paired_difference``
+    # (condition_paired_t_test) as its own first-class reviewed value so its
+    # episode-count sufficiency is never hidden behind the anchor-date shape.
     assert {qt.value for qt in AnalyticalQuestionType} == {
         "level_shift_detection",
         "smoothed_pattern",
         "lagged_association",
         "moving_window_pattern",
         "paired_difference",
+        "condition_paired_difference",
     }
 
 

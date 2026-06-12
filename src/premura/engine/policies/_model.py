@@ -111,8 +111,15 @@ class QuestionType(StrEnum):
     #   because it carries a raw *pair* floor over matched observations, not a
     #   two-series association floor. "Simple anchor-date pairing" is the reviewed
     #   meaning here; broader condition/event pairing is a later reviewed value.
+    #   CONDITION_PAIRED_DIFFERENCE: condition_paired_t_test's declared
+    #   condition-label paired comparison over one operator's series (m8 mission).
+    #   Distinct from PAIRED_DIFFERENCE because its paired unit is a declared
+    #   on-condition *episode*, so its sufficiency floor is a minimum episode
+    #   count, not the anchor-date raw-pair floor. It reuses the same family-level
+    #   admissibility posture as PAIRED_DIFFERENCE (no new family judgments).
     MOVING_WINDOW_PATTERN = "moving_window_pattern"
     PAIRED_DIFFERENCE = "paired_difference"
+    CONDITION_PAIRED_DIFFERENCE = "condition_paired_difference"
 
 
 class EvidenceStatus(StrEnum):
