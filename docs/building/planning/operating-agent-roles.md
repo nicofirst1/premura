@@ -5,6 +5,13 @@
 > surface for operating Premura. No code decisions are locked; this exists so a
 > future spec can start from shared language instead of re-deriving the framing.
 >
+> **Scheduled (2026-06-12):** this is the next strategic thread — Stage 4 is
+> the only remaining stage gap, and promoting this draft to a real spec is
+> item 3 of the [ROADMAP](../../shared/ROADMAP.md) §"Near-term roadmap". The
+> promotion happens in a maintainer design-interview session (decisions get
+> locked there, not here); the first build slice after the spec is the
+> runtime orchestrator skeleton plus the **mandatory `answer_audit` gate**.
+>
 > Companion reading: [`AGENTS.md`](../../../AGENTS.md) §"two rules",
 > [`docs/shared/DOCTRINE.md`](../../shared/DOCTRINE.md),
 > [`docs/building/architecture/STAGES.md`](../architecture/STAGES.md),

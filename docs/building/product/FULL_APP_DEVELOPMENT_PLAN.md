@@ -26,6 +26,12 @@ artifact to agent-mediated analysis to human-facing teaching/interview. `v1.0.0`
 is reserved for that user-facing threshold, not for internal architectural
 milestones.
 
+Version numbers are assigned at **release time** by what actually ships, and
+are no longer pinned to phases: `v0.4.0` (tagged 2026-06-12) shipped harness
+and analytical-tool work while Phase 4 (`parser ecosystem validation`) had not
+started, so the old `Phase N = v0.N` phase naming was dropped. Phases keep
+their names; tags keep their own sequence.
+
 ## Inputs Used
 
 - `CONTEXT.md` (vocabulary)
@@ -251,7 +257,7 @@ Phase 1 proved that MCP can safely access the warehouse and answer six grounded 
 - PubMed use is tool-grounded rather than prompt-grounded (met for the first slice: `pubmed_fetch` returns a citeable record with PubMed provenance and `pubmed_search` returns candidates only, so a final answer may cite only fetched records — never search candidates or the model's priors; the literature-to-warehouse bridge stays deferred)
 - tool outputs include validity/confound metadata, not just point estimates (met: mandatory result envelope with validity metadata + closed confound checklist)
 
-### Phase 4: `v0.4 parser ecosystem validation`
+### Phase 4: `parser ecosystem validation`
 
 #### Goal
 
@@ -281,7 +287,7 @@ The docs already call out the parser-skill bet as risk `R2`. That risk does not 
 - either the parser ecosystem model is validated by a real example
 - or the project has evidence to scale the ambition back instead of assuming ecosystem traction
 
-### Phase 5: `v0.5 interview + teaching MVP`
+### Phase 5: `interview + teaching MVP`
 
 #### Goal
 
@@ -347,8 +353,8 @@ The likely whole-app ordering is:
 1. `v0.1 analytical surface foundation`
 2. `v0.2 labs`
 3. `v0.3 analytical depth`
-4. `v0.4 parser ecosystem validation`
-5. `v0.5 interview + teaching MVP`
+4. `parser ecosystem validation`
+5. `interview + teaching MVP`
 6. `v0.6+ ingest and warehouse expansion`
 
 This is not a rigid dependency chain for every sub-issue. It is the default product-development order that best matches the current docs and open risks.
@@ -364,11 +370,11 @@ This is not a rigid dependency chain for every sub-issue. It is the default prod
 
 ### `R2`: parser-skill bet is unproven
 
-Primary retirement phase: `v0.4 parser ecosystem validation`
+Primary retirement phase: `parser ecosystem validation` (Phase 4)
 
 ### `R4`: teaching-as-pillar is the worst risk
 
-Primary retirement phase: `v0.5 interview + teaching MVP`
+Primary retirement phase: `interview + teaching MVP` (Phase 5)
 
 ### `R7`: n=1 stats can mislead
 

@@ -16,11 +16,58 @@ see [STATUS.md](STATUS.md) and [README.md](../../README.md).
 **The acceptance harness is frozen at current capability (2026-06-12).** It
 runs end-to-end; further harness work must be paid for by findings about
 Premura itself (the findings-per-effort rule), and overnight mission selection
-must not default to harness work because it is safe. Priority returns to the
-app — first #23 (supplement/medication recall ingest, feeding
-`condition_paired_t_test` with real episodes) and live dogfooding sessions.
-Decision note:
+must not default to harness work because it is safe. Decision note:
 [`0012-acceptance-harness-freeze-findings-per-effort.md`](../building/adr/0012-acceptance-harness-freeze-findings-per-effort.md).
+
+**Frontier-window operating mode (2026-06-12 → ~2026-06-22).** The maintainer
+has Anthropic's most capable model (Fable 5) available for roughly ten days
+and has decided that **spec-kitty is not used during this window**. Work runs
+as directly-driven missions instead: each mission still gets a proper written
+specification first (goal, functional requirements, acceptance criteria,
+out-of-scope), the implementing session builds it, an **independent reviewer
+context** checks it, and — per the consolidated-review-ceiling lesson in the
+[2026-06-12 audit](../history/audits/2026-06-12-v040-first-full-stack-live-trial.md)
+— every mission ends with **one real end-to-end exercise**, never review
+alone. Spec-kitty resumes after the window for work that needs its lane
+machinery.
+
+## Near-term roadmap (the frontier window and after)
+
+Sequenced by build order; the freeze and the two governing rules apply
+throughout.
+
+1. **#23 — supplement/medication recall ingest** (app, first up). The
+   AI-chat recall interchange contract + paste-prompt + parser. This feeds
+   `condition_paired_t_test` (the v0.4.0 headline tool) with the operator's
+   real declared episodes — today the tool has no real data to chew on.
+2. **Condition-episode persistence** (app, follows #23). The
+   named-deferred follow-up from the analytical-tool work: persist declared
+   condition episodes in the warehouse via agent-mediated capture, so off/on
+   questions stop re-declaring episodes per request. Scope it only after #23
+   shows the capture shape.
+3. **Stage 4 — operating-roles spec, then first slice** (the strategic
+   thread; the only remaining stage gap). Promote
+   [`operating-agent-roles.md`](../building/planning/operating-agent-roles.md)
+   from DRAFT pre-spec to a real specification (a maintainer
+   design-interview session, since decisions get locked there), then build
+   the first slice: the runtime orchestrator skeleton and the **mandatory
+   `answer_audit` gate** — the piece whose absence means nothing today
+   structurally stops an unaudited health answer. Concept locked by decision
+   note [0010](../building/adr/0010-runtime-orchestrator-and-operating-roles.md).
+4. **Dogfooding as standing practice, not a queue item.** Real monthly
+   ingest (the T2 residue above), real questions through the six tools.
+   Per decision note 0012 this is the acceptance evaluation that costs
+   nothing and yields the most.
+5. **Outward readiness, parallel filler:** #15 (Apache-2.0 license,
+   mechanical), #9 (RESULT_FAMILIES extension trigger, one contract
+   paragraph), #22 (per-agent setup recipes), #14 (README rework —
+   `ready-for-human`, the maintainer's).
+
+**Parked, deliberately:** #24 and #27 (harness defects — frozen; fix only
+when they block a run someone needs), #12 (adversarial narration eval — rig
+work under the freeze), #10 (the acceptance-sandbox umbrella — standing
+infrastructure, stays open by design), #4 (lab validator UI — a visual
+layer, which is a deliberate later destination, not v1).
 
 The user is actively writing more requirements; this section will grow.
 
