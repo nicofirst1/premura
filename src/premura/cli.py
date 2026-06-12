@@ -215,14 +215,18 @@ def _json_is_chat_recall(path: Path) -> bool:
 
     Sniffs a bounded prefix rather than parsing the document, mirroring the
     other discovery sniffers: discovery decides routing only; the parser owns
-    validation.
+    validation. The document-shape check (a JSON object or a whole-document
+    code fence, which the parser tolerates) keeps a saved *prompt* text that
+    merely mentions the marker from routing here and failing the whole ingest.
     """
     try:
         with path.open("r", encoding="utf-8", errors="replace") as f:
             head = f.read(4096)
     except OSError:
         return False
-    return AI_CHAT_RECALL_MARKER in head
+    if AI_CHAT_RECALL_MARKER not in head:
+        return False
+    return head.lstrip().startswith(("{", "```"))
 
 
 def _zip_is_mfp(path: Path) -> bool:

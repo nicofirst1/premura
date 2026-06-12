@@ -129,6 +129,11 @@ the other intake sources). A duplicated entry *within* one export — the
 assistant recalling the same item twice — is skipped with a reason (first
 occurrence wins), never a fatal error.
 
+Known limit: the same item exported once *without* `since` and later *with*
+one produces two rows (their keys differ — the first was anchored at
+`exported_on` as precision `"unknown"`). Inventory consumers should treat
+label equality as the item identity and prefer the more precise row.
+
 ## Deriving a paste-prompt for an assistant
 
 A paste-prompt is any prompt that makes a specific assistant emit valid
@@ -186,6 +191,9 @@ the wording per assistant is free:
 
 Save the assistant's JSON reply to a file and ingest it like any other source
 artifact (`hpipe ingest --source aichat <file>`, or drop it in the inbox).
+A reply wrapped in one whole-document markdown code fence (assistants do this
+despite the "nothing else" instruction) is tolerated; JSON buried in
+surrounding prose is not — re-ask the assistant for the bare object.
 The parser follows the federated parser contract: intake-only
 `ParseOutput(intake=IntakeBatch)`, no observation rows, no `dim_metric`
 additions, gaps declared via `unmapped_metrics` / `skipped_rows`.

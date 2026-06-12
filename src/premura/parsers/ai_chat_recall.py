@@ -58,9 +58,15 @@ from .base import (
 SOURCE_KIND = "ai_chat_recall"
 FORMAT_MARKER = "premura.ai_chat_recall.v1"
 
-# since.precision -> the exact date shape that precision claims. A pair that
-# disagrees is a contradiction, not data.
-_PRECISION_FORMATS = {"day": "%Y-%m-%d", "month": "%Y-%m", "year": "%Y"}
+# since.precision -> (exact date shape that precision claims, strptime format).
+# A pair that disagrees is a contradiction, not data. The shape regex is strict
+# (zero-padded) so the dedupe token derived from the date is stable: "2026-3"
+# and "2026-03" must not become two different inventory rows.
+_PRECISION_SHAPES: dict[str, tuple[re.Pattern[str], str]] = {
+    "day": (re.compile(r"^\d{4}-\d{2}-\d{2}$"), "%Y-%m-%d"),
+    "month": (re.compile(r"^\d{4}-\d{2}$"), "%Y-%m"),
+    "year": (re.compile(r"^\d{4}$"), "%Y"),
+}
 
 _ENTRY_KEYS = {
     "product_label",
@@ -89,6 +95,23 @@ def _parse_day(value: str) -> datetime:
     return datetime.strptime(value.strip(), "%Y-%m-%d")
 
 
+def _strip_markdown_fence(text: str) -> str:
+    """Unwrap one whole-document markdown code fence, if present.
+
+    Assistants routinely wrap the JSON reply in a ``` fence despite the
+    paste-prompt's "nothing else" instruction, and the user saves the reply
+    verbatim. This is bounded format-level recovery only — a fence around the
+    entire document — never extraction of JSON out of surrounding prose.
+    """
+    stripped = text.strip()
+    if not stripped.startswith("```"):
+        return stripped
+    lines = stripped.splitlines()
+    if lines[-1].strip() == "```" and len(lines) >= 2:
+        return "\n".join(lines[1:-1]).strip()
+    return stripped
+
+
 class AiChatRecallParser:
     """Parses an AI-chat recall export into an intake-only batch."""
 
@@ -100,8 +123,9 @@ class AiChatRecallParser:
         return []
 
     def parse(self, path: Path) -> ParseOutput:
+        text = _strip_markdown_fence(path.read_text(encoding="utf-8"))
         try:
-            doc = json.loads(path.read_text(encoding="utf-8"))
+            doc = json.loads(text)
         except json.JSONDecodeError as exc:
             raise ValueError(f"{path.name}: not valid JSON: {exc}") from exc
         if not isinstance(doc, dict) or doc.get("format") != FORMAT_MARKER:
@@ -212,22 +236,29 @@ class AiChatRecallParser:
                 return
             precision_raw = since.get("precision")
             date_raw = since.get("date")
-            if not isinstance(precision_raw, str) or precision_raw not in _PRECISION_FORMATS:
+            if not isinstance(precision_raw, str) or precision_raw not in _PRECISION_SHAPES:
                 skip(
-                    f"'since.precision' must be one of {sorted(_PRECISION_FORMATS)}, "
+                    f"'since.precision' must be one of {sorted(_PRECISION_SHAPES)}, "
                     f"got {precision_raw!r}",
                     label,
                 )
                 return
-            fmt = _PRECISION_FORMATS[precision_raw]
-            try:
-                ts = datetime.strptime(str(date_raw).strip(), fmt)
-            except ValueError:
+            if date_raw is None:
+                skip("'since' declares a precision but carries no date", label)
+                return
+            shape, fmt = _PRECISION_SHAPES[precision_raw]
+            date_str = str(date_raw).strip()
+            if not shape.match(date_str):
                 skip(
                     f"'since.date' {date_raw!r} does not match declared "
                     f"precision {precision_raw!r} (a fabricated-precision contradiction)",
                     label,
                 )
+                return
+            try:
+                ts = datetime.strptime(date_str, fmt)
+            except ValueError:
+                skip(f"'since.date' {date_raw!r} is not a real calendar date", label)
                 return
             ongoing_raw = since.get("ongoing")
             if ongoing_raw is not None and not isinstance(ongoing_raw, bool):
@@ -235,7 +266,9 @@ class AiChatRecallParser:
                 return
             ongoing = ongoing_raw
             precision = precision_raw
-            since_token = str(date_raw).strip()
+            # The dedupe token is the canonical re-rendering of the parsed
+            # date, not the raw string, so equal facts hash equally.
+            since_token = ts.strftime(fmt)
             for key in since:
                 if key not in _SINCE_KEYS:
                     unmapped.add(f"vendor:{SOURCE_KIND}:entry.since.{key}")

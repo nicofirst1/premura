@@ -8,6 +8,47 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-06-12 — AI-chat supplement/medication recall source (#23)
+
+A second intake source, and the first whose "vendor" is an AI assistant: one
+documented JSON interchange contract
+([`AI_CHAT_RECALL_CONTRACT.md`](../building/architecture/AI_CHAT_RECALL_CONTRACT.md),
+format `premura.ai_chat_recall.v1`) that any assistant's paste-prompt can
+target, plus the intake-only parser consuming it through the federated seam
+(`hpipe ingest --source aichat`, inbox autodiscovery via a document-shape +
+marker sniff). Paste-prompts are derived artifacts — the contract states the
+derivation rules and ships one reference prompt (Claude.ai); no assistant
+list anywhere, and each export's `assistant` becomes its own provenance
+source `ai_chat_recall:<slug>` without a registry edit.
+
+The real work was the two honesty decisions the contract settles:
+
+- **Fuzzy time.** `since` carries an explicit precision (`day`/`month`/`year`)
+  whose date *shape* must match (strictly, zero-padded — lenient parsing
+  would let `"2026-3"` vs `"2026-03"` re-exports become two inventory rows);
+  a mismatch is a fabricated-precision contradiction and skips with a reason.
+  Events anchor at the period's earliest instant; the declared precision and
+  the chat's own wording persist in `raw_payload` (no schema migration).
+  Missing `since` anchors at `exported_on` as precision `"unknown"`.
+- **Provenance grade.** Everything lands under `source_kind=ai_chat_recall`
+  — an AI's recollection of what the user told another AI — never mixed with
+  app-logged intake. A verbatim `quote` is mandatory per entry (skipped
+  otherwise); one event per recalled item, daily events never synthesized.
+  The contract states this source answers *inventory* questions only, not
+  adherence.
+
+Mission ran in the frontier-window mode (no spec-kitty): confirmed mini-spec,
+direct implementation, independent subagent review (PASS-WITH-NOTES; its
+should-fix findings — prompt-text/fenced-reply misrouting of `ingest --source
+all`, lenient date shapes destabilizing dedupe — were fixed pre-merge), and a
+real end-to-end exercise: a live model roleplayed the assistant over a
+synthetic chat history and its verbatim JSON went inbox → parser → warehouse,
+idempotent on re-ingest. That exercise caught a contract gap reviews didn't:
+assistants resolve "two weeks ago" into fake day-precision dates by
+arithmetic, so the derivation rules now forbid it explicitly. Recalled-intake
+duplication (the source class's own failure mode) skips with a reason instead
+of failing the batch.
+
 ## 2026-06-12 — Tool-loop fixes from the first full-stack trial (#25, #26 + allowlist)
 
 The first full-stack live trial (audit:

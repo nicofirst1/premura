@@ -169,6 +169,32 @@ def test_date_precision_contradiction_is_skipped(tmp_path: Path) -> None:
     assert "does not match declared precision" in skipped.reason
 
 
+def test_unpadded_date_shape_is_skipped_not_leniently_parsed(tmp_path: Path) -> None:
+    # strptime alone would accept "2026-6-1"; the strict shape gate must not,
+    # or "2026-6" and "2026-06" re-exports would hash to two inventory rows.
+    doc = _doc(_entry(since={"date": "2026-6-1", "precision": "day"}))
+    batch = _parse(_write(tmp_path, doc))
+    assert batch.supplement_events == []
+    (skipped,) = batch.skipped_rows
+    assert "does not match declared precision" in skipped.reason
+
+
+def test_impossible_calendar_date_is_skipped(tmp_path: Path) -> None:
+    doc = _doc(_entry(since={"date": "2026-02-31", "precision": "day"}))
+    batch = _parse(_write(tmp_path, doc))
+    assert batch.supplement_events == []
+    (skipped,) = batch.skipped_rows
+    assert "not a real calendar date" in skipped.reason
+
+
+def test_precision_without_date_is_skipped_with_honest_reason(tmp_path: Path) -> None:
+    doc = _doc(_entry(since={"precision": "day"}))
+    batch = _parse(_write(tmp_path, doc))
+    assert batch.supplement_events == []
+    (skipped,) = batch.skipped_rows
+    assert "carries no date" in skipped.reason
+
+
 def test_unknown_precision_value_is_skipped(tmp_path: Path) -> None:
     doc = _doc(_entry(since={"date": "2026-03", "precision": "approximately"}))
     batch = _parse(_write(tmp_path, doc))
@@ -233,6 +259,35 @@ def test_wrong_format_marker_is_rejected(tmp_path: Path) -> None:
         AiChatRecallParser().parse(path)
 
 
+def test_fenced_reply_is_tolerated(tmp_path: Path) -> None:
+    # Assistants wrap the reply in a fence despite "nothing else"; the user
+    # saves it verbatim. One whole-document fence is format-level recovery.
+    path = tmp_path / "recall.json"
+    path.write_text("```json\n" + json.dumps(_doc(_entry())) + "\n```\n", encoding="utf-8")
+    batch = _parse(path)
+    assert len(batch.supplement_events) == 1
+
+
+def test_non_list_entries_is_rejected(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="'entries' must be a list"):
+        AiChatRecallParser().parse(_write(tmp_path, _doc(entries={"oops": True})))
+
+
+def test_non_object_entry_and_since_and_ongoing_are_skipped(tmp_path: Path) -> None:
+    doc = _doc(
+        _entry(since="2026-03"),
+        _entry(ingredient_label="iron", quote="I take iron.", since=None),
+        _entry(since={"date": "2026-03", "precision": "month", "ongoing": "yes"}),
+    )
+    doc["entries"].insert(0, "not an object")
+    batch = _parse(_write(tmp_path, doc))
+    assert len(batch.supplement_events) == 1  # only the iron entry survives
+    reasons = " | ".join(s.reason for s in batch.skipped_rows)
+    assert "entry is not a JSON object" in reasons
+    assert "'since' is not a JSON object" in reasons
+    assert "'since.ongoing' must be a boolean" in reasons
+
+
 def test_invalid_json_is_rejected(tmp_path: Path) -> None:
     path = tmp_path / "recall.json"
     path.write_text("{not json", encoding="utf-8")
@@ -251,6 +306,33 @@ def test_empty_entries_is_an_honest_nothing_found(tmp_path: Path) -> None:
     batch = _parse(_write(tmp_path, _doc()))
     assert len(batch) == 0
     batch.validate()
+
+
+# ----- inbox discovery sniffer ---------------------------------------------- #
+
+
+def test_discovery_sniffer_routes_documents_not_prompts(tmp_path: Path) -> None:
+    from premura.cli import _json_is_chat_recall
+
+    bare = _write(tmp_path, _doc(_entry()))
+    assert _json_is_chat_recall(bare)
+
+    fenced = tmp_path / "fenced.json"
+    fenced.write_text("```json\n" + json.dumps(_doc(_entry())) + "\n```\n", encoding="utf-8")
+    assert _json_is_chat_recall(fenced)
+
+    # A saved paste-prompt mentions the marker but is prose, not a document;
+    # routing it to the parser would fail the whole `ingest --source all` run.
+    prompt = tmp_path / "prompt.json"
+    prompt.write_text(
+        f'Search our entire conversation history... reply in this format: "{FORMAT_MARKER}" ...',
+        encoding="utf-8",
+    )
+    assert not _json_is_chat_recall(prompt)
+
+    unrelated = tmp_path / "unrelated.json"
+    unrelated.write_text('{"some": "other json"}', encoding="utf-8")
+    assert not _json_is_chat_recall(unrelated)
 
 
 # ----- idempotency ---------------------------------------------------------- #
@@ -296,7 +378,9 @@ def test_round_trip_persists_under_ai_chat_recall(tmp_path: Path, empty_warehous
 
     rows = empty_warehouse.execute(
         """
-        SELECT s.source_kind, e.ts_utc, i.product_label, i.ingredient_label
+        SELECT s.source_kind, e.ts_utc, i.product_label, i.ingredient_label,
+               json_extract_string(e.raw_payload, '$.date_precision'),
+               json_extract_string(e.raw_payload, '$.quote')
         FROM hp.supplement_intake_event e
         JOIN hp.dim_source s USING (source_id)
         JOIN hp.supplement_item i ON i.supplement_event_id = e.supplement_event_id
@@ -305,6 +389,10 @@ def test_round_trip_persists_under_ai_chat_recall(tmp_path: Path, empty_warehous
     ).fetchall()
     assert len(rows) == 4
     assert all(r[0] == SOURCE_KIND for r in rows)
+    # The honesty markers must be queryable from the persisted row, not just
+    # present on the in-memory batch: that is where a signal would read them.
+    assert {r[4] for r in rows} == {"day", "month", "year", "unknown"}
+    assert all(r[5] for r in rows)
 
     # Re-ingesting the same export is a no-op (dedupe_key idempotency).
     stats2 = pi.persist_intake_batch(empty_warehouse, _parse(_write(tmp_path, FULL_EXPORT)))
