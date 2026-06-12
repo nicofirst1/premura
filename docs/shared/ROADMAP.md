@@ -58,9 +58,16 @@ throughout.
    real e2e exercise over the live warehouse driving all four orchestrator
    tools through the stdio surface (a refusal-path answer was audited and
    blessed with the measured disclosure; unaudited drafts were refused).
-   Later slices: improvement queue, share packets, PubMed citation binding
-   (needs PubMed trace recording first), claim-to-trace binding (the spec's
-   honest v1 scope note). Concept lineage: decision note
+   Slice 2 (PubMed citation binding: evidence-source trace recording +
+   the cited-PMID audit check) **merged to master 2026-06-12** after the
+   same gate — two independent reviewers (both PASS-WITH-NOTES, the two
+   MAJORs fixed: honest out-of-form-citation story, no affirmative
+   "none cited" falsehood) and a real e2e over the live warehouse with a
+   real NCBI fetch (cited+fetched draft blessed with the citation line;
+   candidate-only citation refused). Later slices: improvement queue,
+   share packets, claim-to-trace binding (the spec's honest v1 scope
+   note; needs its own decision note), advisory-rubric citation
+   criterion. Concept lineage: decision note
    [0010](../building/adr/0010-runtime-orchestrator-and-operating-roles.md).
 4. **Dogfooding as standing practice, not a queue item.** Real monthly
    ingest (the T2 residue above), real questions through the six tools.
