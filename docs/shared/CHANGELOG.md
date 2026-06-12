@@ -8,6 +8,43 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-06-12 — Tool-loop fixes from the first full-stack trial (#25, #26 + allowlist)
+
+The first full-stack live trial (audit:
+[`2026-06-12-v040-first-full-stack-live-trial.md`](../history/audits/2026-06-12-v040-first-full-stack-live-trial.md))
+found the tool-loop tier unusable with its own default model family; the
+highest-leverage defects are fixed:
+
+- **#25 — content-borne tool calls are now recovered.** The `qwen2.5-coder`
+  family writes tool calls as JSON in the assistant *content* (fenced or
+  bare), never the chat API's native `tool_calls` field; the loop silently
+  treated every such turn as a working-phase end, so the model executed zero
+  tools. A bounded, format-level recovery rule (`_content_tool_calls` — any
+  unambiguous call shape, never a per-model branch) now normalizes those to
+  the native shape and dispatches them. Plain prose still ends the working
+  phase; the recorded transcript keeps the assistant content verbatim. A
+  ``json``-labeled fence that yields NO recoverable call (one bad escape in
+  the call JSON was enough, per the verification trial) is a *malformed* call
+  — corrective message, turn consumed (contract §3) — never a silent
+  working-phase end.
+- **#26 — absent-parser gate rounds now feed actionable guidance.** Ending
+  the working phase with no parser ever written used to feed back the
+  harness's own internal `ModuleNotFoundError` traceback verbatim; the loop
+  now short-circuits to a synthesized failure telling the model to use
+  `write_parser`, with honest empty self-reconcile telemetry.
+- **`read_context` no longer refuses its own allowlist.** A bare relative
+  request (`"qelband.csv"` — the exact form the brief and the refusal message
+  advertise) resolved against the harness process CWD and never matched the
+  absolute allowlist, so the tool refused the very names its own refusal
+  listed and the operator authored blind. Found on the post-#25 re-run, where
+  the 14B finally executed tools. A bare allowlisted *name* now resolves by
+  name; full resolved-path matching, and every refusal bound (manifest,
+  escape, traversal, directory-qualified relative), are unchanged.
+
+The first two fixes are inside the loop module (`live_trial_tool_loop.py`),
+the third in the `read_context` handler (`tool_loop_contract.py`); the gate,
+grading, persistence, and one-shot tier are untouched.
+
 ## 2026-06-12 — Correction: the tool-loop tier had already merged 2026-06-11
 
 The entry below (and the 2026-06-11 tool-loop entry's header) carried stale
