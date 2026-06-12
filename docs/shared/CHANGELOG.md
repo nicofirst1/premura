@@ -8,6 +8,39 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-06-12 — Release candidate `v0.4.0-rc.1` — seven overnight missions consolidated — on `overnight/release-candidate`, awaiting review + tag
+
+Release-prep meta-entry (this is the comparable-unit-of-work the header allows; it
+adds, it does not rewrite the seven mission entries below — those stay verbatim per
+the never-edit-after rule and keep their own "on branch, not yet merged" framing
+until each lands on master). The night's seven feature missions (m2–m8) were
+collected onto `overnight/release-candidate` for a single whole-night review and a
+single tag. The orchestrator cuts the tag after review; this branch does not touch
+`master` and creates no tag.
+
+- **What the candidate carries (m2–m8, each narrated in its own entry below).**
+  m2 conversation-turn capture (`log_turn`), m3 judge AI (`log_judgment` + dossier +
+  versioned rubric), m4 improvement hook (`log_improvement` + versioned playbook),
+  m5 synthetic fixture auto-generator, m6 analyze-and-answer task kind, m7 small
+  follow-ups (`hpipe inspect`, `hpipe gc --dry-run`/`--raw`, `fact_interval.unit`
+  migration 006), and m8 `condition_paired_t_test` (the sixth analytical tool).
+- **Version reasoning → `v0.4.0`.** `v0.3.0` was already tagged 2026-06-01 at the
+  finish-analytical-tool-set mission, and pyproject still read `0.3.0` (now an
+  already-consumed version). The seven missions are all additive, backward-compatible
+  feature work landing after that tag, so under the project's `v0.x.0` line this is
+  the next minor: `0.4.0`. `pyproject.toml` is bumped `0.3.0 → 0.4.0` so the
+  package metadata (`premura.__version__`, sourced from metadata) matches the tag the
+  orchestrator will cut. `v1.0.0` stays reserved for the user-facing threshold.
+- **Whole-night doc reconciliation.** Each mission synced STATUS/ROADMAP pre-merge
+  from its own viewpoint; this pass fixed the cross-WP drift that survived the gaps:
+  the `register_hypothesis_identity` docstring in `src/premura/trace.py` still listed
+  five built-ins (now six), and `STAGES.md` (authoritative) plus
+  `FULL_APP_DEVELOPMENT_PLAN.md` (authoritative, live Phase-3 status) still said
+  "five analytical tools" / "returns exactly these five" and described condition-label
+  pairing as deferred — all corrected to six with `condition_paired_t_test`. STATUS.md,
+  ROADMAP.md, and the engine CONTRACT.md were already at six (synced by m8) and were
+  left as-is.
+
 ## 2026-06-12 — Condition-label pairing (`paired-t-condition-pairing`) — on branch, not yet merged
 
 Written pre-merge (overnight solo mission on
