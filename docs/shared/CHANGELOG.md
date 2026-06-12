@@ -8,6 +8,36 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-06-12 — Condition-label pairing (`paired-t-condition-pairing`) — on branch, not yet merged
+
+Written pre-merge (overnight solo mission on
+`overnight/m8-paired-t-condition-pairing`). Ships the reviewed **condition-label
+pairing** extension the engine CONTRACT's deferred-extension rule prescribed, as
+the sixth analytical tool — `paired_t_test` and `paired_inputs` are byte-for-byte
+unchanged.
+
+- **New tool `condition_paired_t_test`.** Reports a declared **off-vs-on** paired
+  difference over one operator-declared condition *label* (any non-empty string,
+  never an enum) and a set of non-overlapping declared **episodes**. The one fixed
+  rule: each usable episode contributes one pair — off = mean of usable off-window
+  observations outside every declared episode; on = mean of usable on-window
+  observations truncated at `after_days`/the episode end; difference = on − off. The
+  estimate is the mean of the per-episode differences with a descriptive dispersion
+  band. The paired unit is the episode; the floor is two usable episodes.
+- **Honesty boundary unchanged.** No p-value, no "significant", no cause — the label
+  only splits the windows. Per-episode exclusions (before-window contamination,
+  empty windows) are disclosed, never silently salvaged. Constant differences,
+  too-few/overlapping episodes, scan requests, and inadmissible/stale series refuse
+  with a distinct reason and no estimate.
+- **Contract + seam + surface.** New `AnalyticalQuestionType.CONDITION_PAIRED_DIFFERENCE`
+  and its policy twin (declared for exactly the families that allow anchor-date
+  pairing today; no new family judgments); new `condition_inputs` preparation seam;
+  the tool on the default + operator MCP surface; a thin delegating wrapper; and the
+  tool's own normalized trace-identity (metric, label, episode set, windows,
+  direction) registered for the session research trace.
+- **Named-deferred:** warehouse storage of condition periods, multi-label contrasts,
+  episode auto-detection, any scanning — recorded in ROADMAP.
+
 ## 2026-06-12 — Small follow-ups (`small-follow-ups`) — on branch, not yet merged
 
 Written pre-merge (overnight solo mission on `overnight/m7-small-follow-ups`); the

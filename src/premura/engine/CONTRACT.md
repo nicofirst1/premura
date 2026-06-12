@@ -297,11 +297,12 @@ a first-class refusal carrying no estimate. The names below are re-exported from
 `AnalyticalInputSeries`, `PairedAnalyticalInput`,
 `PreRegisteredAssociationHypothesis`, `AnalyticalQuestionType`, `ConfoundKey`,
 `prepare_input_series`, `prepare_paired_input`,
-`prepare_before_after_paired_input`. The first bounded analytical tool set is
-complete: `engine.list_analytical_tools()` returns exactly `change_point`,
-`smoothed_average`, `correlate`, `rolling_mean`, and `paired_t_test`. The rules a
-*sixth* tool must follow — and the bounded shapes the two newest tools commit to —
-are below.
+`prepare_before_after_paired_input`. `engine.list_analytical_tools()` returns exactly
+`change_point`, `smoothed_average`, `correlate`, `rolling_mean`, `paired_t_test`,
+and `condition_paired_t_test` — six tools. The first five are the bounded
+"finished" set; `condition_paired_t_test` is the reviewed condition-label pairing
+extension `paired_t_test` deferred (see its section below). The rules a *seventh*
+tool must follow — and the bounded shapes the newest tools commit to — are below.
 
 The same invariants from the policy layer hold here: the engine is **stateless,
 deterministic, offline** — no clock, no network, no resampling. The only "now"
@@ -409,15 +410,16 @@ the analytical layer:
 - **It names no cause.** The anchor date is a comparison boundary, never a stated
   cause of any change. Available caveats carry no cause, diagnosis, treatment, or
   population-norm claim.
-- **Anchor-date pairing only — condition-label pairing is a deferred extension.**
-  In this mission the only pairing rule is before/after around one declared anchor
-  date. The engine builds pairs from observations before and after the anchor by
-  one fixed documented rule and **must not** support condition labels, arbitrary
-  pair maps, or event classification, and **must not** scan anchor dates,
-  before/after windows, or pair-selection strategies. Broader **condition-label
-  pairing** is a deliberately deferred future extension: adding it requires a new
-  pairing contract, new trace-identity fields, and new refusal rules — it must
-  **not** be smuggled into the simple anchor-date request shape.
+- **Anchor-date pairing only — condition-label pairing is a separate tool.**
+  `paired_t_test`'s only pairing rule is before/after around one declared anchor
+  date. It builds pairs from observations before and after the anchor by one fixed
+  documented rule and **must not** support condition labels, arbitrary pair maps,
+  or event classification, and **must not** scan anchor dates, before/after
+  windows, or pair-selection strategies. Broader **condition-label pairing** is
+  **not** smuggled into this shape: it ships as the sibling
+  `condition_paired_t_test` tool (its own section below), built on its own pairing
+  contract, request shape, trace-identity fields, and refusal rules. The
+  anchor-date request shape, behavior, and trace identity are unchanged.
 - **Required inputs.** One admitted series, an `anchor_date` (local calendar date),
   positive-integer `before_days` and `after_days`, and an `expected_direction`
   (`increase` or `decrease`) declared before computation.
@@ -438,6 +440,69 @@ the analytical layer:
   `anchor_date`, `before_days`, `after_days`, `expected_direction`. Exact retries
   collapse; different anchors, windows, or expected directions are distinct
   examined hypotheses.
+
+### `condition_paired_t_test` — a declared condition-label paired difference, no significance, no cause
+
+`condition_paired_t_test` is the reviewed **condition-label pairing** extension
+that `paired_t_test` deferred. It reports a paired difference between **off-label**
+and **on-label** declared periods of **one** operator's series. It is a *separate
+registered tool* with its own pairing contract, request shape, trace-identity
+fields, and refusal rules — the anchor-date `paired_t_test` is unchanged. Its
+honesty boundary matches the rest of the family.
+
+- **The condition label is operator vocabulary, never an enum.** The caller
+  declares **one** non-empty condition label (a string the operator chose, e.g.
+  `"on_magnesium"`). There is no condition list, no label registry, and no
+  validation against a vocabulary — the contract constrains the *shape* (one
+  label, declared episodes, the one fixed pairing rule), not the *content*. A
+  *list* of labels is a scan attempt and is refused at the boundary.
+- **The one fixed pairing rule (the paired unit is the episode).** The caller
+  declares a set of non-overlapping on-condition **episodes**, each a closed
+  local-calendar-day range `[start_day, end_day]` (`end_day >= start_day`). Each
+  episode contributes **one pair**: the **off value** is the mean of usable
+  observations on days in `[start_day - before_days, start_day)` that fall
+  **outside every declared episode**; the **on value** is the mean of usable
+  observations on days in `[start_day, min(start_day + after_days - 1, end_day)]`;
+  the **difference is on − off**. Day keying and last-write-wins per local calendar
+  day follow the anchor-date conventions. The estimate is the mean of the
+  per-episode differences with a descriptive dispersion band.
+- **No scanning.** One label, one declared episode set, one declared window pair,
+  one declared expected direction per request. Lists of labels, candidate episode
+  sets, or window lists are refusals, not iterations. Multiplicity across requests
+  is the session trace's job.
+- **It is not a significance test and names no cause.** Like `paired_t_test` it
+  emits **no p-value and no significance verdict**, and the label is
+  operator-declared, not a verified condition — it only splits the windows and is
+  never stated as a cause. Available caveats carry no cause, diagnosis, treatment,
+  or population-norm claim. A forbidden quantity (a p-value, a significance test, a
+  scan) is refused **before** computation with `unsupported_parameter`. A constant
+  set of per-episode differences has no honest band, so the tool refuses.
+- **No silent salvage.** An episode whose before-window intersects another declared
+  episode, or that lacks at least one usable observation in either window, is
+  **excluded with a per-episode disclosure** (episode start + machine-readable
+  reason) carried in the estimate. No invented values.
+- **Required inputs.** One admitted series; one `condition_label`; a set of
+  non-overlapping `episodes`; positive-integer `before_days` and `after_days`; and
+  an `expected_direction` (`increase`/`decrease`) declared before computation.
+- **Available envelope fields.** Tool name and declared parameters, metric id, mean
+  per-episode difference (on − off), observed/expected direction + match flag, the
+  echoed label, `episode_count_declared`, `episode_count_used`, the per-episode
+  exclusions, window parameters, method revision, the descriptive dispersion band
+  (`interval_kind="descriptive_dispersion_band"`), imputation percentage, validity
+  status, and a closed-vocabulary confound checklist.
+- **Refusal classes (no estimate).** Refuse when the input series is
+  refused/stale/missing/inadmissible; fewer than two episodes are declared;
+  declared episodes overlap; a window is non-positive or out of bounds; the
+  expected direction is missing or outside the closed set; fewer than two episodes
+  remain usable after exclusions; the per-episode differences are constant; or the
+  caller asks for a label list, candidate episode/window scanning, p-hacking,
+  diagnosis, causation, or treatment advice.
+- **Trace identity.** The normalized hypothesis identity is `metric_id`,
+  `condition_label`, the declared `episodes` set (order-insensitive), `before_days`,
+  `after_days`, `expected_direction` — the fields ADR-0009 anticipated for this
+  family ("grouping/event, windows, contrast, params"). Exact retries collapse;
+  a different label, episode set, window, or expected direction is a distinct
+  examined hypothesis.
 
 ### Confounds are a closed, rule-shaped vocabulary — not an enumerated list
 

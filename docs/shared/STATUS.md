@@ -24,7 +24,7 @@ warehouse holds ~3.5 years of data including the Garmin-only metrics that
 motivated the project (HRV rMSSD overnight, stress, training load/readiness,
 VO₂ max, skin temperature, hydration, sleep score, respiration). Re-ingest is
 idempotent. On top of it: a Stage 2 engine of nine grounded signals behind a
-deterministic evidence-admissibility layer, the completed five-tool Stage 3
+deterministic evidence-admissibility layer, the six-tool Stage 3
 analytical set with session research trace + audit skill, PubMed literature
 grounding, agent-mediated profile capture, usable nutrition/supplement intake
 dimensions, and the session-log substrate with a hardened cheap-model
@@ -53,25 +53,28 @@ significance, no causation. They return explicit stale / unavailable /
 insufficient-data states instead of a misleading answer. The first eight are
 exposed one-to-one as MCP signal tools; `bmi` is engine-registered.
 
-### Stage 3 analytical tools (five — `engine.list_analytical_tools()` returns exactly these)
+### Stage 3 analytical tools (six — `engine.list_analytical_tools()` returns exactly these)
 
 `change_point` (level-shift detection), `smoothed_average` (trailing smoothed
 pattern), `correlate` (pre-registered, caller-declared whole-day-lagged
 Spearman *association*; `N_eff`-corrected band; no p-value, no "significant"),
 `rolling_mean` (declared moving-window summary with visible
 coverage/imputation), `paired_t_test` (declared before/after anchor-date
-paired difference; **not** a significance test). Every tool passes the
-admissibility gate before computation and returns the mandatory result
-envelope (estimate + validity metadata + closed `ConfoundKey` checklist) or a
-first-class refusal. Operative rules:
-[`src/premura/engine/CONTRACT.md`](../../src/premura/engine/CONTRACT.md).
+paired difference; **not** a significance test), `condition_paired_t_test`
+(declared **condition-label** paired difference over off-vs-on declared
+episodes of one operator's series; one off/on pair per usable episode, the
+label is operator-declared and only splits the windows; **not** a significance
+test, names no cause). Every tool passes the admissibility gate before
+computation and returns the mandatory result envelope (estimate + validity
+metadata + closed `ConfoundKey` checklist) or a first-class refusal. Operative
+rules: [`src/premura/engine/CONTRACT.md`](../../src/premura/engine/CONTRACT.md).
 
 ### MCP surfaces
 
-- **Default agent surface (`premura-mcp`) — twenty-two tools:** 2
+- **Default agent surface (`premura-mcp`) — twenty-three tools:** 2
   catalog/summary (`list_metrics`, `metric_summary`), 8 signal-backed (table
   above), 2 profile-capture (`profile_context_supported_fields`,
-  `profile_context_record`), 5 analytical, 3 session research trace
+  `profile_context_record`), 6 analytical, 3 session research trace
   (`research_trace_open`, `research_trace_mark_surfaced`,
   `research_trace_disclosure`), 2 PubMed (`pubmed_search` — candidates only,
   never citeable; `pubmed_fetch` — the only citeable record). No tool on this
@@ -80,7 +83,7 @@ first-class refusal. Operative rules:
   four-state envelope (`available` / `missing_input` / `stale_input` /
   `insufficient_data`) with a structured `missing_input` report a caller can
   branch on.
-- **Operator surface (`premura-mcp-operator`) — twenty-three tools:** all
+- **Operator surface (`premura-mcp-operator`) — twenty-four tools:** all
   default tools plus `query_warehouse` (raw SQL escape hatch, no Stage 2
   guarantees). Requires explicit launch acknowledgment (`--ack` /
   `PREMURA_OPERATOR_ACK`).

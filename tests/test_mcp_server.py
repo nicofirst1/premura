@@ -204,6 +204,7 @@ _DEFAULT_TOOLS = sorted(
         "correlate",
         "rolling_mean",
         "paired_t_test",
+        "condition_paired_t_test",
         "research_trace_open",
         "research_trace_mark_surfaced",
         "research_trace_disclosure",

@@ -541,9 +541,7 @@ def _baseline_relative(
             # floor and the association/difference-not-causation caveat.
             QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=()),
             QuestionType.PAIRED_DIFFERENCE: _paired_difference_rule(caveats=()),
-            QuestionType.CONDITION_PAIRED_DIFFERENCE: _condition_paired_difference_rule(
-                caveats=()
-            ),
+            QuestionType.CONDITION_PAIRED_DIFFERENCE: _condition_paired_difference_rule(caveats=()),
             QuestionType.HISTORICAL_BASELINE: QuestionRule(
                 admissibility=Admissibility.LIMITED,
                 freshness=FreshnessRule(mode=FreshnessMode.CAVEAT_ONLY),
@@ -622,9 +620,7 @@ def _slow_trajectory_method_sensitive(
             # association/difference-not-causation caveat.
             QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=()),
             QuestionType.PAIRED_DIFFERENCE: _paired_difference_rule(caveats=()),
-            QuestionType.CONDITION_PAIRED_DIFFERENCE: _condition_paired_difference_rule(
-                caveats=()
-            ),
+            QuestionType.CONDITION_PAIRED_DIFFERENCE: _condition_paired_difference_rule(caveats=()),
             QuestionType.HISTORICAL_BASELINE: QuestionRule(
                 admissibility=Admissibility.ADMISSIBLE,
                 freshness=FreshnessRule(mode=FreshnessMode.CAVEAT_ONLY),

@@ -39,6 +39,8 @@ from ..engine import (
     AnalyticalResultEnvelope,
     BeforeAfterDirection,
     BeforeAfterPairedRequest,
+    ConditionEpisode,
+    ConditionLabelPairedRequest,
     EvidenceCandidate,
     ExpectedDirection,
     MissingInputReport,
@@ -729,6 +731,126 @@ def _parse_before_after_direction(value: str) -> BeforeAfterDirection:
 
 
 # --------------------------------------------------------------------------- #
+# Stage 3 condition-label paired difference (m8) — condition_paired_t_test
+#
+# ``condition_paired_t_test`` is the condition-label sibling of ``paired_t_test``.
+# It is just as THIN: it validates only the caller-facing parameter shape, reads
+# ONE admitted series' evidence through the SAME engine-owned Stage 2 query layer
+# the single-series tools use (``_prepare_analytical_series`` — no raw fact-table
+# SQL), builds the pre-registered condition-label request the engine requires, then
+# hands the prepared series + request to the engine:
+# ``prepare_condition_label_paired_input`` applies the per-episode pairing +
+# admissibility, and ``invoke_analytical_tool`` runs the deterministic per-episode
+# difference estimate. The wrapper computes NO statistics, does NO pairing, names
+# NO confounds/caveats, and emits NO p-value or significance verdict: the returned
+# envelope (available or refusal) is the engine's, serialized unchanged. The
+# condition label is one operator-declared string — never a list (a label list is
+# a scan attempt and is refused at this boundary).
+# --------------------------------------------------------------------------- #
+
+
+def condition_paired_t_test(
+    metric_id: str,
+    *,
+    condition_label: str,
+    episodes: Sequence[Mapping[str, str]],
+    before_days: int,
+    after_days: int,
+    expected_direction: str,
+    warehouse_path: Path | None = None,
+) -> dict[str, Any]:
+    """Report a condition-label paired difference for one metric (delegates to engine).
+
+    The caller pre-registers the metric, one operator-declared ``condition_label``
+    (a single non-empty string, never a list), the declared non-overlapping
+    on-condition ``episodes`` (each ``{"start_day": "YYYY-MM-DD", "end_day":
+    "YYYY-MM-DD"}``), the before/after window sizes, and the ``expected_direction``
+    ("increase"/"decrease") BEFORE seeing the result. The label is operator-declared,
+    not a verified condition, and only splits the off/on windows.
+
+    This wrapper validates only the caller-facing parameter shape and assembles the
+    declared request. The single series read goes through the engine's Stage 2 query
+    layer; all per-episode pairing, admissibility, computation (mean per-episode
+    difference and its dispersion), confounds, caveats, exclusions, and refusals
+    belong to the engine. The wrapper performs no statistics and emits no p-value or
+    significance verdict; an inadmissible / stale / too-few-episodes / overlapping /
+    too-few-usable-episodes / constant-difference request flows back as a structured
+    refusal with a distinct reason and no estimate.
+    """
+    metric = _require_metric_id("metric_id", metric_id)
+    label = _require_condition_label("condition_label", condition_label)
+    parsed_episodes = _parse_condition_episodes(episodes)
+    _ensure_positive_int("before_days", before_days)
+    _ensure_positive_int("after_days", after_days)
+    direction = _parse_before_after_direction(expected_direction)
+
+    request = ConditionLabelPairedRequest(
+        metric_id=metric,
+        condition_label=label,
+        episodes=parsed_episodes,
+        before_days=before_days,
+        after_days=after_days,
+        expected_direction=direction,
+    )
+
+    with _open_warehouse(warehouse_path) as conn:
+        series = _prepare_analytical_series(
+            conn, metric, AnalyticalQuestionType.CONDITION_PAIRED_DIFFERENCE
+        )
+        paired = engine.prepare_condition_label_paired_input(series, request)
+        envelope = engine.invoke_analytical_tool("condition_paired_t_test", paired)
+    return _serialize_analytical_result(envelope)
+
+
+def _require_condition_label(name: str, value: str) -> str:
+    """Require a single non-empty operator-declared condition label.
+
+    The label is operator vocabulary — any non-empty string — but it must be one
+    string, not a list: a list of labels is a scan attempt and is rejected here
+    before any computation (the no-scanning guardrail).
+    """
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{name} must be a single non-empty operator-declared string")
+    return value.strip()
+
+
+def _parse_condition_episodes(
+    episodes: Sequence[Mapping[str, str]],
+) -> tuple[ConditionEpisode, ...]:
+    """Map caller-facing episode dicts onto the closed engine episode shape.
+
+    Each episode is ``{"start_day": "YYYY-MM-DD", "end_day": "YYYY-MM-DD"}``. The
+    wrapper only parses the calendar dates and constructs the frozen engine
+    ``ConditionEpisode`` (which rejects an end before a start); declared-set
+    concerns (count, overlap) and all pairing belong to the engine seam.
+    """
+    if not isinstance(episodes, Sequence) or isinstance(episodes, (str, bytes)):
+        raise ValueError("episodes must be a list of {start_day, end_day} objects")
+    parsed: list[ConditionEpisode] = []
+    for i, ep in enumerate(episodes):
+        if not isinstance(ep, Mapping) or "start_day" not in ep or "end_day" not in ep:
+            raise ValueError(
+                f"episode[{i}] must be an object with 'start_day' and 'end_day' ISO dates"
+            )
+        start = _parse_episode_date(f"episode[{i}].start_day", ep["start_day"])
+        end = _parse_episode_date(f"episode[{i}].end_day", ep["end_day"])
+        try:
+            parsed.append(ConditionEpisode(start_day=start, end_day=end))
+        except ValueError as exc:
+            raise ValueError(f"episode[{i}] is invalid: {exc}") from exc
+    return tuple(parsed)
+
+
+def _parse_episode_date(name: str, value: str) -> date:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{name} must be a non-empty ISO-8601 date (YYYY-MM-DD)")
+    try:
+        return date.fromisoformat(value.strip())
+    except ValueError as exc:
+        raise ValueError(f"{name} must be an ISO-8601 date (YYYY-MM-DD); got {value!r}") from exc
+
+
+# --------------------------------------------------------------------------- #
 # Stage 3 pre-registered lagged association (WP04) — correlate
 #
 # ``correlate`` is the paired sibling of the single-series analytical tools.
@@ -1224,6 +1346,7 @@ def _json_safe(value: object) -> Any:
 __all__ = [
     "PROFILE_CAPTURE_SOURCE_KIND",
     "change_point",
+    "condition_paired_t_test",
     "correlate",
     "hrv_change_around_date",
     "list_metrics",

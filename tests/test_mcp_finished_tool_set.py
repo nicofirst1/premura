@@ -58,6 +58,7 @@ def _ensure_live_analytical_registry() -> None:
 # pubmed-grounding-tools later adds pubmed_search + pubmed_fetch (-> 20).
 # usable-intake-dimensions WP05 adds the two intake signal tools
 # (supplement_intake_adherence + nutrition_intake_trend) -> 22.
+# m8 adds condition_paired_t_test (the condition-label pairing extension) -> 23.
 _DEFAULT_TOOLS_FINISHED = sorted(
     [
         "list_metrics",
@@ -77,6 +78,7 @@ _DEFAULT_TOOLS_FINISHED = sorted(
         "correlate",
         "rolling_mean",
         "paired_t_test",
+        "condition_paired_t_test",
         "pubmed_search",
         "pubmed_fetch",
         "research_trace_open",
@@ -162,7 +164,7 @@ def test_default_surface_lists_exactly_twenty_tools() -> None:
         server_ = build_server()
         names = sorted(tool.name for tool in await server_.list_tools())
         assert names == _DEFAULT_TOOLS_FINISHED
-        assert len(names) == 22
+        assert len(names) == 23
 
     asyncio.run(run())
 

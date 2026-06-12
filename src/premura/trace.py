@@ -460,6 +460,51 @@ def _identity_paired_t_test(req: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _identity_condition_paired_t_test(req: Mapping[str, Any]) -> dict[str, Any]:
+    """``condition_paired_t_test``: a pre-registered condition-label paired split.
+
+    Identity fields (the pre-registered declaration + the MCP request shape; the
+    fields ADR-0009 anticipated for this family — "grouping/event, windows,
+    contrast, params"): metric id, the operator-declared condition label, the
+    declared episode set, before-window days, after-window days, and the declared
+    expected direction. All are caller-declared *before* the result exists and have
+    no MCP-side default, so every one is identity-bearing: an exact retry of the
+    same label/episodes/windows/direction collapses, while a different label, a
+    different episode set, a different window, or a different expected direction is
+    a distinct examined hypothesis.
+
+    The episode *set* — not the listing order — bears on the hypothesis, so each
+    episode is normalized to its (start, end) ISO pair and the set is sorted: two
+    declarations of the same episodes in a different order are the same examined
+    hypothesis. Each episode's dates are normalized to ISO strings so a ``date`` and
+    its string form share identity.
+    """
+
+    def _iso(value: Any) -> Any:
+        isoformat = getattr(value, "isoformat", None)
+        return isoformat() if callable(isoformat) else value
+
+    episodes = req.get("episodes") or []
+    episode_shape: list[list[Any]] = []
+    for ep in episodes:
+        if isinstance(ep, Mapping):
+            start, end = ep.get("start_day"), ep.get("end_day")
+        else:
+            start, end = getattr(ep, "start_day", None), getattr(ep, "end_day", None)
+        episode_shape.append([_iso(start), _iso(end)])
+    episode_shape.sort(key=lambda pair: (str(pair[0]), str(pair[1])))
+    before_days = req.get("before_days")
+    after_days = req.get("after_days")
+    return {
+        "metric_id": req.get("metric_id"),
+        "condition_label": req.get("condition_label"),
+        "episodes": episode_shape,
+        "before_days": int(before_days) if before_days is not None else None,
+        "after_days": int(after_days) if after_days is not None else None,
+        "expected_direction": req.get("expected_direction"),
+    }
+
+
 # The declaration registry. Keyed by tool name; each value normalizes a request
 # to its identity dict. This is the single seam a future analytical tool plugs
 # into — disclosure/counting code never names a specific tool.
@@ -469,6 +514,7 @@ _IDENTITY_REGISTRY: dict[str, Callable[[Mapping[str, Any]], dict[str, Any]]] = {
     "correlate": _identity_correlate,
     "rolling_mean": _identity_rolling_mean,
     "paired_t_test": _identity_paired_t_test,
+    "condition_paired_t_test": _identity_condition_paired_t_test,
 }
 
 
