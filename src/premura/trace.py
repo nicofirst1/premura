@@ -527,7 +527,8 @@ def register_hypothesis_identity(
     This is how a future tool joins the trace's N-counting without anyone editing
     the disclosure switch: it declares its identity once (the shipped built-ins —
     ``change_point`` / ``smoothed_average`` / ``correlate`` / ``rolling_mean`` /
-    ``paired_t_test`` — register through the same seam). ``normalizer`` maps the
+    ``paired_t_test`` / ``condition_paired_t_test`` — register through the same
+    seam). ``normalizer`` maps the
     tool's request kwargs to the canonical dict of identity-bearing fields.
     """
     _IDENTITY_REGISTRY[tool_name] = normalizer

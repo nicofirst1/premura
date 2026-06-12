@@ -171,7 +171,7 @@ The lab proposal is the first place where Premura becomes more than a wearable d
 
 > **Status: in progress — the first bounded analytical tool set is complete.** The
 > evidence-admissibility foundation and the bounded analytical contract landed, and
-> the five-tool set now sits on the default MCP surface — `change_point`,
+> a first five-tool set landed on the default MCP surface — `change_point`,
 > `smoothed_average`, `correlate` (the first multi-input tool: a pre-registered,
 > caller-declared whole-day-lagged Spearman *association* with an
 > autocorrelation-corrected `N_eff` band, never a p-value or "significant"),
@@ -182,9 +182,15 @@ The lab proposal is the first place where Premura becomes more than a wearable d
 > each carrying the mandatory
 > result envelope (estimate + validity metadata + closed confound checklist,
 > including the `common_cause_plausible` key) or a first-class refusal.
-> `engine.list_analytical_tools()` returns exactly these five. See
-> [CHANGELOG.md](../../shared/CHANGELOG.md) (2026-05-30 entries) and design
-> decision note [0008](../adr/0008-correlate-pre-registered-lagged-association.md).
+> `engine.list_analytical_tools()` then returned exactly these five. A sixth
+> tool, `condition_paired_t_test` (the reviewed **condition-label pairing**
+> extension `paired_t_test` had deferred — a declared off-vs-on paired difference
+> over one operator-declared condition label and a set of non-overlapping declared
+> episodes, one off/on pair per usable episode, same honesty boundary, the label
+> only splits the windows and names no cause), **has since shipped too**, so
+> `engine.list_analytical_tools()` now returns exactly six. See
+> [CHANGELOG.md](../../shared/CHANGELOG.md) (2026-05-30 and 2026-06-12 entries) and
+> design decision note [0008](../adr/0008-correlate-pre-registered-lagged-association.md).
 > The **session research trace / measured multiplicity disclosure** has since
 > shipped too — three default-surface tools (`research_trace_open`,
 > `research_trace_mark_surfaced`, `research_trace_disclosure`) over the pure
@@ -207,9 +213,12 @@ The lab proposal is the first place where Premura becomes more than a wearable d
 > fetched paper to the operator's own warehouse data), and broader PubMed tooling
 > — full-text retrieval, deep paper analysis, other sources (Europe PMC,
 > Unpaywall), MeSH lookup, related-article discovery, citation formatting.
-> `paired_t_test`'s broader condition-label pairing (anchor-date pairing only
-> ships now), nutrition/supplement source adaptation, and the teaching UI also
-> remain deferred.
+> `paired_t_test`'s broader condition-label pairing has since shipped as the
+> sixth tool `condition_paired_t_test` (above); warehouse storage of condition
+> periods, multi-label contrasts, episode auto-detection, and any scanning stay
+> deferred. Nutrition/supplement source adaptation has since shipped (the first
+> real vendor parser, MyFitnessPal, 2026-06-11), and the teaching UI remains
+> deferred.
 
 #### Goal
 
@@ -217,7 +226,7 @@ Turn the first MCP surface into an actually useful analytical surface.
 
 #### Main work
 
-- Add deterministic stats tools from `ROADMAP.md` (`correlate`, `paired_t_test`, `rolling_mean`, `change_point`, …) — the first bounded set is complete: `change_point`, `smoothed_average`, `correlate`, `rolling_mean`, and `paired_t_test` all shipped (`paired_t_test`'s broader condition-label pairing stays deferred)
+- Add deterministic stats tools from `ROADMAP.md` (`correlate`, `paired_t_test`, `rolling_mean`, `change_point`, …) — the bounded set is complete and now six tools: `change_point`, `smoothed_average`, `correlate`, `rolling_mean`, `paired_t_test`, and `condition_paired_t_test` (the condition-label pairing extension `paired_t_test` had deferred) all shipped (warehouse storage of condition periods, multi-label contrasts, episode auto-detection, and scanning stay deferred)
 - Add PubMed search/fetch integration — **first slice shipped**: `pubmed_search` (candidates only, never citeable) and `pubmed_fetch` (a citeable record for one exact PMID, with PubMed provenance) on the default surface, over a Premura-owned adapter on NCBI E-utilities with no new HTTP dependency. Broader PubMed tooling (full text, deep analysis, other sources, MeSH, related-article discovery, citation formatting) stays deferred
 - Add the personal-data bridge from literature to warehouse queries (deferred — the shipped slice grounds citations in fetched records but does not yet tie literature to the operator's own data; concept-to-metric mapping also remains future work)
 - Add reproducible research trace output — **shipped** as the session research trace / measured multiplicity disclosure, and the follow-on **research trace audit skill** that interprets it has **also shipped** (a Premura-specific agent skill reading the audit-consumer contract read-only; it changed no trace counts or schema)
