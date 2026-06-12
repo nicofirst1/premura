@@ -1,16 +1,12 @@
-# Design note (DRAFT): orchestrated operating-agent roles
+# Design note (PROMOTED): orchestrated operating-agent roles
 
-> Status: **pre-spec exploration.** Not authoritative. Captures the resolved
-> shape from the June 2026 design grilling session about a runtime multi-agent
-> surface for operating Premura. No code decisions are locked; this exists so a
-> future spec can start from shared language instead of re-deriving the framing.
->
-> **Scheduled (2026-06-12):** this is the next strategic thread — Stage 4 is
-> the only remaining stage gap, and promoting this draft to a real spec is
-> item 3 of the [ROADMAP](../../shared/ROADMAP.md) §"Near-term roadmap". The
-> promotion happens in a maintainer design-interview session (decisions get
-> locked there, not here); the first build slice after the spec is the
-> runtime orchestrator skeleton plus the **mandatory `answer_audit` gate**.
+> Status: **promoted 2026-06-12 — kept for history, no longer authoritative.**
+> The maintainer design-interview locked five decisions (decision note
+> [0013](../adr/0013-operating-roles-promotion-decisions.md)) and this draft's
+> resolved shape became the specification at
+> [`docs/building/architecture/OPERATING_ROLES.md`](../architecture/OPERATING_ROLES.md).
+> Read the spec, not this note; the vocabulary and queue/sharing sections
+> below remain the original source the spec adopts by reference.
 >
 > Companion reading: [`AGENTS.md`](../../../AGENTS.md) §"two rules",
 > [`docs/shared/DOCTRINE.md`](../../shared/DOCTRINE.md),

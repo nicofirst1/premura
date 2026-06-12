@@ -47,15 +47,17 @@ throughout.
    `condition_paired_t_test` consumes the stored declaration when
    `episodes` is omitted — off/on questions stop re-declaring episodes per
    request. The engine stayed stateless and unchanged.
-3. **Stage 4 — operating-roles spec, then first slice** (the strategic
-   thread; the only remaining stage gap). Promote
-   [`operating-agent-roles.md`](../building/planning/operating-agent-roles.md)
-   from DRAFT pre-spec to a real specification (a maintainer
-   design-interview session, since decisions get locked there), then build
-   the first slice: the runtime orchestrator skeleton and the **mandatory
-   `answer_audit` gate** — the piece whose absence means nothing today
-   structurally stops an unaudited health answer. Concept locked by decision
-   note [0010](../building/adr/0010-runtime-orchestrator-and-operating-roles.md).
+3. **Stage 4 — operating-roles spec, then first slice.** Spec **promoted
+   2026-06-12** in the maintainer design-interview (five locked decisions:
+   decision note
+   [0013](../building/adr/0013-operating-roles-promotion-decisions.md); spec:
+   [`OPERATING_ROLES.md`](../building/architecture/OPERATING_ROLES.md)).
+   Slice 1 (role registry + handoff trace + blocking `answer_audit` /
+   `present_answer` gate) is built on `feat/operating-roles-slice-1` —
+   **pending independent review + one real e2e exercise before merge**.
+   Later slices: improvement queue, share packets, PubMed citation binding
+   (needs PubMed trace recording first). Concept lineage: decision note
+   [0010](../building/adr/0010-runtime-orchestrator-and-operating-roles.md).
 4. **Dogfooding as standing practice, not a queue item.** Real monthly
    ingest (the T2 residue above), real questions through the six tools.
    Per decision note 0012 this is the acceptance evaluation that costs

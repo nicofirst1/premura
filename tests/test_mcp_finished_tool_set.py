@@ -76,6 +76,10 @@ _DEFAULT_TOOLS_FINISHED = sorted(
         "condition_episode_record",
         "condition_episode_list",
         "condition_episode_retract",
+        "operating_roles",
+        "orchestrator_handoff",
+        "answer_audit",
+        "present_answer",
         "change_point",
         "smoothed_average",
         "correlate",
@@ -167,7 +171,7 @@ def test_default_surface_lists_exactly_the_pinned_tools() -> None:
         server_ = build_server()
         names = sorted(tool.name for tool in await server_.list_tools())
         assert names == _DEFAULT_TOOLS_FINISHED
-        assert len(names) == 26
+        assert len(names) == 30
 
     asyncio.run(run())
 

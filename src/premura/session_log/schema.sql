@@ -241,3 +241,46 @@ CREATE TABLE IF NOT EXISTS log_improvement (
 );
 -- Fetch a session's improvement proposals.
 CREATE INDEX IF NOT EXISTS ix_improvement_session ON log_improvement(session_id);
+
+-- ----------------------------------------------------------------------------
+-- log_handoff — the runtime orchestrator's dispatch/handoff trace
+-- (docs/building/architecture/OPERATING_ROLES.md). One row per cross-role
+-- handoff; compact PHI-safe references, never raw health data. Deliberately
+-- NOT FK-bound to log_session: runtime operating sessions are identified by
+-- the caller's stable id (typically the research-trace session id) and exist
+-- outside the harness-run lifecycle log_session models. Kept out of the
+-- warehouse research trace so multiplicity counts stay uncontaminated.
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS log_handoff (
+    handoff_id          VARCHAR PRIMARY KEY,
+    runtime_session_id  VARCHAR NOT NULL,
+    from_id             VARCHAR NOT NULL,  -- 'orchestrator' or a role_id
+    to_id               VARCHAR NOT NULL,  -- a role_id, 'orchestrator', or 'human'
+    task_summary        VARCHAR NOT NULL,  -- PHI-safe one-liner
+    inputs_ref          VARCHAR,           -- compact reference, never raw data
+    outputs_ref         VARCHAR,
+    surface_touched     VARCHAR,
+    status              VARCHAR NOT NULL,  -- 'dispatched' | 'returned' | 'refused' | 'failed'
+    reason              VARCHAR,
+    recorded_at         TIMESTAMP NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_lh_session ON log_handoff(runtime_session_id);
+
+-- ----------------------------------------------------------------------------
+-- log_answer_audit — answer-audit verdicts keyed by the draft's sha256. The
+-- blocking present_answer gate refuses a health-interpreting draft without a
+-- passing row for exactly that hash (OPERATING_ROLES.md v1 checks). The
+-- verdict rows are append-only; a revised draft is a new hash, never an edit.
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS log_answer_audit (
+    audit_id            VARCHAR PRIMARY KEY,
+    runtime_session_id  VARCHAR,           -- research-trace session id when given
+    draft_sha256        VARCHAR NOT NULL,
+    passed              BOOLEAN NOT NULL,
+    trace_verified      BOOLEAN NOT NULL,
+    disclosure          VARCHAR,           -- measured disclosure the gate attaches
+    refusal_count       INTEGER,
+    failures            VARCHAR,           -- JSON list of failed-check descriptions
+    recorded_at         TIMESTAMP NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_laa_draft ON log_answer_audit(draft_sha256);

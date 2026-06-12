@@ -12,9 +12,10 @@ Two entrypoints are provided:
   (``condition_episode_record`` / ``condition_episode_list`` /
   ``condition_episode_retract``), the three session research-trace tools
   (``research_trace_open`` / ``research_trace_mark_surfaced`` /
-  ``research_trace_disclosure``), and the two PubMed grounding tools
-  (``pubmed_search`` / ``pubmed_fetch``) — 26 tools in
-  total.  ``query_warehouse``
+  ``research_trace_disclosure``), the two PubMed grounding tools
+  (``pubmed_search`` / ``pubmed_fetch``), and the four runtime-orchestrator
+  tools (``operating_roles`` / ``orchestrator_handoff`` / ``answer_audit`` /
+  ``present_answer``) — 30 tools in total.  ``query_warehouse``
   is intentionally absent; agents should use the signal-backed tools, the
   analytical tools, the trace tools, the PubMed tools, and the catalog helpers
   instead.  The authoritative tool list is asserted in
@@ -818,6 +819,90 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
             episode_id,
             reason,
             warehouse_path=warehouse_path,
+        )
+
+    # --- Runtime orchestrator: roles, handoff trace, blocking answer gate -- #
+    # Slice 1 of docs/building/architecture/OPERATING_ROLES.md (decision note
+    # 0013). The operating agent is the intelligence; these tools are the thin
+    # deterministic layer: the role registry (discovery), the handoff trace
+    # (session-log file, never the research trace), and the audit gate whose
+    # verified envelope structurally cannot be obtained without an audit.
+
+    @mcp.tool()
+    def operating_roles() -> dict[str, Any]:
+        """List the registered operating-role declarations.
+
+        Each declaration carries the role's job, allowed surfaces, handoff
+        outputs, and boundaries. The registry is bounded but open: new roles
+        register declarations; this is never a closed persona list.
+        """
+        return warehouse_server.operating_roles()
+
+    @mcp.tool()
+    def orchestrator_handoff(
+        runtime_session_id: str,
+        from_id: str,
+        to_id: str,
+        task_summary: str,
+        status: str,
+        inputs_ref: str | None = None,
+        outputs_ref: str | None = None,
+        surface_touched: str | None = None,
+        reason: str | None = None,
+    ) -> dict[str, Any]:
+        """Record one cross-role handoff in the orchestrator trace.
+
+        ``status`` is one of dispatched/returned/refused/failed. All fields are
+        compact PHI-safe references — never raw health data. Handoffs land in
+        the session-log store, not the research trace, so multiplicity counts
+        stay uncontaminated.
+        """
+        return warehouse_server.orchestrator_handoff(
+            runtime_session_id,
+            from_id,
+            to_id,
+            task_summary,
+            status,
+            inputs_ref=inputs_ref,
+            outputs_ref=outputs_ref,
+            surface_touched=surface_touched,
+            reason=reason,
+        )
+
+    @mcp.tool()
+    def answer_audit(draft: str, session_id: str | None = None) -> dict[str, Any]:
+        """Audit a draft health answer against its research-trace session.
+
+        Deterministic v1 checks: the named session must exist and have recorded
+        analytical calls; the measured search-effort disclosure and refusal
+        counts are computed from trace rows, never trusted from prose. The
+        verdict is recorded keyed by the draft's sha256 — ``present_answer``
+        requires a passing verdict for exactly that draft. The audit creates no
+        new evidence and reruns nothing.
+        """
+        return warehouse_server.answer_audit(
+            draft, session_id=session_id, warehouse_path=warehouse_path
+        )
+
+    @mcp.tool()
+    def present_answer(
+        draft: str,
+        interprets_health: bool,
+        acknowledge_unverified: bool = False,
+    ) -> dict[str, Any]:
+        """Bless a final answer for presentation (the blocking gate).
+
+        A health-interpreting draft is blessed only with a passing
+        ``answer_audit`` verdict for exactly this draft; the blessed envelope
+        carries the measured disclosure and mandatory caveats. Without one the
+        gate refuses (``acknowledge_unverified=True`` after a failed audit
+        returns the draft with a prominent NOT TRACE-VERIFIED warning instead).
+        Non-interpreting drafts pass through marked as such.
+        """
+        return warehouse_server.present_answer(
+            draft,
+            interprets_health=interprets_health,
+            acknowledge_unverified=acknowledge_unverified,
         )
 
     # --- Session research trace (WP03, mission session-research-trace) --------- #

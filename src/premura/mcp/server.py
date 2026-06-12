@@ -34,6 +34,7 @@ from typing import TYPE_CHECKING, Any
 import duckdb
 
 from .. import engine
+from .. import trace as trace_service
 from ..config import settings
 from ..engine import (
     AnalyticalInputSeries,
@@ -57,8 +58,10 @@ from ..profile_fields import (
     UnsupportedProfileFieldError,
     get_profile_field,
 )
+from ..session_log import store as session_log_store
 from ..store import condition_episodes as condition_episodes_store
 from ..store import duck, profile_intake
+from ..ui import roles as ui_roles
 from . import pubmed
 
 if TYPE_CHECKING:
@@ -448,6 +451,242 @@ def stored_condition_episodes(
             }
         )
     return episodes
+
+
+# --------------------------------------------------------------------------- #
+# Runtime orchestrator: roles, handoff trace, and the blocking answer gate.
+#
+# Slice 1 of docs/building/architecture/OPERATING_ROLES.md (decision note
+# 0013): the operating agent is the intelligence; this thin deterministic
+# layer owns the two things that must not depend on agent goodwill — the
+# handoff trace (session-log file, never the research trace) and the
+# answer-audit gate. The gate's structural guarantee: anything carrying the
+# verified envelope from present_answer was audited against its research
+# trace; anything that wasn't is visibly not verified.
+# --------------------------------------------------------------------------- #
+
+
+def _draft_sha256(draft: str) -> str:
+    import hashlib
+
+    return hashlib.sha256(draft.encode("utf-8")).hexdigest()
+
+
+@contextmanager
+def _open_session_log(
+    session_log_path: Path | None,
+) -> Iterator[duckdb.DuckDBPyConnection]:
+    """Open the session log's own file (never the warehouse) with schema applied."""
+    conn = session_log_store.connect(session_log_path or settings.session_log_path)
+    try:
+        session_log_store.init_schema(conn)
+        yield conn
+    finally:
+        conn.close()
+
+
+def operating_roles() -> dict[str, Any]:
+    """Return the registered operating-role declarations (the bounded registry)."""
+    declarations = [role.to_dict() for role in ui_roles.list_roles()]
+    return {"roles": declarations, "count": len(declarations)}
+
+
+def orchestrator_handoff(
+    runtime_session_id: str,
+    from_id: str,
+    to_id: str,
+    task_summary: str,
+    status: str,
+    *,
+    inputs_ref: str | None = None,
+    outputs_ref: str | None = None,
+    surface_touched: str | None = None,
+    reason: str | None = None,
+    session_log_path: Path | None = None,
+) -> dict[str, Any]:
+    """Record one cross-role handoff in the orchestrator trace (session log).
+
+    Compact PHI-safe references only — never raw health data. An unknown
+    ``from_id``/``to_id`` is allowed ('orchestrator', 'human', or any
+    registered role) but a non-registered role id is surfaced in the response
+    so a typo never silently becomes a phantom role. Invalid field values come
+    back as a structured ``rejected`` response.
+    """
+    known = {role.role_id for role in ui_roles.list_roles()} | {"orchestrator", "human"}
+    try:
+        with _open_session_log(session_log_path) as conn:
+            handoff_id = session_log_store.record_handoff(
+                conn,
+                runtime_session_id=runtime_session_id,
+                from_id=from_id,
+                to_id=to_id,
+                task_summary=task_summary,
+                status=status,
+                inputs_ref=inputs_ref,
+                outputs_ref=outputs_ref,
+                surface_touched=surface_touched,
+                reason=reason,
+            )
+    except ValueError as exc:
+        return {"status": "rejected", "reason": str(exc)}
+    return {
+        "status": "recorded",
+        "handoff_id": handoff_id,
+        "unregistered_ids": sorted({from_id, to_id} - known) or None,
+    }
+
+
+def answer_audit(
+    draft: str,
+    *,
+    session_id: str | None = None,
+    warehouse_path: Path | None = None,
+    session_log_path: Path | None = None,
+) -> dict[str, Any]:
+    """Run the v1 deterministic answer-audit checks and record the verdict.
+
+    Inspects the draft against the named research-trace session: the session
+    must exist and have recorded analytical calls (check 1); the measured
+    disclosure and refusal counts are computed from trace rows, never trusted
+    from prose (checks 2-3). The verdict is recorded in the session log keyed
+    by the draft's sha256 — ``present_answer`` reads exactly that. The audit
+    creates no new evidence and reruns nothing. The AI rubric
+    (research-trace-audit skill) is advisory on top and never gates here.
+    """
+    if not isinstance(draft, str) or not draft.strip():
+        raise ValueError("draft must be a non-empty string")
+    sha = _draft_sha256(draft)
+    failures: list[str] = []
+    disclosure_text: str | None = None
+    refusal_count: int | None = None
+    trace_verified = False
+
+    if not session_id:
+        failures.append(
+            "no research-trace session_id given; a health-interpreting answer "
+            "must name the session its analysis was recorded in"
+        )
+    else:
+        with _open_warehouse_writable(warehouse_path) as conn:
+            disclosure = trace_service.get_research_disclosure(
+                conn, session_id, include_calls=False
+            )
+        if isinstance(disclosure, trace_service.TraceError):
+            failures.append(f"research-trace session not usable: {disclosure.message}")
+        else:
+            disclosure_text = disclosure.disclosure_text
+            refusal_count = sum(disclosure.refusal_breakdown.values())
+            if disclosure.raw_analytical_call_count == 0:
+                failures.append(
+                    "the session recorded no analytical calls; the draft's claims "
+                    "cannot rest on traced evidence"
+                )
+            else:
+                trace_verified = True
+
+    passed = trace_verified and not failures
+    with _open_session_log(session_log_path) as conn:
+        audit_id = session_log_store.record_answer_audit(
+            conn,
+            draft_sha256=sha,
+            passed=passed,
+            trace_verified=trace_verified,
+            runtime_session_id=session_id,
+            disclosure=disclosure_text,
+            refusal_count=refusal_count,
+            failures=failures or None,
+        )
+    return {
+        "status": "passed" if passed else "failed",
+        "audit_id": audit_id,
+        "draft_sha256": sha,
+        "trace_verified": trace_verified,
+        "disclosure": disclosure_text,
+        "refusal_count": refusal_count,
+        "failures": failures,
+    }
+
+
+def present_answer(
+    draft: str,
+    *,
+    interprets_health: bool,
+    acknowledge_unverified: bool = False,
+    session_log_path: Path | None = None,
+) -> dict[str, Any]:
+    """The blocking presentation gate (decision note 0013, decision 2).
+
+    A health-interpreting draft is blessed only if a **passing** audit verdict
+    for exactly this draft (same sha256) is recorded; the blessed envelope
+    carries the measured disclosure the audit computed from trace rows and the
+    mandatory caveats. Without a passing verdict the gate refuses — unless the
+    caller sets ``acknowledge_unverified=True`` AND a (failed) audit was at
+    least run, in which case the envelope is returned with a prominent
+    NOT TRACE-VERIFIED warning and the instruction to downgrade claims to
+    process/status language. A non-interpreting draft passes through marked as
+    such. A revised draft is a new hash and needs a new audit.
+    """
+    if not isinstance(draft, str) or not draft.strip():
+        raise ValueError("draft must be a non-empty string")
+    if not interprets_health:
+        return {
+            "status": "presented",
+            "verified": False,
+            "interprets_health": False,
+            "draft": draft,
+            "note": "non-interpreting content; the answer-audit gate does not apply",
+        }
+
+    sha = _draft_sha256(draft)
+    with _open_session_log(session_log_path) as conn:
+        verdict = session_log_store.latest_answer_audit(conn, draft_sha256=sha)
+
+    if verdict is None:
+        return {
+            "status": "refused",
+            "draft_sha256": sha,
+            "reason": (
+                "no audit verdict exists for this exact draft; call answer_audit "
+                "with the draft and its research-trace session_id first"
+            ),
+        }
+    if not verdict["passed"]:
+        if acknowledge_unverified:
+            return {
+                "status": "presented",
+                "verified": False,
+                "interprets_health": True,
+                "warning": (
+                    "NOT TRACE-VERIFIED: this answer could not be verified against "
+                    "a research trace. Claims must use process/status language, "
+                    "not health findings."
+                ),
+                "draft": draft,
+                "audit_failures": verdict["failures"],
+            }
+        return {
+            "status": "refused",
+            "draft_sha256": sha,
+            "reason": "the recorded audit verdict for this draft failed",
+            "audit_failures": verdict["failures"],
+            "revision_path": (
+                "route the draft back to human_facing for one revision loop; "
+                "boundary priority: answer_audit > analysis > human_facing"
+            ),
+        }
+
+    return {
+        "status": "presented",
+        "verified": True,
+        "interprets_health": True,
+        "draft": draft,
+        "disclosure": verdict["disclosure"],
+        "refusal_count": verdict["refusal_count"],
+        "caveats": [
+            "descriptive analysis of one person's data; no diagnosis, no causation",
+            "condition/anchor labels are operator-declared, never verified",
+        ],
+    }
 
 
 def list_metrics(
@@ -1513,6 +1752,7 @@ def _json_safe(value: object) -> Any:
 __all__ = [
     "CONDITION_CAPTURE_SOURCE_KIND",
     "PROFILE_CAPTURE_SOURCE_KIND",
+    "answer_audit",
     "change_point",
     "condition_paired_t_test",
     "correlate",
@@ -1521,7 +1761,10 @@ __all__ = [
     "list_metrics",
     "metric_summary",
     "nutrition_intake_trend",
+    "operating_roles",
+    "orchestrator_handoff",
     "paired_t_test",
+    "present_answer",
     "pubmed_fetch",
     "pubmed_search",
     "query_warehouse",

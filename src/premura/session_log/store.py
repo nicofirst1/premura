@@ -589,3 +589,166 @@ def finish_session(conn: duckdb.DuckDBPyConnection, *, session_id: str) -> None:
         "UPDATE log_session SET finished_at = now() WHERE session_id = ?",
         [session_id],
     )
+
+
+# ---------------------------------------------------------------------------
+# Runtime orchestrator records (OPERATING_ROLES.md slice 1).
+#
+# The handoff trace and the answer-audit verdicts are the two deterministic
+# pieces of the hybrid orchestrator (decision note 0013). They live HERE — the
+# session log's own file — and never in the warehouse research trace, so
+# research multiplicity counts stay uncontaminated by orchestrator events.
+# Rows are append-only; a revised draft is a new hash, never an edit.
+# ---------------------------------------------------------------------------
+
+HANDOFF_STATUSES: frozenset[str] = frozenset({"dispatched", "returned", "refused", "failed"})
+
+
+def record_handoff(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    runtime_session_id: str,
+    from_id: str,
+    to_id: str,
+    task_summary: str,
+    status: str,
+    inputs_ref: str | None = None,
+    outputs_ref: str | None = None,
+    surface_touched: str | None = None,
+    reason: str | None = None,
+) -> str:
+    """Insert one ``log_handoff`` row and return its ``handoff_id``.
+
+    ``task_summary`` and the ``*_ref`` fields are compact PHI-safe references —
+    never raw health data. ``status`` is validated against
+    :data:`HANDOFF_STATUSES`; an out-of-vocabulary value raises ``ValueError``.
+    """
+    _require_non_empty(runtime_session_id, field="runtime_session_id")
+    _require_non_empty(from_id, field="from_id")
+    _require_non_empty(to_id, field="to_id")
+    _require_non_empty(task_summary, field="task_summary")
+    if status not in HANDOFF_STATUSES:
+        raise ValueError(f"status must be one of {sorted(HANDOFF_STATUSES)!r}, got {status!r}.")
+    handoff_id = _mint_id()
+    conn.execute(
+        """
+        INSERT INTO log_handoff
+            (handoff_id, runtime_session_id, from_id, to_id, task_summary,
+             inputs_ref, outputs_ref, surface_touched, status, reason, recorded_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
+        """,
+        [
+            handoff_id,
+            runtime_session_id,
+            from_id,
+            to_id,
+            task_summary,
+            inputs_ref,
+            outputs_ref,
+            surface_touched,
+            status,
+            reason,
+        ],
+    )
+    return handoff_id
+
+
+def list_handoffs(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    runtime_session_id: str,
+) -> list[dict[str, object]]:
+    """Return one runtime session's handoffs in recording order (JSON-safe)."""
+    rows = conn.execute(
+        """
+        SELECT handoff_id, runtime_session_id, from_id, to_id, task_summary,
+               inputs_ref, outputs_ref, surface_touched, status, reason,
+               CAST(recorded_at AS VARCHAR)
+        FROM log_handoff WHERE runtime_session_id = ?
+        ORDER BY recorded_at ASC, handoff_id ASC
+        """,
+        [runtime_session_id],
+    ).fetchall()
+    cols = [
+        "handoff_id",
+        "runtime_session_id",
+        "from_id",
+        "to_id",
+        "task_summary",
+        "inputs_ref",
+        "outputs_ref",
+        "surface_touched",
+        "status",
+        "reason",
+        "recorded_at",
+    ]
+    return [dict(zip(cols, row, strict=True)) for row in rows]
+
+
+def record_answer_audit(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    draft_sha256: str,
+    passed: bool,
+    trace_verified: bool,
+    runtime_session_id: str | None = None,
+    disclosure: str | None = None,
+    refusal_count: int | None = None,
+    failures: list[str] | None = None,
+) -> str:
+    """Insert one ``log_answer_audit`` verdict row and return its ``audit_id``."""
+    _require_non_empty(draft_sha256, field="draft_sha256")
+    audit_id = _mint_id()
+    conn.execute(
+        """
+        INSERT INTO log_answer_audit
+            (audit_id, runtime_session_id, draft_sha256, passed, trace_verified,
+             disclosure, refusal_count, failures, recorded_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, now())
+        """,
+        [
+            audit_id,
+            runtime_session_id,
+            draft_sha256,
+            passed,
+            trace_verified,
+            disclosure,
+            refusal_count,
+            json.dumps(failures) if failures is not None else None,
+        ],
+    )
+    return audit_id
+
+
+def latest_answer_audit(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    draft_sha256: str,
+) -> dict[str, object] | None:
+    """Return the newest verdict for a draft hash, or None (gate read path)."""
+    row = conn.execute(
+        """
+        SELECT audit_id, runtime_session_id, draft_sha256, passed, trace_verified,
+               disclosure, refusal_count, failures, CAST(recorded_at AS VARCHAR)
+        FROM log_answer_audit WHERE draft_sha256 = ?
+        ORDER BY recorded_at DESC, audit_id DESC LIMIT 1
+        """,
+        [draft_sha256],
+    ).fetchone()
+    if row is None:
+        return None
+    cols = [
+        "audit_id",
+        "runtime_session_id",
+        "draft_sha256",
+        "passed",
+        "trace_verified",
+        "disclosure",
+        "refusal_count",
+        "failures",
+        "recorded_at",
+    ]
+    record = dict(zip(cols, row, strict=True))
+    if record["failures"] is not None:
+        record["failures"] = json.loads(str(record["failures"]))
+    return record
