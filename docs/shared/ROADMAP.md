@@ -13,6 +13,15 @@ Items below are sorted by reasonable build order, not priority. Anything in the 
 Drive upload remains **opt-in**, not automatic. For the current shipped behavior,
 see [STATUS.md](STATUS.md) and [README.md](../../README.md).
 
+**The acceptance harness is frozen at current capability (2026-06-12).** It
+runs end-to-end; further harness work must be paid for by findings about
+Premura itself (the findings-per-effort rule), and overnight mission selection
+must not default to harness work because it is safe. Priority returns to the
+app — first #23 (supplement/medication recall ingest, feeding
+`condition_paired_t_test` with real episodes) and live dogfooding sessions.
+Decision note:
+[`0012-acceptance-harness-freeze-findings-per-effort.md`](../building/adr/0012-acceptance-harness-freeze-findings-per-effort.md).
+
 The user is actively writing more requirements; this section will grow.
 
 ## Near-term residue
