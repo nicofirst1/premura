@@ -451,7 +451,7 @@ def prepare_condition_label_paired_input(
                     "condition_paired_t_test prepares one declared label and episode "
                     "set only and accepts no extra parameters. It will not scan "
                     "labels, candidate episode sets, or windows, select the best "
-                    "episodes, or return a significance verdict. "
+                    "episodes, or launder a verdict the data cannot support. "
                     f"Unsupported argument(s): {offending}."
                 ),
                 missing_or_bad_inputs=(metric_id,),

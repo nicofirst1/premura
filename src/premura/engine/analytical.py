@@ -68,6 +68,7 @@ _BUILTIN_ANALYTICAL_MODULES: tuple[str, ...] = (
     "premura.engine.analytical_tools",
     "premura.engine.rolling_mean",
     "premura.engine.paired_t_test",
+    "premura.engine.condition_paired_t_test",
 )
 
 # The names the built-in modules are expected to register. Used to decide
@@ -81,6 +82,7 @@ _BUILTIN_ANALYTICAL_NAMES: frozenset[str] = frozenset(
         "correlate",
         "rolling_mean",
         "paired_t_test",
+        "condition_paired_t_test",
     }
 )
 
