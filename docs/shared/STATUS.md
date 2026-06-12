@@ -19,7 +19,8 @@
 restore point is tagged `v0.1.0` (formerly `v1.0.0`, retagged 2026-06-11).**
 The ingest pipeline is operational across the four
 observation sources (Health Connect, Garmin GDPR, Sleep as Android, BMT) plus
-the MyFitnessPal nutrition-intake source; the DuckDB
+two intake sources (MyFitnessPal nutrition, AI-chat supplement/medication
+recall); the DuckDB
 warehouse holds ~3.5 years of data including the Garmin-only metrics that
 motivated the project (HRV rMSSD overnight, stress, training load/readiness,
 VO₂ max, skin temperature, hydration, sleep score, respiration). Re-ingest is
@@ -148,6 +149,7 @@ The pinned inventory test is `tests/test_mcp_server.py`.
 | Sleep as Android parser | ✅ | Synthetic-fixture tests; DST-safe per-minute actigraphy walk. |
 | BMT parser | ✅ | Long/wide format detection; per-row units; custom metrics → `bmt_custom:*`. |
 | MyFitnessPal intake parser | ✅ | First real vendor intake source: per-meal nutrition aggregates → intake seam (`hpipe ingest --source mfp`); exercise/measurement columns surfaced as declared gaps, never observation rows. |
+| AI-chat recall intake parser | ✅ | Interchange contract (`premura.ai_chat_recall.v1`, see `docs/building/architecture/AI_CHAT_RECALL_CONTRACT.md`) + parser (`--source aichat`): assistant-recalled supplements/medications with explicit date precision and mandatory provenance quotes, under `source_kind=ai_chat_recall` (inventory questions only, never adherence). |
 | Loader (batch insert) | ✅ | Polars→DuckDB set-based insert; native-key + cross-source priority dedupe. |
 | CLI (`hpipe`) | ✅ | `bootstrap`, `ingest`, `inspect` (read-only routing preview), `status`, `export`, `upload`, `doctor` (incl. age-key + backup round-trip checks), `gc` (`--dry-run`, opt-in `--raw`), `run-monthly`, launchd install/uninstall, `install-skills`, `profile-fields` / `profile-record`. |
 | Idempotency | ✅ | sha256 skip in `hp.ingest_run` + `dedupe_key UNIQUE` + intra-batch dedupe. |

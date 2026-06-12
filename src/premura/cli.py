@@ -35,6 +35,8 @@ from .bootstrap import (
 from .config import settings
 from .mcp import server as mcp_server
 from .ops import encrypt, notify, upload
+from .parsers.ai_chat_recall import FORMAT_MARKER as AI_CHAT_RECALL_MARKER
+from .parsers.ai_chat_recall import AiChatRecallParser
 from .parsers.base import normalize_parse_output
 from .parsers.bmt import BMTParser
 from .parsers.garmin_gdpr import GarminGDPRParser
@@ -71,6 +73,7 @@ PARSER_REGISTRY: dict[str, tuple[PARSER_FACTORY, str]] = {
     "bmt": (BMTParser, "bmt"),
     "lab": (LabPdfParser, "lab_pdf"),
     "mfp": (MyFitnessPalParser, "myfitnesspal"),
+    "aichat": (AiChatRecallParser, "ai_chat_recall"),
 }
 
 
@@ -81,7 +84,9 @@ PARSER_REGISTRY: dict[str, tuple[PARSER_FACTORY, str]] = {
 
 @app.command()
 def ingest(
-    source: Annotated[str, typer.Option(help="hc | garmin | saa | bmt | lab | mfp | all")] = "all",
+    source: Annotated[
+        str, typer.Option(help="hc | garmin | saa | bmt | lab | mfp | aichat | all")
+    ] = "all",
     path: Annotated[
         Path | None,
         typer.Argument(help="Override file path; defaults to autodiscovery in data/inbox/"),
@@ -177,6 +182,9 @@ def _discover_input(source_key: str) -> Path | None:
         candidates = [p for p in zips if _zip_is_mfp(p)] + [
             p for p in csvs if _csv_kind(p) == "mfp"
         ]
+    elif source_key == "aichat":
+        jsons = sorted(inbox.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+        candidates = [p for p in jsons if _json_is_chat_recall(p)]
     else:
         return None
     return candidates[0] if candidates else None
@@ -200,6 +208,21 @@ def _csv_kind(path: Path) -> str:
     if {"Date", "Meal", "Calories"}.issubset(cols):
         return "mfp"
     return "bmt"
+
+
+def _json_is_chat_recall(path: Path) -> bool:
+    """True when a JSON file carries the AI-chat recall format marker.
+
+    Sniffs a bounded prefix rather than parsing the document, mirroring the
+    other discovery sniffers: discovery decides routing only; the parser owns
+    validation.
+    """
+    try:
+        with path.open("r", encoding="utf-8", errors="replace") as f:
+            head = f.read(4096)
+    except OSError:
+        return False
+    return AI_CHAT_RECALL_MARKER in head
 
 
 def _zip_is_mfp(path: Path) -> bool:
@@ -233,6 +256,8 @@ def _resolve_source_key(path: Path) -> str | None:
         return _csv_kind(path)  # 'saa' | 'mfp' | 'bmt'
     if suffix == ".pdf":
         return "lab"
+    if suffix == ".json" and _json_is_chat_recall(path):
+        return "aichat"
     return None
 
 
