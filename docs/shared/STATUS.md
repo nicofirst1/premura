@@ -115,15 +115,15 @@ The pinned inventory test is `tests/test_mcp_server.py`.
   guarded so failure never flips the verdict): the **AI judge** assesses the
   operator's process against a versioned rubric into `log_judgment`, and the
   **improvement hook** consumes those judgments to derive durable proposals into
-  `log_improvement` via a versioned playbook (it proposes, never acts) — both on
-  branch, not yet merged. A **synthetic fixture auto-generator**
+  `log_improvement` via a versioned playbook (it proposes, never acts) — both
+  merged in `v0.4.0`. A **synthetic fixture auto-generator**
   (`premura.harness.fixture_gen`, runnable as `python -m premura.harness.fixture_gen`)
   fabricates fresh, never-seen synthetic vendor fixtures (CSV + grader-only
   manifest) deterministically from a seed — canonical metrics drawn from the
   committed registry, byte-identical per seed, recognized synthetic by the harness's
   persistence gate via a writer-controlled marker (additive, not a loosening) — so
-  the harness is no longer limited to its two handwritten fixtures (on branch, not
-  yet merged). The harness now grades a **second task kind, analyze-and-answer**
+  the harness is no longer limited to its two handwritten fixtures (merged in
+  `v0.4.0`). The harness now grades a **second task kind, analyze-and-answer**
   (`premura.harness.answer_task`, runnable as `python -m premura.harness.answer_task`):
   over a deterministically seeded synthetic warehouse an operator answers a question
   through a bounded engine-backed analytical surface (no connection/path/SQL), and a
@@ -132,7 +132,7 @@ The pinned inventory test is `tests/test_mcp_server.py`.
   through the sole-writer session log and a scoreboard line under the open
   `analyze_answer` tier — one worked question-kind (`level_shift`) behind an
   add-a-kind registry, with the real-model analyze operator and cross-session
-  aggregation named-deferred (on branch, not yet merged).
+  aggregation named-deferred (merged in `v0.4.0`).
 - **Runtime build-and-use boundary**: an agent may build a parser and use it
   immediately on the operator's own data with no reviewer; only a
   contribute-back PR is reviewed. Pinned by

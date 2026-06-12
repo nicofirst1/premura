@@ -59,13 +59,13 @@ The user is actively writing more requirements; this section will grow.
    mission `tool-loop-live-trial-tier-01KTVG26` (on mission lanes, not yet
    merged — what it adds is recorded in the [CHANGELOG.md](CHANGELOG.md)
    2026-06-11 entry). **Conversation-turn capture has since landed** (the
-   `conversation-turn-capture` mission, on branch, not yet merged): the session
+   `conversation-turn-capture` mission, merged in `v0.4.0`): the session
    log now persists the operator's actual chat history per run — a new additive
    `log_turn` table written through the same sole-writer harness, fed by a
    structural `transcript()` capability that both the tool-loop and one-shot
    tiers expose, so the judge AI has the turns to read (see the
    [CHANGELOG.md](CHANGELOG.md) 2026-06-11 entry). **The judge AI has since
-   shipped** (the `judge-ai` mission, on branch, not yet merged): a harness-side
+   shipped** (the `judge-ai` mission, merged in `v0.4.0`): a harness-side
    evaluator now assembles a read-only **session dossier** (metadata, the
    grader's recomputed facts, per-attempt telemetry, and the transcript), asks a
    **local** model to assess the operator's *process* against a versioned,
@@ -76,8 +76,8 @@ The user is actively writing more requirements; this section will grow.
    evaluates the grader's facts but can never alter `contract_pass`, the
    scoreboard, or the trial verdict, and its failure never raises out of the
    harness (see the [CHANGELOG.md](CHANGELOG.md) 2026-06-11 entry). **The
-   improvement hook has since shipped** (the `improvement-hook` mission, on branch,
-   not yet merged): a deterministic, rule-based scan now *consumes* those judgments
+   improvement hook has since shipped** (the `improvement-hook` mission, merged in
+   `v0.4.0`): a deterministic, rule-based scan now *consumes* those judgments
    — it reads `log_judgment` rows (plus the rubric for criterion→category lookup),
    maps each weak band / failed judgment / off-rubric criterion to an improvement
    area via a versioned, bounded **playbook** (`IMPROVEMENT_PLAYBOOK.md`: one area
@@ -90,7 +90,7 @@ The user is actively writing more requirements; this section will grow.
    default-off** post-run step (`improve_run`, gated on `judge_run`) whose failure
    never raises out of the harness (see the [CHANGELOG.md](CHANGELOG.md)
    2026-06-12 entry). **The fixture auto-generator has since shipped** (the
-   `fixture-auto-generator` mission, on branch, not yet merged): a deterministic,
+   `fixture-auto-generator` mission, merged in `v0.4.0`): a deterministic,
    seeded, offline generator (`premura.harness.fixture_gen`) now fabricates fresh,
    never-seen **synthetic** vendor fixtures — a CSV plus its grader-only ground-truth
    manifest — on demand, so the acceptance harness is no longer limited to its two
@@ -105,7 +105,7 @@ The user is actively writing more requirements; this section will grow.
    With it never invoked, every existing fixture and live-trial test is byte-for-byte
    unaffected (see the [CHANGELOG.md](CHANGELOG.md) 2026-06-12 entry). **The
    analyze-and-answer slice has since shipped** (the `analyze-and-answer` mission,
-   on branch, not yet merged): the harness now grades a *second* task kind — given a
+   merged in `v0.4.0`): the harness now grades a *second* task kind — given a
    deterministically seeded synthetic warehouse and a question, an operator must reach
    the data **only through the engine's analytical surfaces** and return an answer a
    deterministic grader verifies for **honesty** (no forbidden statistical claims —

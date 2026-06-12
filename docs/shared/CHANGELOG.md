@@ -8,6 +8,33 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-06-12 — `v0.4.0` merged to `master` and tagged — release candidate accepted
+
+Closes the loop the rc entry below opened (that entry and the seven mission
+entries stay verbatim per the never-edit-after rule; this entry is the
+correction-style follow-up recording what happened to them). The consolidated
+review the candidate was waiting on ran as seven parallel per-mission
+spec→code→test reviews plus a cross-mission seam pass — full record in
+[`docs/history/audits/2026-06-12-overnight-release-candidate-pre-merge-review.md`](../history/audits/2026-06-12-overnight-release-candidate-pre-merge-review.md).
+
+- **Verdict: zero blockers.** All seven missions PASS (four with nit-grade or
+  deferred-by-design concerns). The cross-mission targets checked out: the
+  six-tool reconciliation is complete on every authoritative surface, the
+  m3→m4 judgment seam matches field-by-field, migration 006 is idempotent
+  with all ~9 in-memory `Interval.unit` call sites cleaned, and the judge /
+  improvement hook safety defaults (OFF, verdict-isolated) hold.
+- **Two doc-truth fixes landed on the branch before merge:** the
+  `analytical-claims-match-engine` rubric grounding claimed a dossier field
+  that does not exist (engine results reach the judge only as tool-result
+  turn content; `rubric_version` → `2026-06-12.2`), and the `log_turn`
+  schema comment said `step_id` is "NOT a hard FK" while the DDL declares an
+  enforced `REFERENCES`.
+- **Merge + tag.** `overnight/release-candidate` merged to `master` (no-ff)
+  and tagged `v0.4.0`; live docs (STATUS, ROADMAP) reconciled post-merge from
+  "on branch, not yet merged" to merged-in-`v0.4.0` framing. The
+  `tool-loop-live-trial-tier-01KTVG26` mission remains genuinely unmerged and
+  keeps its in-progress framing.
+
 ## 2026-06-12 — Release candidate `v0.4.0-rc.1` — seven overnight missions consolidated — on `overnight/release-candidate`, awaiting review + tag
 
 Release-prep meta-entry (this is the comparable-unit-of-work the header allows; it
