@@ -597,6 +597,74 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
             ),
         )
 
+    # --- Stage 3 condition-label paired difference (m8) ------------------ #
+    # condition_paired_t_test reports a condition-label paired difference for one
+    # metric, split into off/on periods by a set of caller-declared on-condition
+    # episodes. It is a thin wrapper that delegates to the engine analytical path
+    # (prepare_condition_label_paired_input -> invoke_analytical_tool): it computes
+    # no statistics, does no pairing, and issues no raw SQL. The agent MUST
+    # pre-register the label, episodes, windows, and expected direction before
+    # seeing the result; the label is one operator-declared string, never a list.
+    # An inadmissible input, too few declared/usable episodes, overlapping episodes,
+    # or a constant difference returns a structured refusal with a distinct reason
+    # and no estimate. It never emits a p-value or a significance verdict.
+
+    @mcp.tool()
+    def condition_paired_t_test(
+        metric_id: str,
+        condition_label: str,
+        episodes: list[dict[str, str]],
+        before_days: int,
+        after_days: int,
+        expected_direction: str,
+        session_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Report a condition-label paired difference for one daily metric.
+
+        Answers one pre-registered question: across the operator's declared
+        on-condition ``episodes`` (each ``{"start_day": "YYYY-MM-DD", "end_day":
+        "YYYY-MM-DD"}``) for one operator-declared ``condition_label`` (a single
+        non-empty string, never a list), how did ``metric_id`` differ between the
+        ``before_days`` off-label days before each episode and the ``after_days``
+        on-label days into it, in the ``expected_direction`` ("increase" or
+        "decrease") you declare up front? Each usable episode contributes one off/on
+        pair; the per-episode differences (on minus off) are summarized as a mean and
+        its dispersion, plus whether the observed direction matches your expectation.
+
+        It is descriptive only: it never reports a p-value or a "significant"
+        verdict; the label is operator-declared, not a verified condition, and only
+        splits the windows; and it makes no causal/diagnostic/treatment/
+        population-norm claim. Inadmissible, stale, too-few-episodes, overlapping,
+        too-few-usable-episodes, or constant-difference requests return a structured
+        refusal with a distinct reason and no estimate.
+
+        Pass the optional ``session_id`` from ``research_trace_open`` to record this
+        pre-registered hypothesis in a research session's multiplicity trace;
+        without it the tool behaves exactly as before and writes no trace row.
+        """
+        return _dispatch_analytical_with_trace(
+            warehouse_path=warehouse_path,
+            tool_name="condition_paired_t_test",
+            session_id=session_id,
+            request={
+                "metric_id": metric_id,
+                "condition_label": condition_label,
+                "episodes": episodes,
+                "before_days": before_days,
+                "after_days": after_days,
+                "expected_direction": expected_direction,
+            },
+            dispatch=lambda: warehouse_server.condition_paired_t_test(
+                metric_id,
+                condition_label=condition_label,
+                episodes=episodes,
+                before_days=before_days,
+                after_days=after_days,
+                expected_direction=expected_direction,
+                warehouse_path=warehouse_path,
+            ),
+        )
+
     # --- Agent-mediated profile capture (WP03) --------------------------- #
     # The bounded write path for stable baseline profile facts. These live on
     # the DEFAULT agent-safe surface (not the operator-only surface) because

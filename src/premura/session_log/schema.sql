@@ -119,3 +119,125 @@ CREATE TABLE IF NOT EXISTS log_live_trial_attempt (
 );
 CREATE INDEX IF NOT EXISTS ix_live_trial_attempt_session
     ON log_live_trial_attempt(session_id, attempt_index);
+
+-- ----------------------------------------------------------------------------
+-- log_turn — the per-turn transcript of a live-trial run: the operator's actual
+-- conversation history (system prompt + every user/assistant/tool turn), one row
+-- per turn. The session log already records the *shape* of a run (the step tree
+-- in log_step); log_turn records the *conversation* the judge-AI follow-on needs
+-- to read. The harness (the sole writer, FR-021) flushes the transcript post-run.
+--
+--   * turn_index is the 0-based position within the session's transcript; the
+--     (session_id, turn_index) pair is UNIQUE so the ordered transcript cannot
+--     hold a duplicate slot.
+--   * step_id is nullable and, when set, links the turn to the log_step node it
+--     occurred under (typically the run's root agent_turn). It is an enforced
+--     FK; the harness flushes the step row before the transcript turns.
+--   * role is a fixed vocabulary {system, user, assistant, tool}, validated at
+--     the store boundary (TURN_ROLES), mirroring the chat-API role standard.
+--   * tool_name / model / token_count are optional per-turn telemetry; nullable.
+--
+-- content stores the full turn content (tool results may quote operator data);
+-- the session log is the local, PHI-bearing store per ADR 0011 and NFR-002 — no
+-- code path syncs or exports it.
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS log_turn (
+    turn_id      VARCHAR PRIMARY KEY,  -- ULID string (python-ulid)
+    session_id   VARCHAR NOT NULL REFERENCES log_session(session_id),
+    step_id      VARCHAR REFERENCES log_step(step_id),  -- nullable link to the step
+    turn_index   INTEGER NOT NULL,     -- 0-based position in the transcript
+    role         VARCHAR NOT NULL,     -- {system, user, assistant, tool} (TURN_ROLES)
+    content      VARCHAR NOT NULL,     -- full turn content (PHI-bearing, local-only)
+    tool_name    VARCHAR,              -- nullable; set on tool-result turns
+    model        VARCHAR,              -- nullable; the model that produced the turn
+    token_count  INTEGER,              -- nullable; optional per-turn telemetry
+    UNIQUE(session_id, turn_index)
+);
+-- Walk a session's transcript in order.
+CREATE INDEX IF NOT EXISTS ix_turn_session ON log_turn(session_id, turn_index);
+
+-- ----------------------------------------------------------------------------
+-- log_judgment — one row per AI-judge invocation over a recorded session
+-- (judge-ai mission m3). The mechanical grader judges a run with `contract_pass`
+-- (in log_ingest_provenance) and the scoreboard records pass/fail; the AI judge
+-- evaluates the run's *process* against a versioned rubric and persists a
+-- structured, DESCRIPTIVE verdict here. It can NEVER alter `contract_pass`, the
+-- scoreboard, or the trial verdict — this is a separate, additive table the judge
+-- only writes into through the sole-writer harness surface (store.record_judgment).
+--
+--   * status is a fixed vocabulary {complete, unparseable, model_unavailable}
+--     (JUDGMENT_STATUSES), validated at the store boundary. A judgment attempt is
+--     always recorded honestly: on unparseable / model_unavailable, criteria_json
+--     is an empty object, overall_band is NULL, and raw_output preserves what the
+--     model actually said (if anything).
+--   * criteria_json is a JSON object mapping rubric criterion id -> {band,
+--     rationale}. The criterion IDS are rubric-owned data, NEVER enumerated in
+--     code; each band is validated against CRITERION_BANDS at the store boundary.
+--   * overall_band / each criterion band ∈ {strong, adequate, weak,
+--     not_applicable} (CRITERION_BANDS) — DESCRIPTIVE bands only: no numeric
+--     scores, no pass/fail language confusable with the mechanical grader verdict
+--     (NFR-6).
+--   * rubric_version pins which rubric produced the judgment (FR-3: a new
+--     criterion bumps the rubric version; no schema or store change is needed).
+--
+-- raw_output / rationale carry full model text; the session log is the local,
+-- PHI-bearing store per ADR 0011 / NFR-002 — no code path syncs or exports it.
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS log_judgment (
+    judgment_id    VARCHAR PRIMARY KEY,  -- ULID string (python-ulid)
+    session_id     VARCHAR NOT NULL REFERENCES log_session(session_id),
+    judged_at      TIMESTAMP NOT NULL,   -- nondeterministic wall-clock; not graded
+    judge_model    VARCHAR NOT NULL,     -- the local model that produced the judgment
+    rubric_version VARCHAR NOT NULL,     -- which rubric version produced it (FR-3)
+    status         VARCHAR NOT NULL,     -- {complete, unparseable, model_unavailable}
+    criteria_json  VARCHAR NOT NULL,     -- {criterion_id: {band, rationale}} (JSON)
+    overall_band   VARCHAR,              -- nullable; {strong, adequate, weak, not_applicable}
+    rationale      VARCHAR,              -- nullable; the judge's overall rationale
+    raw_output     VARCHAR               -- nullable; verbatim model output (honest record)
+);
+-- Fetch a session's judgments.
+CREATE INDEX IF NOT EXISTS ix_judgment_session ON log_judgment(session_id);
+
+-- ----------------------------------------------------------------------------
+-- log_improvement — one row per durable improvement PROPOSAL the improvement
+-- hook (mission m4) derives from a judgment. The judge (m3) writes a structured
+-- verdict into log_judgment but nothing consumes it; the improvement hook reads
+-- those verdicts (plus the rubric for criterion→category lookup) and persists
+-- agent-readable proposals here — "the operator keeps failing this criterion;
+-- look at the prompt's guidance" — so a maintainer agent or the human can decide
+-- what to change. The hook PROPOSES; it never acts, never edits prompts/harness/
+-- rubrics/skills, and NEVER changes a run's verdict. This is a separate, additive
+-- table written only through the sole-writer harness surface
+-- (store.record_improvement), exactly like log_judgment.
+--
+--   * criterion_id is NULLABLE — opaque, rubric-owned data (never enumerated in
+--     code). It is NULL for judgment-level proposals (e.g. a non-complete judgment
+--     status) and the rubric criterion id for criterion-level proposals.
+--   * area is a playbook-owned id (IMPROVEMENT_PLAYBOOK.md). Code never hardcodes
+--     area semantics; it parses the playbook and records whatever area the playbook
+--     maps the judgment evidence to (the same altitude as the rubric's criterion ids).
+--   * status is a fixed vocabulary {open, dismissed, addressed} (PROPOSAL_STATUSES),
+--     validated at the store boundary. This mission only ever writes 'open'; the
+--     other statuses exist now so a later lifecycle mission needs no schema
+--     migration.
+--   * playbook_version pins which playbook produced the proposal — the same
+--     versioning idiom as log_judgment.rubric_version (a new area bumps the
+--     playbook version; no schema or store change is needed).
+--
+-- summary / evidence carry agent-readable prose; the session log is the local,
+-- PHI-bearing store per ADR 0011 / NFR-002 — no code path syncs or exports it.
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS log_improvement (
+    improvement_id   VARCHAR PRIMARY KEY,  -- ULID string (python-ulid)
+    session_id       VARCHAR NOT NULL REFERENCES log_session(session_id),
+    judgment_id      VARCHAR NOT NULL REFERENCES log_judgment(judgment_id),
+    created_at       TIMESTAMP NOT NULL,   -- nondeterministic wall-clock; not graded
+    criterion_id     VARCHAR,              -- nullable; opaque rubric-owned id (NULL = judgment-level)
+    area             VARCHAR NOT NULL,     -- playbook-owned area id (IMPROVEMENT_PLAYBOOK.md)
+    summary          VARCHAR NOT NULL,     -- agent-readable proposal summary
+    evidence         VARCHAR NOT NULL,     -- the grounding the proposal carries
+    playbook_version VARCHAR NOT NULL,     -- which playbook version produced it
+    status           VARCHAR NOT NULL      -- {open, dismissed, addressed} (PROPOSAL_STATUSES)
+);
+-- Fetch a session's improvement proposals.
+CREATE INDEX IF NOT EXISTS ix_improvement_session ON log_improvement(session_id);

@@ -8,6 +8,415 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-06-12 — Release candidate `v0.4.0-rc.1` — seven overnight missions consolidated — on `overnight/release-candidate`, awaiting review + tag
+
+Release-prep meta-entry (this is the comparable-unit-of-work the header allows; it
+adds, it does not rewrite the seven mission entries below — those stay verbatim per
+the never-edit-after rule and keep their own "on branch, not yet merged" framing
+until each lands on master). The night's seven feature missions (m2–m8) were
+collected onto `overnight/release-candidate` for a single whole-night review and a
+single tag. The orchestrator cuts the tag after review; this branch does not touch
+`master` and creates no tag.
+
+- **What the candidate carries (m2–m8, each narrated in its own entry below).**
+  m2 conversation-turn capture (`log_turn`), m3 judge AI (`log_judgment` + dossier +
+  versioned rubric), m4 improvement hook (`log_improvement` + versioned playbook),
+  m5 synthetic fixture auto-generator, m6 analyze-and-answer task kind, m7 small
+  follow-ups (`hpipe inspect`, `hpipe gc --dry-run`/`--raw`, `fact_interval.unit`
+  migration 006), and m8 `condition_paired_t_test` (the sixth analytical tool).
+- **Version reasoning → `v0.4.0`.** `v0.3.0` was already tagged 2026-06-01 at the
+  finish-analytical-tool-set mission, and pyproject still read `0.3.0` (now an
+  already-consumed version). The seven missions are all additive, backward-compatible
+  feature work landing after that tag, so under the project's `v0.x.0` line this is
+  the next minor: `0.4.0`. `pyproject.toml` is bumped `0.3.0 → 0.4.0` so the
+  package metadata (`premura.__version__`, sourced from metadata) matches the tag the
+  orchestrator will cut. `v1.0.0` stays reserved for the user-facing threshold.
+- **Whole-night doc reconciliation.** Each mission synced STATUS/ROADMAP pre-merge
+  from its own viewpoint; this pass fixed the cross-WP drift that survived the gaps:
+  the `register_hypothesis_identity` docstring in `src/premura/trace.py` still listed
+  five built-ins (now six), and `STAGES.md` (authoritative) plus
+  `FULL_APP_DEVELOPMENT_PLAN.md` (authoritative, live Phase-3 status) still said
+  "five analytical tools" / "returns exactly these five" and described condition-label
+  pairing as deferred — all corrected to six with `condition_paired_t_test`. STATUS.md,
+  ROADMAP.md, and the engine CONTRACT.md were already at six (synced by m8) and were
+  left as-is.
+
+## 2026-06-12 — Condition-label pairing (`paired-t-condition-pairing`) — on branch, not yet merged
+
+Written pre-merge (overnight solo mission on
+`overnight/m8-paired-t-condition-pairing`). Ships the reviewed **condition-label
+pairing** extension the engine CONTRACT's deferred-extension rule prescribed, as
+the sixth analytical tool — `paired_t_test` and `paired_inputs` are byte-for-byte
+unchanged.
+
+- **New tool `condition_paired_t_test`.** Reports a declared **off-vs-on** paired
+  difference over one operator-declared condition *label* (any non-empty string,
+  never an enum) and a set of non-overlapping declared **episodes**. The one fixed
+  rule: each usable episode contributes one pair — off = mean of usable off-window
+  observations outside every declared episode; on = mean of usable on-window
+  observations truncated at `after_days`/the episode end; difference = on − off. The
+  estimate is the mean of the per-episode differences with a descriptive dispersion
+  band. The paired unit is the episode; the floor is two usable episodes.
+- **Honesty boundary unchanged.** No p-value, no "significant", no cause — the label
+  only splits the windows. Per-episode exclusions (before-window contamination,
+  empty windows) are disclosed, never silently salvaged. Constant differences,
+  too-few/overlapping episodes, scan requests, and inadmissible/stale series refuse
+  with a distinct reason and no estimate.
+- **Contract + seam + surface.** New `AnalyticalQuestionType.CONDITION_PAIRED_DIFFERENCE`
+  and its policy twin (declared for exactly the families that allow anchor-date
+  pairing today; no new family judgments); new `condition_inputs` preparation seam;
+  the tool on the default + operator MCP surface; a thin delegating wrapper; and the
+  tool's own normalized trace-identity (metric, label, episode set, windows,
+  direction) registered for the session research trace.
+- **Named-deferred:** warehouse storage of condition periods, multi-label contrasts,
+  episode auto-detection, any scanning — recorded in ROADMAP.
+
+## 2026-06-12 — Small follow-ups (`small-follow-ups`) — on branch, not yet merged
+
+Written pre-merge (overnight solo mission on `overnight/m7-small-follow-ups`); the
+post-merge close-out flips tense and records the merge. Three small, independent
+roadmap items that close known gaps in the operating surface — they share no code,
+so they shipped as three work packages on one branch.
+
+- **`hp.fact_interval.unit` column (WP3).** STATUS called out "`fact_interval` has
+  no `unit` column; carried in memory only" — and in fact the in-memory
+  `Interval.unit` was *already dropped silently* in `dedupe._interval_frame`, so
+  parser-supplied unit strings never reached the warehouse. Migration
+  `006_interval_unit.sql` (003 was taken) adds a nullable `unit VARCHAR` with an
+  idempotent backfill from `dim_metric.canonical_unit`, and the interval load path
+  populates `unit` for new rows by joining to `dim_metric` — the metric registry is
+  the **single source of unit truth, never a parser string**. The dead in-memory
+  `Interval.unit` field is removed from the dataclass, the dedupe plumbing, and all
+  nine parser construction sites.
+- **`hpipe inspect <path>` (WP1).** A read-only routing-preview verb — the twin of
+  `ingest` discovery. It resolves the parser for a path with the **same** routing
+  primitives `ingest` uses (no second routing table), enumerates archive/file member
+  names without reading their contents, and prints per-member routing plus an
+  "N routed, M unhandled" summary. Routing preview is a **structural parser
+  capability** (`preview_routing(member_names) -> RoutingPreview`, discovered by
+  `hasattr`/Protocol — not a Garmin if-ladder); the Garmin parser implements it by
+  delegating to its existing `_HANDLERS` dispatch so the preview can never drift from
+  ingest. A parser lacking the capability is reported honestly (exit 0, names the rule
+  for adding it). `inspect` opens no warehouse and writes nothing.
+- **`hpipe gc` raw pruning + `--dry-run` (WP2).** gc applies one mtime cutoff to N
+  roots: exports always, and `data/raw/` only with the opt-in `--raw` flag (files AND
+  directories). `--dry-run` previews exactly what would be removed and removes nothing
+  from either root. **Decision (recorded here per FR-2.3):** `--raw` defaults OFF
+  because `run_monthly()` calls `gc(keep=3)` unattended; silently flipping it to delete
+  staged source artifacts — for un-exported files the only local copy — is a human
+  choice, not an overnight one. `run_monthly`'s behavior is unchanged.
+
+## 2026-06-12 — Analyze-and-answer slice (`analyze-and-answer`) — on branch, not yet merged
+
+Written pre-merge (overnight solo mission on `overnight/m6-analyze-and-answer`);
+the post-merge close-out flips tense and records the merge. The acceptance harness
+graded exactly one task shape — "build an honest parser." The product's real
+end-to-end promise is "here's my data → load it → analyze it → answer my question,"
+and nothing exercised or audited the second half. This mission teaches the harness a
+**second task kind**: given a deterministically seeded synthetic warehouse and a
+question, an operator must reach the data **only through the engine's analytical
+surfaces** and return an answer a deterministic grader can verify for honesty and
+grounding. Everything is captured in the session log through the existing
+sole-writer surfaces, so the exchange is judged and improvable like a parser session.
+
+- **Contract + deterministic grader (`premura.harness.answer_task`).** A
+  `QuestionSpec` declares which registered engine analytical surface a question-kind
+  calls and with what canonical parameters, renders the human question, and selects
+  its metric **deterministically from the seed** out of the policy-covered,
+  `dim_metric`-resident, analyzable metrics — never a metric id hardcoded in code.
+  `AnswerOutcome` carries the final answer text, the claimed estimates as
+  **structured** values, and tool-call provenance; a refusing operator carries a
+  structured refusal instead. `grade_answer` **recomputes ground truth itself**
+  through the same engine surface (a poisoned tool-call report cannot fool it) and
+  bands three checks, each naming itself on failure: **honesty** (no forbidden
+  statistical claim in the answer text — driven by a forbidden-claims pattern
+  registry sourced from the engine contract's prohibitions: "significant"/
+  significance, p-values, causal language, population-norm comparisons),
+  **grounding** (claimed structured estimates match the recomputation within the
+  kind's tolerance — never numbers parsed out of prose), and **refusal fidelity**
+  (only a refusal mirroring the engine's refusal passes; a refusal where the engine
+  computed a result fails).
+- **A level above (guide, don't enumerate).** Question kinds and forbidden-claim
+  patterns are registries with documented add rules; the core never branches on a
+  kind id, there is no enumerated question list and no hardcoded metric id, and an
+  unknown kind fails loudly. Tonight exactly one kind ships — `level_shift` over the
+  `change_point` analytical tool.
+- **Seam + capture (`premura.harness.answer_trial`).** `run_answer_trial` seeds a
+  synthetic warehouse deterministically (synthetic by construction — fabricated
+  source, invented values, a registry metric), hands the operator a **bounded
+  analytical surface** wrapping the engine's registered analytical surfaces over that
+  warehouse (the operator never receives a connection, path, or raw SQL), collects
+  and grades the answer, captures the question + answer exchange through the existing
+  sole-writer session-log surfaces (`open_session` / `record_step` / `record_turn` /
+  `finish_session`, no schema change), so `build_dossier` shows it, and appends one
+  scoreboard line under the existing **open tier axis** with the `analyze_answer`
+  tier value, marked synthetic. `AnswerOperator` is a small protocol; the mission
+  ships a scripted **honest** reference operator (drives the real surface, answers
+  from its results, mirrors a refusal honestly) and a scripted **dishonest** contrast
+  operator (fabricates estimates and/or emits forbidden claims). End-to-end tests
+  cover the honest pass and all four spec-named edge cases.
+- **Rubric + playbook extension by their own rules.** `JUDGE_RUBRIC.md` gains an
+  analytical-honesty criterion (`analytical-claims-match-engine`) under the existing
+  closed `process_honesty` category with a `rubric_version` bump, and
+  `IMPROVEMENT_PLAYBOOK.md`'s `process_honesty` area is extended to cover analytical
+  honesty with a `playbook_version` bump. Because criterion/area semantics are
+  document-owned and never appear in code, this required **no engine, judge, or scan
+  code edit** — a test confirms the rubric/playbook parsers accept the extended
+  documents unchanged and the new criterion maps to an existing area.
+- **CLI.** `python -m premura.harness.answer_task --seed N [--question-kind K]` runs
+  the offline trial end to end with the scripted honest operator against a temp
+  sandbox, prints a one-line summary (kind, metric, verdict with per-check results),
+  and exits nonzero on any failed check — mirroring the m5 CLI pattern.
+- **Deferred, named so it is not assumed shipped:** the real-model (Ollama) analyze
+  operator and its prompt/tool-loop work, cross-session trend aggregation, MCP
+  exposure of the session log, multi-turn / multi-question sessions, natural-language
+  question parsing, model-generated answer prose, and new analytical tools in the
+  engine.
+- With the new task never invoked, the existing parser-trial and session-log tests
+  pass unchanged; the sole-writer invariant, the NFR-005 live-trial gate guard, the
+  no-new-dependency scan, and the engine guards are untouched.
+
+## 2026-06-12 — Fixture auto-generator (`fixture-auto-generator`) — on branch, not yet merged
+
+Written pre-merge (overnight solo mission on
+`overnight/m5-fixture-auto-generator`); the post-merge close-out flips tense and
+records the merge. The acceptance harness grades whether a model can build an
+honest parser for an **unfamiliar** vendor export, but it owned exactly two
+handwritten fixtures — a model under trial could simply have memorized
+Fitbit-shaped exports, and two challenges cannot exercise the contract's breadth.
+This mission adds a deterministic, seeded, offline generator that fabricates fresh,
+never-seen synthetic vendor fixtures — a CSV plus its grader-only ground-truth
+manifest — on demand, so the harness can always present a genuinely unfamiliar
+source. Synthetic only: fabricated source names, invented values, canonical
+metrics drawn from the committed registry — never derived from a real export.
+
+- **Deterministic generation core.** `premura.harness.fixture_gen.generate_fixture(
+  spec)` is pure and offline: every random choice flows from
+  `random.Random(spec.seed)`, so the same `FixtureSpec` yields byte-identical CSV
+  and manifest text on every run, on every machine. No model calls, no clock reads,
+  no network, no reads of any operator data path. The generated observation fixture
+  is a fair challenge by construction: a structural timestamp column in a
+  seed-chosen encoding (ISO 8601 / epoch seconds / epoch microseconds), one or more
+  mappable columns whose **distinct** canonical metrics are drawn from the committed
+  metric registry at generation time (the grader's D6 distinct-metric rule), and at
+  least one declared-gap decoy column with no canonical home (the honesty decoy). A
+  mapped column's vendor-weird header is derived from a fabricated vendor token, not
+  from the canonical metric id, so the header never leaks the answer — the canonical
+  metric lives only in the grader-only manifest.
+- **A level above, three registries.** Drawer behaviour, vendor-weird column-name
+  weirdness, and timestamp encodings are each a small registry with its add rule
+  documented where it lives (NFR-4): a **drawer-strategy** registry keyed by drawer
+  id (only `observation` ships tonight; an unknown drawer id fails loudly, and
+  adding `intake` later needs no core edit), a **naming-transform** registry, and a
+  **timestamp-encoding** registry. No vendor `if/elif` ladders; no metric list
+  hardcoded in code — metrics come from the registry seed.
+- **Validation, writer, scenario adapter.** `validate_fixture` enforces the
+  ground-truth invariants (every CSV column enumerated exactly once; canonical
+  metrics unique and registry-resident; ≥1 mappable and ≥1 declared-gap column;
+  exactly `row_count` rows, all timestamps decodable in the declared encoding) and
+  runs before `generate_fixture` returns, so an invalid fixture can never escape.
+  `write_fixture` writes the pair (refusing to overwrite unless told) plus an
+  explicit, writer-controlled **synthetic marker**, and `scenario_for` adapts a
+  written pair into a `Scenario` the existing harness accepts unchanged — graded by
+  the same `ObservationStrategy` as the committed fixture. The generated manifest
+  matches the committed observation manifest shape exactly (it carries the
+  GRADER-ONLY header and reads through the same YAML loader), so grader/manifest
+  consumers need no changes.
+- **Synthetic recognition without loosening the rule.** The harness's real
+  persistence gate — `live_trial_ollama.is_synthetic_source`, the function the trial
+  loop calls to decide scoreboard persistence — now also recognizes a generated
+  fixture as synthetic by delegating to the writer-controlled marker beside its CSV
+  (`fixture_gen.is_generated_synthetic_source`), so a generated source persists to
+  the scoreboard. This is **additive**: it does not loosen the committed-source
+  rule, so an arbitrary or real-looking marker-less operator path stays non-synthetic
+  (pinned by an integrated test that routes a generated source through the gate while
+  a marker-less path stays non-synthetic and the committed sources stay synthetic).
+  Generated output lands only
+  where the caller points `--out`, never silently into `tests/fixtures/`; with the
+  generator never invoked, every existing fixture and live-trial test is byte-for-byte
+  unaffected.
+- **CLI.** `python -m premura.harness.fixture_gen --seed N [--drawer observation]
+  [--out DIR] [--rows K] [--overwrite]` generates, validates, writes, and prints the
+  written paths plus a one-line summary (drawer, source name, column count,
+  mappable/gap split, encoding); exit code is nonzero on any failure. Mirrors
+  `live_trial_ollama`'s `_main()`. All new tests run in the default offline suite;
+  no new third-party dependency.
+
+Mission detail:
+[`docs/building/planning/fixture-auto-generator.md`](../building/planning/fixture-auto-generator.md).
+
+## 2026-06-12 — Improvement hook (`improvement-hook`) — on branch, not yet merged
+
+Written pre-merge (overnight solo mission on `overnight/m4-improvement-hook`); the
+post-merge close-out flips tense and records the merge. The judge AI (m3) writes a
+structured verdict into `log_judgment`, but nothing consumed it: a weak band or a
+failed judgment was recorded and then ignored. This mission closes that loop one
+step — it turns judgments into durable, agent-readable **improvement proposals**
+("the operator keeps failing `economical-tool-use`; review the prompt's tool
+guidance") so a maintainer agent or the human can decide what to change. The hook
+**proposes; it never acts**: it does not edit prompts, harness code, rubrics, or
+skills, and it never changes a run's verdict.
+
+- **Improvement store surface (`log_improvement`).** A new additive
+  `log_improvement` table plus `record_improvement(...)` and one closed vocabulary
+  validated at the store boundary like the existing ones: `PROPOSAL_STATUSES`
+  (`{open, dismissed, addressed}`). The store rejects an out-of-vocabulary status,
+  a blank `summary`/`evidence`/`area`, or a dangling session/judgment reference.
+  `criterion_id` is nullable and opaque (rubric-owned data, NULL for judgment-level
+  proposals); `area` is **playbook-owned data, never enumerated in code**. This
+  mission only ever writes `"open"`; the other statuses exist now so a later
+  lifecycle mission needs no schema migration. The schema change is `CREATE TABLE
+  IF NOT EXISTS`, so `init_schema` stays idempotent against existing local files.
+- **Read-only judgment + proposal surfaces.** A `premura.session_log.improvement_read`
+  read surface with `read_judgments` (the scan's input) and `read_improvements`
+  (filterable by session and/or status) returning frozen dataclass rows in
+  deterministic order, opening the log **strictly read-only** (same discipline as
+  the m3 dossier) so an agent lists open proposals through it, never via raw SQL,
+  and the harness stays the sole writer.
+- **Versioned playbook, a level above.** The hook's improvement areas live in a
+  versioned `IMPROVEMENT_PLAYBOOK.md` packaged with the harness (mirrors
+  `JUDGE_RUBRIC.md`'s shape) — one area per closed rubric category plus two
+  hook-owned areas (`harness_reliability` for a non-`complete` judgment status,
+  `rubric_drift` for a judged criterion the current rubric no longer defines), each
+  with a `suggested_focus` review pointer and grounding — **plus the explicit rule
+  for adding an area**: edit the doc and bump `playbook_version`; no schema or store
+  change is ever needed. Code never hardcodes area semantics; it parses the doc and
+  fails loudly if the version header or any required area is missing.
+- **Deterministic scan core.** `premura.harness.improvement.scan_session(...)` reads
+  a session's judgments through the read-only surface, looks up each judged
+  criterion's category via the **reused** m3 rubric parser (extended to expose
+  criterion→category — not a second parser), and derives proposals by rule: a
+  criterion banded `weak` → one proposal in its category's area carrying the
+  rationale as evidence; a non-`complete` judgment status → one `harness_reliability`
+  proposal; a judged criterion absent from the current rubric → one `rubric_drift`
+  proposal; `strong`/`adequate`/`not_applicable` produce nothing. Persistence is
+  idempotent on `(judgment_id, criterion_id, area)`: a re-scan writes nothing new and
+  reports each proposal as pre-existing. The scan is **pure and deterministic** — no
+  model calls, no network, no randomness, no clock reads beyond row timestamps — and
+  keys only on the closed store vocabularies + parsed doc structure (no
+  `if criterion_id == ...` ladders).
+- **Harness wiring, opt-in, default OFF.** The cheap-model live-trial run gains an
+  opt-in post-run improvement step (`improve_run=False` by default) that runs after
+  the judge has recorded its judgment. Like the judge step it is fully guarded:
+  hook failure of any kind never changes the trial verdict and never raises out of
+  the harness; it lands as proposals, or a logged warning. `improve_run` WITHOUT
+  `judge_run` is a loud `ValueError` at entry — the hook has nothing to consume.
+  Pinned by a regression test.
+- **Containment unchanged.** Only the harness writes `log_improvement` (pinned by the
+  single-writer test); the read surfaces open the log read-only; committed tests are
+  fully offline and deterministic (synthetic judgments written through the store API,
+  scripted judge transport); synthetic fixtures only; no new third-party dependency.
+
+Mission detail:
+[`docs/building/planning/improvement-hook.md`](../building/planning/improvement-hook.md).
+
+## 2026-06-11 — Judge AI (`judge-ai`) — on branch, not yet merged
+
+Written pre-merge (overnight solo mission on `overnight/m3-judge-ai`); the
+post-merge close-out flips tense and records the merge. The live-trial harness
+grades a run *mechanically* — the grader recomputes `contract_pass` from
+warehouse facts and the scoreboard records pass/fail — but nothing evaluated the
+operator's *process*: whether it worked toward the goal, used its tools
+economically, recovered from failures, or claimed things the grader facts
+contradict. The session log already held everything needed to judge that (steps,
+provenance, per-attempt telemetry, and — since `conversation-turn-capture` — the
+full transcript), but nothing read it. This mission adds an AI judge: a
+harness-side evaluator that assembles a read-only dossier of a recorded session,
+asks a **local** model to assess it against a bounded rubric, and persists the
+structured judgment back through the same sole-writer surface.
+
+- **Judgment store surface (`log_judgment`).** A new additive `log_judgment`
+  table plus `record_judgment(...)` and two closed vocabularies validated at the
+  store boundary like the existing ones: `JUDGMENT_STATUSES`
+  (`{complete, unparseable, model_unavailable}`) and `CRITERION_BANDS`
+  (`{strong, adequate, weak, not_applicable}`). `criteria` is a mapping of
+  rubric criterion id → `{band, rationale}` stored as JSON; every band is
+  validated, but the criterion **ids are rubric-owned data, never enumerated in
+  code**. A judgment attempt is always recorded honestly — on
+  `unparseable` / `model_unavailable` the criteria are empty, `overall_band` is
+  NULL, and `raw_output` preserves what the model actually said. The bands are
+  **descriptive only**: no numeric scores, no language confusable with the
+  mechanical grader verdict. The schema change is `CREATE TABLE IF NOT EXISTS`,
+  so `init_schema` stays idempotent against existing local files.
+- **Read-only session dossier.** A `premura.session_log.dossier` read surface
+  assembles one session into a judge-readable dossier — session metadata, the
+  grader's recomputed facts (`contract_pass`, row counts), per-attempt
+  telemetry, and the full transcript in `turn_index` order — opening the log
+  **strictly read-only** so the judge (and the future improvement hook) never
+  reach into tables ad hoc and never write the log. A session with no recorded
+  turns says so explicitly rather than failing.
+- **Bounded rubric, a level above.** The judge's criteria live in a versioned
+  rubric document packaged with the harness (`JUDGE_RUBRIC.md`, precedent: the
+  research-trace-audit skill's `AUDIT_RUBRIC.md`) with four **closed** criterion
+  categories — process honesty, goal adherence, tool-use economy, failure
+  recovery — **plus the explicit rule for adding a criterion**: edit the rubric
+  (id, question, band grounding) and bump `rubric_version`; no schema or store
+  change is ever needed. Code never enumerates the criteria; it validates bands
+  and records whatever criterion ids the rubric defined.
+- **Judge core.** `premura.harness.judge.judge_session(...)` builds the prompt
+  from dossier + rubric, calls a local model through an injectable transport seam
+  (same pattern as the tool-loop `Transport`; the default reuses the existing
+  local-only Ollama path verbatim, so the PHI-bearing prompt can never leave the
+  machine), parses and validates the verdict, retries a malformed response a
+  bounded number of times, and persists exactly one `log_judgment` row per
+  invocation with the honest status. The judge *evaluates* the grader's facts but
+  can never alter them — `contract_pass`, the scoreboard, and the trial verdict
+  are out of its write reach.
+- **Harness wiring, opt-in, default OFF.** The cheap-model live-trial run gains an
+  opt-in post-run judge step (`judge_run=False` by default) that runs after the
+  final session is recorded. Judge failure of any kind — model unavailable,
+  unparseable output, or a bug — never changes the trial verdict and never raises
+  out of the harness; it lands as an honest `log_judgment` status row, or (if even
+  recording fails) a logged warning. Pinned by a regression test.
+- **Containment unchanged.** Only the harness writes `log_judgment` (pinned by the
+  single-writer test); the dossier opens the log read-only; committed tests are
+  fully offline with a scripted transport (any real-model test would carry the
+  `live_trial` marker); synthetic fixtures only; no new third-party dependency.
+
+Mission detail:
+[`docs/building/planning/judge-ai.md`](../building/planning/judge-ai.md).
+
+## 2026-06-11 — Conversation-turn capture (`conversation-turn-capture`) — on branch, not yet merged
+
+Written pre-merge (overnight solo mission on
+`overnight/m2-conversation-turn-capture`); the post-merge close-out flips tense
+and records the merge. The session log already recorded the *shape* of a
+live-trial run (the step tree, per-attempt telemetry); this mission persists the
+*conversation* — the operator's actual chat history — so the deferred judge AI
+has the turns to read. The transcript lived only in Python memory and was
+discarded when a run ended; it is now flushed to the session log post-run by the
+harness, which remains the **sole writer**.
+
+- **Store surface (`log_turn`).** A new additive `log_turn` table plus
+  `record_turn(...)` and a fixed `TURN_ROLES` vocabulary
+  (`{system, user, assistant, tool}`, the chat-API role standard) validated at
+  the store boundary like the existing `result_status` / `run_kind` vocabularies.
+  `turn_index` is the 0-based transcript position; `(session_id, turn_index)` is
+  unique; `step_id` is a nullable link to the `log_step` node the turn occurred
+  under (the run's root `agent_turn`). `content` is full turn content — the
+  session log is the local, PHI-bearing store per ADR 0011, and no code path
+  syncs or exports it. The schema change is `CREATE TABLE IF NOT EXISTS`, so
+  `init_schema` stays idempotent against existing local files.
+- **Transcript seam (a level above).** The live-trial seam defines a structural
+  `TurnLike` protocol and an optional operator capability: any operator that
+  exposes `transcript()` after `operate()` gets its turns persisted by the
+  harness. The harness detects the capability **structurally** (no registry of
+  tiers, no per-tier capture code); operators without it behave exactly as
+  before (zero `log_turn` rows, unchanged verdict). Capture failure on an
+  otherwise-successful run surfaces as a recorded `error`-status step, never an
+  exception that flips the run verdict.
+- **Both tiers feed the seam.** The tool-loop operator maps its final chat
+  history 1:1 to `TurnLike` items (roles pass through; tool-result turns carry
+  their `tool_name`); the one-shot operator exposes its final prompt/response
+  exchange as a two-turn (`user` prompt, `assistant` response) transcript — so
+  the judge AI reads every tier through the same surface.
+- **Containment unchanged.** Only the harness writes `log_turn` (pinned by the
+  single-writer test); synthetic fixtures only, never real transcripts; no new
+  third-party dependency.
+
+Mission detail:
+[`docs/building/planning/conversation-turn-capture.md`](../building/planning/conversation-turn-capture.md).
+
 ## 2026-06-11 — Tool-loop live-trial tier (`tool-loop-live-trial-tier-01KTVG26`) — in progress, not yet merged
 
 Written pre-merge (this mission's own doc-sync work package runs before the

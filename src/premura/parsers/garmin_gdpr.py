@@ -31,12 +31,12 @@ import json
 import logging
 import re
 import zipfile
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Sequence
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from .base import IngestBatch, Interval, Measurement, SourceDescriptor
+from .base import IngestBatch, Interval, Measurement, RoutingPreview, SourceDescriptor
 
 log = logging.getLogger(__name__)
 SOURCE_KIND = "garmin_gdpr"
@@ -266,6 +266,24 @@ class GarminGDPRParser:
                 return getattr(self, handler_name)
         return None
 
+    def _dispatch_name(self, member_name: str) -> str | None:
+        """Handler *name* for a member, or None — the routing decision without
+        binding the method. Shares the single _HANDLERS table with _dispatch so
+        the preview can never drift from the ingest routing."""
+        for pattern, handler_name in _HANDLERS:
+            if pattern.search(member_name):
+                return handler_name
+        return None
+
+    def preview_routing(self, member_names: Sequence[str]) -> RoutingPreview:
+        """Name-based dry-run routing preview (m7 WP1 / FR-1.4).
+
+        Delegates to the same _HANDLERS dispatch the ingest path uses, so an
+        unhandled member appears here exactly as ingest would log it. Reads no
+        file contents and touches no warehouse.
+        """
+        return RoutingPreview(entries=[(name, self._dispatch_name(name)) for name in member_names])
+
     @staticmethod
     def _iter_records(docs: Any) -> Iterable[dict[str, Any]]:
         if isinstance(docs, list):
@@ -345,7 +363,6 @@ class GarminGDPRParser:
                     start_utc=start,
                     end_utc=end,
                     metric_id="sleep_session",
-                    unit="enum",
                     source_id=DEFAULT_SOURCE_ID,
                     source_kind=SOURCE_KIND,
                     value_text=cal,
@@ -665,7 +682,6 @@ class GarminGDPRParser:
                     start_utc=ts,
                     end_utc=end,
                     metric_id="daily_wellness",
-                    unit="composite",
                     source_id=DEFAULT_SOURCE_ID,
                     source_kind=SOURCE_KIND,
                     value_text=cal,
@@ -697,7 +713,6 @@ class GarminGDPRParser:
                     start_utc=ts,
                     end_utc=end,
                     metric_id="activity_summary",
-                    unit="enum",
                     source_id=DEFAULT_SOURCE_ID,
                     source_kind=SOURCE_KIND,
                     value_text=str(label),

@@ -162,14 +162,23 @@ def _persist_plan(conn: duckdb.DuckDBPyConnection, plan: DedupePlan) -> None:
     if plan.interval_rows.height:
         conn.register("planned_intervals", plan.interval_rows)
         try:
+            # `unit` is sourced from the metric registry (dim_metric.canonical_unit),
+            # never from a parser-supplied string — the warehouse is the single
+            # source of unit truth (m7 WP3 / FR-3.2). A row whose metric is absent
+            # from dim_metric would already have been rejected at validate time, so
+            # the LEFT JOIN is defensive: it leaves unit NULL rather than dropping
+            # the row.
             conn.execute(
                 """
                 INSERT INTO hp.fact_interval
                     (metric_id, start_utc, end_utc, local_tz, value_num, value_text,
-                     source_id, source_uuid, parent_uuid, dedupe_key, ingest_batch, raw_payload)
-                SELECT metric_id, start_utc, end_utc, local_tz, value_num, value_text,
-                       source_id, source_uuid, parent_uuid, dedupe_key, ingest_batch, raw_payload
-                FROM planned_intervals
+                     unit, source_id, source_uuid, parent_uuid, dedupe_key,
+                     ingest_batch, raw_payload)
+                SELECT p.metric_id, p.start_utc, p.end_utc, p.local_tz, p.value_num,
+                       p.value_text, dm.canonical_unit, p.source_id, p.source_uuid,
+                       p.parent_uuid, p.dedupe_key, p.ingest_batch, p.raw_payload
+                FROM planned_intervals p
+                LEFT JOIN hp.dim_metric dm ON dm.metric_id = p.metric_id
                 """
             )
         finally:

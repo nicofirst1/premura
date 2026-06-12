@@ -22,8 +22,12 @@ no harness path leaked into the DEFAULT gate, while this file stays excluded.
 from __future__ import annotations
 
 import importlib
+from pathlib import Path
 
 import pytest
+
+from premura.config import REPO_ROOT
+from premura.harness.sandbox import build_sandbox
 
 # Loaded dynamically (see module docstring): keeps the harness import/call
 # substrings out of this file's text so the committed NFR-005 default-gate guard
@@ -76,6 +80,69 @@ def test_both_drawer_prompts_state_the_renamed_field_rule() -> None:
         assert name in observation, f"observation prompt lost API name {name!r}"
     for name in _INTAKE_API_NAMES:
         assert name in intake, f"intake prompt lost API name {name!r}"
+
+
+_SYNTHETIC_CSV = (
+    Path(__file__).parent / "fixtures" / "session_log" / "fitbit_heart_rate_synthetic.csv"
+)
+
+
+def test_one_shot_operator_exposes_two_turn_transcript(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """FR-4: the one-shot operator exposes its prompt/response as a two-turn transcript.
+
+    Default-suite (no model, no network): the model call and the gate are
+    substituted at their boundaries so the bounded retry loop runs one exchange
+    deterministically. The operator then exposes that exchange as exactly two
+    turns — a ``user`` prompt turn and an ``assistant`` response turn — so the
+    judge AI reads this tier through the SAME ``transcript()`` surface as the
+    tool-loop tier. Both turns pass the chat-API role vocabulary.
+    """
+    canned_response = "class LiveTrialParser:\n    pass\n"
+
+    def _fake_ollama(prompt: str, *, model: str, timeout: int = 300) -> str:  # noqa: ARG001
+        return canned_response
+
+    class _PassingGate:
+        passed = True
+        feedback = ""
+        parser_error = None
+
+        class self_reconciliation:  # noqa: N801 - structural stand-in
+            passed = True
+            source_columns: list[str] = []
+            accounted = frozenset()  # type: ignore[var-annotated]
+            unaccounted: list[str] = []
+
+    def _fake_gate(sandbox_src: Path, source: Path, probe: object) -> object:  # noqa: ARG001
+        return _PassingGate()
+
+    monkeypatch.setattr(lto, "_ollama", _fake_ollama)
+    monkeypatch.setattr(lto, "_gate_parser", _fake_gate)
+
+    sandbox = build_sandbox(REPO_ROOT)
+    try:
+        operator = lto.OllamaOperator(_SYNTHETIC_CSV, model="cheap:test")
+        operator.operate(sandbox, goal="ingest the heart-rate category")
+
+        turns = list(operator.transcript())
+        assert len(turns) == 2
+        prompt_turn, response_turn = turns
+        assert prompt_turn.role == "user"
+        assert response_turn.role == "assistant"
+        # The response turn carries the model's raw output verbatim.
+        assert response_turn.content == canned_response
+        # The prompt turn carries the contract + goal the operator authored against.
+        assert "ingest the heart-rate category" in prompt_turn.content
+        # The operator's model id rides on the response turn for the judge AI.
+        assert response_turn.model == "cheap:test"
+        # Roles are in the store's chat-API vocabulary.
+        from premura.session_log import store
+
+        assert {prompt_turn.role, response_turn.role} <= store.TURN_ROLES
+    finally:
+        sandbox.teardown()
 
 
 def _assert_well_formed(verdict: dict[str, object]) -> None:

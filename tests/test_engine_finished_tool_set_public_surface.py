@@ -1,20 +1,19 @@
-"""WP05 — default-surface discovery for the finished analytical tool set.
+"""Default-surface discovery for the analytical tool set.
 
-These tests pin FR-001 / SC-001 / NFR-007 / NFR-008: after WP05 wires the
-default loader, the public engine discovery surface
-``premura.engine.list_analytical_tools()`` returns exactly the FIVE shipped
+These tests pin the public engine discovery surface
+``premura.engine.list_analytical_tools()``: it returns exactly the SIX shipped
 built-ins (``change_point``, ``smoothed_average``, ``correlate``,
-``rolling_mean``, ``paired_t_test``) — the two tools WP02/WP04 registered into
-the shared REGISTRY but deliberately left off the static default loader are now
-published.
+``rolling_mean``, ``paired_t_test``, ``condition_paired_t_test``). The m8 mission
+added the sixth tool (the condition-label pairing extension); the finish-tool-set
+mission added ``rolling_mean`` / ``paired_t_test`` before it.
 
 The structural guarantees this file locks down:
 
-* the static built-in module/name lists carry both new tools (no filesystem
-  scan, no plugin loader);
-* the full catalog is exactly five named tools, each dispatchable;
-* the before/after paired-input seam the ``paired_t_test`` MCP wrapper needs is
-  re-exported from the public engine surface;
+* the static built-in module/name lists carry the new tools (no filesystem scan,
+  no plugin loader);
+* the full catalog is exactly six named tools, each dispatchable;
+* the paired-input seams the ``paired_t_test`` / ``condition_paired_t_test`` MCP
+  wrappers need are re-exported from the public engine surface;
 * listing the catalog stays well under one second (NFR-007).
 
 Pure engine surface only — no MCP, no warehouse.
@@ -35,7 +34,7 @@ from premura.engine import (
     prepare_before_after_paired_input,
 )
 
-# The full, exact catalog FR-001 / SC-001 require after WP05.
+# The full, exact catalog the public surface must publish.
 _EXPECTED_TOOLS = frozenset(
     {
         "change_point",
@@ -43,33 +42,34 @@ _EXPECTED_TOOLS = frozenset(
         "correlate",
         "rolling_mean",
         "paired_t_test",
+        "condition_paired_t_test",
     }
 )
 
-# The two tools earlier WPs deferred to the default surface.
-_NEWLY_PUBLISHED = frozenset({"rolling_mean", "paired_t_test"})
+# The tool the m8 mission added to the default surface.
+_NEWLY_PUBLISHED = frozenset({"condition_paired_t_test"})
 
 
 # ---------------------------------------------------------------------------
-# 1. The default catalog is EXACTLY five tools (the headline requirement).
+# 1. The default catalog is EXACTLY six tools (the headline requirement).
 # ---------------------------------------------------------------------------
 
 
-def test_default_catalog_is_exactly_five_tools() -> None:
-    """``list_analytical_tools`` returns exactly the five shipped built-ins."""
+def test_default_catalog_is_exactly_six_tools() -> None:
+    """``list_analytical_tools`` returns exactly the six shipped built-ins."""
     names = sorted(spec.name for spec in list_analytical_tools())
     assert names == sorted(_EXPECTED_TOOLS)
-    assert len(names) == 5
+    assert len(names) == 6
 
 
-def test_both_deferred_tools_are_now_published() -> None:
-    """``rolling_mean`` and ``paired_t_test`` reach the default surface (FR-001)."""
+def test_newly_published_tool_is_on_the_surface() -> None:
+    """``condition_paired_t_test`` reaches the default surface (m8 FR-4)."""
     names = {spec.name for spec in list_analytical_tools()}
     assert _NEWLY_PUBLISHED <= names
 
 
 def test_every_catalog_tool_is_dispatchable() -> None:
-    """Each of the five built-ins is a real spec with a callable implementation."""
+    """Each of the six built-ins is a real spec with a callable implementation."""
     by_name = {spec.name: spec for spec in list_analytical_tools()}
     assert set(by_name) == set(_EXPECTED_TOOLS)
     for name in _EXPECTED_TOOLS:
@@ -78,12 +78,11 @@ def test_every_catalog_tool_is_dispatchable() -> None:
         assert spec.fn is not None
 
 
-def test_list_loads_five_builtins_in_clean_process() -> None:
-    """Listing loads all five built-ins on its own (no prior manual load).
+def test_list_loads_six_builtins_in_clean_process() -> None:
+    """Listing loads all six built-ins on its own (no prior manual load).
 
     Run in a clean subprocess so a sibling test that already triggered the load
-    cannot mask a regression where the static loader forgot one of the two newly
-    published tools.
+    cannot mask a regression where the static loader forgot a newly published tool.
     """
     import subprocess
 
@@ -91,7 +90,8 @@ def test_list_loads_five_builtins_in_clean_process() -> None:
         "from premura.engine import list_analytical_tools;"
         "names = sorted(s.name for s in list_analytical_tools());"
         "expected = sorted(["
-        "'change_point','smoothed_average','correlate','rolling_mean','paired_t_test'"
+        "'change_point','smoothed_average','correlate','rolling_mean',"
+        "'paired_t_test','condition_paired_t_test'"
         "]);"
         "assert names == expected, names;"
         "print('ok')"
@@ -102,17 +102,18 @@ def test_list_loads_five_builtins_in_clean_process() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 2. Static loader, not scanning: both new modules are in the explicit tuple.
+# 2. Static loader, not scanning: the tool modules are in the explicit tuple.
 # ---------------------------------------------------------------------------
 
 
-def test_static_loader_lists_both_new_modules() -> None:
-    """The built-in module/name lists carry both new tools as explicit entries."""
+def test_static_loader_lists_the_tool_modules() -> None:
+    """The built-in module/name lists carry the tool modules as explicit entries."""
     import premura.engine.analytical as facade
 
     assert isinstance(facade._BUILTIN_ANALYTICAL_MODULES, tuple)
     assert "premura.engine.rolling_mean" in facade._BUILTIN_ANALYTICAL_MODULES
     assert "premura.engine.paired_t_test" in facade._BUILTIN_ANALYTICAL_MODULES
+    assert "premura.engine.condition_paired_t_test" in facade._BUILTIN_ANALYTICAL_MODULES
     # The reload-guard name set is kept in sync with the published catalog.
     assert _EXPECTED_TOOLS <= facade._BUILTIN_ANALYTICAL_NAMES
 
@@ -163,7 +164,7 @@ def test_before_after_paired_seam_is_publicly_exported() -> None:
 
 
 def test_listing_catalog_is_fast() -> None:
-    """Discovery of the five-tool catalog completes comfortably under one second."""
+    """Discovery of the six-tool catalog completes comfortably under one second."""
     load_builtin_analytical_tools()  # warm the lazy import out of the measured path
     start = time.perf_counter()
     for _ in range(50):

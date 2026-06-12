@@ -98,6 +98,40 @@ Verdict = dict[str, Any]
 
 
 @runtime_checkable
+class TurnLike(Protocol):
+    """One conversation turn an operator may expose for capture (m2 FR-2).
+
+    A bounded structural abstraction (guide-don't-enumerate): any object with a
+    ``role`` and ``content`` string is a turn, with the per-turn telemetry
+    (``tool_name`` / ``model`` / ``token_count``) optional. The harness reads
+    these attributes off whatever an operator's ``transcript()`` returns — it
+    does not require a specific class, so each tier maps its own message shape to
+    this protocol (``ToolLoopOperator``'s chat messages, the one-shot operator's
+    prompt/response). ``role`` is validated against the store's ``TURN_ROLES``
+    vocabulary at persistence time, not here.
+    """
+
+    role: str
+    content: str
+
+
+@runtime_checkable
+class HasTranscript(Protocol):
+    """The optional transcript-capture capability an operator may expose (m2 FR-2).
+
+    An operator that implements ``transcript()`` after ``operate()`` gets its
+    conversation persisted by the harness (the sole log writer). The harness
+    detects this STRUCTURALLY (a ``transcript`` attribute / this protocol) — there
+    is no registry of tiers and no per-tier capture branch. Operators without it
+    behave exactly as before (zero ``log_turn`` rows, unchanged verdict).
+    """
+
+    def transcript(self) -> Sequence[TurnLike]:
+        """Return the final-state conversation as a sequence of :class:`TurnLike`."""
+        ...
+
+
+@runtime_checkable
 class Operator(Protocol):
     """The cheap operator AI: edits the sandbox tree to make the data ingestable.
 
@@ -457,6 +491,58 @@ class LiveTrialResult:
     session_log_path: Path
 
 
+def _persist_transcript(
+    log_conn: duckdb.DuckDBPyConnection,
+    *,
+    operator: Operator,
+    session_id: str,
+    step_id: str,
+) -> None:
+    """Persist a capable operator's conversation as ordered ``log_turn`` rows (FR-5).
+
+    The harness is the SOLE log writer (FR-021 / NFR-1): the operator only
+    EXPOSES its turns; this writes them. The capability is detected STRUCTURALLY
+    (``hasattr``) — no registry of tiers, no per-tier branch (FR-2). An operator
+    without ``transcript()`` is a no-op here.
+
+    Capture must never change an otherwise-successful run's verdict (FR-5): any
+    failure assembling or writing turns is swallowed and surfaced as a recorded
+    ``error``-status step under the run's root ``agent_turn``, not re-raised. The
+    turns link to that root step (FR-1 step_id link) and are written in the order
+    the operator returns them (``turn_index`` is the 0-based position).
+    """
+    if not hasattr(operator, "transcript"):
+        return
+    try:
+        turns = list(operator.transcript())  # type: ignore[attr-defined]
+        for index, turn in enumerate(turns):
+            store.record_turn(
+                log_conn,
+                session_id=session_id,
+                step_id=step_id,
+                turn_index=index,
+                role=turn.role,
+                content=turn.content,
+                tool_name=getattr(turn, "tool_name", None),
+                model=getattr(turn, "model", None),
+                token_count=getattr(turn, "token_count", None),
+            )
+    except Exception as exc:  # noqa: BLE001 - capture failure must not flip the verdict
+        store.record_step(
+            log_conn,
+            session_id=session_id,
+            parent_step_id=step_id,
+            kind="tool_call",
+            name="transcript capture failed",
+            tool_name="capture_transcript",
+            request_summary=None,
+            request_hash=None,
+            result_status="error",
+            result_summary=f"transcript capture failed: {type(exc).__name__}: {exc}"[:500],
+            result_hash=None,
+        )
+
+
 def _drive_live_trial(
     config: LiveTrialConfig,
     *,
@@ -621,6 +707,17 @@ def _drive_live_trial(
             contract_pass=bool(verdict["rules"]["runtime_valid"]["passed"]),
         )
 
+        # (5b) Persist the operator's conversation transcript, if it exposes one
+        #      (FR-2/FR-5). Detected structurally; the harness is the sole writer.
+        #      Capture failure surfaces as an error-status step, never an exception
+        #      that flips the run's verdict.
+        _persist_transcript(
+            log_conn,
+            operator=operator,
+            session_id=session_id,
+            step_id=turn_id,
+        )
+
         # (6) Finish the session.
         store.finish_session(log_conn, session_id=session_id)
 
@@ -721,11 +818,13 @@ def run_live_trial_with_log(
 
 __all__ = [
     "Driver",
+    "HasTranscript",
     "LiveTrialConfig",
     "LiveTrialResult",
     "Operator",
     "ReferenceParserOperator",
     "ScriptedDriver",
+    "TurnLike",
     "Verdict",
     "real_model_driver",
     "real_model_operator",

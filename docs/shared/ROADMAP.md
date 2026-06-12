@@ -28,7 +28,7 @@ The user is actively writing more requirements; this section will grow.
 > This is the current main planning thread. The phase-level source of truth is [FULL_APP_DEVELOPMENT_PLAN.md](../building/product/FULL_APP_DEVELOPMENT_PLAN.md) §"Phase 3: `v0.3 analytical depth`".
 
 1. **Analytical foundation first — shipped.** Premura now has the domain-aware input-resolution seam between Stage 2 and Stage 3, explicit honest-refusal behavior for declared-but-unresolved domains, the deterministic evidence-admissibility policy layer (`evaluate_evidence` over a closed `QuestionType` vocabulary and per-family freshness/sufficiency rules), and a machine-readable closed confound vocabulary on the analytical result envelope. The first cross-domain proof consumer (BMI) uses the resolution seam; admissibility is decided before any tool computes. Missingness and imputation reporting remain a Stage 2 *internal* concern (per-metric `missing_data_policy`, freshness windows), not the analytical foundation itself.
-2. **The first bounded analytical tool set — complete.** Five conservative, reproducible tools now sit on the default MCP surface: `change_point` (level-shift detection), `smoothed_average` (trailing smoothed pattern), `correlate` (the n-of-1 workhorse — a pre-registered, caller-declared whole-day-lagged Spearman *association* with an autocorrelation-corrected `N_eff` band, no p-value and no "significant"), `rolling_mean` (a declared moving-window summary with visible coverage/imputation, distinct from `smoothed_average`), and `paired_t_test` (a declared before/after anchor-date paired comparison reporting a paired difference and a descriptive uncertainty band — **not** a significance test, no p-value, names no cause). Each routes to its own first-class analytical `QuestionType` and returns the mandatory result envelope (estimate + validity metadata + confound checklist, including the `common_cause_plausible` key, or a first-class refusal); `engine.list_analytical_tools()` returns exactly these five. The locked architecture for the multi-input member is design decision note [0008](../building/adr/0008-correlate-pre-registered-lagged-association.md); the operative statistical rules live in [`src/premura/engine/CONTRACT.md`](../../src/premura/engine/CONTRACT.md), with the investigation's rationale recorded in the frozen research note [CORRELATE_METHODOLOGY_RESEARCH.md](../history/research/CORRELATE_METHODOLOGY_RESEARCH.md). **Still deferred:** `paired_t_test`'s broader **condition-label pairing** (anchor-date pairing only ships now), and only later any broader significance-testing coverage. The goal stays honest n-of-1 analysis, not statistical theater.
+2. **The bounded analytical tool set — complete, now six tools.** Six conservative, reproducible tools sit on the default MCP surface: `change_point` (level-shift detection), `smoothed_average` (trailing smoothed pattern), `correlate` (the n-of-1 workhorse — a pre-registered, caller-declared whole-day-lagged Spearman *association* with an autocorrelation-corrected `N_eff` band, no p-value and no "significant"), `rolling_mean` (a declared moving-window summary with visible coverage/imputation, distinct from `smoothed_average`), `paired_t_test` (a declared before/after anchor-date paired comparison reporting a paired difference and a descriptive uncertainty band — **not** a significance test, no p-value, names no cause), and now `condition_paired_t_test` (the reviewed **condition-label pairing** extension `paired_t_test` deferred: a declared off-vs-on paired difference over one operator-declared condition label and a set of non-overlapping declared episodes, one off/on pair per usable episode, with per-episode exclusion disclosures — same honesty boundary, the label only splits the windows and is never a cause). Each routes to its own first-class analytical `QuestionType` and returns the mandatory result envelope (estimate + validity metadata + confound checklist, including the `common_cause_plausible` key, or a first-class refusal); `engine.list_analytical_tools()` returns exactly these six. The locked architecture for the multi-input member is design decision note [0008](../building/adr/0008-correlate-pre-registered-lagged-association.md); the operative statistical rules live in [`src/premura/engine/CONTRACT.md`](../../src/premura/engine/CONTRACT.md), with the investigation's rationale recorded in the frozen research note [CORRELATE_METHODOLOGY_RESEARCH.md](../history/research/CORRELATE_METHODOLOGY_RESEARCH.md). **Still deferred (named so future work is not assumed shipped):** warehouse storage of condition periods (condition episodes are caller-declared in the request today; persisting them is an intake/capture follow-up needing its own agent-mediated capture design); multi-label contrasts, episode auto-detection, and any scanning; and only later any broader significance-testing coverage. The goal stays honest n-of-1 analysis, not statistical theater.
 3. **Reproducible research trace / multiplicity disclosure — shipped.** Analytical sessions now leave behind a **session research trace**: an explicit, append-only ledger of the analytical calls dispatched in a session, recorded at the MCP boundary (the pure `premura.trace` service over `trace.*` tables; the analytical engine stayed stateless). Three default-surface tools (`research_trace_open`, `research_trace_mark_surfaced`, `research_trace_disclosure`) expose it, and each analytical tool takes an optional `session_id` to record into it. The disclosure is **measured** from the recorded rows — "K user-facing findings among N unique hypotheses examined", with exact retries collapsing and refusals still counting toward N; when no results are marked, the surfaced count is reported **surfaced unavailable**, never guessed. It frames search effort, never "significant results," and computes no multiplicity-corrected statistic. The locked architecture is design decision note [0009](../building/adr/0009-session-research-trace-and-multiplicity-disclosure.md). On-demand JSON/Markdown exports are generated views, never the canonical record. **Now also shipped:** the follow-on **research trace audit skill** — a Premura-specific agent skill that reads the trace's audit-consumer contract (read-only) and judges one final answer for search-effort disclosure, hidden refusals or unavailable-surfaced marks, and overclaims. It ships at `src/premura/skills/research-trace-audit/` (a prose `SKILL.md` + a bounded `AUDIT_RUBRIC.md` of four closed criteria categories plus the rule for adding a criterion + five synthetic fixtures), installed via the existing `hpipe install-skills` to `.claude/skills/` — the same project skill home both Claude Code and OpenCode read, so a separate OpenCode-style installer target was evaluated and deliberately rejected (one home serves both clients). It changed no trace counts or schema, and it is not a generic answer-audit product — it applies only to an answer built from a Premura session research trace.
 4. **Then literature grounding — first slice shipped.** With the bounded analytical tool set complete, the first PubMed grounding slice has now landed on the default MCP surface: two tools, `pubmed_search` (returns **candidates only** — never citeable) and `pubmed_fetch` (returns a **citeable** record for one exact PMID, with PubMed provenance). The live tool inventory and counts are in [STATUS.md](STATUS.md) §"Shipped surface". The candidate-vs-fetched citation rule is a Premura invariant owned by a Premura-owned adapter over NCBI E-utilities (no new HTTP dependency); see the [CHANGELOG.md](CHANGELOG.md) 2026-06-01 entry. This grounds citations in fetched records so they attach to tool-grounded analysis rather than free-form narration. **Still deferred (named so future work is not assumed shipped):** the **literature-to-warehouse bridge** and **concept-to-metric mapping** that would connect a fetched paper to the operator's own warehouse data; full-text retrieval, deep paper analysis, expansion to other sources (Europe PMC, Unpaywall), MeSH lookup, related-article discovery, and citation formatting. The shipped tools reach the literature only — they never diagnose, treat, name a cause, or compute over the user's health data. (Nutrition/supplement intake source adaptation has since shipped, including the first real vendor parser — MyFitnessPal, 2026-06-11 — see §"Profile and intake" below; the teaching UI remains deferred.)
 
@@ -58,12 +58,86 @@ The user is actively writing more requirements; this section will grow.
    2026-06-11, and the tier is specified, planned, and in implementation as
    mission `tool-loop-live-trial-tier-01KTVG26` (on mission lanes, not yet
    merged — what it adds is recorded in the [CHANGELOG.md](CHANGELOG.md)
-   2026-06-11 entry). **Still deferred (named so future work is not assumed
-   shipped):** conversation-turn capture, the judge AI, the improvement hook,
-   the fixture auto-generator, the analyze-and-answer slice, and — out of the
-   tier mission's scope by design — multi-model tournaments, tier
-   auto-selection / capability-routing policies, and any frontier or cloud
-   model requirement.
+   2026-06-11 entry). **Conversation-turn capture has since landed** (the
+   `conversation-turn-capture` mission, on branch, not yet merged): the session
+   log now persists the operator's actual chat history per run — a new additive
+   `log_turn` table written through the same sole-writer harness, fed by a
+   structural `transcript()` capability that both the tool-loop and one-shot
+   tiers expose, so the judge AI has the turns to read (see the
+   [CHANGELOG.md](CHANGELOG.md) 2026-06-11 entry). **The judge AI has since
+   shipped** (the `judge-ai` mission, on branch, not yet merged): a harness-side
+   evaluator now assembles a read-only **session dossier** (metadata, the
+   grader's recomputed facts, per-attempt telemetry, and the transcript), asks a
+   **local** model to assess the operator's *process* against a versioned,
+   bounded **rubric** (four closed criterion categories plus the rule for adding
+   a criterion), and persists a structured, descriptive judgment into a new
+   additive `log_judgment` table through the same sole-writer surface. It is
+   wired as an **opt-in, default-off** post-run step of the live trial; the judge
+   evaluates the grader's facts but can never alter `contract_pass`, the
+   scoreboard, or the trial verdict, and its failure never raises out of the
+   harness (see the [CHANGELOG.md](CHANGELOG.md) 2026-06-11 entry). **The
+   improvement hook has since shipped** (the `improvement-hook` mission, on branch,
+   not yet merged): a deterministic, rule-based scan now *consumes* those judgments
+   — it reads `log_judgment` rows (plus the rubric for criterion→category lookup),
+   maps each weak band / failed judgment / off-rubric criterion to an improvement
+   area via a versioned, bounded **playbook** (`IMPROVEMENT_PLAYBOOK.md`: one area
+   per closed rubric category plus the two hook-owned areas `harness_reliability`
+   and `rubric_drift`, plus the rule for adding an area), and persists durable,
+   agent-readable **improvement proposals** into a new additive `log_improvement`
+   table through the same sole-writer surface, read back through a strictly
+   read-only surface. It **proposes; it never acts** — no prompt/harness/rubric/skill
+   edit, and it never changes a run's verdict — and it is wired as an **opt-in,
+   default-off** post-run step (`improve_run`, gated on `judge_run`) whose failure
+   never raises out of the harness (see the [CHANGELOG.md](CHANGELOG.md)
+   2026-06-12 entry). **The fixture auto-generator has since shipped** (the
+   `fixture-auto-generator` mission, on branch, not yet merged): a deterministic,
+   seeded, offline generator (`premura.harness.fixture_gen`) now fabricates fresh,
+   never-seen **synthetic** vendor fixtures — a CSV plus its grader-only ground-truth
+   manifest — on demand, so the acceptance harness is no longer limited to its two
+   handwritten fixtures. Same seed → byte-identical pair; canonical metrics are drawn
+   from the committed registry (never hardcoded); the observation challenge is fair
+   by construction (seed-chosen timestamp encoding, distinct mapped metrics, a
+   declared-gap decoy); drawer behaviour / naming weirdness / timestamp encodings are
+   each a registry with a documented add rule; the harness's persistence gate
+   (`is_synthetic_source`) recognizes a generated source as synthetic via an explicit
+   writer-controlled marker — additive, without loosening the committed-source rule;
+   and it is invocable as `python -m premura.harness.fixture_gen`.
+   With it never invoked, every existing fixture and live-trial test is byte-for-byte
+   unaffected (see the [CHANGELOG.md](CHANGELOG.md) 2026-06-12 entry). **The
+   analyze-and-answer slice has since shipped** (the `analyze-and-answer` mission,
+   on branch, not yet merged): the harness now grades a *second* task kind — given a
+   deterministically seeded synthetic warehouse and a question, an operator must reach
+   the data **only through the engine's analytical surfaces** and return an answer a
+   deterministic grader verifies for **honesty** (no forbidden statistical claims —
+   no "significant", no p-value, no cause, no population norm, per the engine
+   contract), **grounding** (claimed structured estimates match the grader's own
+   recomputation, which it computes itself and never trusts the operator's tool-call
+   report for), and **refusal fidelity** (only a refusal that mirrors the engine's
+   refusal passes; a refusal where the engine computed a result fails). It ships a
+   question-kind registry with one worked kind (`level_shift` over `change_point`)
+   and a documented add-a-kind rule, a forbidden-claims pattern registry with an
+   add-a-pattern rule, a bounded engine-backed tool surface the operator drives
+   (never a connection, path, or raw SQL), scripted honest/dishonest reference
+   operators, full session-log capture of the exchange through the existing
+   sole-writer surfaces (so `build_dossier` shows it) and a scoreboard line under the
+   open tier axis (`analyze_answer`, synthetic), a judge-rubric + playbook extension
+   made by their own add rules (no engine/judge/scan code edit), and a
+   `python -m premura.harness.answer_task` offline runner (see the
+   [CHANGELOG.md](CHANGELOG.md) 2026-06-12 entry). **Still
+   deferred (named so future work is not assumed shipped):** acting on proposals
+   (issue/PR creation, prompt editing, any self-modification), lifecycle tooling for
+   the `dismissed`/`addressed` transitions, model-generated proposal prose,
+   cross-session trend aggregation, and — for the analyze-and-answer slice
+   specifically — the **real-model (Ollama) analyze operator** and its
+   prompt/tool-loop work, **cross-session trend aggregation**, MCP exposure of the
+   session log, multi-turn or multi-question sessions, natural-language question
+   parsing, model-generated answer prose, and new analytical tools in the engine; and, for the fixture
+   auto-generator specifically — the **`intake` drawer strategy** (the drawer-strategy
+   seam ships; the second strategy is follow-on), **non-CSV fixture formats**
+   (JSON/SQLite/zip exports), **auto-generated reference parsers**, and
+   **difficulty-tier / curriculum policies**; and — out of the tier mission's scope by
+   design — multi-model tournaments, tier auto-selection / capability-routing policies,
+   and any frontier or cloud model requirement.
 
 Read the full phase doc for the rationale, risk retirement, and exit criteria:
 
@@ -122,9 +196,9 @@ See [FULL_APP_DEVELOPMENT_PLAN.md](../building/product/FULL_APP_DEVELOPMENT_PLAN
 
 > Also deferred from the first roadmap pass — see [../history/product/ROADMAP_BOOTSTRAP_PLAN.md](../history/product/ROADMAP_BOOTSTRAP_PLAN.md) §"Items I Would Not Pull Into The First Roadmap Pass." Per the partition rule, items here that introduce a new CLI verb or schema change (e.g. `hpipe inspect`, `fact_interval.unit`) will be reclassified as missions, not tasks, when they reach the active backlog.
 
-- **`hpipe inspect <file>`** subcommand that runs each parser's dispatcher in dry-run mode and prints the file→handler routing + any unhandled-filename log. Replaces the inline-Python exploration that built the v1 Garmin handler set.
-- **`hpipe gc` extension** to also prune `data/raw/` (currently only `data/exports/`), with a `--dry-run` flag.
-- **`hp.fact_interval.unit`** column added via `migrations/003_interval_unit.sql`. Backfill from `dim_metric.canonical_unit`. Drop the in-memory-only `unit` field on `Interval`.
+- **`hpipe inspect <file>`** — shipped (mission `small-follow-ups`). A read-only routing-preview verb resolves the parser with the same discovery logic `ingest` uses, enumerates member names without ingesting, and prints file→handler routing + an unhandled summary, via a structural `preview_routing` capability any parser may expose. Garmin implements it tonight by delegating to its existing dispatcher; other parsers adopt the capability in their own follow-up. Replaces the inline-Python exploration that built the v1 Garmin handler set.
+- **`hpipe gc` extension** — shipped (mission `small-follow-ups`). gc gained `--dry-run` (previews, removes nothing, both roots) and opt-in `--raw` pruning of `data/raw/` top-level entries older than the same `--keep` cutoff (one rule, two roots). `--raw` defaults OFF; defaulting it on inside the unattended `run_monthly` job is a deliberate human decision, deferred.
+- **`hp.fact_interval.unit`** — shipped (mission `small-follow-ups`) via `migrations/006_interval_unit.sql` (003 was taken). The column is backfilled from `dim_metric.canonical_unit` and the load path populates new rows from the metric registry — the warehouse is the single source of unit truth, never a parser string. The in-memory-only `unit` field on `Interval` is dropped.
 - **Daily HC pickup** (PLAN §"Automation — optional second agent") — HC auto-exports daily to Drive; pull and ingest without the encrypt+upload tail.
 - **Cross-source priority reconsidered**: currently `garmin_gdpr > health_connect > sleep_as_android > bmt`. The sleep_session join might be better served by `sleep_as_android > garmin_gdpr` for actigraphy fidelity. Empirical question — defer until we have two months of overlap.
 

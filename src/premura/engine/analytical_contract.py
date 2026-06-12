@@ -122,6 +122,27 @@ class AnalyticalQuestionType(StrEnum):
     addition that declares its own contract value and policy rules rather than
     smuggling new behavior into this one."""
 
+    CONDITION_PAIRED_DIFFERENCE = "condition_paired_difference"
+    """For the ``condition_paired_t_test`` tool — a declared **condition-label**
+    paired-difference comparison over **one** operator's series, where the caller
+    declares one operator-chosen condition label and a set of non-overlapping
+    on-condition episodes. Each episode contributes one off/on pair (the mean of
+    usable off-window observations outside every episode vs. the mean of usable
+    on-window observations), and the estimate is the mean of those per-episode
+    differences.
+
+    This is its **own** reviewed value, deliberately *not* a reuse of
+    ``paired_difference`` (the simple anchor-date split). The engine CONTRACT's
+    deferred-extension rule required condition-label pairing to ship with a new
+    pairing contract, new trace-identity fields, and new refusal rules rather than
+    being smuggled into the anchor-date request shape; this value is that reviewed
+    addition. The paired unit is the **episode**, so its sufficiency floor is a
+    minimum *episode* count, distinct from the anchor-date raw-pair floor. The
+    matching policy ``QuestionType.CONDITION_PAIRED_DIFFERENCE`` declares its own
+    freshness/sufficiency (the same admissibility posture as ``PAIRED_DIFFERENCE``
+    today; no new family judgments). The condition *label* is operator vocabulary
+    (any non-empty string), never an enumerated set."""
+
 
 class ConfoundKey(StrEnum):
     """The closed, committed confound vocabulary (research note D5).

@@ -103,6 +103,24 @@ from .analytical_inputs import (
     prepare_paired_input,
 )
 
+# Stage 3 condition-label paired-input seam (m8). The condition-label sibling of
+# the anchor-date seam above: the stable names the ``condition_paired_t_test`` MCP
+# wrapper (m8 WP3) constructs to declare an operator condition label + episode set
+# before dispatch. Same posture as the before/after seam — frozen dataclasses + a
+# pure preparer, no DuckDB/MCP/network — so importing them here stays
+# side-effect-free with respect to the registries.
+from .condition_inputs import (
+    CONDITION_MIN_EPISODES,
+    ConditionEpisode,
+    ConditionEpisodeExclusion,
+    ConditionEpisodePair,
+    ConditionLabelPairedInput,
+    ConditionLabelPairedRequest,
+    ConditionPairRefusalReason,
+    condition_episode_pairs_for_computation,
+    prepare_condition_label_paired_input,
+)
+
 # Stage 3 simple anchor-date before/after paired-input seam (WP03). These are the
 # stable names the ``paired_t_test`` MCP wrapper (WP05) constructs to declare a
 # before/after split before dispatch. Like the single-series and lagged-pair
@@ -320,6 +338,17 @@ __all__ = [
     "BeforeAfterPairRefusalReason",
     "prepare_before_after_paired_input",
     "before_after_pairs_for_computation",
+    # Condition-label paired-input seam the condition_paired_t_test tool (and its
+    # MCP wrapper) consume (m8):
+    "ConditionEpisode",
+    "ConditionEpisodeExclusion",
+    "ConditionEpisodePair",
+    "ConditionLabelPairedInput",
+    "ConditionLabelPairedRequest",
+    "ConditionPairRefusalReason",
+    "prepare_condition_label_paired_input",
+    "condition_episode_pairs_for_computation",
+    "CONDITION_MIN_EPISODES",
 ]
 
 

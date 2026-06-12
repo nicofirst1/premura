@@ -70,6 +70,41 @@ RUN_KINDS: frozenset[str] = frozenset({"repeatable_check", "live_trial"})
 # data-model — the fixed step kinds (OTel GenAI tree shape, by hand).
 STEP_KINDS: frozenset[str] = frozenset({"agent_turn", "model_call", "tool_call"})
 
+# FR-1 — the fixed conversation-turn roles, mirroring the chat-API role standard.
+# Validated at this boundary seam (same style as RESULT_STATUSES): an out-of-
+# vocabulary role raises ValueError rather than being silently stored. The rule
+# for extending it is the same as the other vocabularies — add the value here and
+# extend the vocab test, in this module only; do not enumerate per-tier roles.
+TURN_ROLES: frozenset[str] = frozenset({"system", "user", "assistant", "tool"})
+
+# judge-ai m3 FR-1 — the two closed judgment vocabularies, validated at this
+# boundary seam (same style as the vocabularies above). They are DESCRIPTIVE only:
+# no numeric scores and no pass/fail language confusable with the mechanical
+# grader verdict (NFR-6). The rule for extending either is the existing one — add
+# the value here and extend the vocab test, in this module only.
+#
+# JUDGMENT_STATUSES is the honesty axis: a judgment attempt is always recorded,
+# and ``unparseable`` / ``model_unavailable`` say so plainly rather than being
+# dropped or faked.
+JUDGMENT_STATUSES: frozenset[str] = frozenset({"complete", "unparseable", "model_unavailable"})
+
+# CRITERION_BANDS is the assessment axis: every criterion's band AND the optional
+# overall band are validated against this set. The criterion IDS themselves are
+# rubric-owned data (FR-3) and are deliberately NOT enumerated here — code
+# validates bands and records whatever criterion ids the rubric defined.
+CRITERION_BANDS: frozenset[str] = frozenset({"strong", "adequate", "weak", "not_applicable"})
+
+# improvement-hook m4 FR-1 — the closed improvement-proposal lifecycle vocabulary,
+# validated at this boundary seam (same style as the vocabularies above). The
+# improvement hook only ever writes ``open``; ``dismissed`` / ``addressed`` exist
+# now so a later lifecycle mission can transition a proposal with NO schema
+# migration. The rule for extending it is the existing one — add the value here
+# and extend the vocab test, in this module only. The proposal *area* ids are
+# playbook-owned data (FR-3) and are deliberately NOT enumerated here, exactly as
+# the criterion ids are rubric-owned: code validates the closed status vocabulary
+# and records whatever area the playbook defined.
+PROPOSAL_STATUSES: frozenset[str] = frozenset({"open", "dismissed", "addressed"})
+
 
 class LoadStatsLike(Protocol):
     """The three loader-MEASURED ints :func:`record_ingest_provenance` reads.
@@ -344,6 +379,204 @@ def record_live_trial_attempt(
         ],
     )
     return attempt_id
+
+
+def record_turn(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    session_id: str,
+    step_id: str | None,
+    turn_index: int,
+    role: str,
+    content: str,
+    tool_name: str | None = None,
+    model: str | None = None,
+    token_count: int | None = None,
+) -> str:
+    """Insert one ``log_turn`` row and return its ``turn_id`` (FR-1).
+
+    Records a single conversation turn of a live-trial run's transcript. ``role``
+    is validated against the fixed :data:`TURN_ROLES` vocabulary at this boundary
+    (same style as ``result_status``); an out-of-vocabulary value raises
+    :class:`ValueError` rather than being silently stored. ``turn_index`` is the
+    0-based position within the session's transcript and ``(session_id,
+    turn_index)`` is unique — re-using a slot for a session is rejected by the DB
+    constraint. ``step_id`` is nullable and, when set, links the turn to the
+    ``log_step`` node it occurred under (typically the run's root ``agent_turn``).
+    ``content`` carries the full turn content (PHI-bearing, local-only per NFR-002 /
+    ADR 0011); ``tool_name`` / ``model`` / ``token_count`` are optional per-turn
+    telemetry. The harness is the sole writer (FR-021 / NFR-1).
+    """
+    if role not in TURN_ROLES:
+        raise ValueError(f"role must be one of {sorted(TURN_ROLES)!r}, got {role!r}.")
+    turn_id = _mint_id()
+    conn.execute(
+        """
+        INSERT INTO log_turn
+            (turn_id, session_id, step_id, turn_index, role, content,
+             tool_name, model, token_count)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        [
+            turn_id,
+            session_id,
+            step_id,
+            int(turn_index),
+            role,
+            content,
+            tool_name,
+            model,
+            None if token_count is None else int(token_count),
+        ],
+    )
+    return turn_id
+
+
+def record_judgment(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    session_id: str,
+    judge_model: str,
+    rubric_version: str,
+    status: str,
+    criteria: dict[str, dict[str, object]],
+    overall_band: str | None = None,
+    rationale: str | None = None,
+    raw_output: str | None = None,
+) -> str:
+    """Insert one ``log_judgment`` row and return its ``judgment_id`` (FR-1).
+
+    Records exactly one AI-judge verdict over a recorded session. ``status`` is
+    validated against :data:`JUDGMENT_STATUSES` and every band — each criterion's
+    ``band`` and the optional ``overall_band`` — against :data:`CRITERION_BANDS`,
+    at this boundary (same style as ``result_status`` / ``role``); an
+    out-of-vocabulary value raises :class:`ValueError` rather than being silently
+    stored. The criterion *ids* are NOT enumerated here — they belong to the
+    rubric (FR-3); ``criteria`` is stored verbatim as a JSON object mapping
+    criterion id -> ``{band, rationale}``.
+
+    The judge can never alter ``contract_pass``, the scoreboard, or the trial
+    verdict: this writes a separate, additive ``log_judgment`` row only. A
+    judgment attempt is always recorded honestly — on ``unparseable`` /
+    ``model_unavailable`` the caller passes an empty ``criteria`` and
+    ``overall_band=None`` while ``raw_output`` preserves what the model actually
+    said (if anything). The harness is the sole writer (FR-021 / NFR-1).
+
+    The bands are DESCRIPTIVE only (NFR-6): no numeric scores, no language
+    confusable with the mechanical grader verdict.
+    """
+    if status not in JUDGMENT_STATUSES:
+        raise ValueError(f"status must be one of {sorted(JUDGMENT_STATUSES)!r}, got {status!r}.")
+    for criterion_id, entry in criteria.items():
+        band = entry.get("band")
+        if band not in CRITERION_BANDS:
+            raise ValueError(
+                f"criterion {criterion_id!r} band must be one of "
+                f"{sorted(CRITERION_BANDS)!r}, got {band!r}."
+            )
+    if overall_band is not None and overall_band not in CRITERION_BANDS:
+        raise ValueError(
+            f"overall_band must be one of {sorted(CRITERION_BANDS)!r} or None, "
+            f"got {overall_band!r}."
+        )
+    judgment_id = _mint_id()
+    conn.execute(
+        """
+        INSERT INTO log_judgment
+            (judgment_id, session_id, judged_at, judge_model, rubric_version,
+             status, criteria_json, overall_band, rationale, raw_output)
+        VALUES (?, ?, now(), ?, ?, ?, ?, ?, ?, ?)
+        """,
+        [
+            judgment_id,
+            session_id,
+            judge_model,
+            rubric_version,
+            status,
+            json.dumps(criteria),
+            overall_band,
+            rationale,
+            raw_output,
+        ],
+    )
+    return judgment_id
+
+
+def _require_non_empty(value: str, *, field: str) -> str:
+    """Reject a blank/whitespace-only field at the store seam (FR-1)."""
+    if not value or not value.strip():
+        raise ValueError(f"{field} must be a non-empty string, got {value!r}.")
+    return value
+
+
+def record_improvement(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    session_id: str,
+    judgment_id: str,
+    criterion_id: str | None,
+    area: str,
+    summary: str,
+    evidence: str,
+    playbook_version: str,
+    status: str,
+) -> str:
+    """Insert one ``log_improvement`` row and return its ``improvement_id`` (FR-1).
+
+    Records exactly one durable improvement PROPOSAL the improvement hook derived
+    from a judgment. ``status`` is validated against :data:`PROPOSAL_STATUSES` and
+    ``summary`` / ``evidence`` / ``area`` must be non-empty, at this boundary (same
+    style as ``result_status`` / ``role`` / judgment ``status``); an out-of-
+    vocabulary or blank value raises :class:`ValueError` rather than being silently
+    stored. The referenced ``session_id`` and ``judgment_id`` must already exist —
+    a dangling reference is rejected here (and also by the table's FKs) so a
+    proposal can never point at a session or judgment the log does not carry.
+
+    ``criterion_id`` is NULLABLE and opaque (rubric-owned data, never enumerated in
+    code): NULL for a judgment-level proposal, the rubric criterion id otherwise.
+    ``area`` is a playbook-owned id — code never hardcodes area semantics; it
+    records whatever area the playbook mapped the evidence to. This mission only
+    ever writes ``"open"``; the other statuses exist so a later lifecycle mission
+    needs no schema migration. The harness is the sole writer (FR-021 / NFR-1).
+    """
+    if status not in PROPOSAL_STATUSES:
+        raise ValueError(f"status must be one of {sorted(PROPOSAL_STATUSES)!r}, got {status!r}.")
+    _require_non_empty(area, field="area")
+    _require_non_empty(summary, field="summary")
+    _require_non_empty(evidence, field="evidence")
+
+    session_row = conn.execute(
+        "SELECT 1 FROM log_session WHERE session_id = ?", [session_id]
+    ).fetchone()
+    if session_row is None:
+        raise ValueError(f"no session {session_id!r} in this session log")
+    judgment_row = conn.execute(
+        "SELECT 1 FROM log_judgment WHERE judgment_id = ?", [judgment_id]
+    ).fetchone()
+    if judgment_row is None:
+        raise ValueError(f"no judgment {judgment_id!r} in this session log")
+
+    improvement_id = _mint_id()
+    conn.execute(
+        """
+        INSERT INTO log_improvement
+            (improvement_id, session_id, judgment_id, created_at, criterion_id,
+             area, summary, evidence, playbook_version, status)
+        VALUES (?, ?, ?, now(), ?, ?, ?, ?, ?, ?)
+        """,
+        [
+            improvement_id,
+            session_id,
+            judgment_id,
+            criterion_id,
+            area,
+            summary,
+            evidence,
+            playbook_version,
+            status,
+        ],
+    )
+    return improvement_id
 
 
 def finish_session(conn: duckdb.DuckDBPyConnection, *, session_id: str) -> None:

@@ -16,6 +16,7 @@ fact tables just because that path already exists.
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -51,7 +52,6 @@ class Interval:
     metric_id: str
     source_id: str
     source_kind: str
-    unit: str | None = None
     value_num: float | None = None
     value_text: str | None = None
     local_tz: str | None = None
@@ -456,6 +456,42 @@ def normalize_parse_output(output: ParserOutput) -> tuple[IngestBatch | None, In
     raise TypeError(
         f"parse() must return an IngestBatch or a ParseOutput, got {type(output).__name__}"
     )
+
+
+@dataclass(slots=True)
+class RoutingPreview:
+    """Name-based dry-run routing result for one source artifact.
+
+    ``entries`` is an ordered list of ``(member_name, handler_name | None)``
+    pairs — one per enumerated archive/file member, in enumeration order. A
+    ``None`` handler means the parser would route the member to nothing
+    (``unhandled``). Building a preview MUST NOT read file contents, open a
+    warehouse connection, or mutate anything: it is the read-only twin of
+    ingest discovery (m7 WP1 / FR-1.1).
+    """
+
+    entries: list[tuple[str, str | None]] = field(default_factory=list)
+
+    @property
+    def routed_count(self) -> int:
+        return sum(1 for _member, handler in self.entries if handler is not None)
+
+    @property
+    def unhandled_count(self) -> int:
+        return sum(1 for _member, handler in self.entries if handler is None)
+
+
+class RoutingPreviewParser(Protocol):
+    """Structural capability a parser may expose so ``hpipe inspect`` can preview
+    its routing without ingesting.
+
+    A parser opts in purely by defining ``preview_routing`` with this signature —
+    no registry edit, no isinstance ladder. ``hpipe inspect`` discovers the
+    capability structurally (``hasattr`` / this Protocol). The rule for adding the
+    capability to another parser is exactly: expose this method.
+    """
+
+    def preview_routing(self, member_names: Sequence[str]) -> RoutingPreview: ...
 
 
 class Parser(Protocol):

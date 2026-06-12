@@ -41,6 +41,7 @@ It needs a running Ollama (``http://localhost:11434``) with the model pulled.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import subprocess
@@ -69,6 +70,8 @@ from premura.harness.scoreboard import (
     persist_run,
 )
 from premura.harness.self_reconcile import SelfReconciliationResult
+
+_LOGGER = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
 # Configuration (env-overridable; defaults to a locally available cheap coder).
@@ -571,6 +574,23 @@ class AttemptRecord:
 # --------------------------------------------------------------------------- #
 
 
+@dataclass(slots=True)
+class _OneShotTurn:
+    """One captured turn — a structural ``live_trial.TurnLike`` (m2 FR-4).
+
+    The one-shot tier's exchange maps to two of these (a ``user`` prompt turn and
+    an ``assistant`` response turn). ``role`` / ``content`` plus the optional
+    per-turn telemetry the harness persists; ``model`` is the operator's model id
+    on the response turn.
+    """
+
+    role: str
+    content: str
+    tool_name: str | None = None
+    model: str | None = None
+    token_count: int | None = None
+
+
 class OllamaOperator:
     """Cheap-model operator: drives a local model to author a parser into the sandbox.
 
@@ -600,6 +620,12 @@ class OllamaOperator:
         self.max_tries = max_tries
         self.tries_used = 0
         self.attempts: list[AttemptRecord] = []
+        #: The FINAL prompt/response exchange of the last :meth:`operate` run —
+        #: the prompt sent to the model and the model's raw response. ``transcript()``
+        #: maps it to a two-turn conversation for the harness to persist (m2 FR-4).
+        #: Empty strings until the loop runs.
+        self.last_prompt = ""
+        self.last_response = ""
         # The scenario's drawer probe drives the contract prompt the operator
         # authors against AND the in-sandbox gate's batch/non-empty check. Default
         # to observation so existing callers/tests are unchanged (C-004); the
@@ -616,6 +642,24 @@ class OllamaOperator:
         """Whether the FINAL attempt passed the self-reconcile gate."""
         return bool(self.attempts) and self.attempts[-1].self_reconciliation.passed
 
+    def transcript(self) -> list[_OneShotTurn]:
+        """Expose the final prompt/response exchange as a two-turn transcript (FR-4).
+
+        The one-shot tier has a single (final) prompt -> response exchange; this
+        maps it to the SAME ``transcript()`` surface every other tier exposes so
+        the judge AI reads all tiers uniformly: a ``user`` turn carrying the
+        prompt the graded parser came from, then an ``assistant`` turn carrying
+        the model's raw response (the operator's model id on the response turn).
+        The operator never writes the log — the harness persists this post-run
+        (FR-021 inheritance). Empty until :meth:`operate` has run.
+        """
+        if not self.last_response:
+            return []
+        return [
+            _OneShotTurn(role="user", content=self.last_prompt),
+            _OneShotTurn(role="assistant", content=self.last_response, model=self.model_id),
+        ]
+
     def operate(self, sandbox: Sandbox, goal: str) -> None:
         """Author a parser into the sandbox, gated and retried (NFR-003 / C-005)."""
         sample = "\n".join(self.source.read_text(encoding="utf-8").splitlines()[:8])
@@ -629,7 +673,12 @@ class OllamaOperator:
         prompt = base_prompt
         for attempt in range(1, self.max_tries + 1):
             self.tries_used = attempt
-            code = _normalize_class_name(_extract_code(_ollama(prompt, model=self.model_id)))
+            raw_response = _ollama(prompt, model=self.model_id)
+            # Capture the FINAL exchange so transcript() reflects the prompt the
+            # graded parser came from and the model's raw response (m2 FR-4).
+            self.last_prompt = prompt
+            self.last_response = raw_response
+            code = _normalize_class_name(_extract_code(raw_response))
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text(code, encoding="utf-8")
 
@@ -727,19 +776,32 @@ def _committed_synthetic_sources() -> set[Path]:
 
 
 def is_synthetic_source(source: Path) -> bool:
-    """True iff ``source`` is a committed synthetic scenario source (T013/FR-012).
+    """True iff ``source`` is a synthetic scenario source (T013/FR-012; m5 FR-6).
 
-    The single decision point for whether a run persists: only a committed
-    synthetic scenario source is synthetic; ANY other source (a real local dump, a
-    temp copy at a different path) is treated as real and records nothing. WP05
-    exercises this helper directly. Scenario-derived so the intake scenario's
-    committed alien CSV persists the same way the observation CSV does, with no
-    per-source branch (FR-007).
+    The single decision point for whether a run persists. A source is synthetic in
+    exactly two explicit, bounded ways — never by loosening the rule for arbitrary
+    or real operator paths:
+
+    1. It is a committed synthetic scenario source (a real local dump or a temp copy
+       at a different path is treated as real and records nothing). Scenario-derived
+       so the intake scenario's committed alien CSV persists the same way the
+       observation CSV does, with no per-source branch (FR-007).
+    2. It is an auto-generated synthetic fixture (m5 FR-6): it sits beside the
+       writer-controlled synthetic marker that :func:`fixture_gen.write_fixture`
+       drops. The marker check is owned by ``fixture_gen`` and delegated to here, so
+       a generated source persists to the scoreboard while a marker-less real-looking
+       path stays non-synthetic. WP05 / m5 exercise this helper directly.
     """
+    # Local import: fixture_gen depends on harness.scenario (a leaf this module also
+    # imports), so this is acyclic; kept lazy to avoid widening import-time surface.
+    from premura.harness.fixture_gen import is_generated_synthetic_source
+
     try:
-        return source.resolve() in _committed_synthetic_sources()
+        if source.resolve() in _committed_synthetic_sources():
+            return True
     except OSError:
         return False
+    return is_generated_synthetic_source(source)
 
 
 @dataclass(slots=True)
@@ -786,6 +848,71 @@ def _grade_one(
     )
 
 
+def _run_post_run_judge(
+    log_path: Path,
+    *,
+    session_id: str,
+    model: str,
+    transport: object,
+) -> None:
+    """Run the opt-in post-run AI judge over the recorded session (FR-5).
+
+    Fully GUARDED: the judge is a separate, opt-in evaluation step that can never
+    change the trial verdict or raise out of the harness. Any failure of any kind
+    — model unavailable, unparseable output, or an outright bug in the judge — is
+    swallowed here. The judge's own happy/unhappy paths already record an honest
+    ``log_judgment`` status row (``complete`` / ``unparseable`` /
+    ``model_unavailable``); this guard catches the residual case where even
+    recording the judgment fails, and logs a warning instead of propagating
+    (FR-5: "or, if even recording fails, a logged warning"). The import is LAZY so
+    the judge module is only loaded when the opt-in step is actually used.
+    """
+    try:
+        from premura.harness import judge
+
+        judge.judge_session(
+            log_path,
+            session_id=session_id,
+            model=model,
+            transport=transport,  # type: ignore[arg-type]
+        )
+    except Exception:  # noqa: BLE001 - the judge must never flip the verdict or escape
+        _LOGGER.warning(
+            "post-run judge failed for session %s; trial verdict is unaffected",
+            session_id,
+            exc_info=True,
+        )
+
+
+def _run_post_run_improvement(log_path: Path, *, session_id: str) -> None:
+    """Run the opt-in post-run improvement scan over the recorded session (FR-6).
+
+    Fully GUARDED, exactly like :func:`_run_post_run_judge`: the improvement hook
+    is a separate, opt-in step that can never change the trial verdict or raise out
+    of the harness. The scan is deterministic and consumes the just-recorded
+    ``log_judgment`` rows (it *proposes*; it never acts). Any failure of any kind —
+    a malformed playbook, a bug in the scan, or a write failure — is swallowed here
+    and logged as a warning instead of propagating. On success a one-line count of
+    derived proposals is logged. The import is LAZY so the improvement module is
+    only loaded when the opt-in step is actually used.
+    """
+    try:
+        from premura.harness import improvement
+
+        results = improvement.scan_session(log_path, session_id=session_id)
+        _LOGGER.info(
+            "post-run improvement scan for session %s derived %d proposal(s)",
+            session_id,
+            len(results),
+        )
+    except Exception:  # noqa: BLE001 - the hook must never flip the verdict or escape
+        _LOGGER.warning(
+            "post-run improvement scan failed for session %s; trial verdict is unaffected",
+            session_id,
+            exc_info=True,
+        )
+
+
 def run_live_trial_ollama(
     *,
     model: str = DEFAULT_MODEL,
@@ -795,6 +922,9 @@ def run_live_trial_ollama(
     operator: OllamaOperator | None = None,
     keep_sandboxes: bool = False,
     scenario: Scenario | None = None,
+    judge_run: bool = False,
+    judge_transport: object = None,
+    improve_run: bool = False,
 ) -> LiveTrialOutcome:
     """Drive one Ollama-backed live trial end-to-end (T013/T014; FR-001..014).
 
@@ -836,7 +966,28 @@ def run_live_trial_ollama(
     caller inspection, but ONLY for a SYNTHETIC source. A non-synthetic source
     always tears both sandboxes down regardless of this flag, so no real local
     data is left on disk (FR-004 / NFR-002 / NFR-004).
+
+    ``judge_run`` is the OPT-IN post-run AI judge flag (judge-ai m3 FR-5; default
+    OFF). When True, after the final session is recorded the harness runs the
+    rubric-driven judge over it and persists one honest ``log_judgment`` row.
+    ``judge_transport`` is the injectable judge model backend (DIRECTIVE_036): the
+    default (None) uses the judge's local-only Ollama path; tests pass a scripted
+    callable. Judge failure of any kind never flips the trial verdict or raises out
+    of the harness — the verdict stays the mechanical grader's.
+
+    ``improve_run`` is the OPT-IN post-run improvement-hook flag (improvement-hook
+    m4 FR-6; default OFF). When ``judge_run`` and ``improve_run`` are both set and
+    the judge produced a judgment, the harness runs the deterministic improvement
+    scan over the recorded session and persists ``log_improvement`` proposals; the
+    scan *proposes*, it never acts, and its failure (like the judge's) never flips
+    the verdict or raises out of the harness. ``improve_run`` WITHOUT ``judge_run``
+    is a loud :class:`ValueError` at entry — the hook has nothing to consume.
     """
+    if improve_run and not judge_run:
+        raise ValueError(
+            "improve_run requires judge_run: the improvement hook consumes the judge's "
+            "judgment, so it has nothing to scan without a judge run."
+        )
     if scenario is None:
         scenario = observation_scenario()
     probe = _resolve_drawer_probe(scenario)
@@ -871,6 +1022,30 @@ def run_live_trial_ollama(
             )
     finally:
         log_conn.close()
+
+    # (1b) Opt-in post-run AI judge (judge-ai m3 FR-5; default OFF). It runs over
+    #      the JUST-RECORDED final session (its attempts + transcript are now in
+    #      the log) and persists one honest log_judgment row. Judge failure of ANY
+    #      kind — model unavailable, unparseable output, or a bug — must NEVER flip
+    #      the trial verdict or raise out of the harness: the call is fully guarded
+    #      and the verdict is the mechanical grader's, untouched.
+    if judge_run:
+        _run_post_run_judge(
+            final_log_path,
+            session_id=final_result.session_id,
+            model=model,
+            transport=judge_transport,
+        )
+
+    # (1c) Opt-in post-run improvement hook (improvement-hook m4 FR-6; default
+    #      OFF). It runs ONLY when judge_run AND improve_run are both set (the
+    #      entry guard rejects improve_run without judge_run), after the judge has
+    #      recorded its judgment, and derives durable log_improvement proposals
+    #      from the just-recorded judgment. Like the judge, it is fully guarded:
+    #      it *proposes* and never acts, and its failure of ANY kind never flips
+    #      the trial verdict or raises out of the harness.
+    if judge_run and improve_run:
+        _run_post_run_improvement(final_log_path, session_id=final_result.session_id)
 
     # (2) Independently grade attempt 1 (un-nagged) with the SAME grader.
     first_code = operator.first_attempt_code

@@ -57,6 +57,7 @@ _DEFAULT_TOOLS_WITH_CORRELATE = sorted(
         "correlate",
         "rolling_mean",
         "paired_t_test",
+        "condition_paired_t_test",
         "pubmed_search",
         "pubmed_fetch",
         "research_trace_open",

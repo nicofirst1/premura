@@ -11,7 +11,7 @@
 >
 > Companion to [SPEC.md](SPEC.md), [CHANGELOG.md](CHANGELOG.md),
 > [ROADMAP.md](ROADMAP.md), [USERJOURNEY.md](../using/USERJOURNEY.md).
-> Snapshot date: **2026-06-11**.
+> Snapshot date: **2026-06-12**.
 
 ## TL;DR
 
@@ -24,7 +24,7 @@ warehouse holds ~3.5 years of data including the Garmin-only metrics that
 motivated the project (HRV rMSSD overnight, stress, training load/readiness,
 VO₂ max, skin temperature, hydration, sleep score, respiration). Re-ingest is
 idempotent. On top of it: a Stage 2 engine of nine grounded signals behind a
-deterministic evidence-admissibility layer, the completed five-tool Stage 3
+deterministic evidence-admissibility layer, the six-tool Stage 3
 analytical set with session research trace + audit skill, PubMed literature
 grounding, agent-mediated profile capture, usable nutrition/supplement intake
 dimensions, and the session-log substrate with a hardened cheap-model
@@ -53,25 +53,28 @@ significance, no causation. They return explicit stale / unavailable /
 insufficient-data states instead of a misleading answer. The first eight are
 exposed one-to-one as MCP signal tools; `bmi` is engine-registered.
 
-### Stage 3 analytical tools (five — `engine.list_analytical_tools()` returns exactly these)
+### Stage 3 analytical tools (six — `engine.list_analytical_tools()` returns exactly these)
 
 `change_point` (level-shift detection), `smoothed_average` (trailing smoothed
 pattern), `correlate` (pre-registered, caller-declared whole-day-lagged
 Spearman *association*; `N_eff`-corrected band; no p-value, no "significant"),
 `rolling_mean` (declared moving-window summary with visible
 coverage/imputation), `paired_t_test` (declared before/after anchor-date
-paired difference; **not** a significance test). Every tool passes the
-admissibility gate before computation and returns the mandatory result
-envelope (estimate + validity metadata + closed `ConfoundKey` checklist) or a
-first-class refusal. Operative rules:
-[`src/premura/engine/CONTRACT.md`](../../src/premura/engine/CONTRACT.md).
+paired difference; **not** a significance test), `condition_paired_t_test`
+(declared **condition-label** paired difference over off-vs-on declared
+episodes of one operator's series; one off/on pair per usable episode, the
+label is operator-declared and only splits the windows; **not** a significance
+test, names no cause). Every tool passes the admissibility gate before
+computation and returns the mandatory result envelope (estimate + validity
+metadata + closed `ConfoundKey` checklist) or a first-class refusal. Operative
+rules: [`src/premura/engine/CONTRACT.md`](../../src/premura/engine/CONTRACT.md).
 
 ### MCP surfaces
 
-- **Default agent surface (`premura-mcp`) — twenty-two tools:** 2
+- **Default agent surface (`premura-mcp`) — twenty-three tools:** 2
   catalog/summary (`list_metrics`, `metric_summary`), 8 signal-backed (table
   above), 2 profile-capture (`profile_context_supported_fields`,
-  `profile_context_record`), 5 analytical, 3 session research trace
+  `profile_context_record`), 6 analytical, 3 session research trace
   (`research_trace_open`, `research_trace_mark_surfaced`,
   `research_trace_disclosure`), 2 PubMed (`pubmed_search` — candidates only,
   never citeable; `pubmed_fetch` — the only citeable record). No tool on this
@@ -80,7 +83,7 @@ first-class refusal. Operative rules:
   four-state envelope (`available` / `missing_input` / `stale_input` /
   `insufficient_data`) with a structured `missing_input` report a caller can
   branch on.
-- **Operator surface (`premura-mcp-operator`) — twenty-three tools:** all
+- **Operator surface (`premura-mcp-operator`) — twenty-four tools:** all
   default tools plus `query_warehouse` (raw SQL escape hatch, no Stage 2
   guarantees). Requires explicit launch acknowledgment (`--ack` /
   `PREMURA_OPERATOR_ACK`).
@@ -107,7 +110,29 @@ The pinned inventory test is `tests/test_mcp_server.py`.
   now has two tiers in the codebase: the shipped constrained one-shot floor,
   and a multiturn tool-loop tier **in progress on the
   `tool-loop-live-trial-tier-01KTVG26` mission lanes (not yet merged)** —
-  detail in `kitty-specs/tool-loop-live-trial-tier-01KTVG26/`.
+  detail in `kitty-specs/tool-loop-live-trial-tier-01KTVG26/`. Two opt-in
+  post-run steps now stand on the recorded session (both default OFF, both
+  guarded so failure never flips the verdict): the **AI judge** assesses the
+  operator's process against a versioned rubric into `log_judgment`, and the
+  **improvement hook** consumes those judgments to derive durable proposals into
+  `log_improvement` via a versioned playbook (it proposes, never acts) — both on
+  branch, not yet merged. A **synthetic fixture auto-generator**
+  (`premura.harness.fixture_gen`, runnable as `python -m premura.harness.fixture_gen`)
+  fabricates fresh, never-seen synthetic vendor fixtures (CSV + grader-only
+  manifest) deterministically from a seed — canonical metrics drawn from the
+  committed registry, byte-identical per seed, recognized synthetic by the harness's
+  persistence gate via a writer-controlled marker (additive, not a loosening) — so
+  the harness is no longer limited to its two handwritten fixtures (on branch, not
+  yet merged). The harness now grades a **second task kind, analyze-and-answer**
+  (`premura.harness.answer_task`, runnable as `python -m premura.harness.answer_task`):
+  over a deterministically seeded synthetic warehouse an operator answers a question
+  through a bounded engine-backed analytical surface (no connection/path/SQL), and a
+  deterministic grader recomputes ground truth itself to band honesty (no forbidden
+  statistical claims), grounding, and refusal fidelity; the exchange is captured
+  through the sole-writer session log and a scoreboard line under the open
+  `analyze_answer` tier — one worked question-kind (`level_shift`) behind an
+  add-a-kind registry, with the real-model analyze operator and cross-session
+  aggregation named-deferred (on branch, not yet merged).
 - **Runtime build-and-use boundary**: an agent may build a parser and use it
   immediately on the operator's own data with no reviewer; only a
   contribute-back PR is reviewed. Pinned by
@@ -124,7 +149,7 @@ The pinned inventory test is `tests/test_mcp_server.py`.
 | BMT parser | ✅ | Long/wide format detection; per-row units; custom metrics → `bmt_custom:*`. |
 | MyFitnessPal intake parser | ✅ | First real vendor intake source: per-meal nutrition aggregates → intake seam (`hpipe ingest --source mfp`); exercise/measurement columns surfaced as declared gaps, never observation rows. |
 | Loader (batch insert) | ✅ | Polars→DuckDB set-based insert; native-key + cross-source priority dedupe. |
-| CLI (`hpipe`) | ✅ | `bootstrap`, `ingest`, `status`, `export`, `upload`, `doctor` (incl. age-key + backup round-trip checks), `gc`, `run-monthly`, launchd install/uninstall, `install-skills`, `profile-fields` / `profile-record`. |
+| CLI (`hpipe`) | ✅ | `bootstrap`, `ingest`, `inspect` (read-only routing preview), `status`, `export`, `upload`, `doctor` (incl. age-key + backup round-trip checks), `gc` (`--dry-run`, opt-in `--raw`), `run-monthly`, launchd install/uninstall, `install-skills`, `profile-fields` / `profile-record`. |
 | Idempotency | ✅ | sha256 skip in `hp.ingest_run` + `dedupe_key UNIQUE` + intra-batch dedupe. |
 | Export artifact encryption | ✅ | Live round-trip verified 2026-05-21; per-test keypair regression suite; `doctor` re-proves the key/recipients pair on demand. |
 | Drive upload (opt-in) | ⚠️ Code complete, not auto | `hpipe upload` runs only on explicit invocation. |
@@ -163,7 +188,6 @@ exercise_session, sleep_session, daily_wellness, active_kcal.
   `parent_uuid + epoch_millis`; deduped in-batch, invisible in stats. Cosmetic.
 - **Wide-format BMT without `Time`**: timestamps land at 00:00:00 local.
 - **No FIT-file (per-activity stream) ingestion** — out of scope for v1.
-- **`fact_interval` has no `unit` column**; carried in memory only.
 
 ## Setup and operations
 

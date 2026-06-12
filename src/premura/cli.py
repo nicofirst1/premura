@@ -1,7 +1,7 @@
 """`hpipe` CLI — entry point for the premura pipeline.
 
-Verbs: bootstrap, ingest, status, export, upload, run-monthly, doctor, gc,
-install-launchd, uninstall-launchd, install-skills.
+Verbs: bootstrap, ingest, inspect, status, export, upload, run-monthly, doctor,
+gc, install-launchd, uninstall-launchd, install-skills.
 """
 
 from __future__ import annotations
@@ -209,6 +209,87 @@ def _zip_is_mfp(path: Path) -> bool:
             return any(Path(m).name.startswith("Nutrition-Summary") for m in zf.namelist())
     except (OSError, zipfile.BadZipFile):
         return False
+
+
+# ============================================================================
+# inspect
+# ============================================================================
+
+
+def _resolve_source_key(path: Path) -> str | None:
+    """Map a concrete path to the parser source-key ingest would route it to.
+
+    This is the inverse of ``_discover_input``: it reuses the very same routing
+    primitives (`_csv_kind`, `_zip_is_mfp`, extension checks) so inspect and
+    ingest can never disagree about which parser claims a file. Returns ``None``
+    when no parser would claim the path (FR-1.2 / E1.2).
+    """
+    suffix = path.suffix.lower()
+    if suffix == ".db":
+        return "hc"
+    if suffix == ".zip":
+        return "mfp" if _zip_is_mfp(path) else "garmin"
+    if suffix == ".csv":
+        return _csv_kind(path)  # 'saa' | 'mfp' | 'bmt'
+    if suffix == ".pdf":
+        return "lab"
+    return None
+
+
+def _member_names(path: Path, source_key: str) -> list[str]:
+    """Enumerate the routable member names of a source artifact without reading
+    their contents. For zip-based sources the members are the archive entries;
+    for single-file sources the artifact itself is the one member."""
+    if source_key in ("garmin", "mfp") and path.suffix.lower() == ".zip":
+        try:
+            with zipfile.ZipFile(path) as zf:
+                return [info.filename for info in zf.infolist() if not info.is_dir()]
+        except (OSError, zipfile.BadZipFile):
+            return [path.name]
+    return [path.name]
+
+
+@app.command()
+def inspect(
+    path: Annotated[Path, typer.Argument(help="Source artifact to preview routing for")],
+) -> None:
+    """Dry-run routing preview for a source artifact. Reads no contents, writes
+    nothing — the read-only twin of ``ingest`` discovery."""
+    if not path.exists():
+        console.print(f"[red]{path} does not exist[/red]")
+        raise typer.Exit(code=1)
+
+    source_key = _resolve_source_key(path)
+    if source_key is None:
+        console.print(
+            f"[yellow]no parser matched {path.name}; nothing to preview "
+            f"(inspect mirrors ingest discovery, read-only)[/yellow]"
+        )
+        raise typer.Exit(code=0)
+
+    parser_cls, source_kind = PARSER_REGISTRY[source_key]
+    parser = parser_cls()
+
+    preview_fn = getattr(parser, "preview_routing", None)
+    if preview_fn is None:
+        console.print(
+            f"[yellow]parser '{source_kind}' does not support routing preview yet. "
+            f"To add it, expose a preview_routing(member_names) -> RoutingPreview "
+            f"method on the parser.[/yellow]"
+        )
+        raise typer.Exit(code=0)
+
+    members = _member_names(path, source_key)
+    preview = preview_fn(members)
+    console.print(f"[cyan]routing preview[/cyan] {source_kind} :: {path.name}")
+    for member, handler in preview.entries:
+        if handler is None:
+            console.print(f"  {member} -> [yellow]unhandled[/yellow]")
+        else:
+            console.print(f"  {member} -> {handler}")
+    console.print(
+        f"[green]{preview.routed_count} routed, {preview.unhandled_count} unhandled[/green]"
+    )
 
 
 # ============================================================================
@@ -463,24 +544,64 @@ def doctor() -> None:
 # ============================================================================
 
 
+def _prune_root(root: Path, *, cutoff: float, dry_run: bool, dirs_only: bool) -> int:
+    """Apply one mtime cutoff to one root's top-level entries.
+
+    The single cutoff rule, reused across roots: exports keeps its
+    dirs-only shape; data/raw eligibility includes files AND directories since
+    operators stage both. ``dry_run`` previews (prefixed, unambiguous) and
+    removes nothing. Returns the count removed (or that would be removed).
+    """
+    if not root.exists():
+        console.print(f"[yellow]no {root.name} dir[/yellow]")
+        return 0
+    affected = 0
+    for child in sorted(root.iterdir()):
+        if dirs_only and not child.is_dir():
+            continue
+        if child.stat().st_mtime >= cutoff:
+            continue
+        affected += 1
+        if dry_run:
+            console.print(f"  [dim]would remove[/dim] {root.name}/{child.name}")
+        else:
+            if child.is_dir():
+                shutil.rmtree(child)
+            else:
+                child.unlink()
+            console.print(f"  removed {root.name}/{child.name}")
+    return affected
+
+
 @app.command()
 def gc(
     keep: Annotated[int, typer.Option("--keep", help="months of exports to keep locally")] = 3,
+    raw: Annotated[
+        bool,
+        typer.Option(
+            "--raw/--no-raw",
+            help="also prune data/raw/ staged source artifacts older than --keep (default OFF)",
+        ),
+    ] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="preview what would be removed; remove nothing"),
+    ] = False,
 ) -> None:
-    """Drop local export dirs older than N months."""
-    if not settings.exports_dir.exists():
-        console.print("[yellow]no exports dir[/yellow]")
-        return
+    """Drop local export dirs older than N months.
+
+    With ``--raw`` it also prunes ``data/raw/`` top-level entries (files and
+    directories) older than the same cutoff — one rule, two roots. ``--raw`` is
+    opt-in by design: ``run_monthly`` calls ``gc(keep=3)`` unattended and must
+    not silently delete staged source artifacts. ``--dry-run`` previews and
+    removes nothing from either root.
+    """
     cutoff = time.time() - keep * 31 * 24 * 3600
-    removed = 0
-    for child in sorted(settings.exports_dir.iterdir()):
-        if not child.is_dir():
-            continue
-        if child.stat().st_mtime < cutoff:
-            shutil.rmtree(child)
-            removed += 1
-            console.print(f"  removed {child.name}")
-    console.print(f"[green]gc removed {removed} dir(s)[/green]")
+    removed = _prune_root(settings.exports_dir, cutoff=cutoff, dry_run=dry_run, dirs_only=True)
+    if raw:
+        removed += _prune_root(settings.raw_dir, cutoff=cutoff, dry_run=dry_run, dirs_only=False)
+    verb = "would remove" if dry_run else "removed"
+    console.print(f"[green]gc {verb} {removed} entr{'y' if removed == 1 else 'ies'}[/green]")
 
 
 # ============================================================================
