@@ -3,7 +3,7 @@
 These lock the MCP boundary for the sixth analytical tool:
 
 * the default agent-safe surface (and the operator surface) publishes
-  ``condition_paired_t_test``, taking the surface from 22 to 23 tools;
+  ``condition_paired_t_test`` (the exact count is pinned in the test below);
 * the wrapper DELEGATES to the engine analytical path
   (``prepare_condition_label_paired_input`` then ``invoke_analytical_tool``) and
   only SERIALIZES the returned envelope verbatim — it authors no statistic,

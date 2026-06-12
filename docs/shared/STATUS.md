@@ -83,7 +83,9 @@ rules: [`src/premura/engine/CONTRACT.md`](../../src/premura/engine/CONTRACT.md).
   analytical, 3 session research trace (`research_trace_open`,
   `research_trace_mark_surfaced`, `research_trace_disclosure`), 2 PubMed
   (`pubmed_search` — candidates only, never citeable; `pubmed_fetch` — the
-  only citeable record). No tool on this surface reads `hp.*` directly; the
+  only citeable record). No tool on this surface touches `hp.*` via raw SQL —
+  signal/analytical reads go through the Stage 2 engine, capture tools
+  (profile, condition-episode) write through their store boundaries; the
   trace tools read only derived `trace.*` rows; the PubMed tools reach only
   the literature. Signal tools return the four-state envelope (`available` /
   `missing_input` / `stale_input` / `insufficient_data`) with a structured

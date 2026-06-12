@@ -319,6 +319,45 @@ def test_empty_stored_declaration_flows_into_refusal(
     assert payload["episodes_source"]["episode_ids"] == []
 
 
+def test_trace_identity_carries_the_actual_stored_set(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """FR4's trace honesty, locked: stored-vs-explicit declarations of the SAME
+    set collapse to one examined hypothesis, and a retraction that changes the
+    stored set makes the next stored run a DISTINCT hypothesis (the identity
+    carries the resolved episodes, not the omission)."""
+    _pin_engine_clock(monkeypatch)
+    warehouse = _warehouse_with_episodic_series(tmp_path)
+    server_ = build_server(warehouse_path=warehouse)
+
+    ids = []
+    for start, end in _episode_bounds():
+        payload = _call(
+            server_,
+            "condition_episode_record",
+            {"condition_label": "on_magnesium", "start_day": start, "end_day": end},
+        )
+        ids.append(payload["episode"]["episode_id"])
+
+    session_id = _call(server_, "research_trace_open", {"client_label": "test"})["session_id"]
+
+    explicit_args = {**_analysis_args(_episodes_payload()), "session_id": session_id}
+    stored_args = {**_analysis_args(None), "session_id": session_id}
+    _call(server_, "condition_paired_t_test", explicit_args)
+    _call(server_, "condition_paired_t_test", stored_args)
+
+    disclosure = _call(server_, "research_trace_disclosure", {"session_id": session_id})
+    assert disclosure["raw_analytical_call_count"] == 2
+    assert disclosure["unique_hypothesis_count"] == 1  # same set, same hypothesis
+
+    _call(server_, "condition_episode_retract", {"episode_id": ids[1], "reason": "wrong"})
+    _call(server_, "condition_paired_t_test", stored_args)
+
+    disclosure = _call(server_, "research_trace_disclosure", {"session_id": session_id})
+    assert disclosure["raw_analytical_call_count"] == 3
+    assert disclosure["unique_hypothesis_count"] == 2  # reduced set = distinct hypothesis
+
+
 def test_stored_consumption_skips_ongoing_and_retracted(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

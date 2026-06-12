@@ -636,7 +636,8 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
 
         **Omit ``episodes`` to use the stored declaration:** the warehouse's
         current closed episodes for this label (recorded earlier via
-        ``condition_episode_record``) are loaded and used as the declared set,
+        ``condition_episode_record``; label matching is exact and
+        case-sensitive) are loaded and used as the declared set,
         and the response carries an ``episodes_source`` disclosure naming the
         episode ids used. The stored set was declared before this analysis, so
         the request stays pre-registered; an empty stored set flows into the
@@ -766,7 +767,9 @@ def _register_default_tools(mcp: FastMCP, *, warehouse_path: Path | None) -> Non
         """Record one operator-declared condition episode in the warehouse.
 
         ``condition_label`` is the operator's own word for the condition (any
-        non-empty string — it is recorded, never verified). ``start_day`` /
+        non-empty string — it is recorded, never verified). Matching is exact
+        after whitespace trimming and case-sensitive: ``"Cold"`` and ``"cold"``
+        are two different labels, so reuse the stored spelling. ``start_day`` /
         ``end_day`` are local calendar days (``YYYY-MM-DD``); omit ``end_day``
         while the episode is still ongoing (ongoing episodes are record-keeping
         only; analyses use closed episodes). Pass ``supersedes_episode_id`` to

@@ -158,11 +158,11 @@ def _pin_engine_clock(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 # ---------------------------------------------------------------------------
-# 1. Both tools are on the default (and operator) surface — now 22 tools total.
+# 1. Both tools are on the default (and operator) surface (full pinned list).
 # ---------------------------------------------------------------------------
 
 
-def test_default_surface_lists_exactly_twenty_tools() -> None:
+def test_default_surface_lists_exactly_the_pinned_tools() -> None:
     async def run() -> None:
         server_ = build_server()
         names = sorted(tool.name for tool in await server_.list_tools())

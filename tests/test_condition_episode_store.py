@@ -98,6 +98,21 @@ def test_ongoing_episode_blocks_later_overlap(empty_warehouse) -> None:
         )
 
 
+def test_new_ongoing_episode_overlapping_closed_one_is_refused(empty_warehouse) -> None:
+    # The other direction of open-endedness: a NEW ongoing declaration starting
+    # before an existing closed episode intersects it.
+    ce.record_condition_episode(
+        empty_warehouse,
+        condition_label="med",
+        start_day=date(2026, 6, 10),
+        end_day=date(2026, 6, 20),
+    )
+    with pytest.raises(ce.ConditionEpisodeError, match="overlaps current episode"):
+        ce.record_condition_episode(
+            empty_warehouse, condition_label="med", start_day=date(2026, 6, 1)
+        )
+
+
 def test_same_days_different_label_do_not_conflict(empty_warehouse) -> None:
     ce.record_condition_episode(
         empty_warehouse,
