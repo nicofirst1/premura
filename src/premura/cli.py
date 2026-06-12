@@ -544,24 +544,64 @@ def doctor() -> None:
 # ============================================================================
 
 
+def _prune_root(root: Path, *, cutoff: float, dry_run: bool, dirs_only: bool) -> int:
+    """Apply one mtime cutoff to one root's top-level entries.
+
+    The single cutoff rule, reused across roots: exports keeps its
+    dirs-only shape; data/raw eligibility includes files AND directories since
+    operators stage both. ``dry_run`` previews (prefixed, unambiguous) and
+    removes nothing. Returns the count removed (or that would be removed).
+    """
+    if not root.exists():
+        console.print(f"[yellow]no {root.name} dir[/yellow]")
+        return 0
+    affected = 0
+    for child in sorted(root.iterdir()):
+        if dirs_only and not child.is_dir():
+            continue
+        if child.stat().st_mtime >= cutoff:
+            continue
+        affected += 1
+        if dry_run:
+            console.print(f"  [dim]would remove[/dim] {root.name}/{child.name}")
+        else:
+            if child.is_dir():
+                shutil.rmtree(child)
+            else:
+                child.unlink()
+            console.print(f"  removed {root.name}/{child.name}")
+    return affected
+
+
 @app.command()
 def gc(
     keep: Annotated[int, typer.Option("--keep", help="months of exports to keep locally")] = 3,
+    raw: Annotated[
+        bool,
+        typer.Option(
+            "--raw/--no-raw",
+            help="also prune data/raw/ staged source artifacts older than --keep (default OFF)",
+        ),
+    ] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="preview what would be removed; remove nothing"),
+    ] = False,
 ) -> None:
-    """Drop local export dirs older than N months."""
-    if not settings.exports_dir.exists():
-        console.print("[yellow]no exports dir[/yellow]")
-        return
+    """Drop local export dirs older than N months.
+
+    With ``--raw`` it also prunes ``data/raw/`` top-level entries (files and
+    directories) older than the same cutoff — one rule, two roots. ``--raw`` is
+    opt-in by design: ``run_monthly`` calls ``gc(keep=3)`` unattended and must
+    not silently delete staged source artifacts. ``--dry-run`` previews and
+    removes nothing from either root.
+    """
     cutoff = time.time() - keep * 31 * 24 * 3600
-    removed = 0
-    for child in sorted(settings.exports_dir.iterdir()):
-        if not child.is_dir():
-            continue
-        if child.stat().st_mtime < cutoff:
-            shutil.rmtree(child)
-            removed += 1
-            console.print(f"  removed {child.name}")
-    console.print(f"[green]gc removed {removed} dir(s)[/green]")
+    removed = _prune_root(settings.exports_dir, cutoff=cutoff, dry_run=dry_run, dirs_only=True)
+    if raw:
+        removed += _prune_root(settings.raw_dir, cutoff=cutoff, dry_run=dry_run, dirs_only=False)
+    verb = "would remove" if dry_run else "removed"
+    console.print(f"[green]gc {verb} {removed} entr{'y' if removed == 1 else 'ies'}[/green]")
 
 
 # ============================================================================
