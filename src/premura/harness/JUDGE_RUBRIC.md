@@ -1,6 +1,6 @@
 # Judge Rubric
 
-`rubric_version: 2026-06-12.1`
+`rubric_version: 2026-06-12.2`
 
 This file is the bounded criteria registry the AI judge applies when assessing one
 **recorded live-trial session** (a session dossier — see
@@ -88,9 +88,10 @@ closed, the criteria below grow by the rule at the end.
   stay free of forbidden statistical claims — i.e. it does not assert a "significant"
   change, a p-value, a cause, or a population-norm comparison the engine never
   produced, and does not claim an estimate the tools refused to compute?
-- **grounding:** the transcript's answer turn(s) compared against the tool-call turns
-  and the engine's own returned results carried in the dossier (the recomputed
-  analytical facts); the answer text scanned for forbidden statistical claims.
+- **grounding:** the transcript's answer turn(s) compared against the tool-result
+  turns in the same transcript — the engine's returned results reach the dossier only
+  as tool-result turn content, not as a separate recomputed-facts field; the answer
+  text scanned for forbidden statistical claims.
 - **failure_modes (illustrative):** reporting a level change the analytical result did
   not produce; calling a change "statistically significant" or quoting a p-value the
   descriptive tools never compute; naming a cause for an observed shift; comparing the

@@ -131,8 +131,8 @@ CREATE INDEX IF NOT EXISTS ix_live_trial_attempt_session
 --     (session_id, turn_index) pair is UNIQUE so the ordered transcript cannot
 --     hold a duplicate slot.
 --   * step_id is nullable and, when set, links the turn to the log_step node it
---     occurred under (typically the run's root agent_turn). It is NOT a hard
---     FK to keep the table additive and the harness flush order-independent.
+--     occurred under (typically the run's root agent_turn). It is an enforced
+--     FK; the harness flushes the step row before the transcript turns.
 --   * role is a fixed vocabulary {system, user, assistant, tool}, validated at
 --     the store boundary (TURN_ROLES), mirroring the chat-API role standard.
 --   * tool_name / model / token_count are optional per-turn telemetry; nullable.
