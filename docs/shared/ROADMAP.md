@@ -53,9 +53,11 @@ throughout.
    [0013](../building/adr/0013-operating-roles-promotion-decisions.md); spec:
    [`OPERATING_ROLES.md`](../building/architecture/OPERATING_ROLES.md)).
    Slice 1 (role registry + handoff trace + blocking `answer_audit` /
-   `present_answer` gate) is built on `feat/operating-roles-slice-1`;
-   independent review (two reviewers, 2026-06-12) passed with findings
-   addressed on the branch — **pending one real e2e exercise before merge**.
+   `present_answer` gate) **merged to master 2026-06-12** after its full
+   gate: independent review (two reviewers, findings addressed) plus one
+   real e2e exercise over the live warehouse driving all four orchestrator
+   tools through the stdio surface (a refusal-path answer was audited and
+   blessed with the measured disclosure; unaudited drafts were refused).
    Later slices: improvement queue, share packets, PubMed citation binding
    (needs PubMed trace recording first), claim-to-trace binding (the spec's
    honest v1 scope note). Concept lineage: decision note
