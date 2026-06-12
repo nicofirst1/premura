@@ -105,22 +105,37 @@ def test_call_kind_recorded_and_validated(tmp_path: Path) -> None:
 
 
 def test_migration_backfills_existing_rows_as_analytical(tmp_path: Path) -> None:
-    """A pre-slice-2 row (inserted without the column) reads back analytical."""
-    warehouse = _warehouse(tmp_path)
-    session_id = _open_session(warehouse)
-    with server._open_warehouse_writable(warehouse) as conn:
+    """The true upgrade path: rows that PRE-DATE migration 008 read back analytical.
+
+    Builds the genuine pre-008 schema (migrations 001-007 only), inserts a row
+    the old way, then runs the full migration set as any writable open does —
+    pinning that the ALTER's DEFAULT backfills the existing row.
+    """
+    import duckdb
+
+    conn = duckdb.connect(str(tmp_path / "pre008.duckdb"))
+    try:
+        for path in sorted(duck._migration_paths()):
+            if path.name.startswith("008"):
+                continue
+            conn.execute(path.read_text(encoding="utf-8"))
+        conn.execute(
+            "INSERT INTO trace.research_session (session_id, started_at_utc) VALUES ('s', now())"
+        )
         conn.execute(
             """
             INSERT INTO trace.tool_call
                 (call_id, session_id, tool_name, request_hash, hypothesis_identity,
                  started_at_utc)
-            VALUES ('legacy-1', ?, 'change_point', 'h', 'i', now())
-            """,
-            [session_id],
+            VALUES ('legacy-1', 's', 'change_point', 'h', 'i', now())
+            """
         )
+        duck.run_migrations(conn)
         row = conn.execute(
             "SELECT call_kind FROM trace.tool_call WHERE call_id = 'legacy-1'"
         ).fetchone()
+    finally:
+        conn.close()
     assert row is not None and row[0] == "analytical"
 
 
@@ -222,7 +237,7 @@ def test_fetched_citation_pmids_is_exactly_the_successful_fetches(tmp_path: Path
 # ----- the citation-extraction contract ---------------------------------------- #
 
 
-def test_extraction_contract_covers_both_documented_forms() -> None:
+def test_extraction_contract_covers_the_documented_forms() -> None:
     draft = (
         "Magnesium and sleep are associated in trials (PMID: 11111; see also "
         "PMID 22222 and https://pubmed.ncbi.nlm.nih.gov/33333). "
@@ -230,6 +245,24 @@ def test_extraction_contract_covers_both_documented_forms() -> None:
     )
     assert server._extract_cited_pmids(draft) == {"11111", "22222", "33333", "44444"}
     assert server._extract_cited_pmids("no literature cited here") == set()
+
+
+def test_extraction_contract_near_miss_forms_are_recognized() -> None:
+    """The reviewer's evasion set: each near-miss form must be SEEN (fail-closed)."""
+    cases = {
+        "hyphen separator (PMID-77777) here": {"77777"},
+        "plural list PMIDs: 77777 and 88888 support it": {"77777", "88888"},
+        "comma list PMIDs 1, 2; 3 / 4 & 5": {"1", "2", "3", "4", "5"},
+        "spelled out PubMed ID 77777": {"77777"},
+        "legacy url https://www.ncbi.nlm.nih.gov/pubmed/77777": {"77777"},
+        "no digit-length ceiling: PMID 123456789": {"123456789"},
+        "glued pmid12345 still seen": {"12345"},
+    }
+    for draft, expected in cases.items():
+        assert server._extract_cited_pmids(draft) == expected, draft
+    # Leading zeros stay as written: a mismatch with the fetched canonical PMID
+    # fails the audit (the strict direction), never silently passes.
+    assert server._extract_cited_pmids("PMID 012345") == {"012345"}
 
 
 # ----- citation binding through the audit gate ---------------------------------- #
@@ -260,7 +293,10 @@ def test_cited_and_fetched_pmid_passes_and_envelope_discloses_it(tmp_path: Path)
     )
     assert verdict["status"] == "passed"
     assert verdict["cited_pmids"] == ["11111"]
-    assert "citations: 1 cited PMID(s), all fetched this session" in verdict["disclosure"]
+    assert (
+        "citations: 1 cited PMID(s) (recognized forms), all fetched this session"
+        in verdict["disclosure"]
+    )
 
     blessed = server.present_answer(draft, interprets_health=True, session_log_path=log)
     assert blessed["status"] == "presented" and blessed["verified"] is True
@@ -324,7 +360,7 @@ def test_uncited_draft_passes_vacuously_with_honest_line(tmp_path: Path) -> None
     )
     assert verdict["status"] == "passed"
     assert verdict["cited_pmids"] == []
-    assert "citations: none cited" in verdict["disclosure"]
+    assert "citations: none in the recognized PMID forms" in verdict["disclosure"]
 
 
 def test_citing_without_a_session_names_the_citation_problem(tmp_path: Path) -> None:
@@ -383,7 +419,10 @@ def test_traced_fetch_records_an_evidence_row_and_binds_citations(
     assert verdict["status"] == "passed"
     blessed = _call(mcp, "present_answer", {"draft": draft, "interprets_health": True})
     assert blessed["verified"] is True
-    assert "citations: 1 cited PMID(s), all fetched this session" in blessed["disclosure"]
+    assert (
+        "citations: 1 cited PMID(s) (recognized forms), all fetched this session"
+        in blessed["disclosure"]
+    )
 
     # The evidence row never contaminated the analytical multiplicity.
     with server._open_warehouse(warehouse) as conn:

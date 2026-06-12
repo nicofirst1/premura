@@ -51,7 +51,7 @@ Required fields:
 - `refusal_reason`: nullable (populated only for a `refused` call).
 - `error_kind`: nullable (populated only for an `error` call — a dispatch failure recorded as a first-class call).
 - `result_ref`: nullable object with `result_id` and `result_hash`.
-- `call_kind`: `analytical` or `evidence_source` (additive since operating-roles slice 2; defaults to `analytical`).
+- `call_kind`: `analytical` or `evidence_source` (additive since operating-roles slice 2; defaults to `analytical`). Note: the disclosure's `calls` list contains only `analytical` records, so a consumer reading Call Records through the disclosure observes `analytical` exclusively — `evidence_source` rows are reachable only via the citation-binding read path, not this contract.
 - `started_at_utc`.
 - `finished_at_utc`.
 

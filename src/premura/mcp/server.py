@@ -491,32 +491,54 @@ def _draft_rejection(draft: object) -> str | None:
 
 
 # The citation-extraction contract (operating-roles slice 2). Deterministic and
-# documented: a draft "cites" exactly the PMIDs matched by these two forms —
-# the textual ``PMID 12345`` / ``PMID: 12345`` convention and a PubMed record
-# URL. A citation the extractor cannot see is a citation the gate cannot
-# verify, so drafts must cite in one of these forms; the advisory rubric reads
-# anything fancier. PMIDs are matched as written (digit runs up to 8 digits).
-_CITED_PMID_PATTERNS = (
-    re.compile(r"\bPMID[\s:]*([0-9]{1,8})\b", re.IGNORECASE),
-    re.compile(r"pubmed\.ncbi\.nlm\.nih\.gov/([0-9]{1,8})\b", re.IGNORECASE),
+# documented: a draft "cites" exactly the PMIDs matched by the recognized
+# forms — a ``PMID``/``PMIDs``/``PubMed ID`` textual marker followed by one or
+# more numbers (lists split on ``,`` / ``;`` / ``/`` / ``&`` / ``and``), or a
+# PubMed record URL on either host (``pubmed.ncbi.nlm.nih.gov/<id>`` and the
+# legacy ``ncbi.nlm.nih.gov/pubmed/<id>``). Matching is deliberately generous
+# because over-extraction fails CLOSED (an extracted-but-unfetched PMID fails
+# the audit); PMIDs are matched as written, any digit length, no
+# normalization. A citation written outside these forms is INVISIBLE to the
+# deterministic gate — and the v1 advisory rubric has no citation criterion
+# either — so the runtime contract obliges agents to cite in a recognized
+# form (the provider's own ``pubmed_url`` output is one). The disclosure line
+# states its own scope ("recognized PMID forms") so it never claims more than
+# the extractor saw.
+_PMID_TEXT_MARKER = re.compile(
+    r"\b(?:PMIDs?|PubMed[\s-]*IDs?)[\s:#,-]*((?:[0-9]+)(?:\s*(?:,|;|/|&|and)\s*[0-9]+)*)",
+    re.IGNORECASE,
 )
+_PMID_URL_PATTERNS = (
+    re.compile(r"pubmed\.ncbi\.nlm\.nih\.gov/([0-9]+)", re.IGNORECASE),
+    re.compile(r"\bncbi\.nlm\.nih\.gov/pubmed/([0-9]+)", re.IGNORECASE),
+)
+_DIGIT_RUN = re.compile(r"[0-9]+")
 
 
 def _extract_cited_pmids(draft: str) -> set[str]:
     """The set of PMIDs the draft cites, per the documented extraction contract."""
     cited: set[str] = set()
-    for pattern in _CITED_PMID_PATTERNS:
+    for marker in _PMID_TEXT_MARKER.finditer(draft):
+        cited.update(_DIGIT_RUN.findall(marker.group(1)))
+    for pattern in _PMID_URL_PATTERNS:
         cited.update(match.group(1) for match in pattern.finditer(draft))
     return cited
 
 
 def _citation_disclosure_line(cited: set[str], missing: list[str]) -> str:
-    """The measured citation line the gate appends to the disclosure."""
+    """The measured citation line the gate appends to the disclosure.
+
+    Scoped wording on purpose: the gate can only vouch for citations in the
+    recognized forms, so the line never claims "none cited" outright.
+    """
     if not cited:
-        return "citations: none cited"
+        return "citations: none in the recognized PMID forms"
     if missing:
-        return f"citations: {len(cited)} cited PMID(s), {len(missing)} not fetched this session"
-    return f"citations: {len(cited)} cited PMID(s), all fetched this session"
+        return (
+            f"citations: {len(cited)} cited PMID(s) (recognized forms), "
+            f"{len(missing)} not fetched this session"
+        )
+    return f"citations: {len(cited)} cited PMID(s) (recognized forms), all fetched this session"
 
 
 @contextmanager
@@ -687,6 +709,15 @@ def answer_audit(
                 "citeable — fetch each by exact PMID with pubmed_fetch(session_id=...) "
                 "before citing it"
             )
+    elif cited_pmids and trace_verified:
+        # Defensive (should be unreachable): the disclosure read succeeded but
+        # the evidence-row read did not. Never let an unverified citation ride
+        # a passing verdict — fail, exactly like every other unverifiable check.
+        missing_pmids = sorted(cited_pmids)
+        failures.append(
+            "citation verification could not read this session's evidence rows; "
+            "cited PMIDs are unverified"
+        )
     if disclosure_text is not None:
         disclosure_text = (
             f"{disclosure_text}; {_citation_disclosure_line(cited_pmids, missing_pmids)}"

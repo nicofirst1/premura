@@ -31,14 +31,21 @@ at the tool layer.
   are byte-identical to before.
 - **Citation binding in the gate** (check 5 in `OPERATING_ROLES.md`):
   `answer_audit` extracts cited PMIDs under a fixed documented contract
-  (`PMID 12345` / `PMID: 12345` textual forms plus PubMed record URLs) and
-  fails the verdict unless each has a successful in-session `pubmed_fetch`
+  (`PMID`/`PMIDs`/`PubMed ID` textual markers with number lists, plus both
+  PubMed record-URL hosts) and fails the verdict unless each has a
+  successful in-session `pubmed_fetch`
   (`premura.trace.fetched_citation_pmids`, read back from the recorded
-  hypothesis identity so recording and audit cannot drift). The measured
-  disclosure now carries a citation line either way ("citations: none
-  cited" / "K cited PMID(s), all fetched this session"), and the verdict
-  reports `cited_pmids`. A draft citing PMIDs without naming a session
-  fails with a citation-specific reason.
+  hypothesis identity so recording and audit cannot drift). Extraction is
+  deliberately generous because over-extraction fails closed. The measured
+  disclosure carries a self-scoping citation line either way ("citations:
+  none in the recognized PMID forms" / "K cited PMID(s) (recognized forms),
+  all fetched this session" — it never claims "none cited" outright), and
+  the verdict reports `cited_pmids`. A draft citing PMIDs without naming a
+  session fails with a citation-specific reason. Out-of-form citations are
+  invisible to the gate AND uncovered by the v1 advisory rubric (its
+  categories are closed); the runtime contract's cite-in-recognized-form
+  obligation carries that gap, and a rubric citation criterion is named
+  follow-up work in the spec.
 - The audit-consumer Call Record gains the additive `call_kind` field
   (contract doc updated). Pinned by `tests/test_operating_roles_slice2.py`
   (kind storage and backfill, disclosure exclusion, the citeable set, the

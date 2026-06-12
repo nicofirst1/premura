@@ -122,11 +122,17 @@ violating its contract, and the absence of the envelope shows it.
    the analytical tools use — and the multiplicity disclosure counts
    `analytical` rows only, so "N unique hypotheses examined" stays
    uncontaminated by literature lookups. What counts as "cites" is a fixed,
-   documented extraction contract (the `PMID 12345` / `PMID: 12345` textual
-   forms and PubMed record URLs); a citation written outside those forms is
-   the advisory rubric's to read, not deterministically verified. The
-   envelope's measured disclosure carries the citation count either way
-   ("citations: none cited" / "K cited PMID(s), all fetched this session").
+   documented extraction contract: a `PMID`/`PMIDs`/`PubMed ID` textual
+   marker followed by one or more numbers, or a PubMed record URL on either
+   host (`pubmed.ncbi.nlm.nih.gov/<id>`, legacy `ncbi.nlm.nih.gov/pubmed/<id>`).
+   Stated honestly: a citation written outside those forms is **invisible to
+   the gate**, and the v1 advisory rubric has no citation criterion either —
+   so the runtime contract obliges operating agents to cite in a recognized
+   form (the provider's own `pubmed_url` output is one), and the envelope's
+   citation line scopes its own claim ("citations: none in the recognized
+   PMID forms" / "K cited PMID(s) (recognized forms), all fetched this
+   session") rather than asserting "none cited" outright. Wiring a citation
+   criterion into the advisory rubric is named follow-up work below.
 
 The AI rubric (the existing research-trace-audit skill) runs **on top as
 advisory only**; its judgment never gates in v1 and may be promoted later by
@@ -147,7 +153,12 @@ could in principle cite a session whose calls are unrelated to its claims;
 the advisory rubric is what reads the draft against the trace content until
 binding is promoted by its own decision note (the open design question —
 what deterministically marks a "claim" in prose — needs a maintainer
-design-interview, like the slice-1 promotion got).
+design-interview, like the slice-1 promotion got). **Advisory-rubric
+citation criterion** — the research-trace-audit rubric's categories are
+closed by its own contract, so teaching it to read out-of-form citations is
+a spec amendment of its own, not a rubric edit; until then out-of-form
+citations are covered by the runtime contract's cite-in-recognized-form
+obligation, not by any checker.
 
 ## Improvement scan, queue, sharing (specified, later slices)
 
