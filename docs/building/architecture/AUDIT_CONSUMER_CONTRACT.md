@@ -51,6 +51,7 @@ Required fields:
 - `refusal_reason`: nullable (populated only for a `refused` call).
 - `error_kind`: nullable (populated only for an `error` call — a dispatch failure recorded as a first-class call).
 - `result_ref`: nullable object with `result_id` and `result_hash`.
+- `call_kind`: `analytical` or `evidence_source` (additive since operating-roles slice 2; defaults to `analytical`).
 - `started_at_utc`.
 - `finished_at_utc`.
 
@@ -59,6 +60,7 @@ Rules:
 - `hypothesis_identity` is the deduplication key for `N`.
 - Refused calls remain first-class records and count toward `N` if they reached data/admissibility evaluation.
 - Exact retries have separate `call_id` values but the same `hypothesis_identity`.
+- Only `analytical` records count toward `raw`, `N`, the refusal breakdown, and the disclosure's call list. `evidence_source` records (literature lookups such as `pubmed_fetch`) are recorded in the same store for citation binding but never appear in the multiplicity disclosure.
 
 ## Contract Object: Surfaced Mark
 

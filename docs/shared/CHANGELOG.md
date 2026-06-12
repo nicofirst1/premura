@@ -8,6 +8,43 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-06-12 — Operating-roles slice 2: PubMed citation binding
+
+The first of the two named slice-2 items from `OPERATING_ROLES.md` (the
+other, claim-to-trace binding, stays named later work pending its own
+decision note): the answer-audit gate now deterministically verifies that
+every PMID a draft cites was actually fetched in the named session —
+"candidates are never citeable" is enforced at audit time, not just stated
+at the tool layer.
+
+- **Evidence-source trace recording** (migration 008, `call_kind` on
+  `trace.tool_call`): `pubmed_search` / `pubmed_fetch` accept an optional
+  `session_id` and record through the exact record → dispatch → finalize
+  seam the analytical tools use, as `call_kind = evidence_source` rows.
+  The multiplicity disclosure (raw, N, refusal breakdown, call list) counts
+  `analytical` rows only, so "N unique hypotheses examined" stays
+  uncontaminated by literature lookups; `mark_surfaced` refuses evidence
+  rows so K cannot leak either. Provider outcomes map honestly: only an
+  `available` fetch records terminal `available`; `provider_error` is an
+  `error` row; `no_results` / `invalid_pmid` / `unavailable` are `refused`
+  rows that never become citeable. Untraced PubMed calls (no `session_id`)
+  are byte-identical to before.
+- **Citation binding in the gate** (check 5 in `OPERATING_ROLES.md`):
+  `answer_audit` extracts cited PMIDs under a fixed documented contract
+  (`PMID 12345` / `PMID: 12345` textual forms plus PubMed record URLs) and
+  fails the verdict unless each has a successful in-session `pubmed_fetch`
+  (`premura.trace.fetched_citation_pmids`, read back from the recorded
+  hypothesis identity so recording and audit cannot drift). The measured
+  disclosure now carries a citation line either way ("citations: none
+  cited" / "K cited PMID(s), all fetched this session"), and the verdict
+  reports `cited_pmids`. A draft citing PMIDs without naming a session
+  fails with a citation-specific reason.
+- The audit-consumer Call Record gains the additive `call_kind` field
+  (contract doc updated). Pinned by `tests/test_operating_roles_slice2.py`
+  (kind storage and backfill, disclosure exclusion, the citeable set, the
+  extraction contract, gate pass/fail paths, and the full
+  fetch → audit → envelope flow through the real MCP surface).
+
 ## 2026-06-12 — Condition-episode persistence (roadmap item 2)
 
 The named-deferred follow-up from the analytical-tool work: operator-declared

@@ -25,6 +25,7 @@ Two families of helpers live here:
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 from datetime import date, datetime, timedelta
@@ -489,6 +490,35 @@ def _draft_rejection(draft: object) -> str | None:
     return None
 
 
+# The citation-extraction contract (operating-roles slice 2). Deterministic and
+# documented: a draft "cites" exactly the PMIDs matched by these two forms —
+# the textual ``PMID 12345`` / ``PMID: 12345`` convention and a PubMed record
+# URL. A citation the extractor cannot see is a citation the gate cannot
+# verify, so drafts must cite in one of these forms; the advisory rubric reads
+# anything fancier. PMIDs are matched as written (digit runs up to 8 digits).
+_CITED_PMID_PATTERNS = (
+    re.compile(r"\bPMID[\s:]*([0-9]{1,8})\b", re.IGNORECASE),
+    re.compile(r"pubmed\.ncbi\.nlm\.nih\.gov/([0-9]{1,8})\b", re.IGNORECASE),
+)
+
+
+def _extract_cited_pmids(draft: str) -> set[str]:
+    """The set of PMIDs the draft cites, per the documented extraction contract."""
+    cited: set[str] = set()
+    for pattern in _CITED_PMID_PATTERNS:
+        cited.update(match.group(1) for match in pattern.finditer(draft))
+    return cited
+
+
+def _citation_disclosure_line(cited: set[str], missing: list[str]) -> str:
+    """The measured citation line the gate appends to the disclosure."""
+    if not cited:
+        return "citations: none cited"
+    if missing:
+        return f"citations: {len(cited)} cited PMID(s), {len(missing)} not fetched this session"
+    return f"citations: {len(cited)} cited PMID(s), all fetched this session"
+
+
 @contextmanager
 def _open_session_log(
     session_log_path: Path | None,
@@ -587,12 +617,15 @@ def answer_audit(
     Inspects the draft against the named research-trace session: the session
     must exist and have recorded analytical calls (check 1); the measured
     disclosure and refusal counts are computed from trace rows, never trusted
-    from prose (checks 2-3). The verdict is recorded in the session log keyed
-    by the draft's sha256 — ``present_answer`` reads exactly that. The audit
-    creates no new evidence and reruns nothing, so the warehouse is opened
-    read-only; an unreadable warehouse is an audit failure, not a crash. The
-    AI rubric (research-trace-audit skill) is advisory on top and never gates
-    here. Malformed drafts come back as a structured ``rejected`` response.
+    from prose (checks 2-3); every PMID the draft cites must have a successful
+    in-session ``pubmed_fetch`` — search candidates are never citeable (check
+    5, citation binding; the extraction contract is ``_CITED_PMID_PATTERNS``).
+    The verdict is recorded in the session log keyed by the draft's sha256 —
+    ``present_answer`` reads exactly that. The audit creates no new evidence
+    and reruns nothing, so the warehouse is opened read-only; an unreadable
+    warehouse is an audit failure, not a crash. The AI rubric
+    (research-trace-audit skill) is advisory on top and never gates here.
+    Malformed drafts come back as a structured ``rejected`` response.
     """
     rejection = _draft_rejection(draft)
     if rejection is not None:
@@ -602,18 +635,29 @@ def answer_audit(
     disclosure_text: str | None = None
     refusal_count: int | None = None
     trace_verified = False
+    cited_pmids = _extract_cited_pmids(draft)
+    fetched_pmids: set[str] | None = None
 
     if not session_id:
         failures.append(
             "no research-trace session_id given; a health-interpreting answer "
             "must name the session its analysis was recorded in"
         )
+        if cited_pmids:
+            failures.append(
+                "the draft cites PMIDs but names no research-trace session; a "
+                "citation is verifiable only against the session's recorded fetches"
+            )
     else:
         try:
             with _open_warehouse(warehouse_path) as conn:
                 disclosure = trace_service.get_research_disclosure(
                     conn, session_id, include_calls=False
                 )
+                if cited_pmids and not isinstance(disclosure, trace_service.TraceError):
+                    fetched = trace_service.fetched_citation_pmids(conn, session_id)
+                    if not isinstance(fetched, trace_service.TraceError):
+                        fetched_pmids = fetched
         except duckdb.Error as exc:
             failures.append(f"research-trace session not usable: warehouse not readable ({exc})")
         else:
@@ -629,6 +673,24 @@ def answer_audit(
                     )
                 else:
                     trace_verified = True
+
+    # Citation binding (check 5): a cited PMID is verified iff this session
+    # recorded a successful evidence-source fetch for it. Computed from trace
+    # rows like every other check — never trusted from prose.
+    missing_pmids: list[str] = []
+    if cited_pmids and fetched_pmids is not None:
+        missing_pmids = sorted(cited_pmids - fetched_pmids)
+        if missing_pmids:
+            failures.append(
+                "cited PMIDs were never successfully fetched in this session: "
+                f"{', '.join(missing_pmids)}; pubmed_search candidates are never "
+                "citeable — fetch each by exact PMID with pubmed_fetch(session_id=...) "
+                "before citing it"
+            )
+    if disclosure_text is not None:
+        disclosure_text = (
+            f"{disclosure_text}; {_citation_disclosure_line(cited_pmids, missing_pmids)}"
+        )
 
     passed = trace_verified and not failures
     with _open_session_log(session_log_path) as conn:
@@ -649,6 +711,7 @@ def answer_audit(
         "trace_verified": trace_verified,
         "disclosure": disclosure_text,
         "refusal_count": refusal_count,
+        "cited_pmids": sorted(cited_pmids),
         "failures": failures,
     }
 

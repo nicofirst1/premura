@@ -67,6 +67,19 @@ STATUS_AVAILABLE = "available"
 STATUS_REFUSED = "refused"
 STATUS_ERROR = "error"
 
+# Bounded vocabulary of recorded-call kinds (migration 008). ``analytical``
+# calls are hypotheses about the user's data and are what the multiplicity
+# disclosure counts (raw, N, refusal breakdown). ``evidence_source`` calls are
+# literature/evidence lookups (pubmed_search / pubmed_fetch today) recorded so
+# citation binding can verify a cited record was actually fetched in-session —
+# they NEVER count toward "N unique hypotheses examined" by design
+# (OPERATING_ROLES.md keeps the research multiplicity uncontaminated). A new
+# kind is added by extending this vocabulary in one place with its own
+# counting/consumption rule, never by branching per tool elsewhere.
+CALL_KIND_ANALYTICAL = "analytical"
+CALL_KIND_EVIDENCE_SOURCE = "evidence_source"
+VALID_CALL_KINDS = (CALL_KIND_ANALYTICAL, CALL_KIND_EVIDENCE_SOURCE)
+
 # Closed-ish vocabulary of surfaced-mark roles (data-model). The service
 # validates non-empty; the exact label set stays the agent's to extend, so this
 # is documentation of the expected shapes, not an enforced enum.
@@ -155,6 +168,7 @@ class RecordedCall:
     refusal_reason: str | None = None
     error_kind: str | None = None
     result_ref: ResultRef | None = None
+    call_kind: str = CALL_KIND_ANALYTICAL
     status: str = "recorded"
 
     def to_dict(self) -> dict[str, Any]:
@@ -169,6 +183,7 @@ class RecordedCall:
             "refusal_reason": self.refusal_reason,
             "error_kind": self.error_kind,
             "result_ref": self.result_ref.to_dict() if self.result_ref else None,
+            "call_kind": self.call_kind,
             "started_at_utc": self.started_at_utc,
             "finished_at_utc": self.finished_at_utc,
         }
@@ -186,6 +201,7 @@ class PendingCall:
     hypothesis_identity: str
     request_hash: str
     started_at_utc: str
+    call_kind: str = CALL_KIND_ANALYTICAL
     status: str = "started"
 
 
@@ -505,9 +521,29 @@ def _identity_condition_paired_t_test(req: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _identity_pubmed_search(req: Mapping[str, Any]) -> dict[str, Any]:
+    # Evidence-source identity: the discovery question is the trimmed query plus
+    # the sort order; ``limit`` only changes how many candidates come back, not
+    # what was asked, so retries with a different limit collapse.
+    query = req.get("query")
+    return {
+        "query": query.strip() if isinstance(query, str) else query,
+        "sort": req.get("sort"),
+    }
+
+
+def _identity_pubmed_fetch(req: Mapping[str, Any]) -> dict[str, Any]:
+    # Evidence-source identity: the exact PMID. Citation binding reads this
+    # field back from recorded rows, so it must stay the trimmed PMID alone.
+    pmid = req.get("pmid")
+    return {"pmid": pmid.strip() if isinstance(pmid, str) else pmid}
+
+
 # The declaration registry. Keyed by tool name; each value normalizes a request
 # to its identity dict. This is the single seam a future analytical tool plugs
-# into — disclosure/counting code never names a specific tool.
+# into — disclosure/counting code never names a specific tool. Evidence-source
+# tools (recorded with ``call_kind = evidence_source``, excluded from N) join
+# through the same seam.
 _IDENTITY_REGISTRY: dict[str, Callable[[Mapping[str, Any]], dict[str, Any]]] = {
     "change_point": _identity_change_point,
     "smoothed_average": _identity_smoothed_average,
@@ -515,7 +551,13 @@ _IDENTITY_REGISTRY: dict[str, Callable[[Mapping[str, Any]], dict[str, Any]]] = {
     "rolling_mean": _identity_rolling_mean,
     "paired_t_test": _identity_paired_t_test,
     "condition_paired_t_test": _identity_condition_paired_t_test,
+    "pubmed_search": _identity_pubmed_search,
+    "pubmed_fetch": _identity_pubmed_fetch,
 }
+
+# The tool whose successful evidence-source rows satisfy citation binding.
+# Named once here so the audit-side check and the recording side cannot drift.
+PUBMED_FETCH_TOOL_NAME = "pubmed_fetch"
 
 
 def register_hypothesis_identity(
@@ -678,8 +720,10 @@ def start_recorded_call(
     session_id: str,
     tool_name: str,
     request: Mapping[str, Any],
+    *,
+    call_kind: str = CALL_KIND_ANALYTICAL,
 ) -> PendingCall | TraceError:
-    """Record an analytical call *before* dispatch (FR-002, FR-003).
+    """Record an analytical or evidence-source call *before* dispatch (FR-002, FR-003).
 
     Mints a stable ``call_id``, computes the deterministic request hash and the
     normalized hypothesis identity, and inserts a call row with no terminal
@@ -687,9 +731,19 @@ def start_recorded_call(
     :func:`finish_recorded_call`, or a :class:`TraceError` (``not_found``) for an
     unknown session.
 
+    ``call_kind`` must come from :data:`VALID_CALL_KINDS`: ``analytical`` rows
+    are what the multiplicity disclosure counts; ``evidence_source`` rows
+    (literature lookups) are recorded for citation binding and never inflate N.
+
     This does not read ``hp.*`` and computes no statistic — it only records the
     request shape the boundary observed.
     """
+    if call_kind not in VALID_CALL_KINDS:
+        return TraceError(
+            status="validation_error",
+            message=f"call_kind must be one of {VALID_CALL_KINDS!r}, got {call_kind!r}.",
+            field="call_kind",
+        )
     if not _session_exists(conn, session_id):
         return TraceError(
             status="not_found",
@@ -704,10 +758,10 @@ def start_recorded_call(
         """
         INSERT INTO trace.tool_call
             (call_id, session_id, tool_name, request_hash, hypothesis_identity,
-             started_at_utc)
-        VALUES (?, ?, ?, ?, ?, ?)
+             started_at_utc, call_kind)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
-        [call_id, session_id, tool_name, rhash, identity, started_at],
+        [call_id, session_id, tool_name, rhash, identity, started_at, call_kind],
     )
     return PendingCall(
         call_id=call_id,
@@ -716,6 +770,7 @@ def start_recorded_call(
         hypothesis_identity=identity,
         request_hash=rhash,
         started_at_utc=started_at,
+        call_kind=call_kind,
     )
 
 
@@ -811,6 +866,7 @@ def finish_recorded_call(
         refusal_reason=refusal_reason if terminal_status == STATUS_REFUSED else None,
         error_kind=error_kind if terminal_status == STATUS_ERROR else None,
         result_ref=result_ref,
+        call_kind=pending.call_kind,
     )
 
 
@@ -939,7 +995,7 @@ def mark_surfaced(
             field="session_id",
         )
     row = conn.execute(
-        "SELECT session_id FROM trace.tool_call WHERE call_id = ? LIMIT 1",
+        "SELECT session_id, call_kind FROM trace.tool_call WHERE call_id = ? LIMIT 1",
         [call_id],
     ).fetchone()
     if row is None:
@@ -952,6 +1008,20 @@ def mark_surfaced(
         return TraceError(
             status="invalid_reference",
             message=(f"Call {call_id!r} belongs to session {row[0]!r}, not {session_id!r}."),
+            field="call_id",
+        )
+    # K counts surfaced *analytical findings*. An evidence-source row (a
+    # literature lookup) is not a finding about the user's data: citing it is
+    # citation binding's territory, and marking it would let evidence lookups
+    # leak into K while being excluded from N (breaking raw >= N >= K).
+    if (row[1] or CALL_KIND_ANALYTICAL) != CALL_KIND_ANALYTICAL:
+        return TraceError(
+            status="validation_error",
+            message=(
+                f"Call {call_id!r} is an evidence-source record, not an analytical "
+                "finding; cite it in the draft (citation binding verifies the fetch) "
+                "instead of marking it surfaced."
+            ),
             field="call_id",
         )
     # K counts distinct surfaced *calls* (FR-010), not mark rows. A second mark on
@@ -992,6 +1062,57 @@ def mark_surfaced(
 
 
 # ===========================================================================
+# Citation binding reads (operating-roles slice 2)
+# ===========================================================================
+
+
+def fetched_citation_pmids(
+    conn: duckdb.DuckDBPyConnection,
+    session_id: str,
+) -> set[str] | TraceError:
+    """PMIDs with a *successful* in-session ``pubmed_fetch`` — the citeable set.
+
+    The deterministic half of the candidate-vs-fetched rule at audit time: a
+    draft may cite a PMID only if this session recorded an ``evidence_source``
+    ``pubmed_fetch`` call for it that finished ``available``. Search candidates
+    never appear here (different tool), and neither do failed/unavailable
+    fetches (different terminal status). One bounded scan over this session's
+    evidence rows; the PMID is read back from the recorded hypothesis identity
+    (``_identity_pubmed_fetch``), so recording and audit cannot drift.
+
+    Returns a :class:`TraceError` (``not_found``) for an unknown session —
+    distinct from a valid session that fetched nothing (empty set).
+    """
+    if not _session_exists(conn, session_id):
+        return TraceError(
+            status="not_found",
+            message=f"No such research session: {session_id!r}.",
+            field="session_id",
+        )
+    rows = conn.execute(
+        """
+        SELECT hypothesis_identity
+        FROM trace.tool_call
+        WHERE session_id = ?
+          AND COALESCE(call_kind, 'analytical') = ?
+          AND tool_name = ?
+          AND terminal_status = ?
+        """,
+        [session_id, CALL_KIND_EVIDENCE_SOURCE, PUBMED_FETCH_TOOL_NAME, STATUS_AVAILABLE],
+    ).fetchall()
+    pmids: set[str] = set()
+    for (identity_json,) in rows:
+        try:
+            identity = json.loads(identity_json) if identity_json else {}
+        except (TypeError, json.JSONDecodeError):  # pragma: no cover - defensive
+            continue
+        pmid = identity.get("identity", {}).get("pmid") if isinstance(identity, dict) else None
+        if isinstance(pmid, str) and pmid:
+            pmids.add(pmid)
+    return pmids
+
+
+# ===========================================================================
 # Disclosure computation + exports (T011)
 # ===========================================================================
 
@@ -1017,7 +1138,11 @@ def get_research_disclosure(
     which is distinct from a valid-but-empty session (raw=N=0, surfaced
     unavailable).
 
-    * **raw_analytical_call_count** — every recorded call in the session.
+    * **raw_analytical_call_count** — every recorded *analytical* call in the
+      session. Evidence-source rows (literature lookups, ``call_kind =
+      evidence_source``) are excluded from every disclosure count and from the
+      ``calls`` list by design — they are not hypotheses about the user's data;
+      citation binding reads them via :func:`fetched_citation_pmids`.
     * **unique_hypothesis_count (N)** — ``COUNT(DISTINCT hypothesis_identity)``,
       so exact retries collapse but refusals still count.
     * **surfaced (K)** — count of surfaced marks; reported *unavailable* with an
@@ -1045,25 +1170,30 @@ def get_research_disclosure(
 
     # Aggregate counts in one bounded query (raw + N). Bounded by definition: one
     # grouped scan over this session's calls, never a per-row Python loop.
+    # Analytical rows only: evidence-source rows (literature lookups) are not
+    # hypotheses about the user's data, so they never count toward raw or N.
+    # COALESCE keeps a pre-migration NULL kind counted as what it was: analytical.
     agg = conn.execute(
         """
         SELECT
             COUNT(*) AS raw_calls,
             COUNT(DISTINCT hypothesis_identity) AS n_unique
         FROM trace.tool_call
-        WHERE session_id = ?
+        WHERE session_id = ? AND COALESCE(call_kind, 'analytical') = 'analytical'
         """,
         [session_id],
     ).fetchone()
     raw_calls = int(agg[0]) if agg else 0
     n_unique = int(agg[1]) if agg else 0
 
-    # Refusal breakdown by reason — a second bounded grouped scan.
+    # Refusal breakdown by reason — a second bounded grouped scan, analytical
+    # rows only (an evidence lookup's failure is not an analytical refusal).
     refusal_rows = conn.execute(
         """
         SELECT refusal_reason, COUNT(*)
         FROM trace.tool_call
         WHERE session_id = ? AND terminal_status = ? AND refusal_reason IS NOT NULL
+          AND COALESCE(call_kind, 'analytical') = 'analytical'
         GROUP BY refusal_reason
         ORDER BY refusal_reason
         """,
@@ -1159,10 +1289,12 @@ def _call_records(
         SELECT
             c.call_id, c.session_id, c.tool_name, c.hypothesis_identity,
             c.request_hash, c.terminal_status, c.started_at_utc, c.finished_at_utc,
-            c.refusal_reason, c.error_kind, r.result_id, r.result_hash
+            c.refusal_reason, c.error_kind, r.result_id, r.result_hash,
+            c.call_kind
         FROM trace.tool_call c
         LEFT JOIN trace.tool_result r ON r.call_id = c.call_id
         WHERE c.session_id = ?
+          AND COALESCE(c.call_kind, 'analytical') = 'analytical'
         ORDER BY c.started_at_utc, c.call_id
         LIMIT ?
         """,
@@ -1188,6 +1320,7 @@ def _call_records(
                 if row[10] is not None
                 else None
             ),
+            call_kind=str(row[12]) if row[12] is not None else CALL_KIND_ANALYTICAL,
         )
         for row in rows
     )

@@ -114,22 +114,40 @@ violating its contract, and the absence of the envelope shows it.
    for one revision loop; remaining conflicts follow the fixed boundary
    priority `answer_audit` > `analysis` > `human_facing` — usefulness never
    overrides evidence.
+5. **Citation binding (shipped slice 2):** every PMID the draft cites must
+   have a *successful* in-session `pubmed_fetch`; search candidates and
+   failed fetches are never citeable. The PubMed tools record into the
+   research trace when given a `session_id` — as `call_kind =
+   evidence_source` rows through the same record → dispatch → finalize seam
+   the analytical tools use — and the multiplicity disclosure counts
+   `analytical` rows only, so "N unique hypotheses examined" stays
+   uncontaminated by literature lookups. What counts as "cites" is a fixed,
+   documented extraction contract (the `PMID 12345` / `PMID: 12345` textual
+   forms and PubMed record URLs); a citation written outside those forms is
+   the advisory rubric's to read, not deterministically verified. The
+   envelope's measured disclosure carries the citation count either way
+   ("citations: none cited" / "K cited PMID(s), all fetched this session").
 
 The AI rubric (the existing research-trace-audit skill) runs **on top as
 advisory only**; its judgment never gates in v1 and may be promoted later by
 its own decision note.
 
-**Named slice-2 work (so it is not assumed shipped):** citation binding —
-"every cited PMID was actually fetched, candidates are never citeable" —
-requires the PubMed tools to record into the research trace first; both land
-together in a later slice. Until then PubMed narration relies on the
-candidate-vs-fetched rule at the tool layer plus the advisory rubric.
-**Claim-to-trace binding** is named alongside it: deterministically tying
-the draft's individual claims to the specific recorded calls they rest on.
-Today check 1 proves only that the named session recorded analytical work —
-an audited draft could in principle cite a session whose calls are unrelated
-to its claims; the advisory rubric is what reads the draft against the trace
-content until binding is promoted by its own decision note.
+**Slice 2 shipped citation binding** (check 5 above): PubMed trace
+recording and the cited-PMID check landed together, as required. The shape
+to preserve when adding a binding: a documented deterministic extractor over
+the draft plus a bounded trace query it resolves against (cited-PMID →
+fetched evidence row is the first instance) — a new binding adds its
+extractor-and-query pair beside check 5, never a fork of the audit flow.
+
+**Named later-slice work (so it is not assumed shipped):**
+**claim-to-trace binding** — deterministically tying the draft's individual
+claims to the specific recorded calls they rest on. Today check 1 proves
+only that the named session recorded analytical work — an audited draft
+could in principle cite a session whose calls are unrelated to its claims;
+the advisory rubric is what reads the draft against the trace content until
+binding is promoted by its own decision note (the open design question —
+what deterministically marks a "claim" in prose — needs a maintainer
+design-interview, like the slice-1 promotion got).
 
 ## Improvement scan, queue, sharing (specified, later slices)
 

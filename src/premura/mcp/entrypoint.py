@@ -132,6 +132,7 @@ def _dispatch_analytical_with_trace(
     session_id: str | None,
     request: dict[str, Any],
     dispatch: Any,
+    call_kind: str = trace.CALL_KIND_ANALYTICAL,
 ) -> dict[str, Any]:
     """Dispatch an analytical wrapper, mechanically recording it iff a session is given.
 
@@ -151,6 +152,11 @@ def _dispatch_analytical_with_trace(
     ``request`` is the analytical request kwargs as the wrapper received them; the
     per-tool identity registry in ``premura.trace`` normalizes them, so the wrapper
     passes them straight through (exact retries collapse to one hypothesis there).
+
+    ``call_kind`` routes evidence-source tools (the PubMed lookups) through the
+    exact same record → dispatch → finalize seam; their rows are excluded from
+    the multiplicity disclosure by ``premura.trace`` and consumed by citation
+    binding instead.
     """
     if not session_id:
         # Untraced fast path — identical to pre-WP03 behavior, no trace key added.
@@ -164,7 +170,9 @@ def _dispatch_analytical_with_trace(
     # dispatch without ever overlapping its read-only handle. The logical order
     # (record → dispatch → finalize) is preserved.
     with warehouse_server._open_warehouse_writable(warehouse_path) as conn:
-        pending = trace.start_recorded_call(conn, session_id, tool_name, request)
+        pending = trace.start_recorded_call(
+            conn, session_id, tool_name, request, call_kind=call_kind
+        )
     if isinstance(pending, trace.TraceError):
         # An explicit session_id was supplied but the call cannot be recorded
         # against it (e.g. an unknown / typo'd / expired session). REFUSE rather
@@ -195,7 +203,9 @@ def _dispatch_analytical_with_trace(
         raise
 
     with warehouse_server._open_warehouse_writable(warehouse_path) as conn:
-        if payload.get("status") == "refused":
+        if call_kind == trace.CALL_KIND_EVIDENCE_SOURCE:
+            recorded = _finish_evidence_call(conn, pending, payload)
+        elif payload.get("status") == "refused":
             recorded = trace.finish_recorded_call(
                 conn,
                 pending,
@@ -211,6 +221,46 @@ def _dispatch_analytical_with_trace(
             )
     payload["trace"] = _trace_meta_of(recorded)
     return payload
+
+
+def _finish_evidence_call(
+    conn: Any, pending: trace.PendingCall, payload: dict[str, Any]
+) -> trace.RecordedCall | trace.TraceError:
+    """Finalize an evidence-source lookup with an honest terminal status.
+
+    Citation binding treats ONLY a terminal-``available`` ``pubmed_fetch`` row
+    as citeable, so the mapping must never record a failed lookup as available:
+
+    * provider outcome ``available`` → ``available`` (the lookup produced the
+      record / candidates; the compact result reference is attached);
+    * ``provider_error`` → ``error`` (transport/parse fault — the look-up never
+      completed);
+    * anything else (``no_results`` / ``invalid_pmid`` / ``unavailable``) →
+      ``refused`` with the provider outcome as the machine-readable reason: the
+      lookup completed but yielded nothing citeable. Evidence refusals never
+      reach the analytical refusal breakdown (filtered by kind in the trace).
+    """
+    outcome = payload.get("status")
+    if outcome == "available":
+        return trace.finish_recorded_call(
+            conn,
+            pending,
+            terminal_status=trace.STATUS_AVAILABLE,
+            result=payload,
+        )
+    if outcome == "provider_error":
+        return trace.finish_recorded_call(
+            conn,
+            pending,
+            terminal_status=trace.STATUS_ERROR,
+            error_kind="provider_error",
+        )
+    return trace.finish_recorded_call(
+        conn,
+        pending,
+        terminal_status=trace.STATUS_REFUSED,
+        refusal_reason=str(outcome) if outcome else "unknown_outcome",
+    )
 
 
 def _register_default_tools(
@@ -995,7 +1045,12 @@ def _register_default_tools(
     # no SQL, and never computes a claim about the user's own warehouse data.
 
     @mcp.tool()
-    def pubmed_search(query: str, limit: int = 20, sort: str | None = None) -> dict[str, Any]:
+    def pubmed_search(
+        query: str,
+        limit: int = 20,
+        sort: str | None = None,
+        session_id: str | None = None,
+    ) -> dict[str, Any]:
         """Search PubMed for CANDIDATE literature records (candidates only).
 
         Returns discovery hints, NOT citeable evidence: every candidate carries
@@ -1004,16 +1059,30 @@ def _register_default_tools(
         ``pubmed_fetch`` by its exact ``pmid`` — a search candidate (even with a
         title or snippet) is never citeable on its own.
 
+        Pass the research-trace ``session_id`` when literature work belongs to a
+        recorded session: the lookup is then recorded as an EVIDENCE-SOURCE call
+        (record → dispatch → finalize, same seam as the analytical tools).
+        Evidence rows never count toward "N unique hypotheses examined"; they
+        exist so the answer-audit gate can verify citations. Without
+        ``session_id`` the behavior is exactly the untraced behavior.
+
         This is literature grounding only. It does not read the user's health
         warehouse and does not compute, confirm, or quantify any claim about the
         user's own data; it never produces diagnosis, treatment, or causal claims.
         Ordinary outcomes (``available`` / ``no_results`` / ``provider_error``)
         come back as a structured dict.
         """
-        return warehouse_server.pubmed_search(query, limit=limit, sort=sort)
+        return _dispatch_analytical_with_trace(
+            warehouse_path=warehouse_path,
+            tool_name="pubmed_search",
+            session_id=session_id,
+            request={"query": query, "limit": limit, "sort": sort},
+            dispatch=lambda: warehouse_server.pubmed_search(query, limit=limit, sort=sort),
+            call_kind=trace.CALL_KIND_EVIDENCE_SOURCE,
+        )
 
     @mcp.tool()
-    def pubmed_fetch(pmid: str) -> dict[str, Any]:
+    def pubmed_fetch(pmid: str, session_id: str | None = None) -> dict[str, Any]:
         """Fetch one CITEABLE PubMed record by its exact PMID.
 
         A successful fetch returns a record with
@@ -1022,6 +1091,14 @@ def _register_default_tools(
         ONLY records obtained this way; ``pubmed_search`` candidates are discovery
         hints and are never citeable until fetched here by exact PMID.
 
+        Pass the research-trace ``session_id`` whenever the fetched record may be
+        cited in a final answer: the fetch is then recorded as an EVIDENCE-SOURCE
+        call, and the answer-audit gate's citation binding accepts a cited PMID
+        ONLY when this session recorded a successful fetch for it. A fetch made
+        without ``session_id`` is untraced and cannot back a citation in an
+        audited answer. Evidence rows never count toward "N unique hypotheses
+        examined".
+
         This is literature grounding only. It does not read the user's health
         warehouse and does not compute, confirm, or quantify any claim about the
         user's own data; it never produces diagnosis, treatment, or causal claims.
@@ -1029,7 +1106,14 @@ def _register_default_tools(
         ``provider_error``) come back as a structured dict; missing optional
         metadata stays explicitly absent and is never fabricated.
         """
-        return warehouse_server.pubmed_fetch(pmid)
+        return _dispatch_analytical_with_trace(
+            warehouse_path=warehouse_path,
+            tool_name=trace.PUBMED_FETCH_TOOL_NAME,
+            session_id=session_id,
+            request={"pmid": pmid},
+            dispatch=lambda: warehouse_server.pubmed_fetch(pmid),
+            call_kind=trace.CALL_KIND_EVIDENCE_SOURCE,
+        )
 
 
 def build_server(

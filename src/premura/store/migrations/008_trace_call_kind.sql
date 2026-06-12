@@ -1,0 +1,22 @@
+-- 008_trace_call_kind.sql — distinguish evidence-source calls from analytical ones.
+--
+-- Operating-roles slice 2 (citation binding). The research trace now also
+-- records *evidence-source* calls — literature lookups such as
+-- pubmed_search/pubmed_fetch — so the answer-audit gate can deterministically
+-- verify that every PMID a draft cites was actually fetched in the named
+-- session. A literature lookup is NOT a hypothesis about the user's data, and
+-- the spec locks the multiplicity disclosure ("N unique hypotheses examined")
+-- as purely analytical, so the two kinds must be structurally separable.
+--
+-- `call_kind` is a bounded vocabulary owned by `premura.trace`
+-- (`analytical` | `evidence_source` today); the rule for adding a kind lives
+-- there, next to the hypothesis-identity registry — never as a schema edit per
+-- tool. Disclosure counting filters to `analytical`; citation binding reads
+-- `evidence_source` rows. The DEFAULT backfills every pre-slice-2 row as
+-- `analytical`, which is exactly what those rows were.
+--
+-- Idempotent (ADD COLUMN IF NOT EXISTS) so the normal migration loader
+-- (premura.store.duck.run_migrations) can re-run it safely. No `hp.*` object
+-- is touched here.
+
+ALTER TABLE trace.tool_call ADD COLUMN IF NOT EXISTS call_kind VARCHAR DEFAULT 'analytical';

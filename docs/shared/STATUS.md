@@ -83,15 +83,18 @@ rules: [`src/premura/engine/CONTRACT.md`](../../src/premura/engine/CONTRACT.md).
   analytical, 3 session research trace (`research_trace_open`,
   `research_trace_mark_surfaced`, `research_trace_disclosure`), 2 PubMed
   (`pubmed_search` — candidates only, never citeable; `pubmed_fetch` — the
-  only citeable record), 4 runtime-orchestrator (`operating_roles`,
+  only citeable record; both record evidence-source trace rows when given a
+  `session_id`, excluded from the multiplicity disclosure), 4
+  runtime-orchestrator (`operating_roles`,
   `orchestrator_handoff` — handoff trace in the session-log store, never the
   research trace — and the blocking answer gate `answer_audit` +
   `present_answer`: no verified envelope without a passing audit of exactly
-  that draft; see `docs/building/architecture/OPERATING_ROLES.md`). No tool on this surface touches `hp.*` via raw SQL —
+  that draft, and no cited PMID without a successful in-session fetch;
+  see `docs/building/architecture/OPERATING_ROLES.md`). No tool on this surface touches `hp.*` via raw SQL —
   signal/analytical reads go through the Stage 2 engine, capture tools
   (profile, condition-episode) write through their store boundaries; the
   trace tools read only derived `trace.*` rows; the PubMed tools reach only
-  the literature. Signal tools return the four-state envelope (`available` /
+  the literature plus their own evidence-source trace rows. Signal tools return the four-state envelope (`available` /
   `missing_input` / `stale_input` / `insufficient_data`) with a structured
   `missing_input` report a caller can branch on.
 - **Operator surface (`premura-mcp-operator`) — thirty-one tools:** all
