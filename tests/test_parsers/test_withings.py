@@ -121,13 +121,19 @@ def test_steps_becomes_interval_not_measurement(export_zip: Path) -> None:
 def test_sleep_session_and_deep_pct(export_zip: Path) -> None:
     batch = WithingsParser().parse(export_zip)
     sessions = [i for i in batch.intervals if i.metric_id == "sleep_session"]
-    # Happy-path row + blank-stage row both produce a session interval; the
-    # unparseable-`to` row is skipped wholesale (no interval, no measurement).
-    assert len(sessions) == 2
+    # Happy-path, blank-stage, and non-numeric-stage rows all keep their
+    # session interval; the unparseable-`to` row is skipped wholesale
+    # (no interval, no measurement).
+    assert len(sessions) == 3
     deep_pct = [m for m in batch.measurements if m.metric_id == "sleep_deep_pct"]
     assert len(deep_pct) == 1
     total = 5400 + 14400 + 7200 + 900
     assert abs(deep_pct[0].value_num - 100.0 * 5400 / total) < 1e-6
+    # Both stage-duration edge cases are declared, not silently dropped:
+    # blank cells (2026-06-05 row) and a non-numeric cell (2026-06-07 row).
+    reasons = [s.reason for s in batch.skipped_rows if s.raw_field == "sleep.stage_durations"]
+    assert any("incomplete stage durations" in r for r in reasons)
+    assert any("non-numeric stage duration" in r for r in reasons)
 
 
 def test_source_descriptor_and_dedupe_keys(export_zip: Path) -> None:

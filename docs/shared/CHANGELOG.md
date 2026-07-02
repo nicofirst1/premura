@@ -49,7 +49,7 @@ proved it on the intake seam.
   the issue's acceptance `<fixture>` path is generated on demand from
   committed text, not itself committed as a binary).
 - **Real e2e exercise** (against a locally-built fixture zip):
-  `hpipe ingest --source withings <fixture>` (36 rows inserted) → re-ingest
+  `hpipe ingest --source withings <fixture>` (37 rows inserted) → re-ingest
   (0 inserted, sha256 skip) → `hpipe inspect <fixture>` (5/5 members routed)
   → `hpipe status` → `weight_trend` through the MCP surface returned
   `status: available`, `trend_direction: flat` with honest

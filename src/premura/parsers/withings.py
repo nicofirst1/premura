@@ -48,7 +48,7 @@ import logging
 import re
 import zipfile
 from collections.abc import Sequence
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from dateutil import parser as dtparser
@@ -71,7 +71,9 @@ def _parse_ts(raw: str) -> datetime | None:
     except (ValueError, TypeError, OverflowError):
         return None
     if ts.tzinfo is not None:
-        ts = ts.astimezone().replace(tzinfo=None)
+        # Normalize offset-carrying timestamps to naive UTC, matching
+        # sleep_as_android._to_utc's convention (never the local machine zone).
+        ts = ts.astimezone(UTC).replace(tzinfo=None)
     return ts
 
 

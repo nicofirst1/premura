@@ -247,8 +247,10 @@ def _zip_is_withings(path: Path) -> bool:
     """True when a zip looks like a Withings data export (vs a Garmin GDPR zip).
 
     Withings' per-category export member names (``weight.csv``, ``bp.csv``,
-    ``raw_tracker_hr.csv``, ``aggregates_steps.csv``, ``sleep.csv``) are checked
-    before falling back to ``garmin`` for any other zip, mirroring ``_zip_is_mfp``.
+    ``raw_tracker_hr.csv``, ``aggregates_steps.csv``) are checked before
+    falling back to ``garmin`` for any other zip, mirroring ``_zip_is_mfp``.
+    ``sleep.csv`` is deliberately not sniffed — the bare name is too generic
+    to identify a Withings zip on its own.
     """
     withings_names = {"weight.csv", "bp.csv", "raw_tracker_hr.csv", "aggregates_steps.csv"}
     try:
