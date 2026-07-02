@@ -162,6 +162,18 @@
     it: [pressione diastolica]
     de: [diastolischer Blutdruck]
 
+- metric_id: vendor:withings:pulse_wave_velocity
+  display_name: Pulse wave velocity (Withings BPM Core)
+  canonical_unit: m/s
+  value_kind: instantaneous
+  description: Device-specific arterial-stiffness reading from Withings' BPM
+    Core cuff. Decision-tree step 5 (vendor fallback) -- no existing alias,
+    LOINC row, or IEEE 1752.1 coverage in this ontology at authoring time.
+    Added by the Withings parser (#33).
+  category: cardiovascular
+  validity_window: P1D
+  missing_data_policy: none
+
 - metric_id: blood_glucose
   display_name: Blood glucose
   canonical_unit: mmol_per_l
@@ -247,6 +259,18 @@
   display_name: Muscle mass
   canonical_unit: kg
   value_kind: instantaneous
+  category: body_composition
+  validity_window: P1W
+  missing_data_policy: last_observation_carried_forward
+
+- metric_id: fat_mass
+  display_name: Fat mass
+  canonical_unit: kg
+  value_kind: instantaneous
+  description: Absolute fat mass, distinct from body_fat_pct (a percentage) and
+    lean_body_mass (its complement). Bare English canonical name (decision-tree
+    step 4) -- a reusable cross-vendor body-composition concept, not tied to
+    LOINC or IEEE 1752.1 in this ontology. Added by the Withings parser (#33).
   category: body_composition
   validity_window: P1W
   missing_data_policy: last_observation_carried_forward

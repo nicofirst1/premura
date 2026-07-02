@@ -16,8 +16,16 @@ if TYPE_CHECKING:
 
 
 # Highest = wins. docs/SPEC.md §5 cross-source priority.
+#
+# withings sits between garmin_gdpr and health_connect (#33 FR-6): Withings'
+# scale and BPM Core cuff are purpose-built, calibrated instruments that
+# generally beat wrist-wearable estimates for weight/body-composition/BP, and
+# match a dedicated tracking device for steps/HR/sleep -- ranking it just
+# below Garmin's higher-frequency continuous wearable telemetry but above
+# phone-aggregated Health Connect and phone-sensor/manual sources.
 SOURCE_PRIORITY: dict[str, int] = {
     "garmin_gdpr": 100,
+    "withings": 90,
     "health_connect": 80,
     "sleep_as_android": 60,
     "bmt": 40,

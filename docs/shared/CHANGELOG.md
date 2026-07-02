@@ -111,6 +111,53 @@ improvement item — not just prose the agent forgets between sessions.
   `present_answer` recorded as a handoff, turned into an improvement item,
   read back through `improvement_queue_list`).
 
+## 2026-07-02 — Withings CSV parser: first real observation-seam vendor (#33, M4)
+
+Phase 4's named candidate lands: a `PluginParser` for Withings' "Download
+your data" CSV export (`--source withings`), proving the federated parser
+ecosystem on the **observation** seam the way the MyFitnessPal intake parser
+proved it on the intake seam.
+
+- **`src/premura/parsers/withings.py`**: reads the zip-of-per-category-CSVs
+  Withings export (`weight.csv`, `bp.csv`, `raw_tracker_hr.csv`,
+  `aggregates_steps.csv`, `sleep.csv`; member routing + `preview_routing`
+  mirror `garmin_gdpr.py`'s pattern). Weight, blood pressure, heart rate,
+  steps, and sleep session/deep-% all reuse **existing** `dim_metric.yaml`
+  metric_ids (decision-tree step 1) — no new rows needed for the FR-1 core
+  set. Two new ontology rows were added for fields with no existing home:
+  `fat_mass` (step 4, bare English canonical — a reusable cross-vendor
+  body-composition concept) and `vendor:withings:pulse_wave_velocity` (step
+  5, vendor fallback — Withings BPM Core-specific). The structural
+  `weight.Category` field is declared via `unmapped_metrics`; malformed cells
+  become `skipped_rows` with a reason; blank cells are left unknown rather
+  than fabricated as zero.
+- **Cross-source dedupe priority**: `withings` ranks between `garmin_gdpr`
+  and `health_connect` (`SOURCE_PRIORITY["withings"] = 90`) — Withings' scale
+  and BPM Core cuff are calibrated instruments that generally beat
+  wrist-wearable estimates for weight/body-composition/BP and match a
+  dedicated tracker for steps/HR/sleep, but Garmin's continuous wearable
+  telemetry still outranks it.
+  No live Withings export was available to validate against; this is the
+  parser's documented contract surface built from public export
+  documentation ("real vendor *format*, synthetic *data*" per the issue) — a
+  real-export validation pass is separate follow-up work, `ready-for-human`.
+- **Synthetic fixture**: `tests/fixtures/parsers/withings/` — the CSV content
+  lives in the committed, text-only `csv_content.py` (single source of
+  truth) and covers every spec-named edge case — happy path, blank cell,
+  malformed cell, the vendor fallback, and the bare-English addition — end to
+  end. `build_fixture.py` materializes it as a **local-only, gitignored**
+  `.zip` (this repo's `.gitignore` excludes `*.zip` repo-wide and
+  `ops/check_no_tracked_data.sh` documents "synthetic test fixtures are text
+  formats ... and never match these patterns" — a finding worth recording:
+  the issue's acceptance `<fixture>` path is generated on demand from
+  committed text, not itself committed as a binary).
+- **Real e2e exercise** (against a locally-built fixture zip):
+  `hpipe ingest --source withings <fixture>` (37 rows inserted) → re-ingest
+  (0 inserted, sha256 skip) → `hpipe inspect <fixture>` (5/5 members routed)
+  → `hpipe status` → `weight_trend` through the MCP surface returned
+  `status: available`, `trend_direction: flat` with honest
+  carried-forward/gap caveats over the fixture data.
+
 ## 2026-06-12 — Operating-roles slice 2: PubMed citation binding
 
 The first of the two named slice-2 items from `OPERATING_ROLES.md` (the

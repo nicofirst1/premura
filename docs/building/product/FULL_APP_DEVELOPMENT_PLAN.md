@@ -265,7 +265,7 @@ Test whether the parser-skill and parser-generator story is real or still specul
 
 #### Main work
 
-- Build at least one real third-party parser outside the original four sources (candidate: Withings CSV, chosen because the format is simple enough that the skill model can be the bottleneck rather than the parsing complexity). *Partially satisfied early: the MyFitnessPal intake parser (2026-06-11, see the [CHANGELOG.md](../../shared/CHANGELOG.md) entry) is a real third-party source built through the parser-generator skill workflow — on the intake seam rather than the observation seam this criterion originally imagined, so a real observation-seam vendor (e.g. Withings) remains the cleaner validation of the original claim.*
+- Build at least one real third-party parser outside the original four sources (candidate: Withings CSV, chosen because the format is simple enough that the skill model can be the bottleneck rather than the parsing complexity). *Satisfied: the MyFitnessPal intake parser (2026-06-11) proved the criterion on the intake seam; the Withings CSV parser (issue #33, 2026-07-02, see [CHANGELOG.md](../../shared/CHANGELOG.md)) proves it on the **observation** seam this criterion originally imagined — weight, blood pressure, heart rate, steps, and sleep via `--source withings`.*
 - Use that work to validate the parser plug-in interface and parser-generator workflow
 - Decide whether the ecosystem story should be expanded, narrowed, or deferred
 
