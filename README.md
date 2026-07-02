@@ -11,6 +11,11 @@ through tools. You do not need the planning or history docs to start.
 
 > Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [Doctrine](docs/shared/DOCTRINE.md) · [SPEC](docs/shared/SPEC.md) · [STATUS](docs/shared/STATUS.md) · [Changelog](docs/shared/CHANGELOG.md) · [Stages](docs/building/architecture/STAGES.md) · [Roadmap](docs/shared/ROADMAP.md) · [Full Plan](docs/building/product/FULL_APP_DEVELOPMENT_PLAN.md)
 
+**Premura is not medical advice and not a diagnostic tool.** It helps you and
+your agent organize and understand your own health data; it does not
+diagnose, treat, or replace a clinician. Talk to a qualified healthcare
+professional about any medical decision.
+
 Premura is still pre-`v1`: release tags use the `v0.x.0` line until all
 four stages form a coherent user-facing path. The `v0.1.0` tag marks the first
 local-ingest pipeline foundation (it briefly carried the name `v1.0.0`;
@@ -87,3 +92,7 @@ When you hand Premura to an AI agent, point it at the right guide:
 - **Changing Premura's code** in this clone → [`AGENTS.md`](AGENTS.md).
 - **Opening a pull request** (human or agent) → development setup, checks, and
   the PR workflow live in [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+## License
+
+Apache License 2.0 — see [`LICENSE`](LICENSE).
