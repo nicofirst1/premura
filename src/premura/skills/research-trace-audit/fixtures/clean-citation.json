@@ -1,0 +1,45 @@
+{
+  "_note": "Synthetic fixture. All ids/hashes are fake; no real hp.* rows, no PHI. disclosure_text is convenience-only and is NEVER the source for counts. The answer cites literature only in the recognized PMID form (OPERATING_ROLES.md check 5), and its own citation wording matches the deterministic gate's own scoped disclosure line ('all fetched this session') rather than overclaiming verification.",
+  "disclosure": {
+    "schema_version": "audit-consumer/1",
+    "session_id": "sess-FAKE-cleancite-0007",
+    "started_at_utc": "2026-06-01T10:00:00Z",
+    "warehouse_fingerprint": "wh:fake:sha256:3333aaaa4444bbbb",
+    "raw_analytical_call_count": 5,
+    "unique_hypothesis_count": 3,
+    "surfaced": {
+      "status": "available",
+      "count": 1,
+      "message": null,
+      "marks": [
+        {
+          "mark_id": "mark-FAKE-92",
+          "call_id": "call-FAKE-82",
+          "role": "lead_finding",
+          "rationale": "Strongest descriptive association observed this session.",
+          "marked_at_utc": "2026-06-01T10:12:00Z"
+        }
+      ]
+    },
+    "refusal_breakdown": {},
+    "calls": [
+      {
+        "call_id": "call-FAKE-82",
+        "tool_name": "correlate",
+        "hypothesis_identity": "hyp-FAKE-evening-walk-vs-sleep-quality",
+        "request_hash": "req:fake:ffff02",
+        "terminal_status": "available",
+        "refusal_reason": null,
+        "error_kind": null,
+        "result_ref": {"result_id": "res-FAKE-82", "result_hash": "res:fake:ffff82"},
+        "started_at_utc": "2026-06-01T10:05:00Z",
+        "finished_at_utc": "2026-06-01T10:05:03Z"
+      }
+    ],
+    "calls_truncated": true,
+    "disclosure_text": "1 user-facing finding among 3 unique hypotheses examined (5 analytical calls total); citations: 1 cited PMID(s) (recognized forms), all fetched this session."
+  },
+  "final_answer": "Across 3 hypotheses examined this session, evening walks tended to coincide with better self-reported sleep quality in your own logs. PMID 30123456 reports a similar association in its own cohort, fetched and checked this session; treat it as related context rather than proof for your own data.",
+  "expected_verdict": "pass",
+  "expected_reason_categories": []
+}

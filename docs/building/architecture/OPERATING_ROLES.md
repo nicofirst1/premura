@@ -126,13 +126,18 @@ violating its contract, and the absence of the envelope shows it.
    marker followed by one or more numbers, or a PubMed record URL on either
    host (`pubmed.ncbi.nlm.nih.gov/<id>`, legacy `ncbi.nlm.nih.gov/pubmed/<id>`).
    Stated honestly: a citation written outside those forms is **invisible to
-   the gate**, and the v1 advisory rubric has no citation criterion either —
-   so the runtime contract obliges operating agents to cite in a recognized
-   form (the provider's own `pubmed_url` output is one), and the envelope's
-   citation line scopes its own claim ("citations: none in the recognized
-   PMID forms" / "K cited PMID(s) (recognized forms), all fetched this
-   session") rather than asserting "none cited" outright. Wiring a citation
-   criterion into the advisory rubric is named follow-up work below.
+   the gate** — so the runtime contract obliges operating agents to cite in a
+   recognized form (the provider's own `pubmed_url` output is one), and the
+   envelope's citation line scopes its own claim ("citations: none in the
+   recognized PMID forms" / "K cited PMID(s) (recognized forms), all fetched
+   this session") rather than asserting "none cited" outright. **Shipped:**
+   the v1 advisory rubric now carries a citation criterion
+   (`citations-verifiable-or-flagged`, `research-trace-audit`'s
+   `AUDIT_RUBRIC.md`, `overclaim_boundary` category) that reads the out-of-form
+   citations this gate structurally cannot see and flags them as advisory
+   findings when the answer presents them as gate-verified without
+   disclosure — it never gates and never restates check 5's own PMID-fetch
+   binding.
 
 The AI rubric (the existing research-trace-audit skill) runs **on top as
 advisory only**; its judgment never gates in v1 and may be promoted later by
@@ -154,11 +159,16 @@ the advisory rubric is what reads the draft against the trace content until
 binding is promoted by its own decision note (the open design question —
 what deterministically marks a "claim" in prose — needs a maintainer
 design-interview, like the slice-1 promotion got). **Advisory-rubric
-citation criterion** — the research-trace-audit rubric's categories are
-closed by its own contract, so teaching it to read out-of-form citations is
-a spec amendment of its own, not a rubric edit; until then out-of-form
-citations are covered by the runtime contract's cite-in-recognized-form
-obligation, not by any checker.
+citation criterion — shipped.** The research-trace-audit rubric's four
+categories stay closed; adding a new *criterion* inside the existing
+`overclaim_boundary` category is a normal rubric edit under the rubric's own
+add-a-criterion rule, not a category-level spec amendment. The shipped
+criterion (`citations-verifiable-or-flagged`) grounds only in quoted answer
+spans — the Session Disclosure's `calls` list excludes `evidence_source`
+rows by contract, so the criterion cannot and does not re-derive the
+fetched-PMID set itself; it judges whether the answer's own wording
+overclaims a citation's verification status, staying advisory and never
+gating.
 
 ## Improvement scan, queue, sharing (specified, later slices)
 

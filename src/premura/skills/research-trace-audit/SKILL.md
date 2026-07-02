@@ -133,8 +133,12 @@ when you want to check your reading of a category against a known verdict:
 (`N` not disclosed → `needs_revision`), `hidden-refusal.json` (refusal recast as
 "nothing notable" → `needs_revision`), `surfaced-unavailable.json`
 (`surfaced.status = unavailable` presented as a ranked top-N → `needs_revision`),
-and `overclaim.json` (association presented as causation → `blocked`). The
-fixtures are examples; `AUDIT_RUBRIC.md` remains the source of criteria detail.
+`overclaim.json` (association presented as causation → `blocked`),
+`out-of-form-citation.json` (a bare "a 2023 study" citation presented as
+verified with no recognized PMID form → `needs_revision`), and
+`clean-citation.json` (only a recognized-form, gate-fetched PMID citation →
+`pass`). The fixtures are examples; `AUDIT_RUBRIC.md` remains the source of
+criteria detail.
 
 ## Do not
 
