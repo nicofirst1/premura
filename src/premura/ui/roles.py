@@ -145,11 +145,11 @@ register_role(
     RoleDeclaration(
         role_id="improvement_scan",
         job="Turn runtime friction into private, sanitized improvement candidates.",
-        surfaces=("local improvement queue (later slice)",),
+        surfaces=("improvement_queue_record / improvement_queue_list (private, local)",),
         handoff_outputs=("improvement candidates",),
         boundaries=(
             "writes sanitized candidates only",
-            "no public GitHub content without a reviewed share packet",
+            "no public GitHub content without a reviewed share packet (later slice)",
         ),
     )
 )

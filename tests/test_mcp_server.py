@@ -185,6 +185,11 @@ def test_metric_summary_rejects_blank_metric_id(tmp_path: Path) -> None:
 # pubmed_fetch) join the same default surface (eighteen -> twenty). They are the
 # ONLY PubMed tools on the surface — no full-text/MeSH/Europe-PMC/Unpaywall/
 # related-article/deep-analysis tools are exposed (see the narrow-surface test).
+# operating-roles slice 1/2 added the four runtime-orchestrator tools
+# (operating_roles / orchestrator_handoff / answer_audit / present_answer),
+# twenty -> thirty. operating-roles slice 3 adds the private local
+# improvement-queue tools (improvement_queue_record / improvement_queue_list),
+# thirty -> thirty-two.
 _DEFAULT_TOOLS = sorted(
     [
         "list_metrics",
@@ -217,6 +222,8 @@ _DEFAULT_TOOLS = sorted(
         "research_trace_disclosure",
         "pubmed_search",
         "pubmed_fetch",
+        "improvement_queue_record",
+        "improvement_queue_list",
     ]
 )
 

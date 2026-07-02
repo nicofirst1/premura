@@ -13,9 +13,10 @@ Two entrypoints are provided:
   ``condition_episode_retract``), the three session research-trace tools
   (``research_trace_open`` / ``research_trace_mark_surfaced`` /
   ``research_trace_disclosure``), the two PubMed grounding tools
-  (``pubmed_search`` / ``pubmed_fetch``), and the four runtime-orchestrator
+  (``pubmed_search`` / ``pubmed_fetch``), and the six runtime-orchestrator
   tools (``operating_roles`` / ``orchestrator_handoff`` / ``answer_audit`` /
-  ``present_answer``) — 30 tools in total.  ``query_warehouse``
+  ``present_answer`` / ``improvement_queue_record`` /
+  ``improvement_queue_list``) — 32 tools in total.  ``query_warehouse``
   is intentionally absent; agents should use the signal-backed tools, the
   analytical tools, the trace tools, the PubMed tools, and the catalog helpers
   instead.  The authoritative tool list is asserted in
@@ -959,6 +960,65 @@ def _register_default_tools(
             draft,
             interprets_health=interprets_health,
             acknowledge_unverified=acknowledge_unverified,
+            session_log_path=session_log_path,
+        )
+
+    # --- Runtime improvement queue (OPERATING_ROLES.md slice 3) ------------ #
+    # The `improvement_scan` role's write/read path: a PRIVATE, LOCAL queue in
+    # the session-log store (never the warehouse, never GitHub). Sharing
+    # (share packets, public writes) is later-slice work (slice 4).
+
+    @mcp.tool()
+    def improvement_queue_record(
+        kind: str,
+        summary: str,
+        privacy_level: str,
+        suggested_action: str | None = None,
+        trace_refs: list[str] | None = None,
+        github_refs: list[str] | None = None,
+        status: str = "open",
+        kind_description: str | None = None,
+    ) -> dict[str, Any]:
+        """Record one improvement candidate in the private local queue.
+
+        ``kind`` must be a REGISTERED id in the bounded, open kind registry
+        (seeded: ``parser_gap`` / ``analysis_gap`` / ``teaching_gap`` /
+        ``workflow_gap`` / ``docs_gap`` / ``other``). Pass ``kind_description``
+        to register a new kind on the spot — the documented rule for adding a
+        kind, with no central edit. ``status`` defaults to ``"open"`` and
+        ``privacy_level`` must be one of ``minimal`` / ``structural`` /
+        ``synthetic_example`` (which sharing level this item would need IF it
+        were ever shared — sharing itself is not implemented yet). This is a
+        LOCAL, PRIVATE write: nothing here reaches GitHub. An out-of-vocabulary
+        value or an unregistered kind without a description comes back as a
+        structured ``rejected`` response.
+        """
+        return warehouse_server.improvement_queue_record(
+            kind,
+            summary,
+            privacy_level,
+            suggested_action=suggested_action,
+            trace_refs=trace_refs,
+            github_refs=github_refs,
+            status=status,
+            kind_description=kind_description,
+            session_log_path=session_log_path,
+        )
+
+    @mcp.tool()
+    def improvement_queue_list(
+        status: str | None = None,
+        kind: str | None = None,
+    ) -> dict[str, Any]:
+        """Read back the private local improvement queue, optionally filtered.
+
+        A pure, strictly read-only lookup; a session log with no recorded
+        items returns an empty list rather than an error. Filter by the fixed
+        ``status`` vocabulary and/or an exact ``kind`` id.
+        """
+        return warehouse_server.improvement_queue_list(
+            status=status,
+            kind=kind,
             session_log_path=session_log_path,
         )
 

@@ -752,3 +752,185 @@ def latest_answer_audit(
     if record["failures"] is not None:
         record["failures"] = json.loads(str(record["failures"]))
     return record
+
+
+# ---------------------------------------------------------------------------
+# Runtime improvement queue (OPERATING_ROLES.md slice 3, "Improvement scan,
+# queue, sharing").
+#
+# The `improvement_scan` role's private, local write path. Deliberately
+# decoupled from `premura.ui.improvement_kinds`, mirroring `record_handoff`
+# above: this module stays a generic session-log substrate shared by the
+# harness and the runtime layer, so it does NOT import Stage 4's `premura.ui`
+# package. `kind` is validated here only as a non-empty string — checking it
+# against the OPEN kind registry (and auto-registering a new kind with a
+# description) is the MCP-layer wrapper's job
+# (`premura.mcp.server.improvement_queue_record`), exactly like
+# `orchestrator_handoff`'s role-registry check lives at that same layer, not
+# here. `status` and `privacy_level` ARE fixed, closed vocabularies (the
+# draft's seven lifecycle statuses and three sharing levels) and so ARE
+# validated at this boundary, the same style as every other status field in
+# this module.
+# ---------------------------------------------------------------------------
+
+# The draft's seven-value improvement-item lifecycle. The rule for extending
+# it is the existing one — add the value here (this module only); it is NOT
+# a Rule-2 open registry like `kind`, because the lifecycle states are a
+# small closed vocabulary the spec names outright, not an open categorization.
+IMPROVEMENT_ITEM_STATUSES: frozenset[str] = frozenset(
+    {
+        "open",
+        "issue_proposed",
+        "issue_created",
+        "pr_proposed",
+        "pr_created",
+        "done",
+        "dismissed",
+    }
+)
+
+# The draft's three sharing levels ("Supported sharing levels"). `privacy_level`
+# names which level THIS candidate would need if it were ever shared; sharing
+# itself (share packets, GitHub writes) is later-slice work (slice 4) and no
+# code path in this slice reads this field to make a network call.
+IMPROVEMENT_PRIVACY_LEVELS: frozenset[str] = frozenset(
+    {"minimal", "structural", "synthetic_example"}
+)
+
+
+def record_improvement_item(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    kind: str,
+    summary: str,
+    privacy_level: str,
+    suggested_action: str | None = None,
+    trace_refs: Sequence[str] | None = None,
+    github_refs: Sequence[str] | None = None,
+    status: str = "open",
+) -> str:
+    """Insert one ``log_improvement_item`` row and return its ``item_id``.
+
+    ``status`` is validated against :data:`IMPROVEMENT_ITEM_STATUSES` and
+    ``privacy_level`` against :data:`IMPROVEMENT_PRIVACY_LEVELS`; an
+    out-of-vocabulary value raises :class:`ValueError`. ``kind`` and
+    ``summary`` must be non-empty strings; ``kind`` is NOT checked against
+    the open kind registry here (see module note above — that check, and the
+    add-a-kind path, live at the MCP wrapper). ``trace_refs`` /
+    ``github_refs`` are compact PHI-safe references, stored as JSON lists
+    (empty list when omitted); ``github_refs`` is inert in this slice — no
+    code path here ever reaches GitHub.
+    """
+    if status not in IMPROVEMENT_ITEM_STATUSES:
+        raise ValueError(
+            f"status must be one of {sorted(IMPROVEMENT_ITEM_STATUSES)!r}, got {status!r}."
+        )
+    if privacy_level not in IMPROVEMENT_PRIVACY_LEVELS:
+        raise ValueError(
+            f"privacy_level must be one of {sorted(IMPROVEMENT_PRIVACY_LEVELS)!r}, "
+            f"got {privacy_level!r}."
+        )
+    _require_non_empty(kind, field="kind")
+    _require_non_empty(summary, field="summary")
+
+    item_id = _mint_id()
+    conn.execute(
+        """
+        INSERT INTO log_improvement_item
+            (item_id, created_at, status, kind, summary, suggested_action,
+             privacy_level, trace_refs_json, github_refs_json)
+        VALUES (?, now(), ?, ?, ?, ?, ?, ?, ?)
+        """,
+        [
+            item_id,
+            status,
+            kind,
+            summary,
+            suggested_action,
+            privacy_level,
+            json.dumps(list(trace_refs) if trace_refs else []),
+            json.dumps(list(github_refs) if github_refs else []),
+        ],
+    )
+    return item_id
+
+
+_IMPROVEMENT_ITEM_COLUMNS = (
+    "item_id",
+    "created_at",
+    "status",
+    "kind",
+    "summary",
+    "suggested_action",
+    "privacy_level",
+    "trace_refs_json",
+    "github_refs_json",
+)
+
+
+def _improvement_item_row(row: tuple[object, ...]) -> dict[str, object]:
+    record = dict(zip(_IMPROVEMENT_ITEM_COLUMNS, row, strict=True))
+    record["trace_refs"] = json.loads(str(record.pop("trace_refs_json")))
+    record["github_refs"] = json.loads(str(record.pop("github_refs_json")))
+    return record
+
+
+def list_improvement_items(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    status: str | None = None,
+    kind: str | None = None,
+) -> list[dict[str, object]]:
+    """Read the improvement queue, oldest first, optionally filtered (JSON-safe).
+
+    A ``status`` outside :data:`IMPROVEMENT_ITEM_STATUSES` raises
+    :class:`ValueError` — a typo'd filter is a caller bug, not an empty
+    result (same discipline as
+    :func:`premura.session_log.improvement_read.read_improvements`).
+    ``kind`` is unrestricted (the open registry lives elsewhere); an unknown
+    kind simply matches nothing.
+    """
+    if status is not None and status not in IMPROVEMENT_ITEM_STATUSES:
+        raise ValueError(
+            f"status must be one of {sorted(IMPROVEMENT_ITEM_STATUSES)!r} or None, got {status!r}."
+        )
+    clauses: list[str] = []
+    params: list[object] = []
+    if status is not None:
+        clauses.append("status = ?")
+        params.append(status)
+    if kind is not None:
+        clauses.append("kind = ?")
+        params.append(kind)
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+
+    rows = conn.execute(
+        f"""
+        SELECT item_id, CAST(created_at AS VARCHAR), status, kind, summary,
+               suggested_action, privacy_level, trace_refs_json, github_refs_json
+        FROM log_improvement_item
+        {where}
+        ORDER BY created_at ASC, item_id ASC
+        """,
+        params,
+    ).fetchall()
+    return [_improvement_item_row(row) for row in rows]
+
+
+def get_improvement_item(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    item_id: str,
+) -> dict[str, object] | None:
+    """Read back exactly one improvement-queue item by id, or ``None``."""
+    row = conn.execute(
+        """
+        SELECT item_id, CAST(created_at AS VARCHAR), status, kind, summary,
+               suggested_action, privacy_level, trace_refs_json, github_refs_json
+        FROM log_improvement_item WHERE item_id = ?
+        """,
+        [item_id],
+    ).fetchone()
+    if row is None:
+        return None
+    return _improvement_item_row(row)

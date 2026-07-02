@@ -160,16 +160,55 @@ a spec amendment of its own, not a rubric edit; until then out-of-form
 citations are covered by the runtime contract's cite-in-recognized-form
 obligation, not by any checker.
 
-## Improvement scan, queue, sharing (specified, later slices)
+## Improvement scan, queue, sharing
 
 The draft's improvement-queue item shape (`id`, `created_at`, `status`,
 `kind`, `summary`, `suggested_action`, `privacy_level`, `trace_refs`,
 `github_refs`; seeded kinds plus the rule for adding one) and the three
 sharing levels (minimal / structural / synthetic example, with share packets
 reviewed before any public GitHub write and real excerpts never committed)
-are adopted into this spec unchanged. They build in later slices; the
-dev-time boundary (build-and-use needs no reviewer; only contribute-back is
-gated) is restated by decision notes 0010/0013 and unchanged here.
+are adopted into this spec unchanged. The dev-time boundary (build-and-use
+needs no reviewer; only contribute-back is gated) is restated by decision
+notes 0010/0013 and unchanged here.
+
+**Slice 3 shipped the runtime queue itself** (the storage half, not sharing):
+`improvement_scan` writes items through `improvement_queue_record` and reads
+them back through the strictly read-only `improvement_queue_list`, both on
+the default MCP surface. The item shape is exactly the draft's nine fields,
+persisted in `log_improvement_item` — its own table in the session-log
+store (ADR 0011), mirroring the handoff-trace seam slice 1 established. Two
+fields carry a fixed vocabulary validated at the store boundary: `status`
+(the draft's seven lifecycle values) and `privacy_level` (the draft's three
+sharing levels — recording which one a candidate would need *if* it were
+ever shared; slice 3 never reads this field to make a network call).
+`kind`, by contrast, is a **bounded, open registry**
+(`premura.ui.improvement_kinds`), never a fixed enum — the seeded six
+(`parser_gap` / `analysis_gap` / `teaching_gap` / `workflow_gap` /
+`docs_gap` / `other`) are examples, and `improvement_queue_record` registers
+a new kind on the spot when called with a `kind_description`, so adding one
+needs no central edit (DOCTRINE rule 2).
+
+**This queue is PRIVATE and LOCAL by construction**, not by a lifecycle
+gate: no code path in slice 3 reaches GitHub or any network — `github_refs`
+is accepted and stored exactly as supplied, and nothing populates or reads
+it to make a write. Sharing (share packets, the reviewed-before-public-write
+flow, turning an item into an actual GitHub issue/PR) is unimplemented and
+stays later-slice work (slice 4); the item shape's `github_refs` field and
+the `status` values past `open` (`issue_proposed` and on) exist now so slice
+4 needs no schema change.
+
+**Distinct from the harness-only `log_improvement` table.** Premura already
+has an unrelated, dev-time-only improvement mechanism: the acceptance
+harness's improvement hook (mission m4) derives proposals from an AI judge's
+`log_judgment` verdict over one recorded repeatable-check/live-trial run,
+keyed to a `judgment_id`, written only by the harness
+(`premura.session_log.improvement_read` is its read surface). That table is
+about *harness runs*, never touched by an operating agent. The runtime
+queue described here (`log_improvement_item`) is about *live operating
+sessions* — any operating agent may record an item mid-session through
+`improvement_queue_record`, with no judgment or harness run involved. The
+two tables share no rows, no code path, and no reader; a future agent that
+wants "all improvement signal" reads both and says so explicitly.
 
 ## First build slice (locked)
 
