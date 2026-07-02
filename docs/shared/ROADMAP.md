@@ -19,19 +19,38 @@ Premura itself (the findings-per-effort rule), and overnight mission selection
 must not default to harness work because it is safe. Decision note:
 [`0012-acceptance-harness-freeze-findings-per-effort.md`](../building/adr/0012-acceptance-harness-freeze-findings-per-effort.md).
 
-**Frontier-window operating mode (2026-06-12 → ~2026-06-22).** The maintainer
-has Anthropic's most capable model (Fable 5) available for roughly ten days
-and has decided that **spec-kitty is not used during this window**. Work runs
-as directly-driven missions instead: each mission still gets a proper written
-specification first (goal, functional requirements, acceptance criteria,
-out-of-scope), the implementing session builds it, an **independent reviewer
-context** checks it, and — per the consolidated-review-ceiling lesson in the
-[2026-06-12 audit](../history/audits/2026-06-12-v040-first-full-stack-live-trial.md)
-— every mission ends with **one real end-to-end exercise**, never review
-alone. Spec-kitty resumes after the window for work that needs its lane
-machinery.
+**Milestone-driven operating mode (since 2026-07-02).** The frontier window
+(2026-06-12 → ~2026-06-22, directly-driven missions, no spec-kitty) is over;
+its sprint shipped `v0.4.0` plus operating-roles slices 1–2. Planning now
+lives in **GitHub milestones M2–M5** on `nicofirst1/premura`, and the path to
+`v1.0.0` is the milestone sequence: M2 outward-ready basics ∥ M3 operating-roles
+completion ∥ M4 parser-ecosystem proof, then M5 teaching MVP (design-gated).
+Issues labeled `ready-for-agent` are groomed to the **cold-agent bar** — goal,
+functional requirements, acceptance criteria with exact commands, doc-sync
+list, out-of-scope, and the mandatory one-real-e2e-exercise gate — so any
+execution channel (overnight runner, spec-kitty missions, a scheduled or cloud
+agent, a cheaper model) can pick one up without clarifying questions. Design
+work (`ready-for-human`: #31, #35, #36) stays with the maintainer + a frontier
+session; every mission still ends with one real end-to-end exercise, never
+review alone.
 
-## Near-term roadmap (the frontier window and after)
+**Capability routing (`tier:*` labels).** Specification completeness does not
+equal implementability, so every agent-executable issue also carries a tier:
+`tier:mechanical` (any model, normal review), `tier:standard` (mid-tier
+implementer, **reviewer must be stronger**), `tier:hard` (strongest available
+implementer, a **plan-first comment sanity-checked before any code**,
+independent review plus the drift audit in
+[`implement-review-drift-audit.md`](../building/agents/implement-review-drift-audit.md)).
+Queue pickers (overnight runner included) must respect the tier: an
+unattended run never takes a `tier:hard` issue without the plan-first gate.
+This mirrors the model routing the first overnight run already used
+(frontier specs, Opus implements/reviews, cheaper models research).
+
+## Near-term roadmap (superseded by the GitHub milestones)
+
+> This numbered list is the pre-milestone record; items 1–3 shipped. The live
+> sequencing is now the milestone descriptions on GitHub (M2–M5). Kept for
+> the pointers it carries.
 
 Sequenced by build order; the freeze and the two governing rules apply
 throughout.
@@ -78,21 +97,20 @@ throughout.
    paragraph), #22 (per-agent setup recipes), #14 (README rework —
    `ready-for-human`, the maintainer's).
 
-**Parked, deliberately:** #24 and #27 (harness defects — frozen; fix only
-when they block a run someone needs), #12 (adversarial narration eval — rig
-work under the freeze), #10 (the acceptance-sandbox umbrella — standing
-infrastructure, stays open by design), #4 (lab validator UI — a visual
-layer, which is a deliberate later destination, not v1).
-
-The user is actively writing more requirements; this section will grow.
+**Parked, deliberately** (now carried by the `parked` label on the tracker):
+#24 and #27 (harness defects — frozen; fix only when they block a run someone
+needs), #4 (lab validator UI — a visual layer, a deliberate later
+destination, not v1). #12 (adversarial narration eval) and #10 (the
+acceptance-sandbox umbrella) are no longer parked — both sit in milestone M5
+as release-confidence gates for `v1.0.0`.
 
 ## Near-term residue
 
 > Shipped items from this section have been pruned. Live encrypt round-trip and launchd installation both completed 2026-05-21 — see [STATUS.md](STATUS.md). What remains here is cleanup, not the main next product bet.
 
-1. **Real SAA ingest on the next monthly cadence** (bootstrap task T2)
-   - The synthetic-CSV unit tests pass, but the format is permissive enough that the first real export likely surfaces a parser quirk. Catch it on the first live run.
-2. **Wiki hub page** in the operator's personal knowledge wiki (bootstrap task T3). Separate repo, location operator-specific — needs cross-repo write authorization.
+1. **Real SAA ingest on the next monthly cadence** (bootstrap task T2) — now
+   tracked as issue #34 (milestone M4). The synthetic-CSV unit tests pass, but the format is permissive enough that the first real export likely surfaces a parser quirk. Catch it on the first live run.
+2. ~~**Wiki hub page** (bootstrap task T3)~~ — done; the operator's wiki has a premura hub (`wiki/projects/premura/`) plus a v1 finish-line note.
 
 ## Next major phase — analytical depth
 
