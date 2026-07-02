@@ -172,6 +172,40 @@ Cosmetic packaging concerns (a nicer output struct, a more compact field set)
 are not triggers. Likewise, multi-domain inputs alone do not motivate a new
 family: BMI is multi-domain and ships under the existing `status` family.
 
+## When to extend `RESULT_FAMILIES`
+
+The trigger above is about *process* — a new family needs a dedicated planning
+mission. This section is about *content* — what shape of future domain would
+actually justify raising that question. Resolvers (`premura.engine.views`)
+are open by design: a new domain's resolver lands without touching existing
+ones. Answer families are the opposite — every consumer downstream (Stage 3
+tools, MCP envelopes, test fixtures, the future teaching layer) switches on
+`family`, so opening the set changes what every one of those consumers must
+handle. Keep the dispatching axis (resolvers) pluggable; keep the
+type-switching axis (families) closed.
+
+Extending `RESULT_FAMILIES` is worth raising for review when a new domain's
+natural answer matches one of these shapes, none of which the current four
+families can honestly carry:
+
+- **Categorical / qualitative.** The natural answer is a category, not a
+  number — SNP genotype, blood type, a presence/absence flag from a
+  microbiome panel. Likely needs an `assertion` or `categorical_status`
+  family.
+- **Structured uncertainty.** The natural answer carries uncertainty that
+  does not fit a single number — a polygenic risk score with a confidence
+  interval, an imaging segmentation confidence. Likely needs a `distribution`
+  family.
+- **Structured, non-scalar input.** The resolved input itself is structured
+  rather than scalar — a vector of genome positions, an image mask — and no
+  `to_dict()` over the existing envelopes captures it without lying about its
+  shape.
+
+Do not stretch an existing family to cover one of these. The cost of a fifth
+family entry in `_results.py` is small. The cost of `StatusResult.value:
+float | None` quietly holding `1.0` to mean "AG genotype" is that every
+Stage 3 tool downstream silently loses type safety.
+
 ## Caveats that must be named
 
 - Vendor-estimated metrics (e.g. sleep stages, HRV) must carry an
