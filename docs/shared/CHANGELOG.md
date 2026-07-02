@@ -23,6 +23,18 @@ instead, which already routes to the relevant `SKILL.md` files by path, so no
 second `install-skills` target is needed. README's "Surfaces" section links
 the new page.
 
+## 2026-07-02 — Adopt Apache-2.0 (issue #15)
+
+The repo had no LICENSE file and no license metadata, so it could not
+meaningfully go public. Decision made 2026-06-10: Apache-2.0 (permissive like
+MIT, plus a patent grant and stronger AS-IS warranty/liability language — the
+better fit for health-adjacent software). Added the verbatim `LICENSE` file at
+repo root, `license = "Apache-2.0"` in `pyproject.toml` `[project]` (SPDX
+string form, supported by hatchling ≥1.26), a README "License" section, and a
+plain-language front-door disclaimer ("not medical advice, not a diagnostic
+tool") near the top of `README.md` — the doctrine already said this; the front
+door now does too.
+
 ## 2026-06-12 — Operating-roles slice 2: PubMed citation binding
 
 The first of the two named slice-2 items from `OPERATING_ROLES.md` (the
