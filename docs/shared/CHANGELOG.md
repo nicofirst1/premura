@@ -8,6 +8,21 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-07-02 — Per-agent-app setup recipes (issue #22)
+
+Premura already speaks MCP, so supporting agent apps beyond Claude Code is
+per-app setup documentation, not new architecture (per audit follow-up
+2026-06-10). New [AGENT_CLIENTS.md](../using/AGENT_CLIENTS.md) states the one
+MCP-registration recipe pattern (name, launch command, optional env) once,
+then gives the config delta for Claude Code, OpenCode, and Codex, including
+the operator surface's `--ack` caveat. It also documents the skills story per
+client: `.claude/skills/` (populated by `hpipe install-skills`) is the one
+skill home Claude Code and OpenCode both read directly — a decision already
+recorded in the 2026-06-12 entry below — while Codex reads `AGENTS.md`
+instead, which already routes to the relevant `SKILL.md` files by path, so no
+second `install-skills` target is needed. README's "Surfaces" section links
+the new page.
+
 ## 2026-06-12 — Operating-roles slice 2: PubMed citation binding
 
 The first of the two named slice-2 items from `OPERATING_ROLES.md` (the

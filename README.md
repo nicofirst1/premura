@@ -78,6 +78,10 @@ For the full `hpipe` CLI reference and the complete MCP tool inventory, see
 [OPERATIONS.md](docs/using/OPERATIONS.md). Direct DuckDB and notebook access
 remain available as expert fallbacks.
 
+Using an agent app other than Claude Code (OpenCode, Codex)? See
+[AGENT_CLIENTS.md](docs/using/AGENT_CLIENTS.md) for the MCP config recipe per
+client and what each one reads for skills.
+
 ## Pointers for your agent
 
 When you hand Premura to an AI agent, point it at the right guide:
