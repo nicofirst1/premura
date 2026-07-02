@@ -284,3 +284,60 @@ CREATE TABLE IF NOT EXISTS log_answer_audit (
     recorded_at         TIMESTAMP NOT NULL
 );
 CREATE INDEX IF NOT EXISTS ix_laa_draft ON log_answer_audit(draft_sha256);
+
+-- ----------------------------------------------------------------------------
+-- log_improvement_item — the runtime `improvement_scan` role's PRIVATE, LOCAL
+-- queue (docs/building/architecture/OPERATING_ROLES.md "Improvement scan,
+-- queue, sharing", operating-roles slice 3). One row per improvement
+-- candidate the role turns runtime friction (refusals, unmapped metrics,
+-- audit failures, repeated handoff loops) into. The item shape is exactly
+-- the one the promoted spec adopts from the draft
+-- (docs/building/planning/operating-agent-roles.md §"Improvement scan and
+-- queue"): id, created_at, status, kind, summary, suggested_action,
+-- privacy_level, trace_refs, github_refs.
+--
+-- NOT the same table as `log_improvement` above. `log_improvement` is a
+-- HARNESS-ONLY, dev-time table: the improvement hook (mission m4) derives
+-- proposals from an AI judge's `log_judgment` verdict over one recorded
+-- repeatable-check/live-trial RUN, keyed to a `judgment_id`, written only by
+-- the harness. `log_improvement_item` is the RUNTIME `improvement_scan`
+-- role's queue: any operating agent may record an item during a live
+-- session through the sole-writer surface below
+-- (`store.record_improvement_item`), keyed to no judgment at all. The two
+-- tables never share rows or code paths.
+--
+--   * `kind` is a BOUNDED, OPEN registry id (`premura.ui.improvement_kinds`),
+--     never a fixed enum: the seeded kinds are the draft's six
+--     (parser_gap / analysis_gap / teaching_gap / workflow_gap / docs_gap /
+--     other) and a new kind registers with a short description at write
+--     time (DOCTRINE rule 2 — guide, don't enumerate). Validated against the
+--     LIVE registry contents at the store boundary, never a frozenset baked
+--     into this schema or the store module.
+--   * `status` is a FIXED lifecycle vocabulary
+--     (`store.IMPROVEMENT_ITEM_STATUSES`), the seven values the draft
+--     names; validated at the store boundary.
+--   * `privacy_level` is a FIXED vocabulary
+--     (`store.IMPROVEMENT_PRIVACY_LEVELS`) naming which of the draft's three
+--     sharing levels (minimal / structural / synthetic_example) this
+--     candidate would need IF it were ever shared. Sharing itself (share
+--     packets, GitHub writes) is out of scope for this slice (later slice
+--     4) — the field exists now so slice 4 needs no schema change, and no
+--     code path in this slice reads it to make a network call.
+--   * `trace_refs_json` / `github_refs_json` are JSON lists of COMPACT
+--     references, never raw health data — the same discipline as
+--     `log_handoff`'s `*_ref` columns. `github_refs_json` is always
+--     caller-supplied and inert here: nothing in this slice reaches GitHub.
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS log_improvement_item (
+    item_id           VARCHAR PRIMARY KEY,  -- ULID string
+    created_at        TIMESTAMP NOT NULL,
+    status            VARCHAR NOT NULL,     -- IMPROVEMENT_ITEM_STATUSES
+    kind              VARCHAR NOT NULL,     -- open registry id (premura.ui.improvement_kinds)
+    summary           VARCHAR NOT NULL,
+    suggested_action  VARCHAR,
+    privacy_level     VARCHAR NOT NULL,     -- IMPROVEMENT_PRIVACY_LEVELS
+    trace_refs_json   VARCHAR,              -- JSON list of compact references
+    github_refs_json  VARCHAR                -- JSON list; inert in this slice
+);
+CREATE INDEX IF NOT EXISTS ix_lii_status ON log_improvement_item(status);
+CREATE INDEX IF NOT EXISTS ix_lii_kind   ON log_improvement_item(kind);

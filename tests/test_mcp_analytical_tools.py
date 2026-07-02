@@ -63,6 +63,8 @@ _DEFAULT_TOOLS_WITH_ANALYTICAL = sorted(
         "research_trace_open",
         "research_trace_mark_surfaced",
         "research_trace_disclosure",
+        "improvement_queue_record",
+        "improvement_queue_list",
     ]
 )
 

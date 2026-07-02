@@ -83,9 +83,15 @@ throughout.
    MAJORs fixed: honest out-of-form-citation story, no affirmative
    "none cited" falsehood) and a real e2e over the live warehouse with a
    real NCBI fetch (cited+fetched draft blessed with the citation line;
-   candidate-only citation refused). Later slices: improvement queue,
-   share packets, claim-to-trace binding (the spec's honest v1 scope
-   note; needs its own decision note), advisory-rubric citation
+   candidate-only citation refused). Slice 3 (#28: the private local
+   improvement queue — item-shape storage in `log_improvement_item`, the
+   open `kind` registry, `improvement_queue_record` / `_list` on the
+   default surface) implemented against the issue's cold-agent bar, with a
+   real e2e exercise through the FastMCP surface (a `present_answer`
+   refusal recorded as a handoff, turned into an improvement item, read
+   back read-only); merge pending review. Later slices: share packets /
+   public writes (slice 4), claim-to-trace binding (the spec's honest v1
+   scope note; needs its own decision note), advisory-rubric citation
    criterion. Concept lineage: decision note
    [0010](../building/adr/0010-runtime-orchestrator-and-operating-roles.md).
 4. **Dogfooding as standing practice, not a queue item.** Real monthly

@@ -62,6 +62,7 @@ from ..profile_fields import (
 from ..session_log import store as session_log_store
 from ..store import condition_episodes as condition_episodes_store
 from ..store import duck, profile_intake
+from ..ui import improvement_kinds
 from ..ui import roles as ui_roles
 from . import pubmed
 
@@ -831,6 +832,109 @@ def present_answer(
             "condition/anchor labels are operator-declared, never verified",
         ],
     }
+
+
+# --------------------------------------------------------------------------- #
+# Runtime improvement queue: the `improvement_scan` role's write/read path
+# (OPERATING_ROLES.md slice 3, "Improvement scan, queue, sharing"). PRIVATE
+# and LOCAL — nothing here writes to GitHub or leaves the machine; sharing
+# (share packets, public writes) is slice 4, out of scope. Distinct from the
+# harness-only `log_improvement` table (dev-time judge-derived proposals,
+# `premura.session_log.improvement_read`) — see the schema.sql note beside
+# `log_improvement_item` for the full relationship.
+# --------------------------------------------------------------------------- #
+
+
+def improvement_queue_record(
+    kind: str,
+    summary: str,
+    privacy_level: str,
+    *,
+    suggested_action: str | None = None,
+    trace_refs: list[str] | None = None,
+    github_refs: list[str] | None = None,
+    status: str = "open",
+    kind_description: str | None = None,
+    session_log_path: Path | None = None,
+) -> dict[str, Any]:
+    """Record one improvement-queue item — the `improvement_scan` role's write path.
+
+    ``kind`` must already be REGISTERED in the bounded, open
+    ``premura.ui.improvement_kinds`` registry (the seeded six, or any prior
+    runtime registration) — UNLESS ``kind_description`` is given, in which
+    case an unrecognized ``kind`` is registered on the spot with that
+    description before the item is recorded. This is the documented rule for
+    adding a kind (DOCTRINE rule 2 — guide, don't enumerate): no central edit
+    to this module or the store is needed to add one. ``status`` and
+    ``privacy_level`` are the draft's FIXED vocabularies
+    (``session_log.store.IMPROVEMENT_ITEM_STATUSES`` /
+    ``IMPROVEMENT_PRIVACY_LEVELS``); an out-of-vocabulary value is a
+    structured ``rejected`` response, never a raised exception. This is a
+    LOCAL, PRIVATE write: nothing here reaches GitHub (``github_refs`` is
+    stored inertly, exactly as supplied).
+    """
+    if improvement_kinds.get_kind(kind) is None:
+        if not kind_description or not kind_description.strip():
+            return {
+                "status": "rejected",
+                "reason": (
+                    f"kind {kind!r} is not registered; pass a non-empty "
+                    "kind_description to register it (the documented rule for "
+                    "adding a kind), or use a registered kind: "
+                    f"{sorted(improvement_kinds.known_kind_ids())!r}"
+                ),
+            }
+        try:
+            improvement_kinds.register_kind(
+                improvement_kinds.ImprovementKind(kind, kind_description)
+            )
+        except ValueError as exc:
+            return {"status": "rejected", "reason": str(exc)}
+
+    try:
+        with _open_session_log(session_log_path) as conn:
+            item_id = session_log_store.record_improvement_item(
+                conn,
+                kind=kind,
+                summary=summary,
+                privacy_level=privacy_level,
+                suggested_action=suggested_action,
+                trace_refs=trace_refs,
+                github_refs=github_refs,
+                status=status,
+            )
+    except ValueError as exc:
+        return {"status": "rejected", "reason": str(exc)}
+    return {"status": "recorded", "item_id": item_id}
+
+
+def improvement_queue_list(
+    *,
+    status: str | None = None,
+    kind: str | None = None,
+    session_log_path: Path | None = None,
+) -> dict[str, Any]:
+    """Read back the improvement queue — read-only, optionally filtered.
+
+    A pure read: opens the session log's own file STRICTLY READ-ONLY (no DDL,
+    no writer-lock contention), mirroring ``present_answer``'s verdict
+    lookup. A missing file or a pre-slice-3 session log without the table
+    both honestly mean "no items recorded yet", not a crash. A ``status``
+    outside the fixed vocabulary is a structured ``rejected`` response.
+    """
+    path = session_log_path or settings.session_log_path
+    if not Path(path).exists():
+        return {"items": [], "count": 0}
+    conn = session_log_store.connect(path, read_only=True)
+    try:
+        items = session_log_store.list_improvement_items(conn, status=status, kind=kind)
+    except duckdb.CatalogException:
+        items = []
+    except ValueError as exc:
+        return {"status": "rejected", "reason": str(exc), "items": [], "count": 0}
+    finally:
+        conn.close()
+    return {"items": items, "count": len(items)}
 
 
 def list_metrics(
@@ -1901,6 +2005,8 @@ __all__ = [
     "condition_paired_t_test",
     "correlate",
     "hrv_change_around_date",
+    "improvement_queue_list",
+    "improvement_queue_record",
     "list_condition_episodes",
     "list_metrics",
     "metric_summary",

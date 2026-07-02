@@ -59,6 +59,8 @@ def _ensure_live_analytical_registry() -> None:
 # usable-intake-dimensions WP05 adds the two intake signal tools
 # (supplement_intake_adherence + nutrition_intake_trend) -> 22.
 # m8 adds condition_paired_t_test (the condition-label pairing extension) -> 23.
+# operating-roles slice 3 adds the private local improvement-queue tools
+# (improvement_queue_record / improvement_queue_list) -> 32.
 _DEFAULT_TOOLS_FINISHED = sorted(
     [
         "list_metrics",
@@ -91,6 +93,8 @@ _DEFAULT_TOOLS_FINISHED = sorted(
         "research_trace_open",
         "research_trace_mark_surfaced",
         "research_trace_disclosure",
+        "improvement_queue_record",
+        "improvement_queue_list",
     ]
 )
 
@@ -171,7 +175,7 @@ def test_default_surface_lists_exactly_the_pinned_tools() -> None:
         server_ = build_server()
         names = sorted(tool.name for tool in await server_.list_tools())
         assert names == _DEFAULT_TOOLS_FINISHED
-        assert len(names) == 30
+        assert len(names) == 32
 
     asyncio.run(run())
 

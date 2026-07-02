@@ -66,6 +66,51 @@ either.
 Spec/fixture-only change: no trace schema, no gate code, no new rubric
 category, no promotion of the rubric to gating.
 
+## 2026-07-02 — Operating-roles slice 3: runtime improvement queue
+
+The `improvement_scan` role named as later-slice work in `OPERATING_ROLES.md`
+goes live: runtime friction (refusals, unmapped metrics, audit failures,
+repeated loops) can now become a durable, private, agent-readable
+improvement item — not just prose the agent forgets between sessions.
+
+- **Item shape + storage** (`log_improvement_item`, session-log store,
+  mirroring the handoff-trace seam from slice 1): the draft's nine fields
+  (`id`, `created_at`, `status`, `kind`, `summary`, `suggested_action`,
+  `privacy_level`, `trace_refs`, `github_refs`) persisted through a
+  sole-writer `record_improvement_item` and read back through strictly
+  read-only readers (`list_improvement_items` / `get_improvement_item`).
+  `status` (seven lifecycle values) and `privacy_level` (the three sharing
+  levels) are fixed vocabularies validated at the store boundary.
+- **`kind` is a bounded, open registry, not an enum** (`premura.ui.
+  improvement_kinds`, mirroring `premura.ui.roles`): the seeded six
+  (`parser_gap` / `analysis_gap` / `teaching_gap` / `workflow_gap` /
+  `docs_gap` / `other`) are examples, not a closed list. A new kind
+  registers with a short description at write time — the MCP tool's
+  `kind_description` argument — with no central edit (DOCTRINE rule 2:
+  guide, don't enumerate). An unregistered kind without a description is a
+  structured rejection.
+- **MCP surface**: `improvement_queue_record` (write) and
+  `improvement_queue_list` (strictly read-only) join the default agent-safe
+  surface, thirty tools -> thirty-two. Both are private and local by
+  construction — no code path reaches GitHub; `github_refs` is stored
+  exactly as supplied and inert until a later sharing slice reads it.
+- **Distinct from the harness-only `log_improvement` table** (the improvement
+  hook, mission m4): that table derives dev-time proposals from an AI
+  judge's verdict over one recorded harness run; `log_improvement_item` is
+  the runtime queue any operating agent writes mid-session, with no
+  judgment or harness run involved. The two share no rows, no code path, and
+  no reader (`docs/building/architecture/OPERATING_ROLES.md`
+  §"Improvement scan, queue, sharing" states the relationship explicitly).
+- Sharing (share packets, reviewed public GitHub writes, acting on an item)
+  stays later-slice work (slice 4), unchanged.
+- Pinned by `tests/test_operating_roles_slice3.py`: seeded-kind registration,
+  the add-a-kind rule end to end with no central edit, rejection of an
+  unknown kind/status/privacy_level, the harness-decoupling proof (a fresh
+  session log with zero `log_session` rows still accepts an item), and a
+  real e2e exercise through the FastMCP surface (a refusal from
+  `present_answer` recorded as a handoff, turned into an improvement item,
+  read back through `improvement_queue_list`).
+
 ## 2026-06-12 — Operating-roles slice 2: PubMed citation binding
 
 The first of the two named slice-2 items from `OPERATING_ROLES.md` (the
