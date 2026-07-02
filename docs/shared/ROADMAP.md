@@ -111,6 +111,7 @@ as release-confidence gates for `v1.0.0`.
 1. **Real SAA ingest on the next monthly cadence** (bootstrap task T2) — now
    tracked as issue #34 (milestone M4). The synthetic-CSV unit tests pass, but the format is permissive enough that the first real export likely surfaces a parser quirk. Catch it on the first live run.
 2. ~~**Wiki hub page** (bootstrap task T3)~~ — done; the operator's wiki has a premura hub (`wiki/projects/premura/`) plus a v1 finish-line note.
+3. ~~**Withings CSV parser — the observation-seam parser-ecosystem proof** (issue #33, milestone M4)~~ — **shipped 2026-07-02** (CHANGELOG entry of that date): `--source withings`, synthetic zip-of-CSVs fixture, dedupe priority wired between `garmin_gdpr` and `health_connect`. Satisfies the Phase 4 candidate named in [FULL_APP_DEVELOPMENT_PLAN.md](../building/product/FULL_APP_DEVELOPMENT_PLAN.md) §"Phase 4". Real-export validation remains separate follow-up (`ready-for-human`).
 
 ## Next major phase — analytical depth
 

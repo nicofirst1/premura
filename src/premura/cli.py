@@ -44,6 +44,7 @@ from .parsers.health_connect import HealthConnectParser
 from .parsers.lab_pdf import LabPdfParser
 from .parsers.myfitnesspal import MyFitnessPalParser
 from .parsers.sleep_as_android import SleepAsAndroidParser
+from .parsers.withings import WithingsParser
 from .store import duck
 from .store.loader import already_ingested, load
 from .store.profile_intake import persist_intake_batch
@@ -74,6 +75,7 @@ PARSER_REGISTRY: dict[str, tuple[PARSER_FACTORY, str]] = {
     "lab": (LabPdfParser, "lab_pdf"),
     "mfp": (MyFitnessPalParser, "myfitnesspal"),
     "aichat": (AiChatRecallParser, "ai_chat_recall"),
+    "withings": (WithingsParser, "withings"),
 }
 
 
@@ -85,7 +87,7 @@ PARSER_REGISTRY: dict[str, tuple[PARSER_FACTORY, str]] = {
 @app.command()
 def ingest(
     source: Annotated[
-        str, typer.Option(help="hc | garmin | saa | bmt | lab | mfp | aichat | all")
+        str, typer.Option(help="hc | garmin | saa | bmt | lab | mfp | aichat | withings | all")
     ] = "all",
     path: Annotated[
         Path | None,
@@ -170,7 +172,10 @@ def _discover_input(source_key: str) -> Path | None:
         candidates = sorted(inbox.glob("*.db"), key=lambda p: p.stat().st_mtime, reverse=True)
     elif source_key == "garmin":
         zips = sorted(inbox.glob("*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
-        candidates = [p for p in zips if not _zip_is_mfp(p)]
+        candidates = [p for p in zips if not _zip_is_mfp(p) and not _zip_is_withings(p)]
+    elif source_key == "withings":
+        zips = sorted(inbox.glob("*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
+        candidates = [p for p in zips if _zip_is_withings(p)]
     elif source_key in ("saa", "bmt"):
         csvs = sorted(inbox.glob("*.csv"), key=lambda p: p.stat().st_mtime, reverse=True)
         candidates = [p for p in csvs if _csv_kind(p) == source_key]
@@ -238,6 +243,21 @@ def _zip_is_mfp(path: Path) -> bool:
         return False
 
 
+def _zip_is_withings(path: Path) -> bool:
+    """True when a zip looks like a Withings data export (vs a Garmin GDPR zip).
+
+    Withings' per-category export member names (``weight.csv``, ``bp.csv``,
+    ``raw_tracker_hr.csv``, ``aggregates_steps.csv``, ``sleep.csv``) are checked
+    before falling back to ``garmin`` for any other zip, mirroring ``_zip_is_mfp``.
+    """
+    withings_names = {"weight.csv", "bp.csv", "raw_tracker_hr.csv", "aggregates_steps.csv"}
+    try:
+        with zipfile.ZipFile(path) as zf:
+            return any(Path(m).name.lower() in withings_names for m in zf.namelist())
+    except (OSError, zipfile.BadZipFile):
+        return False
+
+
 # ============================================================================
 # inspect
 # ============================================================================
@@ -255,7 +275,11 @@ def _resolve_source_key(path: Path) -> str | None:
     if suffix == ".db":
         return "hc"
     if suffix == ".zip":
-        return "mfp" if _zip_is_mfp(path) else "garmin"
+        if _zip_is_mfp(path):
+            return "mfp"
+        if _zip_is_withings(path):
+            return "withings"
+        return "garmin"
     if suffix == ".csv":
         return _csv_kind(path)  # 'saa' | 'mfp' | 'bmt'
     if suffix == ".pdf":
@@ -269,7 +293,7 @@ def _member_names(path: Path, source_key: str) -> list[str]:
     """Enumerate the routable member names of a source artifact without reading
     their contents. For zip-based sources the members are the archive entries;
     for single-file sources the artifact itself is the one member."""
-    if source_key in ("garmin", "mfp") and path.suffix.lower() == ".zip":
+    if source_key in ("garmin", "mfp", "withings") and path.suffix.lower() == ".zip":
         try:
             with zipfile.ZipFile(path) as zf:
                 return [info.filename for info in zf.infolist() if not info.is_dir()]

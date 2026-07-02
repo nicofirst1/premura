@@ -11,16 +11,16 @@
 >
 > Companion to [SPEC.md](SPEC.md), [CHANGELOG.md](CHANGELOG.md),
 > [ROADMAP.md](ROADMAP.md), [USERJOURNEY.md](../using/USERJOURNEY.md).
-> Snapshot date: **2026-06-12**.
+> Snapshot date: **2026-07-02**.
 
 ## TL;DR
 
 **Pre-`v1` foundation — the product line is `v0.x`; the first-pipeline
 restore point is tagged `v0.1.0` (formerly `v1.0.0`, retagged 2026-06-11).**
-The ingest pipeline is operational across the four
-observation sources (Health Connect, Garmin GDPR, Sleep as Android, BMT) plus
-two intake sources (MyFitnessPal nutrition, AI-chat supplement/medication
-recall); the DuckDB
+The ingest pipeline is operational across the five
+observation sources (Health Connect, Garmin GDPR, Sleep as Android, BMT,
+Withings) plus two intake sources (MyFitnessPal nutrition, AI-chat
+supplement/medication recall); the DuckDB
 warehouse holds ~3.5 years of data including the Garmin-only metrics that
 motivated the project (HRV rMSSD overnight, stress, training load/readiness,
 VO₂ max, skin temperature, hydration, sleep score, respiration). Re-ingest is
@@ -161,6 +161,7 @@ The pinned inventory test is `tests/test_mcp_server.py`.
 | Garmin GDPR parser | ✅ | UDS, sleepData, healthStatus, BP, hydration, training load/readiness, max-met, summarizedActivities; unknown filenames surfaced in `ingest_run.notes`. |
 | Sleep as Android parser | ✅ | Synthetic-fixture tests; DST-safe per-minute actigraphy walk. |
 | BMT parser | ✅ | Long/wide format detection; per-row units; custom metrics → `bmt_custom:*`. |
+| Withings parser | ✅ | First real third-party **observation**-seam vendor (#33, M4): zip-of-CSVs export (weight, BP, HR, steps, sleep) → `hpipe ingest --source withings`; reuses existing ontology metrics plus `fat_mass` (bare English) and `vendor:withings:pulse_wave_velocity` (fallback); dedupe priority between `garmin_gdpr` and `health_connect`. |
 | MyFitnessPal intake parser | ✅ | First real vendor intake source: per-meal nutrition aggregates → intake seam (`hpipe ingest --source mfp`); exercise/measurement columns surfaced as declared gaps, never observation rows. |
 | AI-chat recall intake parser | ✅ | Interchange contract (`premura.ai_chat_recall.v1`, see `docs/building/architecture/AI_CHAT_RECALL_CONTRACT.md`) + parser (`--source aichat`): assistant-recalled supplements/medications with explicit date precision and mandatory provenance quotes, under `source_kind=ai_chat_recall` (inventory questions only, never adherence). |
 | Loader (batch insert) | ✅ | Polars→DuckDB set-based insert; native-key + cross-source priority dedupe. |
