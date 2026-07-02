@@ -35,6 +35,37 @@ plain-language front-door disclaimer ("not medical advice, not a diagnostic
 tool") near the top of `README.md` — the doctrine already said this; the front
 door now does too.
 
+## 2026-07-02 — Advisory-rubric citation criterion for out-of-form citations
+
+Closes the named gap recorded at the end of `OPERATING_ROLES.md` §"v1
+deterministic checks": the deterministic citation-binding gate (check 5) only
+sees PMID citations in a recognized textual/URL form; a citation written
+outside those forms (a bare "a 2023 study", a DOI, a journal-style reference)
+was invisible to it, and the v1 advisory rubric had no citation criterion
+either.
+
+- **New rubric criterion** (`citations-verifiable-or-flagged`,
+  `research-trace-audit`'s `AUDIT_RUBRIC.md`, `overclaim_boundary` category,
+  added under the rubric's own add-a-criterion rule — a criterion inside an
+  existing closed category, not a new category): flags an answer that
+  presents an out-of-form citation as though it carried the same in-session
+  verified weight as a recognized-form PMID citation the gate can bind.
+  Grounds only in quoted answer spans — the Session Disclosure's `calls`
+  list excludes `evidence_source` rows by `AUDIT_CONSUMER_CONTRACT.md`, so
+  the criterion never re-derives the fetched-PMID set itself and never
+  restates check 5. It always contributes `needs_revision` (advisory), never
+  `blocked`, and cannot flip a passing gate verdict.
+- **Fixtures**: `out-of-form-citation.json` (a bare "a 2023 study" citation
+  presented as verified → criterion fires, `needs_revision`) and
+  `clean-citation.json` (only a recognized-form, gate-fetched PMID citation,
+  worded to match the gate's own scoped disclosure → criterion does not
+  fire, `pass`).
+- **Doc sync**: `OPERATING_ROLES.md` check 5 and the "named later-slice work"
+  section now record this as shipped instead of named follow-up work.
+
+Spec/fixture-only change: no trace schema, no gate code, no new rubric
+category, no promotion of the rubric to gating.
+
 ## 2026-06-12 — Operating-roles slice 2: PubMed citation binding
 
 The first of the two named slice-2 items from `OPERATING_ROLES.md` (the

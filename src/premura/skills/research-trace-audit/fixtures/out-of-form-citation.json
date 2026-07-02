@@ -1,0 +1,45 @@
+{
+  "_note": "Synthetic fixture. All ids/hashes are fake; no real hp.* rows, no PHI. disclosure_text is convenience-only and is NEVER the source for counts. The answer cites literature in an out-of-form way (bare 'a 2023 study', no PMID/PubMed-ID marker, no PubMed URL) and presents it as settled fact with no disclosure that it sits outside the deterministic citation-binding gate (OPERATING_ROLES.md check 5).",
+  "disclosure": {
+    "schema_version": "audit-consumer/1",
+    "session_id": "sess-FAKE-outform-0006",
+    "started_at_utc": "2026-06-01T09:00:00Z",
+    "warehouse_fingerprint": "wh:fake:sha256:1111eeee2222ffff",
+    "raw_analytical_call_count": 6,
+    "unique_hypothesis_count": 4,
+    "surfaced": {
+      "status": "available",
+      "count": 1,
+      "message": null,
+      "marks": [
+        {
+          "mark_id": "mark-FAKE-91",
+          "call_id": "call-FAKE-81",
+          "role": "lead_finding",
+          "rationale": "Strongest descriptive association observed this session.",
+          "marked_at_utc": "2026-06-01T09:15:00Z"
+        }
+      ]
+    },
+    "refusal_breakdown": {},
+    "calls": [
+      {
+        "call_id": "call-FAKE-81",
+        "tool_name": "correlate",
+        "hypothesis_identity": "hyp-FAKE-evening-walk-vs-sleep-quality",
+        "request_hash": "req:fake:ffff01",
+        "terminal_status": "available",
+        "refusal_reason": null,
+        "error_kind": null,
+        "result_ref": {"result_id": "res-FAKE-81", "result_hash": "res:fake:ffff81"},
+        "started_at_utc": "2026-06-01T09:05:00Z",
+        "finished_at_utc": "2026-06-01T09:05:03Z"
+      }
+    ],
+    "calls_truncated": true,
+    "disclosure_text": "1 user-facing finding among 4 unique hypotheses examined (6 analytical calls total); citations: none in the recognized PMID forms."
+  },
+  "final_answer": "Across 4 hypotheses examined this session, evening walks tended to coincide with better self-reported sleep quality in your own logs. A 2023 study confirms evening walking improves sleep quality, backing up this session's finding.",
+  "expected_verdict": "needs_revision",
+  "expected_reason_categories": ["overclaim_boundary"]
+}
