@@ -189,7 +189,8 @@ def test_metric_summary_rejects_blank_metric_id(tmp_path: Path) -> None:
 # (operating_roles / orchestrator_handoff / answer_audit / present_answer),
 # twenty -> thirty. operating-roles slice 3 adds the private local
 # improvement-queue tools (improvement_queue_record / improvement_queue_list),
-# thirty -> thirty-two.
+# thirty -> thirty-two. operating-roles slice 4 adds share_packet_render,
+# thirty-two -> thirty-three.
 _DEFAULT_TOOLS = sorted(
     [
         "list_metrics",
@@ -224,6 +225,7 @@ _DEFAULT_TOOLS = sorted(
         "pubmed_fetch",
         "improvement_queue_record",
         "improvement_queue_list",
+        "share_packet_render",
     ]
 )
 

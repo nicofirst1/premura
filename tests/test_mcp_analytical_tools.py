@@ -65,6 +65,7 @@ _DEFAULT_TOOLS_WITH_ANALYTICAL = sorted(
         "research_trace_disclosure",
         "improvement_queue_record",
         "improvement_queue_list",
+        "share_packet_render",
     ]
 )
 

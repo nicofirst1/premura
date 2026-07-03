@@ -112,6 +112,14 @@ source, never real health excerpts. Real excerpts may be used only in
 private/local debugging with explicit approval of the exact excerpt and
 destination, and must never be committed as fixtures, tests, or docs.
 
+Share packets are real: call the default-surface `share_packet_render` tool
+with a queue item's id and a level (`minimal` / `structural` /
+`synthetic_example`) to get that reviewable text. This tool only PRODUCES the
+packet — it never posts anywhere, and this repo ships no GitHub API/posting
+code. Every packet's `notice` field restates this: producing a packet and
+publishing it are two separate acts, and publishing still requires your
+explicit approval, exactly like the human-in-the-loop rule above.
+
 ## Proposing changes (improvement candidates)
 
 When you hit a real gap — an unsupported source, an unmapped metric, a missing

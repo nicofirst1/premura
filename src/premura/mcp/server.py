@@ -35,6 +35,7 @@ from typing import TYPE_CHECKING, Any
 import duckdb
 
 from .. import engine
+from .. import share_packet as share_packet_service
 from .. import trace as trace_service
 from ..config import settings
 from ..engine import (
@@ -935,6 +936,59 @@ def improvement_queue_list(
     finally:
         conn.close()
     return {"items": items, "count": len(items)}
+
+
+# --------------------------------------------------------------------------- #
+# Share packets: the `improvement_scan` role's sharing path (OPERATING_ROLES.md
+# slice 4, "Improvement scan, queue, sharing"). Renders a privacy-graded VIEW
+# over one stored queue item (`premura.share_packet`) — production only. No
+# code path here reaches GitHub or leaves the machine; posting a packet is a
+# distinct, explicitly human-approved act (see `share_packet.NOT_POSTED_NOTICE`
+# and RUNTIME_AGENT.md "Privacy and share-packet boundary").
+# --------------------------------------------------------------------------- #
+
+
+def share_packet_render(
+    item_id: str,
+    level: str,
+    *,
+    format: str = "json",
+    session_log_path: Path | None = None,
+) -> dict[str, Any]:
+    """Render one improvement-queue item as a reviewable public share packet.
+
+    A pure read + pure render: opens the session log's own file STRICTLY
+    READ-ONLY (mirrors ``improvement_queue_list``) to fetch the item, then
+    derives a packet view over it via
+    :func:`premura.share_packet.render_share_packet` — never a second copy of
+    the record. An unknown ``item_id`` is a structured ``not_found``; an
+    unknown ``level`` is a structured ``rejected``, never an exception.
+    ``format="markdown"`` adds a generated human-readable export beside the
+    structured fields. Producing a packet writes nothing anywhere — see the
+    module docstring.
+    """
+    path = session_log_path or settings.session_log_path
+    if not Path(path).exists():
+        return {"status": "not_found", "reason": f"no session log at {path}", "item_id": item_id}
+    conn = session_log_store.connect(path, read_only=True)
+    try:
+        item = session_log_store.get_improvement_item(conn, item_id=item_id)
+    except duckdb.CatalogException:
+        item = None
+    finally:
+        conn.close()
+    if item is None:
+        return {"status": "not_found", "item_id": item_id}
+
+    try:
+        packet = share_packet_service.render_share_packet(item, level)
+    except ValueError as exc:
+        return {"status": "rejected", "reason": str(exc)}
+
+    payload = packet.to_dict()
+    if format == "markdown":
+        payload["packet_markdown"] = share_packet_service.share_packet_to_markdown(packet)
+    return payload
 
 
 def list_metrics(

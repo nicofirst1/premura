@@ -16,7 +16,8 @@ Two entrypoints are provided:
   (``pubmed_search`` / ``pubmed_fetch``), and the six runtime-orchestrator
   tools (``operating_roles`` / ``orchestrator_handoff`` / ``answer_audit`` /
   ``present_answer`` / ``improvement_queue_record`` /
-  ``improvement_queue_list``) — 32 tools in total.  ``query_warehouse``
+  ``improvement_queue_list`` / ``share_packet_render``) — 33 tools in
+  total.  ``query_warehouse``
   is intentionally absent; agents should use the signal-backed tools, the
   analytical tools, the trace tools, the PubMed tools, and the catalog helpers
   instead.  The authoritative tool list is asserted in
@@ -1019,6 +1020,40 @@ def _register_default_tools(
         return warehouse_server.improvement_queue_list(
             status=status,
             kind=kind,
+            session_log_path=session_log_path,
+        )
+
+    # --- Share packets (OPERATING_ROLES.md slice 4) ------------------------- #
+    # Renders a privacy-graded VIEW over one stored improvement-queue item —
+    # production only. No code path here writes to GitHub or off this machine;
+    # posting a packet is a separate, explicitly human-approved act (see
+    # ``premura.share_packet.NOT_POSTED_NOTICE`` and RUNTIME_AGENT.md
+    # "Privacy and share-packet boundary").
+
+    @mcp.tool()
+    def share_packet_render(
+        item_id: str,
+        level: str,
+        format: str = "json",
+    ) -> dict[str, Any]:
+        """Render one improvement-queue item as a reviewable public share packet.
+
+        ``level`` selects one of the three draft sharing levels: ``minimal``
+        (say only that a gap of this kind was encountered), ``structural``
+        (adds bookkeeping counts plus a couple of fabricated illustrative
+        field examples), or ``synthetic_example`` (adds one fully fabricated
+        record shaped like a generic source export). All three are generated
+        views over the stored item and NEVER echo its free-text ``summary``/
+        ``suggested_action`` — see the module docstring for why. This tool
+        PRODUCES a packet only; it writes nothing to GitHub or off this
+        machine. Posting is a separate, explicitly human-approved act.
+        ``format="markdown"`` adds a generated human-readable export beside
+        the structured fields.
+        """
+        return warehouse_server.share_packet_render(
+            item_id,
+            level,
+            format=format,
             session_log_path=session_log_path,
         )
 

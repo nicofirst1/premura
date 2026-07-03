@@ -201,11 +201,30 @@ needs no central edit (DOCTRINE rule 2).
 **This queue is PRIVATE and LOCAL by construction**, not by a lifecycle
 gate: no code path in slice 3 reaches GitHub or any network — `github_refs`
 is accepted and stored exactly as supplied, and nothing populates or reads
-it to make a write. Sharing (share packets, the reviewed-before-public-write
-flow, turning an item into an actual GitHub issue/PR) is unimplemented and
-stays later-slice work (slice 4); the item shape's `github_refs` field and
-the `status` values past `open` (`issue_proposed` and on) exist now so slice
-4 needs no schema change.
+it to make a write.
+
+**Slice 4 shipped share packets** — a generated, privacy-graded VIEW over one
+stored queue item, mirroring `premura.trace`'s disclosure export pattern
+exactly (`premura.share_packet.render_share_packet` + `share_packet_to_json`
+/ `share_packet_to_markdown`, exposed as the default-surface MCP tool
+`share_packet_render`). The item row stays canonical; a packet is never a
+second copy of it. The three levels are the draft's:
+`minimal` says only that a gap of the item's kind was encountered;
+`structural` adds bookkeeping counts plus a couple of fabricated illustrative
+field examples — the draft's named structural fields (source name, file type,
+column names, units, error class) are not stored in the frozen nine-field
+item shape, so they are not deliverable until the item shape evolves;
+`synthetic_example` adds one fully fabricated record shaped
+like a generic source export. Across ALL three levels the item's own
+free-text `summary` / `suggested_action` is never echoed verbatim — that is
+the actual PHI boundary, documented as a RULE beside each level's branch in
+`premura.share_packet` rather than an enumerated allowlist (DOCTRINE rule 2);
+fabricated content reuses the harness fixture generator's seeded-RNG and
+`dim_metric.yaml` seams (FR-3) instead of inventing new fabrication code.
+Producing a packet writes NOTHING to GitHub or off this machine — every
+packet carries an explicit `notice` that publishing is a separate,
+human-approved act (the Drive-upload two-acts split, mirrored here); this
+slice ships packet production only, no GitHub API/posting code.
 
 **Distinct from the harness-only `log_improvement` table.** Premura already
 has an unrelated, dev-time-only improvement mechanism: the acceptance

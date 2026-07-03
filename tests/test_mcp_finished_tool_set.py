@@ -61,6 +61,7 @@ def _ensure_live_analytical_registry() -> None:
 # m8 adds condition_paired_t_test (the condition-label pairing extension) -> 23.
 # operating-roles slice 3 adds the private local improvement-queue tools
 # (improvement_queue_record / improvement_queue_list) -> 32.
+# operating-roles slice 4 adds share_packet_render -> 33.
 _DEFAULT_TOOLS_FINISHED = sorted(
     [
         "list_metrics",
@@ -95,6 +96,7 @@ _DEFAULT_TOOLS_FINISHED = sorted(
         "research_trace_disclosure",
         "improvement_queue_record",
         "improvement_queue_list",
+        "share_packet_render",
     ]
 )
 
@@ -175,7 +177,7 @@ def test_default_surface_lists_exactly_the_pinned_tools() -> None:
         server_ = build_server()
         names = sorted(tool.name for tool in await server_.list_tools())
         assert names == _DEFAULT_TOOLS_FINISHED
-        assert len(names) == 32
+        assert len(names) == 33
 
     asyncio.run(run())
 

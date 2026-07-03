@@ -72,7 +72,7 @@ rules: [`src/premura/engine/CONTRACT.md`](../../src/premura/engine/CONTRACT.md).
 
 ### MCP surfaces
 
-- **Default agent surface (`premura-mcp`) — thirty-two tools:** 2
+- **Default agent surface (`premura-mcp`) — thirty-three tools:** 2
   catalog/summary (`list_metrics`, `metric_summary`), 8 signal-backed (table
   above), 2 profile-capture (`profile_context_supported_fields`,
   `profile_context_record`), 3 condition-episode capture
@@ -84,16 +84,19 @@ rules: [`src/premura/engine/CONTRACT.md`](../../src/premura/engine/CONTRACT.md).
   `research_trace_mark_surfaced`, `research_trace_disclosure`), 2 PubMed
   (`pubmed_search` — candidates only, never citeable; `pubmed_fetch` — the
   only citeable record; both record evidence-source trace rows when given a
-  `session_id`, excluded from the multiplicity disclosure), 6
+  `session_id`, excluded from the multiplicity disclosure), 7
   runtime-orchestrator (`operating_roles`,
   `orchestrator_handoff` — handoff trace in the session-log store, never the
   research trace — the blocking answer gate `answer_audit` +
   `present_answer`: no verified envelope without a passing audit of exactly
-  that draft, and no cited PMID without a successful in-session fetch; and
-  the private local improvement queue `improvement_queue_record` +
+  that draft, and no cited PMID without a successful in-session fetch; the
+  private local improvement queue `improvement_queue_record` +
   `improvement_queue_list` — `kind` is an open registry
   (`premura.ui.improvement_kinds`), `status`/`privacy_level` are fixed
-  vocabularies, nothing reaches GitHub;
+  vocabularies, nothing reaches GitHub; and `share_packet_render` — renders
+  one queue item as a privacy-graded share packet (minimal/structural/
+  synthetic_example), never echoing the item's own free-text fields,
+  production only (no GitHub write code);
   see `docs/building/architecture/OPERATING_ROLES.md`). No tool on this surface touches `hp.*` via raw SQL —
   signal/analytical reads go through the Stage 2 engine, capture tools
   (profile, condition-episode) write through their store boundaries; the
@@ -101,7 +104,7 @@ rules: [`src/premura/engine/CONTRACT.md`](../../src/premura/engine/CONTRACT.md).
   the literature plus their own evidence-source trace rows. Signal tools return the four-state envelope (`available` /
   `missing_input` / `stale_input` / `insufficient_data`) with a structured
   `missing_input` report a caller can branch on.
-- **Operator surface (`premura-mcp-operator`) — thirty-three tools:** all
+- **Operator surface (`premura-mcp-operator`) — thirty-four tools:** all
   default tools plus `query_warehouse` (raw SQL escape hatch, no Stage 2
   guarantees). Requires explicit launch acknowledgment (`--ack` /
   `PREMURA_OPERATOR_ACK`).

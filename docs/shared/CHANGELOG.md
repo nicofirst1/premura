@@ -8,6 +8,46 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-07-03 — Operating-roles slice 4: share packets (issue #29)
+
+Slice 3's private local improvement queue gets its sharing path: an item can
+now be rendered as a **share packet** — a generated, privacy-graded VIEW over
+the stored queue item, never a second record.
+
+- **`premura.share_packet`** (new top-level module, mirroring
+  `premura.trace`'s `disclosure_to_json`/`disclosure_to_markdown` export
+  pattern): `render_share_packet(item, level)` derives a `SharePacket` from an
+  already-fetched `log_improvement_item` row; `share_packet_to_json` /
+  `share_packet_to_markdown` are pure formatters over it. The three draft
+  sharing levels: `minimal` (say only that a gap of
+  this kind was encountered), `structural` (bookkeeping counts plus a couple
+  of fabricated illustrative field examples — the draft's named structural
+  fields, e.g. source name / column names / units / error class, are not
+  stored in the frozen nine-field item shape and so are not deliverable
+  until the item shape evolves), `synthetic_example` (one fully
+  fabricated record shaped like a generic source export).
+- **The PHI boundary is structural, not a regex scrub**: across all three
+  levels, the item's own free-text `summary` / `suggested_action` is never
+  echoed verbatim — a real value could have leaked into that agent-authored
+  prose despite the authoring convention, and a pattern-based scrub would be
+  fragile, so the module excludes those fields outright instead. Each level's
+  allowed content is a RULE documented beside its branch, not an enumerated
+  allowlist of strings (DOCTRINE rule 2). Fabricated content reuses the
+  harness fixture generator's seams (seed-driven `random.Random`, canonical
+  metric ids read from `dim_metric.yaml` at call time) rather than new
+  fabrication code.
+- **MCP surface**: `share_packet_render` (production only — reads the item
+  strictly read-only, renders, returns; `format="markdown"` adds a generated
+  export) joins the default agent-safe surface, thirty-two tools ->
+  thirty-three. No GitHub API or posting code shipped: every packet carries
+  an explicit `notice` that publishing is a separate, human-approved act
+  (mirroring the Drive-upload opt-in two-acts split) — the review gate itself
+  stays documented behavior (RUNTIME_AGENT.md), not a workflow engine.
+- **Tests**: `tests/test_operating_roles_slice4.py` — per-level redaction
+  locks (a planted distinctive marker asserted absent from minimal and
+  structural output across dict/JSON/Markdown views), rejection/not-found
+  paths, and an e2e exercise through the live MCP surface.
+
 ## 2026-07-02 — Per-agent-app setup recipes (issue #22)
 
 Premura already speaks MCP, so supporting agent apps beyond Claude Code is
