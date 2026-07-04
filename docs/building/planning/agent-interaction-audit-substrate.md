@@ -14,8 +14,9 @@
 >
 > Companion reading: [`AGENTS.md`](../../../AGENTS.md) §"two rules",
 > [`docs/shared/DOCTRINE.md`](../../shared/DOCTRINE.md),
-> [`operating-agent-roles.md`](operating-agent-roles.md) (the orchestrator this
-> log ultimately serves), [`docs/building/adr/0010-runtime-orchestrator-and-operating-roles.md`](../adr/0010-runtime-orchestrator-and-operating-roles.md),
+> [`OPERATING_ROLES.md`](../architecture/OPERATING_ROLES.md) (the orchestrator
+> this log ultimately serves; supersedes the `operating-agent-roles.md` draft
+> cited elsewhere in this historical note), [`docs/building/adr/0010-runtime-orchestrator-and-operating-roles.md`](../adr/0010-runtime-orchestrator-and-operating-roles.md),
 > [`docs/building/architecture/STAGES.md`](../architecture/STAGES.md),
 > [`research-trace-multiplicity-audit.md`](research-trace-multiplicity-audit.md),
 > `src/premura/trace.py`, `src/premura/store/migrations/005_trace_audit.sql`,
