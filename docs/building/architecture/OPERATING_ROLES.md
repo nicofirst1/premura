@@ -108,12 +108,9 @@ violating its contract, and the absence of the envelope shows it.
    prominent *not trace-verified* warning and downgraded, process-language
    claims — never as a verified health finding). Stated honestly: what v1
    verifies deterministically is that traced analysis happened in the named
-   session — it cannot verify that the draft's *claims* rest on those
-   specific calls. Binding each claim to the recorded calls it rests on is
-   the advisory rubric's territory until promoted, and deterministic
-   claim-to-trace binding is named later-slice work below (its shape is now
-   locked by decision note
-   [0014](../adr/0014-claim-to-trace-binding.md); implementation is issue #32).
+   session. Binding each *individual claim* to the specific recorded calls it
+   rests on is check 6 below (shipped slice 5); a claim written outside the
+   recognized marker form stays the advisory rubric's territory.
 2. The measured disclosure is computed from trace rows ("K user-facing
    findings among N unique hypotheses examined") and attached by the gate.
 3. Refusals recorded in the session are not hidden: the verdict reports
@@ -146,6 +143,26 @@ violating its contract, and the absence of the envelope shows it.
    findings when the answer presents them as gate-verified without
    disclosure — it never gates and never restates check 5's own PMID-fetch
    binding.
+6. **Claim-to-trace binding (shipped slice 5, [ADR
+   0014](../adr/0014-claim-to-trace-binding.md)):** every claim the draft
+   marks with a `[trace: <call_id>]` suffix must bind to a call this session
+   recorded finishing `available`. The marker carries the recorded call(s) a
+   claim rests on by `call_id` (`call_ab12`, comma-separated for several); a
+   marked id that is unknown, belongs to another session, or names a
+   refused/errored call is unbindable and **fails the gate** (named in the
+   failures), the same fail-closed stance as an unfetched cited PMID. Unlike
+   citation binding this does not filter on `call_kind` — a marker may rest on
+   any `available` call, including an `evidence_source` row. What counts as a
+   marked claim is a documented recognized-forms pattern set with an
+   add-a-form rule (mirroring the PMID contract): the canonical
+   `[trace: <call_id>]` suffix is the first and only shipped form. Stated
+   honestly: a claim written outside those forms is **invisible to the gate**,
+   so the runtime contract obliges operating agents to mark traced claims in a
+   recognized form, and the envelope's claim line scopes its own coverage to
+   *recognized marker forms only* ("claims: none in the recognized marker
+   forms" / "K marked claim(s) (recognized forms), all bound this session") —
+   never asserting total claim coverage. This is a new deterministic
+   extractor-and-query pair **beside** check 5, never a fork of the audit flow.
 
 The AI rubric (the existing research-trace-audit skill) runs **on top as
 advisory only**; its judgment never gates in v1 and may be promoted later by
@@ -158,22 +175,19 @@ the draft plus a bounded trace query it resolves against (cited-PMID →
 fetched evidence row is the first instance) — a new binding adds its
 extractor-and-query pair beside check 5, never a fork of the audit flow.
 
-**Named later-slice work (design locked, not yet shipped):**
-**claim-to-trace binding** — deterministically tying the draft's individual
-claims to the specific recorded calls they rest on. Today check 1 proves
-only that the named session recorded analytical work — an audited draft
-could in principle cite a session whose calls are unrelated to its claims;
-the advisory rubric is what reads the draft against the trace content until
-binding ships. The open design question — what deterministically marks a
-"claim" in prose — was answered by a maintainer design-interview (like the
-slice-1 promotion) and **its shape is locked by decision note
-[0014](../adr/0014-claim-to-trace-binding.md)**: an inline
-`[trace: <call_id>]` marker the runtime contract obliges the drafting agent to
-emit, extracted by a documented recognized-forms pattern set and resolved by a
-bounded per-marker trace query (call exists in the named session,
-`terminal_status = available`) — a new extractor-and-query pair beside check 5,
-fail-closed on any unbindable marked claim, its disclosure line scoped to
-"claims in recognized marker form only." Implementation is issue #32. **Advisory-rubric
+**Slice 5 shipped claim-to-trace binding** (check 6 above): the second
+extractor-and-query pair beside check 5, landed as the shape above prescribes.
+The open design question — what deterministically marks a "claim" in prose —
+was answered by a maintainer design-interview (like the slice-1 promotion) and
+**locked by decision note [0014](../adr/0014-claim-to-trace-binding.md)**: an
+inline `[trace: <call_id>]` marker the runtime contract obliges the drafting
+agent to emit, extracted by a documented recognized-forms pattern set
+(`_extract_claim_trace_refs`) and resolved by a bounded per-marker trace query
+(`premura.trace.bound_claim_calls` — the call exists in the named session with
+`terminal_status = available`, no `call_kind` filter), fail-closed on any
+unbindable marked claim, its disclosure line scoped to "claims in recognized
+marker form only." A claim outside a recognized marker form stays the advisory
+rubric's territory. **Advisory-rubric
 citation criterion — shipped.** The research-trace-audit rubric's four
 categories stay closed; adding a new *criterion* inside the existing
 `overclaim_boundary` category is a normal rubric edit under the rubric's own
