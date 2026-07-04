@@ -105,7 +105,9 @@ violating its contract, and the absence of the envelope shows it.
    session — it cannot verify that the draft's *claims* rest on those
    specific calls. Binding each claim to the recorded calls it rests on is
    the advisory rubric's territory until promoted, and deterministic
-   claim-to-trace binding is named later-slice work below.
+   claim-to-trace binding is named later-slice work below (its shape is now
+   locked by decision note
+   [0014](../adr/0014-claim-to-trace-binding.md); implementation is issue #32).
 2. The measured disclosure is computed from trace rows ("K user-facing
    findings among N unique hypotheses examined") and attached by the gate.
 3. Refusals recorded in the session are not hidden: the verdict reports
@@ -150,15 +152,22 @@ the draft plus a bounded trace query it resolves against (cited-PMID →
 fetched evidence row is the first instance) — a new binding adds its
 extractor-and-query pair beside check 5, never a fork of the audit flow.
 
-**Named later-slice work (so it is not assumed shipped):**
+**Named later-slice work (design locked, not yet shipped):**
 **claim-to-trace binding** — deterministically tying the draft's individual
 claims to the specific recorded calls they rest on. Today check 1 proves
 only that the named session recorded analytical work — an audited draft
 could in principle cite a session whose calls are unrelated to its claims;
 the advisory rubric is what reads the draft against the trace content until
-binding is promoted by its own decision note (the open design question —
-what deterministically marks a "claim" in prose — needs a maintainer
-design-interview, like the slice-1 promotion got). **Advisory-rubric
+binding ships. The open design question — what deterministically marks a
+"claim" in prose — was answered by a maintainer design-interview (like the
+slice-1 promotion) and **its shape is locked by decision note
+[0014](../adr/0014-claim-to-trace-binding.md)**: an inline
+`[trace: <call_id>]` marker the runtime contract obliges the drafting agent to
+emit, extracted by a documented recognized-forms pattern set and resolved by a
+bounded per-marker trace query (call exists in the named session,
+`terminal_status = available`) — a new extractor-and-query pair beside check 5,
+fail-closed on any unbindable marked claim, its disclosure line scoped to
+"claims in recognized marker form only." Implementation is issue #32. **Advisory-rubric
 citation criterion — shipped.** The research-trace-audit rubric's four
 categories stay closed; adding a new *criterion* inside the existing
 `overclaim_boundary` category is a normal rubric edit under the rubric's own

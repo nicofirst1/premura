@@ -55,7 +55,9 @@ def test_inspect_nonexistent_path_exits_nonzero(tmp_path: Path) -> None:
     missing = tmp_path / "nope.zip"
     result = runner.invoke(cli.app, ["inspect", str(missing)])
     assert result.exit_code != 0
-    assert "does not exist" in result.output.lower() or "not found" in result.output.lower()
+    # Click wraps long error lines, so normalize whitespace before matching.
+    out = " ".join(result.output.lower().split())
+    assert "does not exist" in out or "not found" in out
 
 
 def test_inspect_unmatched_path_exits_zero(tmp_path: Path) -> None:
