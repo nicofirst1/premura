@@ -139,5 +139,3 @@ A criterion that hardcodes approved phrasings ("always say *tended to
 coincide*") or banned words. That hardcodes a list where it should define the
 rule for adding to the list. The dimension question is what catches the next
 tool's novel way of misleading a non-expert.
-</content>
-</invoke>

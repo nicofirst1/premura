@@ -29,4 +29,3 @@ text/MCP surface reusing `present_answer`/`answer_audit`/`profile_context_record
 unchanged; dual-coded charts, a teach-back comprehension loop, rubric-as-gate,
 and the issue #12 eval surface are named-deferred. Concept lineage: decision note
 0013 (operating-roles promotion pattern); build-and-use boundary unchanged.
-</content>

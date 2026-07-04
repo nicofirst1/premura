@@ -157,5 +157,3 @@ adversarial narration eval surface (issue #12).
 - Physical home of the track registry: `premura.ui.interview_tracks` proposed,
   beside `premura.ui.roles` — an implementation choice for issue #37, not a
   design blocker.
-</content>
-</invoke>
