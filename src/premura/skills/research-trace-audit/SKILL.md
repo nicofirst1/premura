@@ -1,6 +1,6 @@
 ---
 name: research-trace-audit
-description: Audit a final Premura analytical answer against its session research trace disclosure (the audit-consumer contract). REQUIRES two inputs — the structured Session Disclosure object from `research_trace_disclosure`, and the final analytical answer text. Use when an agent or reviewer says "audit this answer against the trace", "did this answer disclose its search effort", "check this analytical answer for overclaiming", or must judge whether the answer disclosed search effort and the multiplicity denominator, hid refused/errored/surfaced-unavailable calls, suppressed contradictions, or overclaimed causation/diagnosis/significance. Premura-specific; not a general critique of arbitrary agent answers.
+description: Audit a final Premura analytical answer against its structured Session Disclosure (audit-consumer contract). REQUIRES both: the disclosure object from `research_trace_disclosure` and the final answer text. Use when an agent or reviewer must audit an answer against its trace — search-effort disclosure, hidden refusals/errors, suppressed contradictions, overclaiming. Premura-specific; not general answer critique.
 ---
 
 # Premura research trace audit
@@ -28,13 +28,10 @@ You cannot issue a real audit without **both** of these:
 
 1. **The structured Session Disclosure object** from `research_trace_disclosure`
    — the contract object defined by
-   `docs/building/architecture/AUDIT_CONSUMER_CONTRACT.md`.
-   Accept it as JSON-like structured data or a faithfully pasted object. All
-   counts come from its **structured fields** —
-   `raw_analytical_call_count`, `unique_hypothesis_count` (`N`), `surfaced`,
-   `refusal_breakdown`, and each Call Record's `terminal_status` /
-   `refusal_reason` / `error_kind`. **Never** read counts out of the
-   `disclosure_text` prose; it is a convenience rendering only.
+   `docs/building/architecture/AUDIT_CONSUMER_CONTRACT.md` (see it for the
+   full field list). Accept it as JSON-like structured data or a faithfully
+   pasted object. All counts come from its structured fields — **never** from
+   the `disclosure_text` prose, which is a convenience rendering only.
 2. **The final analytical answer text** — the answer the operator would see,
    built from that session.
 
@@ -77,18 +74,16 @@ disagrees with this skill on criteria detail, `AUDIT_RUBRIC.md` wins.
    (or request it). Do not proceed on the answer alone.
 2. **Read `AUDIT_RUBRIC.md`** end-to-end so every category is applied against
    its grounding fields.
-3. **Inspect the structured counts and surfaced summary** — `unique_hypothesis_count`
-   (`N`), `raw_analytical_call_count`, and `surfaced` (`status`, `count`,
-   `marks`). When `surfaced.status = unavailable`, `count` is null: **never
-   infer or fabricate a surfaced count** from available calls, effect size, or
-   the answer's own emphasis.
-4. **Inspect refusals, errors, unavailable state, and call records** — walk
-   `refusal_breakdown` and each Call Record's `terminal_status` /
-   `refusal_reason` / `error_kind`. A refused or errored call must not appear in
-   the answer as a confident "nothing notable".
-5. **Compare the final answer's claims against tool boundaries** — quote spans
-   where the answer exceeds what the producing tool supports (e.g. an
-   `correlate` yields an association, not a cause).
+3. **Check `search_effort_disclosure`** — grounding fields: `unique_hypothesis_count`
+   (`N`), `raw_analytical_call_count`, `surfaced` (`status`, `count`, `marks`).
+   See `AUDIT_RUBRIC.md` for the criterion.
+4. **Check `refused_or_unavailable_handling`** — grounding fields:
+   `refusal_breakdown`, each Call Record's `terminal_status` /
+   `refusal_reason` / `error_kind`, `surfaced.status`. See `AUDIT_RUBRIC.md`
+   for the criteria.
+5. **Check `overclaim_boundary`** — grounding fields: quoted answer spans
+   against the producing call's tool semantics. See `AUDIT_RUBRIC.md` for the
+   criteria.
 6. **Apply each of the four rubric categories** and **emit a verdict**:
    `pass`, `needs_revision`, or `blocked`.
 7. **Attach concrete evidence to every non-`pass` result** — each reason carries
@@ -103,13 +98,16 @@ record the review of each category, not merely the absence of a flag.
 
 ## Audit result shape
 
-Emit the structure defined by `contracts/audit-result-contract.md` in this
-mission:
+This is the single authoritative definition of the output shape — emit exactly
+this structure:
 
 - `verdict` — exactly one of `pass`, `needs_revision`, `blocked`.
 - `reasons` — one per fired or noteworthy criterion, each with `criterion_id`,
   `category`, `finding`, and an `evidence_ref` (structured field-and-value, or a
-  quoted answer span). At least one reason for any non-`pass` verdict.
+  quoted answer span). At least one reason for any non-`pass` verdict. A reason
+  may *flag* a forbidden semantic in the audited answer (significance,
+  causation, diagnosis, treatment, prediction) but must never itself assert
+  one.
 - `suggested_revisions` — concrete wording/disclosure changes (≥ 1 for any
   non-`pass`). A revision must **never** propose changing trace storage (e.g.
   editing `unique_hypothesis_count` or back-filling `surfaced` counts) as the fix
@@ -127,33 +125,6 @@ Precedence — three files, three jobs:
 - **`SKILL.md`** (this file) — defines **how an agent runs the audit**.
 
 The `fixtures/` directory beside this file holds synthetic worked examples — a
-Session Disclosure + answer + `expected_verdict` each — for calibration. Load one
-when you want to check your reading of a category against a known verdict:
-`pass.json` (all four reviewed, none fired → `pass`), `omitted-search-effort.json`
-(`N` not disclosed → `needs_revision`), `hidden-refusal.json` (refusal recast as
-"nothing notable" → `needs_revision`), `surfaced-unavailable.json`
-(`surfaced.status = unavailable` presented as a ranked top-N → `needs_revision`),
-`overclaim.json` (association presented as causation → `blocked`),
-`out-of-form-citation.json` (a bare "a 2023 study" citation presented as
-verified with no recognized PMID form → `needs_revision`), and
-`clean-citation.json` (only a recognized-form, gate-fetched PMID citation →
-`pass`). The fixtures are examples; `AUDIT_RUBRIC.md` remains the source of
-criteria detail.
-
-## Do not
-
-- **Do not infer a surfaced count when `surfaced.status = unavailable`** — treat
-  it as "no surfaced selection recorded", never as zero or as a self-ranked top-N.
-- **Do not read counts from `disclosure_text`** — derive every count from the
-  structured fields.
-- **Do not introduce forbidden semantics yourself.** You may *flag* a p-value,
-  significance label, multiplicity correction, or causal / diagnostic /
-  treatment / predictive claim in the **audited answer**, but the audit result
-  must never itself assert significance, causation, diagnosis, treatment, or
-  prediction.
-- **Do not mutate or reconstruct the trace** — no editing counts, no
-  back-filling `surfaced`, no querying `hp.*` / DuckDB / logs.
-- **Do not write a generic moral critique** — name what transparency means here:
-  search effort, surfaced availability, refusals/errors, suppressed
-  contradictions, and claim boundaries.
-- **Do not require a network call** at runtime.
+Session Disclosure + answer + `expected_verdict` each — for calibration, one
+per criterion (see `AUDIT_RUBRIC.md` for which fixture exercises which
+criterion).
