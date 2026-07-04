@@ -3,7 +3,7 @@
 > Status: live reference. How an agent operates a **developed** Premura on
 > behalf of a human — through tools, without editing the repo.
 >
-> Companion to [../product/DOCTRINE.md](../shared/DOCTRINE.md) (why Premura is
+> Companion to [../shared/DOCTRINE.md](../shared/DOCTRINE.md) (why Premura is
 > agent-first in execution, human-first in purpose), [../../README.md](../../README.md)
 > (install + surfaces), and [STATUS.md](../shared/STATUS.md) (what is shipped today). If you
 > are instead changing Premura's code, this is the wrong guide — read
@@ -127,9 +127,17 @@ analysis capability — you may turn it into an *improvement candidate*: a
 sanitized, private note that can become an issue. The default path is
 issue-first, and you tell the human plainly that Premura is designed to improve
 from real use and that they do not have to write the issue or PR themselves.
-Parser work and code changes happen through the dev-time path
-([../../CONTRIBUTING.md](../../CONTRIBUTING.md)), gated behind a reviewed share
-packet and the human's approval — never inline from the operating session.
+
+**Building and using a parser at runtime needs no reviewer.** Per
+[ADR 0010](../building/adr/0010-runtime-orchestrator-and-operating-roles.md)
+and [OPERATING_ROLES.md](../building/architecture/OPERATING_ROLES.md) §"Dev-time
+boundary", you may build a parser and use it immediately against the operator's
+own data as part of operating an installed Premura — that is not gated behind
+review. Review only enters if the human consents to **contribute that parser
+back** as a public PR: the dev-time path
+([../../CONTRIBUTING.md](../../CONTRIBUTING.md)) then applies, gated behind a
+reviewed share packet and the human's approval for that contribution, never for
+the local use itself.
 
 ## Operator fallback surface
 
@@ -147,10 +155,23 @@ lower-guarantee path. The entrypoint refuses to start without `--ack` (or
 `PREMURA_OPERATOR_ACK=1`) precisely so this is a deliberate, approved step rather
 than a silent default.
 
+## Contracts that bind this guide
+
+Two architecture contracts, both authoritative, bind how a runtime agent
+operates:
+
+- [`docs/building/architecture/OPERATING_ROLES.md`](../building/architecture/OPERATING_ROLES.md)
+  — the runtime multi-agent shape (orchestrator, bounded operating roles, the
+  blocking answer-audit gate, the improvement queue, share packets).
+- [`docs/building/architecture/AUDIT_CONSUMER_CONTRACT.md`](../building/architecture/AUDIT_CONSUMER_CONTRACT.md)
+  — the structured Session Disclosure object your research-trace disclosure
+  must satisfy.
+
 ## Forward design
 
-A fuller runtime multi-agent shape (orchestrator + bounded operating roles,
-answer-audit loop, improvement queue) is sketched as pre-spec design in
-[../planning/operating-agent-roles.md](../building/planning/operating-agent-roles.md).
-That document is exploratory and **not** authoritative; this guide describes how
-to operate the shipped surface honestly today.
+`OPERATING_ROLES.md` above was promoted from pre-spec design to an authoritative
+specification on 2026-06-12
+([ADR 0013](../building/adr/0013-operating-roles-promotion-decisions.md)). The
+superseded draft is kept for history at
+[`docs/building/planning/operating-agent-roles.md`](../building/planning/operating-agent-roles.md);
+this guide describes how to operate the shipped surface honestly today.

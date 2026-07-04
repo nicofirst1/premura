@@ -13,8 +13,8 @@
 > [`FULL_APP_DEVELOPMENT_PLAN.md`](../product/FULL_APP_DEVELOPMENT_PLAN.md)
 > Phase 5 (interview + teaching MVP — the weakest-validated bet),
 > [`STAGES.md`](../architecture/STAGES.md) §UI/Teaching,
-> [`operating-agent-roles.md`](operating-agent-roles.md) (narration/audit rules,
-> the `teaching_gap` outcome), the
+> [`OPERATING_ROLES.md`](../architecture/OPERATING_ROLES.md) (narration/audit
+> rules, the `teaching_gap` outcome), the
 > [`research-trace-audit` skill](../../../src/premura/skills/research-trace-audit/)
 > and its audit-consumer contract, and issue #12 (adversarial narration eval).
 
