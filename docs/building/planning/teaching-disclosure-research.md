@@ -1,11 +1,15 @@
-# Teaching-layer disclosure research — evidence base (backlog, parked)
+# Teaching-layer disclosure research — evidence base (promoted, kept for history)
 
-> **Status: BACKLOG, parked.** This is a research-direction note, not a spec and
-> not an active mission. It records *why* the teaching / user-interaction agent
-> profile needs a deliberate evidence base, and *what shape* that research must
-> take, so the work is durable and starts from shared language. It is gated behind
-> the teaching layer being scoped at all — see §"Gating". Recorded now so the
-> direction is not lost, not so it is done next.
+> **Status: PROMOTED 2026-07-04, kept for history.** The bounded artifact this
+> note called for now ships as
+> [`DISCLOSURE_RUBRIC.md`](../architecture/DISCLOSURE_RUBRIC.md) and the
+> consuming role as [`HUMAN_FACING.md`](../architecture/HUMAN_FACING.md)
+> (decision note [0015](../adr/0015-teaching-disclosure-and-human-facing-promotion.md),
+> issues #35/#36). This page is retained as the *evidence base and rationale*
+> that motivated them; the §"Open questions" below are answered in the promoted
+> specs (one rubric dual-consumed; comprehension measured by an adversarial
+> naive-reader restating the gist). Read the specs for the authoritative
+> contract; read on here for *why*.
 
 > **Read first:** [`DOCTRINE.md`](../../shared/DOCTRINE.md) (agent-first; design a
 > level above). Companion reading:
