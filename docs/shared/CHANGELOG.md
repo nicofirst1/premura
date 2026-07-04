@@ -8,6 +8,30 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-07-04 — disclosure-rubric candidate criteria + verdict-changing fixtures (Phase 5 slice 4, issue #44)
+
+Grew `DISCLOSURE_RUBRIC.md` from its two seeded criteria to five, admitting the
+three exercisable candidates, each backed by a verdict-changing fixture pair and
+a lightweight deterministic guard.
+
+- **Three criteria added** (docs + byte-identical bundled skill copy, drift-guard
+  green): `denominator-preserved-gist` (`gist_fidelity`),
+  `progressive-sequencing` (`load_management`),
+  `simplification-stays-descriptive` (`boundary_integrity`). The fourth
+  candidate, `teach-back-confirmation`, is noted as **deliberately deferred to
+  #12** — its verdict needs the naive-reader restatement mechanism only the #12
+  eval surface provides.
+- **Fixture pairs** (`src/premura/skills/human-facing-teaching/fixtures/*.json`),
+  mirroring the `research-trace-audit` fixture anatomy: each criterion ships a
+  fail narration and a pass narration over the **same** synthetic structured
+  output `{effect, n, p, ci, is_imputed_pct, validity_status}`. Synthetic only,
+  no PHI.
+- **Guard** (`tests/test_disclosure_rubric_fixtures.py`): a plain assert test —
+  not the #12 acceptance harness (ADR 0012 freeze) — asserting each criterion's
+  verdict flips between its pass/fail fixtures over identical evidence, that
+  fixtures ground in real rubric headings, and (meta-test) that a non-flipping
+  pair is rejected, proving the guard bites.
+
 ## 2026-07-04 — human_facing role contract + teaching self-check skill (Phase 5 slice 3, issue #43)
 
 Shipped Part A of the promoted `human_facing` spec and the drafting self-check

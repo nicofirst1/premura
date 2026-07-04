@@ -1,0 +1,15 @@
+{
+  "_note": "Synthetic fixture. No PHI, no real hp.* rows, all values fabricated. Pass side of the simplification-stays-descriptive pair; same structured_output as descriptive-fail.json, the simplification stays about the observed pattern and names its limit.",
+  "criterion_id": "simplification-stays-descriptive",
+  "dimension": "boundary_integrity",
+  "verdict": "pass",
+  "structured_output": {
+    "effect": "3 of 30 logged nights showed elevated resting heart rate",
+    "n": 30,
+    "p": 0.03,
+    "ci": [0.1, 0.4],
+    "is_imputed_pct": 12,
+    "validity_status": "provisional"
+  },
+  "narration": "To put it simply, your resting heart rate was higher on those nights. The data shows the pattern, not why."
+}

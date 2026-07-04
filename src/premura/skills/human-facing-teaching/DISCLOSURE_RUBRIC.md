@@ -85,13 +85,17 @@ Each criterion has a stable `id`, its `dimension`, a yes/no `question`, the
 `evidence_source` it reads, illustrative `failure_modes` (examples, **not** a
 checklist), and a `suggested_revision_hint`. It fires when the question is "no".
 
-Two criteria are seeded here as worked examples of the shape. The remaining
-candidate criteria (denominator-preserved gist, progressive sequencing,
-teach-back confirmation, simplification-stays-descriptive) are added at
-implementation (issues #37 / #12), each seeded to one eval fixture per the
-add-rule below — the same way the audit rubric grew its criteria across slices.
-A criterion without a fixture that changes a verdict is aspirational and is not
+Five criteria are admitted below, each with a verdict-changing fixture pair per
+the add-rule — the same way the audit rubric grew its criteria across slices. A
+criterion without a fixture that flips its verdict is aspirational and is not
 admitted.
+
+The fourth candidate, `teach-back-confirmation` (`load_management`), stays
+**deliberately deferred to issue #12** — a settled decision, not an open
+question. Its verdict requires the adversarial naive-reader restatement
+mechanism only the #12 eval surface provides, so no deterministic fixture can
+flip it here; a lightweight deterministic guard cannot exercise it, so it is not
+admitted yet.
 
 ### `risk-stated-as-natural-frequency` — `calibration`
 
@@ -117,6 +121,43 @@ admitted.
 - **suggested_revision_hint:** lead with the uncertainty in plain terms tied to
   the value, e.g. "half of these days were estimated, so treat this as a hint,
   not a result."
+
+### `denominator-preserved-gist` — `gist_fidelity`
+
+- **question:** Does the narration's headline gist carry the denominator, so a
+  count over `n` observations is remembered as "X of your N", not collapsed into
+  a general fact ("on the nights you logged") that reads a few-of-many as
+  all-of-them?
+- **evidence_source:** `effect`, `n`; the narration's headline/gist span.
+- **failure_modes (illustrative):** dropping "of 30 nights" so 3-of-30 reads as
+  a standing pattern; a smoothed trend recalled as a hard per-observation fact.
+- **suggested_revision_hint:** state the numerator and denominator together in
+  the take-away sentence ("on 3 of your 30 logged nights"), not only in a caveat.
+
+### `progressive-sequencing` — `load_management`
+
+- **question:** Is the most load-bearing idea — the finding itself — stated
+  first, with method, imputation, and interval detail following one at a time,
+  rather than front-loading the caveats and math so the take-away is buried?
+- **evidence_source:** `is_imputed_pct`, `ci`, `p`; narration ordering vs the
+  headline finding.
+- **failure_modes (illustrative):** opening with the CI and imputation
+  methodology before the reader knows what was found; dumping every caveat in one
+  breath ahead of the result.
+- **suggested_revision_hint:** lead with the plain finding, then attach at most
+  one caveat per sentence in decreasing load order.
+
+### `simplification-stays-descriptive` — `boundary_integrity`
+
+- **question:** While being made simpler, does the narration stay descriptive —
+  reporting the observed pattern — without the simplification tipping into an
+  implied cause, deficiency, or treatment ("you're low on X, so rest more")?
+- **evidence_source:** the narration's simplification span vs the producing
+  tool's semantics (an association, not a cause).
+- **failure_modes (illustrative):** "to put it simply, your heart is strained,
+  rest more" (diagnosis + prescription smuggled in via the plain-language aid).
+- **suggested_revision_hint:** keep the simplification about the pattern the tool
+  measured and name its limit — "the data shows the pattern, not why."
 
 ## Rule for adding a criterion (what makes this a rubric, not a list)
 
