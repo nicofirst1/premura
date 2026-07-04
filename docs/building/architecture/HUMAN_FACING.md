@@ -154,6 +154,8 @@ adversarial narration eval surface (issue #12).
 
 ## Open items (implementation, deferred to #37)
 
-- Physical home of the track registry: `premura.ui.interview_tracks` proposed,
-  beside `premura.ui.roles` — an implementation choice for issue #37, not a
-  design blocker.
+- ~~Physical home of the track registry~~ — **shipped** (issue #41, Phase 5
+  slice 1): `premura.ui.interview_tracks`, beside `premura.ui.roles`. The
+  route resolver is injected (`set_route_resolver`; default rejects all, so an
+  un-wired registry admits nothing) because Stage 4 imports no engine code;
+  the STAGES-8 seed once a real resolver is installed.
