@@ -19,7 +19,7 @@ The audit reads the structured **Session Disclosure** object
 and the per-call `terminal_status`. The `disclosure_text` field is a convenience rendering and is
 **never** the source of a count, and a surfaced count is **never** inferred when
 `surfaced.status = unavailable` (C-002). The output shape is defined by
-`contracts/audit-result-contract.md`.
+`SKILL.md` §"Audit result shape" — the single authoritative home for it.
 
 ## The four closed categories
 
@@ -162,16 +162,10 @@ inputs.
   so the deterministic gate can bind it, or explicitly flag the out-of-form
   citation as not verified via an in-session fetch rather than presenting it
   as established.
-- **relationship to the deterministic gate (FR-3):** this criterion never
-  contradicts check 5. Check 5 only ever fails a *recognized-form* PMID that
-  was never successfully fetched this session — a purely mechanical,
-  deterministic check. This criterion only ever fires on *out-of-form*
-  citations, which check 5 cannot see at all (`OPERATING_ROLES.md` §"v1
-  deterministic checks", end of check 5). A draft the gate passed (no
-  recognized-form citations, or all recognized-form citations fetched) can
-  still pick up an advisory `needs_revision` finding here if it also carries
-  an unflagged out-of-form citation, and that finding is always advisory,
-  never a gate failure — it cannot flip a passing gate verdict.
+- **relationship to the deterministic gate (FR-3):** check 5 is a mechanical
+  check that only fails a recognized-form PMID never fetched this session;
+  this criterion only fires on out-of-form citations check 5 cannot see, and
+  its finding is always advisory — it can never flip a passing gate verdict.
 - **fires on fixture:** `out-of-form-citation.json` — the answer states "A
   2023 study confirms evening walking improves sleep quality, backing up
   this session's finding" with no PMID/recognized form anywhere and no
