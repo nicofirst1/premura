@@ -116,14 +116,30 @@ register_role(
     RoleDeclaration(
         role_id="human_facing",
         job=(
-            "Ask minimal/optional clarifying questions, explain results, and present "
-            "blessed answers and share packets."
+            "Conduct the first-run interview, route the human's goal to analysis, and "
+            "narrate findings back in calibrated, non-expert language."
         ),
-        surfaces=("conversation", "present_answer gate", "capture tools with consent"),
-        handoff_outputs=("draft answers", "user decisions", "clarified goals"),
+        # Allowed surfaces only (HUMAN_FACING.md §Part A). The analytical tools,
+        # the warehouse, and the operator SQL surface are deliberately absent.
+        surfaces=(
+            "the interview-track tools and record_profile_context (agent-mediated, "
+            "one-fact-at-a-time capture against the closed profile allowlist)",
+            "present_answer for every health-interpreting draft (the blocking gate, "
+            "reused unchanged)",
+        ),
+        handoff_outputs=(
+            "a routing decision (interview -> analysis)",
+            "a draft answer submitted to answer_audit / present_answer",
+            "lifestyle-context capture proposals (never a silent write)",
+        ),
         boundaries=(
-            "must not silently store lifestyle context",
-            "final health-interpreting answers go through present_answer",
+            "Never presents a health-interpreting draft except through present_answer "
+            "-- inherits the blocking gate unchanged.",
+            "Never diagnoses, names a cause, or asserts significance; narrates the "
+            "tool verdict, never invents an effect size.",
+            "Never silently stores lifestyle/profile context -- capture is a proposal "
+            "the human confirms, one allowlisted fact at a time.",
+            "Never sends data off-machine or writes public GitHub.",
         ),
     )
 )

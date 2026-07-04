@@ -27,6 +27,13 @@ direct engine calls (STAGES UI-layering rule).
 
 ## Part A — the `human_facing` role contract
 
+> **Shipped.** This contract is filled out in `premura.ui.roles` (the four
+> numbered boundaries + the `present_answer`-only surface), with the bundled
+> `human-facing-teaching` skill (`src/premura/skills/human-facing-teaching/`)
+> applying the rubric self-check before `present_answer`. Of Parts B–C, the
+> track registry shipped as `premura.ui.interview_tracks` (issue #41); the
+> interview flow itself remains design, deferred to #37.
+
 Filling the five registry-declaration fields (OPERATING_ROLES.md §Role
 declarations):
 
