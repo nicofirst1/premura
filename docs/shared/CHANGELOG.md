@@ -8,6 +8,32 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-07-04 — Phase 5 slice 1: interview-track registry + resolving-route safety rail (issue #41)
+
+The Stage-4 interview asks the user *what direction* to look at (STAGES.md
+§Interview: sleep, cardio, metabolic, stress, mental, gut, lab, overview) and
+routes that choice to the signal selector. This slice ships those directions as
+a **bounded, open registry** (`premura.ui.interview_tracks`) mirroring
+`premura.ui.improvement_kinds`: a frozen `InterviewTrack` declaration +
+`register_track` / `get_track` / `list_tracks` / `known_track_ids`, seeded with
+the STAGES-8 as instances of the contract, never a closed enumeration
+(DOCTRINE.md rule 2). First implementation slice of the
+[`HUMAN_FACING.md`](../building/architecture/HUMAN_FACING.md) track-registry
+contract (ADR 0015 decision 3).
+
+- **The health safety rail.** A direction that routes nowhere is a dead end —
+  the user is asked about a topic Premura cannot then analyse. `register_track`
+  refuses any track whose `signal_route` does not resolve to a registered signal
+  selector, with a message naming the unresolvable route.
+- **Injected resolver (Stage-4 purity).** Because Stage 4 imports no engine code
+  (no `hp.*` reads, no direct engine/warehouse calls), the route resolver is
+  injected via `set_route_resolver`. The default resolver rejects everything, so
+  an un-wired registry cannot silently admit a dead end; the STAGES-8 seed only
+  once a real resolver is installed.
+- Process-local and ephemeral, exactly like the improvement-kind registry.
+
+Foundational and mergeable alone; no engine, MCP, or signal-selector wiring yet.
+
 ## 2026-07-04 — Teaching-disclosure rubric + human_facing role promoted (design, issues #35/#36)
 
 A maintainer design-interview (one combined window for the two blocked design
