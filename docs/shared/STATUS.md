@@ -124,7 +124,10 @@ The pinned inventory test is `tests/test_mcp_server.py`.
   measured "K findings among N unique hypotheses" disclosure; consumer surface
   is the [audit-consumer contract](../building/architecture/AUDIT_CONSUMER_CONTRACT.md),
   read by the research-trace-audit skill
-  (`src/premura/skills/research-trace-audit/`).
+  (`src/premura/skills/research-trace-audit/`). The `human_facing` role's
+  drafting self-check ships as the `human-facing-teaching` skill
+  (`src/premura/skills/human-facing-teaching/`), applying the bundled
+  `DISCLOSURE_RUBRIC.md` before `present_answer` (advisory, not a gate).
 - **Session-log substrate + live trial**: local session-log store, contract
   checker, sandbox runner, deterministic grader, hardened local-only
   cheap-model live-trial seam (`live_trial` marker, never in CI). The trial

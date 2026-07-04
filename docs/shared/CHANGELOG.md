@@ -8,6 +8,33 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-07-04 — human_facing role contract + teaching self-check skill (Phase 5 slice 3, issue #43)
+
+Shipped Part A of the promoted `human_facing` spec and the drafting self-check
+that consumes the disclosure rubric. No new gate — reuses
+`present_answer` / `answer_audit` / `record_profile_context` unchanged.
+
+- **`human_facing` declaration filled** in `premura.ui.roles`: the four numbered
+  boundaries (present only through `present_answer`; never diagnose / name a
+  cause / invent an effect; never silently store lifestyle context — one
+  allowlisted fact at a time; never off-machine / public GitHub), the
+  `present_answer`-only surface (analytical / warehouse / SQL surfaces
+  deliberately absent), and the routing-decision / audited-draft / capture-
+  proposal handoffs.
+- **`human-facing-teaching` skill** (`src/premura/skills/human-facing-teaching/`),
+  mirroring `research-trace-audit`: instructs the role to apply
+  `DISCLOSURE_RUBRIC.md` as an **advisory** self-check before `present_answer`
+  and to route an audit-failed revision back through the one revision loop under
+  the fixed priority `answer_audit > analysis > human_facing`. The rubric is
+  bundled beside the skill (self-contained install); its single authoritative
+  home stays in `docs/`, enforced by a drift-guard test.
+- **Coverage:** the role contract (all four boundaries + surface absence), two
+  spec-named e2e fixtures (a `present_answer` bypass refused by the existing
+  gate; an unconfirmed capture that stores nothing while only a confirmed
+  allowlisted fact persists), idempotent install + rubric drift-guard, and the
+  revision-loop priority exercised end to end through `answer_audit` →
+  `present_answer`.
+
 ## 2026-07-04 — Phase 5 slice 1: interview-track registry + resolving-route safety rail (issue #41)
 
 The Stage-4 interview asks the user *what direction* to look at (STAGES.md

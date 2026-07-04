@@ -69,7 +69,11 @@ edit. `human_facing` now has a full contract plus its first-run interview flow
 in [`HUMAN_FACING.md`](HUMAN_FACING.md) (decision note
 [0015](../adr/0015-teaching-disclosure-and-human-facing-promotion.md)); it
 consumes the [`DISCLOSURE_RUBRIC.md`](DISCLOSURE_RUBRIC.md) as advisory-to-
-drafting, never as a second gate. The orchestrator itself is not a role. Roles keep no private memory
+drafting, never as a second gate. Its Part A declaration is now filled out in
+`premura.ui.roles` (the four numbered boundaries + the `present_answer`-only
+surface), and the bundled `human-facing-teaching` skill applies the rubric
+self-check to a draft narration before `present_answer`. The orchestrator itself
+is not a role. Roles keep no private memory
 across sessions; durable state lives only in explicit local stores.
 
 Parser extension is not an operating role: parser-building is file-editing,
