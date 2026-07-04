@@ -65,7 +65,11 @@ human_facing never silently stores lifestyle context; answer_audit creates no
 new evidence; improvement_scan writes only sanitized candidates). They are
 examples of the contract, not a closed persona list: a new role is added by
 registering a declaration that satisfies the fields above, with no central
-edit. The orchestrator itself is not a role. Roles keep no private memory
+edit. `human_facing` now has a full contract plus its first-run interview flow
+in [`HUMAN_FACING.md`](HUMAN_FACING.md) (decision note
+[0015](../adr/0015-teaching-disclosure-and-human-facing-promotion.md)); it
+consumes the [`DISCLOSURE_RUBRIC.md`](DISCLOSURE_RUBRIC.md) as advisory-to-
+drafting, never as a second gate. The orchestrator itself is not a role. Roles keep no private memory
 across sessions; durable state lives only in explicit local stores.
 
 Parser extension is not an operating role: parser-building is file-editing,

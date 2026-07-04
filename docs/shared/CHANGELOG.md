@@ -8,6 +8,37 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-07-04 — Teaching-disclosure rubric + human_facing role promoted (design, issues #35/#36)
+
+A maintainer design-interview (one combined window for the two blocked design
+issues) promoted the parked teaching-disclosure evidence base and the
+`human_facing` draft into two shipped specifications, plus a combined decision
+note. This is design/contract work — no runtime code, no new tools, no schema.
+
+- **[`DISCLOSURE_RUBRIC.md`](../building/architecture/DISCLOSURE_RUBRIC.md)
+  (issue #35).** The bounded artifact governing how `human_facing` explains a
+  finding to a non-expert without misleading — four closed dimensions
+  (`calibration`, `gist_fidelity`, `load_management`, `boundary_integrity`) plus
+  an add-a-criterion rule, modeled on the sibling `AUDIT_RUBRIC.md`. **Locked:**
+  ONE rubric, dual-consumed (the role's drafting self-check *and* issue #12's
+  eval read the same file); comprehension measured without a human by an
+  adversarial naive-reader restating the gist. Two seed criteria ship; the rest
+  are added at implementation (#37/#12), each with a verdict-changing fixture.
+- **[`HUMAN_FACING.md`](../building/architecture/HUMAN_FACING.md) (issue #36).**
+  The `human_facing` role's full contract (the five registry fields + assertion
+  boundaries) and the first-run interview flow — phases + invariants + a track
+  registry with an add rule, never a question script. **Locked:** interview
+  tracks are a bounded-open registry gated on the track's `signal_route`
+  resolving to a registered signal selector (no closed allowlist, no dead-end
+  direction); the rubric is consumed advisory-to-drafting, not as a second gate;
+  the STAGES-8 directions ship as seeds. Teaching-MVP cut-line reuses
+  `present_answer`/`answer_audit`/`profile_context_record` unchanged.
+- **[ADR 0015](../building/adr/0015-teaching-disclosure-and-human-facing-promotion.md)**
+  records the four locked decisions. The parked
+  [`teaching-disclosure-research.md`](../building/planning/teaching-disclosure-research.md)
+  is retitled *promoted, kept for history*; `OPERATING_ROLES.md` now links the
+  `human_facing` contract.
+
 ## 2026-07-04 — Operating-roles slice 5: claim-to-trace binding (issue #32)
 
 The answer-audit gate could prove a session recorded analytical work (check 1)
