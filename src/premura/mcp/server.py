@@ -63,7 +63,7 @@ from ..profile_fields import (
 from ..session_log import store as session_log_store
 from ..store import condition_episodes as condition_episodes_store
 from ..store import duck, profile_intake
-from ..ui import improvement_kinds
+from ..ui import improvement_kinds, interview_tracks
 from ..ui import roles as ui_roles
 from . import pubmed
 
@@ -454,6 +454,132 @@ def stored_condition_episodes(
             }
         )
     return episodes
+
+
+# --------------------------------------------------------------------------- #
+# Interview routing surface (Phase 5 slice 2, HUMAN_FACING.md Part B).
+#
+# Interview phase 1 (Direction): a requested health direction resolves to an
+# interview TRACK — its signal route plus the profile slots phase 2 (Grounding)
+# must fill — never an "analyse everything" default. The bounded-open track
+# registry and its resolving-route safety rail live in
+# ``premura.ui.interview_tracks`` (issue #41); Stage 4 imports no engine, so the
+# route resolver is INJECTED here at the MCP boundary. A ``signal_selector:<d>``
+# route resolves iff the engine registry has at least one signal in that domain
+# (``engine.list_by_domain`` — pure signal-domain metadata, no warehouse rows);
+# a direction with nothing behind it is the dead end the safety rail refuses. The
+# tool NEVER writes a profile fact — it proposes which allowlisted slots grounding
+# should fill (``missing_slots``), leaving one-fact-at-a-time capture to
+# ``record_profile_context``.
+# --------------------------------------------------------------------------- #
+
+_SIGNAL_SELECTOR_ROUTE_PREFIX = "signal_selector:"
+
+
+def _engine_route_resolver(route: str) -> bool:
+    """Resolve an interview track's signal route against the engine signal selector.
+
+    A ``signal_selector:<direction>`` route resolves iff the engine registry has
+    at least one signal in that domain (``engine.list_by_domain`` — pure metadata,
+    no warehouse rows). Any other route form, an empty direction, or a direction
+    with no signal behind it does not resolve — the dead end the track safety rail
+    refuses at registration.
+    """
+    if not route.startswith(_SIGNAL_SELECTOR_ROUTE_PREFIX):
+        return False
+    domain = route[len(_SIGNAL_SELECTOR_ROUTE_PREFIX) :].strip()
+    return bool(domain) and bool(engine.list_by_domain(domain))
+
+
+def install_interview_route_resolver() -> None:
+    """Install the engine-backed route resolver and seed the STAGES-8 directions.
+
+    Called once at MCP startup (idempotent). ``interview_tracks`` ships the
+    STAGES-8 as seed instances but leaves seeding to "once a real resolver is
+    installed" (#41); its own one-shot seeder registers all eight atomically, so
+    it cannot be used here — the safety rail must refuse a seed direction with no
+    analysis behind it, not crash startup. Instead each STAGES-8 direction is
+    offered individually and the rail admits only the ones whose route resolves to
+    a live signal selector; a dead-end seed (no signals yet) is skipped and lights
+    up when its signals ship.
+    """
+    interview_tracks.set_route_resolver(_engine_route_resolver, seed=False)
+    for direction in interview_tracks._STAGES8:
+        try:
+            interview_tracks.register_track(
+                interview_tracks.InterviewTrack(
+                    track_id=direction,
+                    signal_route=f"{_SIGNAL_SELECTOR_ROUTE_PREFIX}{direction}",
+                )
+            )
+        except ValueError:
+            # Dead-end direction (no signal behind it yet) or already seeded — the
+            # safety rail refuses it; skip rather than crash MCP startup.
+            continue
+
+
+def interview_route(direction: str, *, warehouse_path: Path | None = None) -> dict[str, Any]:
+    """Resolve one requested interview direction to its track (interview phase 1).
+
+    Returns the direction's ``track_id`` / ``signal_route`` / ``required_slots``
+    plus ``missing_slots`` — the subset of the track's required slots that are
+    allowlisted profile fields (``profile_fields.SUPPORTED_PROFILE_FIELDS``) still
+    unset in the warehouse, i.e. what phase-2 grounding should propose to capture,
+    one fact at a time, via ``record_profile_context``. This tool WRITES NOTHING.
+
+    A direction that is not already a registered track is admitted on the spot iff
+    its ``signal_selector:<direction>`` route resolves (the documented add rule);
+    a direction whose route does not resolve is refused with the registry's own
+    dead-end message — the routing decision never fabricates a route ("interview
+    before metrics", no dead end).
+    """
+    if not isinstance(direction, str) or not direction.strip():
+        return {
+            "status": "refused",
+            "direction": direction,
+            "reason": "direction must be a non-empty string",
+        }
+    requested = direction.strip()
+    track = interview_tracks.get_track(requested)
+    if track is None:
+        try:
+            track = interview_tracks.register_track(
+                interview_tracks.InterviewTrack(
+                    track_id=requested,
+                    signal_route=f"{_SIGNAL_SELECTOR_ROUTE_PREFIX}{requested}",
+                )
+            )
+        except ValueError as exc:
+            return {"status": "refused", "direction": requested, "reason": str(exc)}
+    return {
+        "status": "routed",
+        "track_id": track.track_id,
+        "signal_route": track.signal_route,
+        "required_slots": list(track.required_slots),
+        "missing_slots": _missing_profile_slots(track.required_slots, warehouse_path),
+    }
+
+
+def _missing_profile_slots(required_slots: Sequence[str], warehouse_path: Path | None) -> list[str]:
+    """Which of a track's required slots are allowlisted profile facts still unset.
+
+    Computed against the closed profile allowlist: a required slot outside
+    ``SUPPORTED_PROFILE_FIELDS`` is not a capturable profile fact and is not
+    proposed here. A warehouse that predates the profile migration has nothing
+    set, so every allowlisted required slot is missing.
+    """
+    allowlisted = [slot for slot in required_slots if slot in SUPPORTED_PROFILE_FIELDS]
+    if not allowlisted:
+        return []
+    with _open_warehouse(warehouse_path) as conn:
+        try:
+            return [
+                slot
+                for slot in allowlisted
+                if profile_intake.get_current_profile(conn, slot) is None
+            ]
+        except duckdb.CatalogException:
+            return list(allowlisted)
 
 
 # --------------------------------------------------------------------------- #

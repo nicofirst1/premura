@@ -31,8 +31,11 @@ direct engine calls (STAGES UI-layering rule).
 > numbered boundaries + the `present_answer`-only surface), with the bundled
 > `human-facing-teaching` skill (`src/premura/skills/human-facing-teaching/`)
 > applying the rubric self-check before `present_answer`. Of Parts B–C, the
-> track registry shipped as `premura.ui.interview_tracks` (issue #41); the
-> interview flow itself remains design, deferred to #37.
+> track registry shipped as `premura.ui.interview_tracks` (issue #41) and its
+> **phase-1 routing surface** shipped as the `interview_route` MCP tool with the
+> engine-backed route resolver wired in (issue #42); the rest of the interview
+> flow (phase-2 grounding orchestration, phase-3 narration) remains design,
+> deferred to #37.
 
 Filling the five registry-declaration fields (OPERATING_ROLES.md §Role
 declarations):
@@ -166,3 +169,11 @@ adversarial narration eval surface (issue #12).
   route resolver is injected (`set_route_resolver`; default rejects all, so an
   un-wired registry admits nothing) because Stage 4 imports no engine code;
   the STAGES-8 seed once a real resolver is installed.
+- ~~Phase-1 routing surface + resolver wiring~~ — **shipped** (issue #42, Phase 5
+  slice 2): the `interview_route(direction)` MCP tool resolves a direction to its
+  track (`{track_id, signal_route, required_slots, missing_slots}`) and refuses a
+  dead-end direction; the engine-backed resolver
+  (`server.install_interview_route_resolver`) is installed at MCP startup, so a
+  route resolves iff the engine signal selector (`engine.list_by_domain`) has a
+  signal behind that direction. `missing_slots` proposes which allowlisted profile
+  facts phase-2 grounding should capture; the tool writes none itself.

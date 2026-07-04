@@ -72,10 +72,12 @@ rules: [`src/premura/engine/CONTRACT.md`](../../src/premura/engine/CONTRACT.md).
 
 ### MCP surfaces
 
-- **Default agent surface (`premura-mcp`) — thirty-three tools:** 2
+- **Default agent surface (`premura-mcp`) — thirty-four tools:** 2
   catalog/summary (`list_metrics`, `metric_summary`), 8 signal-backed (table
   above), 2 profile-capture (`profile_context_supported_fields`,
-  `profile_context_record`), 3 condition-episode capture
+  `profile_context_record`), 1 interview routing (`interview_route` — resolves a
+  chosen health direction to its track + `missing_slots`, writing no profile
+  fact; refuses a dead-end direction), 3 condition-episode capture
   (`condition_episode_record`, `condition_episode_list`,
   `condition_episode_retract` — operator-declared episodes persisted in
   `hp.condition_episode` so `condition_paired_t_test` can omit `episodes` and
@@ -104,7 +106,7 @@ rules: [`src/premura/engine/CONTRACT.md`](../../src/premura/engine/CONTRACT.md).
   the literature plus their own evidence-source trace rows. Signal tools return the four-state envelope (`available` /
   `missing_input` / `stale_input` / `insufficient_data`) with a structured
   `missing_input` report a caller can branch on.
-- **Operator surface (`premura-mcp-operator`) — thirty-four tools:** all
+- **Operator surface (`premura-mcp-operator`) — thirty-five tools:** all
   default tools plus `query_warehouse` (raw SQL escape hatch, no Stage 2
   guarantees). Requires explicit launch acknowledgment (`--ack` /
   `PREMURA_OPERATOR_ACK`).
