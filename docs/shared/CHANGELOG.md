@@ -8,6 +8,47 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-07-04 — Operating-roles slice 5: claim-to-trace binding (issue #32)
+
+The answer-audit gate could prove a session recorded analytical work (check 1)
+but not that a draft's *individual claims* rest on those calls. Slice 5 closes
+that gap with a second deterministic extractor-and-query pair standing **beside**
+check 5's citation binding — never a fork of the audit flow (design locked by
+[ADR 0014](../building/adr/0014-claim-to-trace-binding.md)).
+
+- **The marker extractor** (`_extract_claim_trace_refs` in
+  `premura.mcp.server`, beside `_extract_cited_pmids`): a claim is marked in the
+  draft prose with a `[trace: <call_id>]` suffix carrying the recorded call(s)
+  it rests on (`call_ab12`, comma-separated for several). It is a documented
+  recognized-forms pattern set with an add-a-form rule, mirroring the PMID
+  contract; the canonical bracket form is the first and only shipped form.
+  Matching is generous (flexible spacing/case, non-`call_` tokens ignored)
+  because binding fails CLOSED.
+- **The per-marker trace query** (`premura.trace.bound_claim_calls`, beside
+  `fetched_citation_pmids`): one bounded scan returning the subset of marked
+  ids that exist in the named session with `terminal_status = available`.
+  Unlike citation binding it does **not** filter on `call_kind` — a marker may
+  rest on any `available` call, including an `evidence_source` row. An unknown
+  session is `not_found`, distinct from a valid session that binds nothing.
+- **Check 6 in `answer_audit`**: after the check-5 block, every marked id that
+  does not bind (unknown / wrong session / refused-or-errored) is named in the
+  failures and sets `passed=false` through the existing
+  `passed = trace_verified and not failures` — the same fail-closed stance as an
+  unfetched cited PMID, routed unchanged through the single revision loop. A
+  scope-honest disclosure line (`_claim_binding_disclosure_line`) is appended,
+  scoped to "recognized marker forms" ("claims: none in the recognized marker
+  forms" / "K marked claim(s) (recognized forms), all bound this session") and
+  never asserting total claim coverage.
+- **No new schema, tool, or statistic**: reuses `trace.tool_call`, extends the
+  existing `answer_audit` tool, and touches neither `AUDIT_RUBRIC.md`,
+  `mark_surfaced`, nor `hp.*`.
+- **Tests**: `tests/test_operating_roles_slice5.py` — extractor forms and
+  near-misses, the query's session/terminal-status/cross-session shapes, the
+  audit wiring (marked-and-bound passes, unbindable fails naming the id,
+  unmarked contributes no failures), and an e2e exercise through the live MCP
+  surface proving a marked-and-bound draft presents while a marked-but-unbindable
+  draft is refused.
+
 ## 2026-07-03 — Operating-roles slice 4: share packets (issue #29)
 
 Slice 3's private local improvement queue gets its sharing path: an item can

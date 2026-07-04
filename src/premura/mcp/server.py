@@ -543,6 +543,53 @@ def _citation_disclosure_line(cited: set[str], missing: list[str]) -> str:
     return f"citations: {len(cited)} cited PMID(s) (recognized forms), all fetched this session"
 
 
+# The claim-to-trace binding contract (operating-roles slice 5, decision note
+# 0014). The sibling of the citation contract above: where check 5 binds cited
+# PMIDs to fetched evidence rows, this binds *marked claims* to recorded trace
+# calls. A claim is marked in the draft prose itself, carrying the ``call_id``(s)
+# it rests on. Canonical (and only shipped) recognized form: a bracketed
+# ``[trace: <call_id>]`` suffix, where ``<call_id>`` is one or more minted
+# ``call_<hex>`` ids, comma-separated (e.g. ``[trace: call_ab12, call_cd34]``).
+# Matching is deliberately generous — the marker bracket is matched
+# case-insensitively with flexible spacing, and every ``call_<hex>`` token inside
+# it is pulled out — because over-extraction fails CLOSED (a marked id that
+# doesn't bind to an in-session ``available`` call fails the audit). A malformed
+# or non-``call_`` token is simply not matched, so it is invisible rather than a
+# phantom binding. A claim written outside these forms is INVISIBLE to the gate,
+# so the disclosure line scopes its own claim ("recognized marker forms") and the
+# runtime contract obliges agents to mark traced claims in one. Adding a
+# recognized form is a documented edit to this pattern set under a stated rule (a
+# new form must be an unambiguous, self-delimiting textual marker that yields a
+# set of ``call_id``s and cannot collide with ordinary prose), never a scatter of
+# ad-hoc regexes — exactly as the PMID contract adds a recognized form.
+_CLAIM_TRACE_MARKER = re.compile(r"\[\s*trace\s*:\s*([^\]]+)\]", re.IGNORECASE)
+_CALL_ID_TOKEN = re.compile(r"call_[0-9a-f]+", re.IGNORECASE)
+
+
+def _extract_claim_trace_refs(draft: str) -> set[str]:
+    """The set of ``call_id``s the draft's claims reference, per the marker contract."""
+    refs: set[str] = set()
+    for marker in _CLAIM_TRACE_MARKER.finditer(draft):
+        refs.update(_CALL_ID_TOKEN.findall(marker.group(1)))
+    return refs
+
+
+def _claim_binding_disclosure_line(marked: set[str], unbound: list[str]) -> str:
+    """The measured claim-binding line the gate appends to the disclosure.
+
+    Scoped like the citation line: the gate can only vouch for claims written in
+    a recognized marker form, so it never asserts total claim coverage.
+    """
+    if not marked:
+        return "claims: none in the recognized marker forms"
+    if unbound:
+        return (
+            f"claims: {len(marked)} marked claim(s) (recognized forms), "
+            f"{len(unbound)} not bound this session"
+        )
+    return f"claims: {len(marked)} marked claim(s) (recognized forms), all bound this session"
+
+
 @contextmanager
 def _open_session_log(
     session_log_path: Path | None,
@@ -643,7 +690,11 @@ def answer_audit(
     disclosure and refusal counts are computed from trace rows, never trusted
     from prose (checks 2-3); every PMID the draft cites must have a successful
     in-session ``pubmed_fetch`` — search candidates are never citeable (check
-    5, citation binding; the extraction contract is ``_CITED_PMID_PATTERNS``).
+    5, citation binding); and every claim the draft marks with a
+    ``[trace: call_...]`` ref must bind to an in-session call that finished
+    ``available`` (check 6, claim-to-trace binding, ADR 0014). Both bindings are
+    a documented extractor over the draft plus a bounded trace query it resolves
+    against, standing beside each other — never a fork of the audit flow.
     The verdict is recorded in the session log keyed by the draft's sha256 —
     ``present_answer`` reads exactly that. The audit creates no new evidence
     and reruns nothing, so the warehouse is opened read-only; an unreadable
@@ -661,6 +712,8 @@ def answer_audit(
     trace_verified = False
     cited_pmids = _extract_cited_pmids(draft)
     fetched_pmids: set[str] | None = None
+    claim_refs = _extract_claim_trace_refs(draft)
+    bound_claim_ids: set[str] | None = None
 
     if not session_id:
         failures.append(
@@ -672,6 +725,11 @@ def answer_audit(
                 "the draft cites PMIDs but names no research-trace session; a "
                 "citation is verifiable only against the session's recorded fetches"
             )
+        if claim_refs:
+            failures.append(
+                "the draft marks claims with trace refs but names no research-trace "
+                "session; a marked claim is bindable only against the session's recorded calls"
+            )
     else:
         try:
             with _open_warehouse(warehouse_path) as conn:
@@ -682,6 +740,10 @@ def answer_audit(
                     fetched = trace_service.fetched_citation_pmids(conn, session_id)
                     if not isinstance(fetched, trace_service.TraceError):
                         fetched_pmids = fetched
+                if claim_refs and not isinstance(disclosure, trace_service.TraceError):
+                    bound = trace_service.bound_claim_calls(conn, session_id, claim_refs)
+                    if not isinstance(bound, trace_service.TraceError):
+                        bound_claim_ids = bound
         except duckdb.Error as exc:
             failures.append(f"research-trace session not usable: warehouse not readable ({exc})")
         else:
@@ -720,9 +782,34 @@ def answer_audit(
             "citation verification could not read this session's evidence rows; "
             "cited PMIDs are unverified"
         )
+    # Claim-to-trace binding (check 6, operating-roles slice 5): a marked claim
+    # is verified iff this session recorded the referenced call finishing
+    # available. Computed from trace rows like every other check — fail-closed on
+    # any marked id that does not bind (unknown / wrong session / not available).
+    unbound_claims: list[str] = []
+    if claim_refs and bound_claim_ids is not None:
+        unbound_claims = sorted(claim_refs - bound_claim_ids)
+        if unbound_claims:
+            failures.append(
+                "marked claims reference trace calls that do not bind in this session: "
+                f"{', '.join(unbound_claims)}; a [trace: call_...] marker binds only to an "
+                "in-session call that finished 'available' — the id is unknown, belongs to "
+                "another session, or the call was refused/errored"
+            )
+    elif claim_refs and trace_verified:
+        # Defensive (should be unreachable): the disclosure read succeeded but the
+        # claim-binding read did not. Never let an unbound marked claim ride a
+        # passing verdict — fail, exactly like the citation defensive branch.
+        unbound_claims = sorted(claim_refs)
+        failures.append(
+            "claim-to-trace binding could not read this session's recorded calls; "
+            "marked claims are unbound"
+        )
+
     if disclosure_text is not None:
         disclosure_text = (
             f"{disclosure_text}; {_citation_disclosure_line(cited_pmids, missing_pmids)}"
+            f"; {_claim_binding_disclosure_line(claim_refs, unbound_claims)}"
         )
 
     passed = trace_verified and not failures

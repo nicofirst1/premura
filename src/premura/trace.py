@@ -1112,6 +1112,50 @@ def fetched_citation_pmids(
     return pmids
 
 
+def bound_claim_calls(
+    conn: duckdb.DuckDBPyConnection,
+    session_id: str,
+    call_ids: set[str],
+) -> set[str] | TraceError:
+    """The subset of ``call_ids`` that bind: an in-session ``available`` call exists.
+
+    The deterministic half of the claim-to-trace binding rule at audit time
+    (operating-roles slice 5, ADR 0014): a marked claim binds only if this
+    session recorded a ``trace.tool_call`` for the referenced ``call_id`` that
+    finished ``available``. Unlike citation binding this does **not** filter on
+    ``call_kind`` — a marker may rest on any recorded call, including an
+    ``available`` ``evidence_source`` row. A call from another session, one that
+    finished ``refused``/``error``, or an id that was never recorded is simply not
+    in the returned subset. One bounded scan over this session's calls; the caller
+    fails closed on any referenced id not returned (measured, never trusted).
+
+    Returns a :class:`TraceError` (``not_found``) for an unknown session —
+    distinct from a valid session that binds nothing (empty set, incl. the
+    no-markers case where ``call_ids`` is empty).
+    """
+    if not _session_exists(conn, session_id):
+        return TraceError(
+            status="not_found",
+            message=f"No such research session: {session_id!r}.",
+            field="session_id",
+        )
+    if not call_ids:
+        return set()
+    ordered = sorted(call_ids)
+    placeholders = ", ".join("?" for _ in ordered)
+    rows = conn.execute(
+        f"""
+        SELECT call_id
+        FROM trace.tool_call
+        WHERE session_id = ?
+          AND terminal_status = ?
+          AND call_id IN ({placeholders})
+        """,
+        [session_id, STATUS_AVAILABLE, *ordered],
+    ).fetchall()
+    return {str(row[0]) for row in rows}
+
+
 # ===========================================================================
 # Disclosure computation + exports (T011)
 # ===========================================================================
