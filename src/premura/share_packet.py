@@ -12,7 +12,8 @@ warehouse, or GitHub. Producing a packet and posting it are two separate acts
 The three sharing levels are the draft's
 (``docs/building/planning/operating-agent-roles.md`` "Supported sharing
 levels"); see the structural branch's HONESTY NOTE for the one place the
-frozen queue-item shape cannot yet deliver the draft's named fields. Each level's allowed content is documented as a RULE next to the
+frozen queue-item shape cannot yet deliver the draft's named fields. Each
+level's allowed content is documented as a RULE next to the
 level's branch in :func:`render_share_packet`, not as an enumerated allowlist
 of strings (DOCTRINE rule 2). The one rule that holds across ALL three levels,
 because it is the actual PHI boundary: an item's own free-text ``summary`` /
