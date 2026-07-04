@@ -2,9 +2,9 @@
 
 This package is the importable home for the fourth stage of the four-stage
 architecture (parsers → engine → MCP → UI). Stage 4 is the user's entry
-point: it walks the user through an interview keyed on the six health
-directions — sleep, energy, mood, movement, recovery, longevity — and asks,
-for each direction, which signals to surface and which missing inputs to
+point: it walks the user through an interview keyed on the STAGES-8 health
+directions — sleep, cardio, metabolic, stress, mental, gut, lab, overview — and
+asks, for each direction, which signals to surface and which missing inputs to
 prompt the user to gather (a fasting lab, a wearable export, a sleep
 tracker, etc.). The UI never assembles signals itself; it asks the MCP
 layer, which in turn asks the engine.
@@ -27,10 +27,10 @@ __all__ = ["start_interview"]
 
 
 def start_interview() -> None:
-    """Launch the six-direction health interview.
+    """Launch the STAGES-8 health-direction interview.
 
-    Phase 1 stub. The eventual implementation prompts the user across the six
-    health directions, calls into the Stage 3 MCP surface for each chosen
+    Phase 1 stub. The eventual implementation prompts the user across the
+    STAGES-8 health directions, calls into the Stage 3 MCP surface for each chosen
     direction, and renders results plus a ``missing_inputs_report`` for any
     signals whose inputs are not yet available. Raises
     :class:`NotImplementedError` until that mission lands.

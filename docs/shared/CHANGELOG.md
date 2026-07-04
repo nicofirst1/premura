@@ -8,6 +8,34 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-07-04 — interview routing surface + grounding wiring (Phase 5 slice 2, issue #42)
+
+Wired the #41 interview-track registry into the MCP runtime as interview phase 1
+(Direction → Grounding → Route), exposed as one new default-surface tool
+`interview_route(direction)`. No new gate; capture stays with the unchanged
+`record_profile_context`.
+
+- **Engine-backed route resolver installed at MCP startup**
+  (`install_interview_route_resolver`, `premura.mcp.server`): a
+  `signal_selector:<direction>` route resolves iff the engine registry has at
+  least one signal in that domain (`engine.list_by_domain` — pure signal-domain
+  metadata, no warehouse rows). Stage 4 imports no engine, so the resolver is
+  injected here. The STAGES-8 seed directions are offered individually; the #41
+  safety rail admits only the ones with a live signal selector behind them (a
+  dead-end direction with no analysis yet is skipped, not admitted, and lights up
+  when its signals ship). Today only `sleep` maps to a real signal domain.
+- **`interview_route(direction)`** resolves a requested direction to its track
+  and returns `{track_id, signal_route, required_slots, missing_slots}`.
+  `missing_slots` is the track's required slots that are allowlisted profile
+  facts (`profile_fields.SUPPORTED_PROFILE_FIELDS`) still unset — what phase-2
+  grounding proposes to capture, one fact at a time. The tool writes **no**
+  profile fact of its own. A direction whose route does not resolve is refused
+  with the registry's dead-end message — the routing decision never fabricates a
+  route (interview-before-metrics, no dead end).
+- **Default agent surface: 34 tools** (operator: 35).
+- **Doc sync**: HUMAN_FACING.md marks the phase-1 interview-routing surface
+  shipped; `premura.ui.__init__` docstring realigned to the STAGES-8 directions.
+
 ## 2026-07-04 — disclosure-rubric candidate criteria + verdict-changing fixtures (Phase 5 slice 4, issue #44)
 
 Grew `DISCLOSURE_RUBRIC.md` from its two seeded criteria to five, admitting the

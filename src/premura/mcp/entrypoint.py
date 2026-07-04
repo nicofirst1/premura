@@ -16,8 +16,9 @@ Two entrypoints are provided:
   (``pubmed_search`` / ``pubmed_fetch``), and the six runtime-orchestrator
   tools (``operating_roles`` / ``orchestrator_handoff`` / ``answer_audit`` /
   ``present_answer`` / ``improvement_queue_record`` /
-  ``improvement_queue_list`` / ``share_packet_render``) — 33 tools in
-  total.  ``query_warehouse``
+  ``improvement_queue_list`` / ``share_packet_render``), and the interview
+  routing tool (``interview_route`` — resolves a chosen health direction to its
+  track) — 34 tools in total.  ``query_warehouse``
   is intentionally absent; agents should use the signal-backed tools, the
   analytical tools, the trace tools, the PubMed tools, and the catalog helpers
   instead.  The authoritative tool list is asserted in
@@ -273,6 +274,9 @@ def _register_default_tools(
     This is the shared core.  It does NOT include ``query_warehouse`` — that
     raw SQL escape hatch lives exclusively on the operator surface.
     """
+    # Inject the engine-backed interview route resolver + seed the STAGES-8 (#41
+    # leaves this to MCP startup; Stage 4 imports no engine). Idempotent.
+    warehouse_server.install_interview_route_resolver()
 
     @mcp.tool()
     def list_metrics(
@@ -800,6 +804,30 @@ def _register_default_tools(
             notes=notes,
             warehouse_path=warehouse_path,
         )
+
+    # --- Interview routing (Phase 5 slice 2, HUMAN_FACING.md Part B) ------- #
+    # Interview phase 1 (Direction): resolve the human's chosen health direction
+    # to a track — its signal route + the profile slots grounding must fill —
+    # never an "analyse everything" default. The bounded-open track registry and
+    # the resolving-route safety rail live in ``premura.ui.interview_tracks``
+    # (#41); the engine-backed resolver is injected at server build. This tool is
+    # a pure proposal: it writes NO profile fact (capture stays with
+    # ``profile_context_record``) and refuses a dead-end direction rather than
+    # fabricating a route.
+
+    @mcp.tool()
+    def interview_route(direction: str) -> dict[str, Any]:
+        """Resolve a chosen health direction to its interview track (phase 1).
+
+        Give the direction the human picked (e.g. ``sleep``). Returns the track's
+        ``signal_route`` and ``required_slots`` plus ``missing_slots`` — the
+        allowlisted baseline-profile facts still unset that phase-2 grounding
+        should propose to capture, one at a time, via ``profile_context_record``.
+        This tool writes NO profile fact of its own. A direction with no analysis
+        behind it is refused with a dead-end reason (``status='refused'``) rather
+        than fabricating a route — interview before metrics, never a dead end.
+        """
+        return warehouse_server.interview_route(direction, warehouse_path=warehouse_path)
 
     # --- Agent-mediated condition-episode capture ------------------------- #
     # The warehouse home for operator-declared condition episodes, so off/on

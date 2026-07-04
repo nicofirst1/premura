@@ -48,6 +48,7 @@ _DEFAULT_TOOLS_WITH_ANALYTICAL = sorted(
         "condition_episode_record",
         "condition_episode_list",
         "condition_episode_retract",
+        "interview_route",
         "operating_roles",
         "orchestrator_handoff",
         "answer_audit",
