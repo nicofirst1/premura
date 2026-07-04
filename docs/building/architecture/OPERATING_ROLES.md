@@ -68,6 +68,12 @@ registering a declaration that satisfies the fields above, with no central
 edit. The orchestrator itself is not a role. Roles keep no private memory
 across sessions; durable state lives only in explicit local stores.
 
+Parser extension is not an operating role: parser-building is file-editing,
+not a job the orchestrator dispatches through Premura's MCP tools. At runtime
+an agent may build a parser and use it immediately for the operator's own
+data with no reviewer; review gates only the optional contribute-back PR
+(ADR 0010).
+
 ## The answer-audit gate (locked: blocking, deterministic core)
 
 **Scope.** Any draft answer that interprets health data — comparison,

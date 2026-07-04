@@ -1,7 +1,7 @@
 """Pin the settled build-and-use-now parser rule across the doctrine docs.
 
 SC-007 (mission session-log-substrate-01KT45S1, FR-130): after this mission,
-``operating-agent-roles.md``, ADR 0010, and ``DOCTRINE.md`` state the
+``OPERATING_ROLES.md``, ADR 0010, and ``DOCTRINE.md`` state the
 build-and-use-now rule consistently, and **no remaining sentence requires
 review before a parser is used on the operator's own data**. The only thing
 that changed is the *review-before-use* clause; the narrow "operating role =
@@ -20,14 +20,16 @@ from pathlib import Path
 # tests/ lives at the repo root; the docs are siblings under docs/.
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
-_OPERATING_ROLES = _REPO_ROOT / "docs" / "building" / "planning" / "operating-agent-roles.md"
+# The planning draft was superseded by the promoted architecture spec
+# (ADR 0013); the settled rule now lives there.
+_OPERATING_ROLES = _REPO_ROOT / "docs" / "building" / "architecture" / "OPERATING_ROLES.md"
 _ADR_0010 = (
     _REPO_ROOT / "docs" / "building" / "adr" / "0010-runtime-orchestrator-and-operating-roles.md"
 )
 _DOCTRINE = _REPO_ROOT / "docs" / "shared" / "DOCTRINE.md"
 
 # The exact review-before-use sentence the mission removes from
-# operating-agent-roles.md. If it ever comes back, SC-007 has regressed.
+# OPERATING_ROLES.md. If it ever comes back, SC-007 has regressed.
 _OLD_REVIEW_BEFORE_USE_SENTENCE = (
     "The actual code change remains outside the runtime orchestrator and goes "
     "through the existing development/review process."
@@ -52,14 +54,14 @@ def _normalize_ws(text: str) -> str:
 
 
 def test_no_review_before_use_sentence() -> None:
-    """The review-before-use sentence must be absent from operating-agent-roles.md.
+    """The review-before-use sentence must be absent from OPERATING_ROLES.md.
 
     The doc wraps sentences across lines, so compare against whitespace-normalized
     bytes — otherwise a wrapped copy of the sentence would slip past a raw probe.
     """
     text = _normalize_ws(_read(_OPERATING_ROLES))
     assert _OLD_REVIEW_BEFORE_USE_SENTENCE not in text, (
-        "operating-agent-roles.md still asserts the local parser code change is "
+        "OPERATING_ROLES.md still asserts the local parser code change is "
         "reviewed before use; SC-007 forbids any remaining review-before-use "
         "sentence on the operator's own data."
     )
@@ -81,14 +83,14 @@ def test_adr_no_blanket_codebase_extension_separation() -> None:
 
 
 def test_build_and_use_rule_present() -> None:
-    """The build-and-use phrase must appear in operating-agent-roles.md AND DOCTRINE.md.
+    """The build-and-use phrase must appear in OPERATING_ROLES.md AND DOCTRINE.md.
 
     Normalize whitespace so the probe matches even when the phrase line-wraps.
     """
     roles_text = _normalize_ws(_read(_OPERATING_ROLES))
     doctrine_text = _normalize_ws(_read(_DOCTRINE))
     assert _BUILD_AND_USE_PHRASE in roles_text, (
-        "operating-agent-roles.md must state that at runtime an agent may build a "
+        "OPERATING_ROLES.md must state that at runtime an agent may build a "
         f"parser and {_BUILD_AND_USE_PHRASE!r} with no reviewer."
     )
     assert _BUILD_AND_USE_PHRASE in doctrine_text, (
@@ -107,10 +109,10 @@ def test_adr_states_build_and_use_for_operator_data() -> None:
 
 
 def test_operating_role_definition_unchanged() -> None:
-    """The narrow operating-role definition must survive in operating-agent-roles.md."""
+    """The narrow operating-role definition must survive in OPERATING_ROLES.md."""
     text = _normalize_ws(_read(_OPERATING_ROLES))
     assert _OPERATING_ROLE_DEFINITION in text, (
-        "operating-agent-roles.md must keep 'Parser extension is not an operating "
+        "OPERATING_ROLES.md must keep 'Parser extension is not an operating "
         "role' — parser-building is file-editing, not an MCP-dispatched operating "
         "role; only the review-before-use clause changes."
     )
