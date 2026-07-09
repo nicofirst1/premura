@@ -456,9 +456,19 @@ def test_judge_on_records_one_judgment_and_keeps_verdict(
 
     judge_mod = importlib.import_module("premura.harness." + "judge")
     rubric_ids = judge_mod.load_rubric().criterion_ids
-    verdict = {"criteria": {cid: {"band": "adequate", "rationale": "ok"} for cid in rubric_ids}}
 
-    def _transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
+    def _transport(prompt: str, *, model: str) -> str:
+        # A grounding-quote-compliant verdict (issue #52): the quote is lifted
+        # verbatim out of the prompt's always-present TRANSCRIPT section.
+        marker = "=== TRANSCRIPT (in turn order) ===\n"
+        start = prompt.index(marker) + len(marker)
+        quote = prompt[start : prompt.index("\n", start)]
+        verdict = {
+            "criteria": {
+                cid: {"band": "adequate", "rationale": "ok", "evidence_quote": quote}
+                for cid in rubric_ids
+            }
+        }
         return _json.dumps(verdict)
 
     operator = _InjectedFakeOperator(_GOOD_PARSER, tries_used=1)
@@ -531,11 +541,24 @@ def _count_improvements(session_log_path: Path, session_id: str) -> int:
 
 def _weak_verdict_transport(criterion_ids: tuple[str, ...]) -> object:
     """A scripted judge transport that bands every rubric criterion ``weak`` so the
-    improvement scan has weak evidence to turn into proposals."""
+    improvement scan has weak evidence to turn into proposals.
 
-    def _transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
+    Each criterion's ``evidence_quote`` is a line lifted verbatim out of the
+    prompt itself (the "=== TRANSCRIPT ===" section the judge always renders,
+    even when the session carries no recorded turns), so the grounding-quote
+    check (issue #52) accepts it regardless of this fixture's actual transcript
+    content.
+    """
+
+    def _transport(prompt: str, *, model: str) -> str:
+        marker = "=== TRANSCRIPT (in turn order) ===\n"
+        start = prompt.index(marker) + len(marker)
+        quote = prompt[start : prompt.index("\n", start)]
         verdict = {
-            "criteria": {cid: {"band": "weak", "rationale": "weak"} for cid in criterion_ids},
+            "criteria": {
+                cid: {"band": "weak", "rationale": "weak", "evidence_quote": quote}
+                for cid in criterion_ids
+            },
             "overall_band": "weak",
         }
         return _json.dumps(verdict)

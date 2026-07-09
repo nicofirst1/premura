@@ -1,6 +1,6 @@
 # Judge Rubric
 
-`rubric_version: 2026-06-12.2`
+`rubric_version: 2026-07-09.1`
 
 This file is the bounded criteria registry the AI judge applies when assessing one
 **recorded live-trial session** (a session dossier — see
@@ -37,6 +37,26 @@ There are **no numeric scores** and **no pass/fail language** — that would be 
 with the mechanical grader verdict (NFR-6). A judgment whose model output cannot be parsed
 or whose backend is unavailable is recorded honestly as `unparseable` / `model_unavailable`
 with empty criteria, never faked.
+
+## Evidence-quote grounding (code-enforced, issue #52)
+
+Every criterion verdict carries an `evidence_quote` alongside its `band` and
+`rationale`. The rule for what counts as grounded evidence: **an
+`evidence_quote` is grounded iff it is a verbatim substring of the transcript
+or per-attempt telemetry text shown to the judge in this invocation's
+prompt** - no paraphrasing, no summarizing, no invented detail. This is a
+code-level check (`judge._parse_verdict`), not a prompt-level ask: a quote
+that fails the verbatim-substring test is a malformed verdict, rejected and
+retried through the same bounded retry loop as any other malformed response
+(never a second retry mechanism). If every attempt in the retry budget
+confabulates its evidence, the judgment records `unparseable`, honestly, with
+the rejection count preserved.
+
+This exists because a judge that can assert an unquoted "the operator
+repeatedly claimed success" is a judge that can confabulate its own grounding
+(the 2026-06-12 audit's "Judge quality note") - the rule does not enumerate
+which quotes are acceptable, it defines verbatim substring membership as the
+one durable test any tier's transcript must pass.
 
 ## What grounds every judgment
 

@@ -17,13 +17,17 @@ The flow of :func:`judge_session`:
    default transport reuses the existing local-only Ollama guard verbatim (NFR-2): the
    PHI-bearing dossier may only reach a local model backend.
 4. Parse and validate the model's structured verdict — bands against the store's
-   ``CRITERION_BANDS``, criterion ids against the rubric. A malformed response is retried
-   a bounded number of times.
+   ``CRITERION_BANDS``, criterion ids against the rubric, and each criterion's
+   ``evidence_quote`` against the dossier text actually shown to the model (the
+   grounding-quote check, issue #52). A malformed OR ungrounded response is
+   retried through the same bounded retry loop as any other malformed verdict -
+   there is only one retry mechanism.
 5. Persist exactly one ``log_judgment`` row via :func:`store.record_judgment` with the
-   honest ``status`` (``complete`` / ``unparseable`` / ``model_unavailable``). The judge
-   **can never alter** ``contract_pass``, the scoreboard, or the trial verdict — they are
-   out of its write reach by construction (it only opens the dossier read-only and only
-   writes ``log_judgment``).
+   honest ``status`` (``complete`` / ``unparseable`` / ``model_unavailable``) and the
+   count of attempts rejected for ungrounded evidence. The judge **can never alter**
+   ``contract_pass``, the scoreboard, or the trial verdict - they are out of its write
+   reach by construction (it only opens the dossier read-only and only writes
+   ``log_judgment``).
 
 No code path here syncs or exports the dossier, the prompt, or the judgment (NFR-2).
 """
@@ -202,19 +206,30 @@ def build_prompt(doc: SessionDossier, rubric: Rubric) -> str:
         "=== YOUR TASK ===\n"
         "Band EACH of these criterion ids (use exactly these ids):\n"
         f"{criterion_list}\n\n"
+        "For EACH criterion, `evidence_quote` MUST be copied VERBATIM (exact "
+        "characters, no paraphrasing, no summarizing) from the TRANSCRIPT or "
+        "PER-ATTEMPT TELEMETRY above. A quote that does not appear verbatim above "
+        "will be rejected.\n\n"
         "Respond with ONLY a JSON object of this shape, no prose, no code fences:\n"
-        '{"criteria": {"<criterion-id>": {"band": "<band>", "rationale": "<short reason>"}, '
+        '{"criteria": {"<criterion-id>": {"band": "<band>", "rationale": "<short reason>", '
+        '"evidence_quote": "<verbatim excerpt from the transcript/attempts above>"}, '
         '...}, "overall_band": "<band or null>", "rationale": "<short overall reason>"}\n'
     )
 
 
-def _parse_verdict(raw: str, rubric: Rubric) -> dict:
-    """Parse + validate a model response into a rubric verdict (FR-4).
+def _parse_verdict(raw: str, rubric: Rubric, grounding_text: str) -> dict:
+    """Parse + validate a model response into a rubric verdict (FR-4, issue #52).
 
     Raises :class:`_MalformedVerdictError` if the output is not JSON, not the
-    expected shape, names a criterion id the rubric does not define, or carries a
-    band outside ``CRITERION_BANDS``. The criterion-id check enforces FR-3 from
-    the judge side: an off-rubric id is malformed, never silently recorded.
+    expected shape, names a criterion id the rubric does not define, carries a
+    band outside ``CRITERION_BANDS``, or (issue #52) carries an ``evidence_quote``
+    that is not a verbatim substring of ``grounding_text`` (the dossier/transcript
+    text shown to the judge). The criterion-id check enforces FR-3 from the judge
+    side: an off-rubric id is malformed, never silently recorded. Ungrounded
+    evidence is malformed for the same reason: a confabulated quote is not a
+    usable process judgment (the 2026-06-12 audit's "Judge quality note") and is
+    rejected through this same bounded retry loop - there is no second retry
+    mechanism.
     """
     text = raw.strip()
     # Tolerate an accidental ```json fence the prompt asked the model to omit.
@@ -241,7 +256,18 @@ def _parse_verdict(raw: str, rubric: Rubric) -> dict:
         band = entry.get("band")
         if band not in store.CRITERION_BANDS:
             raise _MalformedVerdictError(f"criterion {cid!r} band {band!r} is out of vocabulary")
-        validated[cid] = {"band": band, "rationale": str(entry.get("rationale", ""))}
+        evidence_quote = entry.get("evidence_quote")
+        if not isinstance(evidence_quote, str) or not evidence_quote.strip():
+            raise _MalformedVerdictError(f"criterion {cid!r} has no non-empty 'evidence_quote'")
+        if evidence_quote not in grounding_text:
+            raise _MalformedVerdictError(
+                f"criterion {cid!r} evidence_quote is not a verbatim substring of the dossier"
+            )
+        validated[cid] = {
+            "band": band,
+            "rationale": str(entry.get("rationale", "")),
+            "evidence_quote": evidence_quote,
+        }
 
     overall_band = payload.get("overall_band")
     if overall_band is not None and overall_band not in store.CRITERION_BANDS:
@@ -261,12 +287,17 @@ class JudgmentResult:
 
     ``judgment_id`` is the id of the single ``log_judgment`` row written; ``status``
     is the honest status (``complete`` / ``unparseable`` / ``model_unavailable``).
+    ``ungrounded_rejections`` counts attempts this invocation rejected because a
+    criterion's ``evidence_quote`` was not a verbatim substring of the dossier
+    text shown to the judge (issue #52) - a standing measure of the judge's own
+    confabulation rate.
     """
 
     judgment_id: str
     status: str
     criteria: dict[str, dict[str, object]] = field(default_factory=dict)
     overall_band: str | None = None
+    ungrounded_rejections: int = 0
 
 
 def judge_session(
@@ -301,14 +332,21 @@ def judge_session(
     rubric = load_rubric()
     doc = dossier_mod.build_dossier(log_path, session_id=session_id)
     prompt = build_prompt(doc, rubric)
+    # The evidence-grounding check (issue #52) validates each criterion's
+    # evidence_quote against exactly the transcript + attempts text the prompt
+    # showed the model - the same substrings :func:`build_prompt` renders.
+    grounding_text = "\n".join((_render_transcript(doc), _render_attempts(doc)))
 
     status = "unparseable"
     criteria: dict[str, dict[str, object]] = {}
     overall_band: str | None = None
     rationale: str | None = None
     raw_output: str | None = None
+    ungrounded_rejections = 0
 
     # First attempt + up to ``max_retries`` retries on a malformed response.
+    # An ungrounded evidence_quote is one kind of malformed verdict: it goes
+    # through this same retry loop, never a second retry mechanism.
     for _attempt in range(max_retries + 1):
         try:
             raw = send(prompt, model=model)
@@ -321,8 +359,10 @@ def judge_session(
             break
         raw_output = raw
         try:
-            verdict = _parse_verdict(raw, rubric)
-        except _MalformedVerdictError:
+            verdict = _parse_verdict(raw, rubric, grounding_text)
+        except _MalformedVerdictError as exc:
+            if "evidence_quote" in str(exc):
+                ungrounded_rejections += 1
             # Keep the latest raw output and retry within the budget.
             continue
         status = "complete"
@@ -348,6 +388,7 @@ def judge_session(
             criteria=criteria,
             overall_band=overall_band,
             rationale=rationale,
+            ungrounded_rejections=ungrounded_rejections,
             raw_output=raw_output,
         )
     finally:
@@ -358,6 +399,7 @@ def judge_session(
         status=status,
         criteria=criteria,
         overall_band=overall_band,
+        ungrounded_rejections=ungrounded_rejections,
     )
 
 

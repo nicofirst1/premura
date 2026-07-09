@@ -78,8 +78,16 @@ def _seed_session(conn: duckdb.DuckDBPyConnection) -> str:
 def _well_formed_verdict() -> dict:
     return {
         "criteria": {
-            "claims-match-grader-facts": {"band": "strong", "rationale": "claims match facts"},
-            "worked-toward-the-goal": {"band": "adequate", "rationale": "stayed on goal"},
+            "claims-match-grader-facts": {
+                "band": "strong",
+                "rationale": "claims match facts",
+                "evidence_quote": "I wrote a parser that maps heart_rate.",
+            },
+            "worked-toward-the-goal": {
+                "band": "adequate",
+                "rationale": "stayed on goal",
+                "evidence_quote": "ingest the data",
+            },
         },
         "overall_band": "strong",
         "rationale": "honest and goal-directed",
@@ -118,6 +126,129 @@ def test_well_formed_verdict_persisted_faithfully(tmp_path: Path) -> None:
     assert json.loads(criteria_json) == verdict["criteria"]
     assert overall_band == "strong"
     assert rationale == "honest and goal-directed"
+    assert result.ungrounded_rejections == 0
+
+
+def test_grounded_evidence_quote_accepted(tmp_path: Path) -> None:
+    """Issue #52: a verdict whose evidence_quote is a verbatim substring of the
+    transcript shown to the judge is accepted on the first attempt, with the
+    quote persisted alongside band + rationale and zero rejections recorded."""
+    log_path = tmp_path / "session_log.duckdb"
+    conn = _open_initialized(log_path)
+    sid = _seed_session(conn)
+    conn.close()
+
+    verdict = _well_formed_verdict()
+
+    def transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
+        return json.dumps(verdict)
+
+    result = judge.judge_session(log_path, session_id=sid, transport=transport)
+    assert result.status == "complete"
+    assert result.ungrounded_rejections == 0
+
+    ro = store.connect(log_path, read_only=True)
+    row = ro.execute(
+        "SELECT criteria_json, ungrounded_rejections FROM log_judgment WHERE session_id = ?",
+        [sid],
+    ).fetchone()
+    ro.close()
+    assert row is not None
+    criteria_json, ungrounded_rejections = row
+    persisted = json.loads(criteria_json)
+    assert (
+        persisted["claims-match-grader-facts"]["evidence_quote"]
+        == "I wrote a parser that maps heart_rate."
+    )
+    assert ungrounded_rejections == 0
+
+
+def test_confabulated_evidence_quote_rejected_and_retried(tmp_path: Path) -> None:
+    """Issue #52: a verdict whose evidence_quote is NOT a verbatim substring of
+    the dossier text is rejected through the existing malformed-verdict retry
+    loop (no second retry mechanism); a grounded retry then completes, and the
+    rejection is counted in ``ungrounded_rejections`` on the persisted row."""
+    log_path = tmp_path / "session_log.duckdb"
+    conn = _open_initialized(log_path)
+    sid = _seed_session(conn)
+    conn.close()
+
+    confabulated = json.dumps(
+        {
+            "criteria": {
+                "claims-match-grader-facts": {
+                    "band": "strong",
+                    "rationale": "claims match facts",
+                    "evidence_quote": "the operator repeatedly claimed total success",
+                }
+            },
+            "overall_band": "strong",
+            "rationale": "honest",
+        }
+    )
+    grounded = json.dumps(_well_formed_verdict())
+    replies = [confabulated, grounded]
+
+    def transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
+        return replies.pop(0)
+
+    result = judge.judge_session(log_path, session_id=sid, transport=transport, max_retries=2)
+    assert result.status == "complete"
+    assert result.ungrounded_rejections == 1
+
+    ro = store.connect(log_path, read_only=True)
+    row = ro.execute(
+        "SELECT status, ungrounded_rejections FROM log_judgment WHERE session_id = ?",
+        [sid],
+    ).fetchone()
+    ro.close()
+    assert row is not None
+    assert row[0] == "complete"
+    assert row[1] == 1  # one rejected attempt persisted alongside the eventual complete row
+
+
+def test_all_attempts_confabulated_yields_unparseable_with_rejection_count(
+    tmp_path: Path,
+) -> None:
+    """Issue #52: if every attempt within the retry budget confabulates its
+    evidence_quote, the judgment is an honest ``unparseable`` row (same as any
+    other exhausted malformed-verdict retry) with the ungrounded rejection count
+    persisted."""
+    log_path = tmp_path / "session_log.duckdb"
+    conn = _open_initialized(log_path)
+    sid = _seed_session(conn)
+    conn.close()
+
+    def transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
+        return json.dumps(
+            {
+                "criteria": {
+                    "claims-match-grader-facts": {
+                        "band": "strong",
+                        "rationale": "x",
+                        "evidence_quote": "a quote that never appears in the dossier",
+                    }
+                }
+            }
+        )
+
+    result = judge.judge_session(log_path, session_id=sid, transport=transport, max_retries=2)
+    assert result.status == "unparseable"
+    assert result.ungrounded_rejections == 3  # first attempt + 2 retries, all confabulated
+
+    ro = store.connect(log_path, read_only=True)
+    row = ro.execute(
+        """
+        SELECT status, criteria_json, ungrounded_rejections
+        FROM log_judgment WHERE session_id = ?
+        """,
+        [sid],
+    ).fetchone()
+    ro.close()
+    assert row is not None
+    assert row[0] == "unparseable"
+    assert json.loads(row[1]) == {}
+    assert row[2] == 3
 
 
 def test_criteria_ids_come_from_the_rubric_not_code(tmp_path: Path) -> None:
@@ -131,7 +262,16 @@ def test_criteria_ids_come_from_the_rubric_not_code(tmp_path: Path) -> None:
 
     rubric_ids = set(judge.load_rubric().criterion_ids)
     # The scripted verdict bands every rubric criterion.
-    verdict = {"criteria": {cid: {"band": "adequate", "rationale": "ok"} for cid in rubric_ids}}
+    verdict = {
+        "criteria": {
+            cid: {
+                "band": "adequate",
+                "rationale": "ok",
+                "evidence_quote": "ingest the data",
+            }
+            for cid in rubric_ids
+        }
+    }
 
     def transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
         return json.dumps(verdict)
@@ -242,7 +382,15 @@ def test_unknown_criterion_id_rejected_as_unparseable(tmp_path: Path) -> None:
 
     def transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
         return json.dumps(
-            {"criteria": {"not-a-real-criterion": {"band": "strong", "rationale": "x"}}}
+            {
+                "criteria": {
+                    "not-a-real-criterion": {
+                        "band": "strong",
+                        "rationale": "x",
+                        "evidence_quote": "ingest the data",
+                    }
+                }
+            }
         )
 
     result = judge.judge_session(log_path, session_id=sid, transport=transport, max_retries=1)
@@ -267,7 +415,15 @@ def test_unknown_band_rejected_as_unparseable(tmp_path: Path) -> None:
 
     def transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
         return json.dumps(
-            {"criteria": {"claims-match-grader-facts": {"band": "excellent", "rationale": "x"}}}
+            {
+                "criteria": {
+                    "claims-match-grader-facts": {
+                        "band": "excellent",
+                        "rationale": "x",
+                        "evidence_quote": "ingest the data",
+                    }
+                }
+            }
         )
 
     result = judge.judge_session(log_path, session_id=sid, transport=transport, max_retries=1)

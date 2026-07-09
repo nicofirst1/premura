@@ -443,6 +443,7 @@ def record_judgment(
     overall_band: str | None = None,
     rationale: str | None = None,
     raw_output: str | None = None,
+    ungrounded_rejections: int = 0,
 ) -> str:
     """Insert one ``log_judgment`` row and return its ``judgment_id`` (FR-1).
 
@@ -453,7 +454,7 @@ def record_judgment(
     out-of-vocabulary value raises :class:`ValueError` rather than being silently
     stored. The criterion *ids* are NOT enumerated here — they belong to the
     rubric (FR-3); ``criteria`` is stored verbatim as a JSON object mapping
-    criterion id -> ``{band, rationale}``.
+    criterion id -> ``{band, rationale, evidence_quote}``.
 
     The judge can never alter ``contract_pass``, the scoreboard, or the trial
     verdict: this writes a separate, additive ``log_judgment`` row only. A
@@ -461,6 +462,12 @@ def record_judgment(
     ``model_unavailable`` the caller passes an empty ``criteria`` and
     ``overall_band=None`` while ``raw_output`` preserves what the model actually
     said (if anything). The harness is the sole writer (FR-021 / NFR-1).
+
+    ``ungrounded_rejections`` (issue #52) counts how many attempts this judge
+    invocation rejected because a criterion's ``evidence_quote`` was not a
+    verbatim substring of the dossier text shown to the judge - the judge's own
+    confabulation rate, made a standing, queryable number rather than a one-off
+    audit observation.
 
     The bands are DESCRIPTIVE only (NFR-6): no numeric scores, no language
     confusable with the mechanical grader verdict.
@@ -484,8 +491,9 @@ def record_judgment(
         """
         INSERT INTO log_judgment
             (judgment_id, session_id, judged_at, judge_model, rubric_version,
-             status, criteria_json, overall_band, rationale, raw_output)
-        VALUES (?, ?, now(), ?, ?, ?, ?, ?, ?, ?)
+             status, criteria_json, overall_band, rationale, raw_output,
+             ungrounded_rejections)
+        VALUES (?, ?, now(), ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         [
             judgment_id,
@@ -497,6 +505,7 @@ def record_judgment(
             overall_band,
             rationale,
             raw_output,
+            int(ungrounded_rejections),
         ],
     )
     return judgment_id
