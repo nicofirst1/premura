@@ -12,6 +12,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from premura.harness.install_tier import (
+    INSTALL_TIER,
+    INSTALL_TIER_STEPS,
+    InstallTierResult,
+    run_install_tier,
+)
 from premura.harness.sandbox import (
     EXCLUDED_TOP_LEVEL,
     Sandbox,
@@ -55,8 +61,12 @@ def open_sandbox_warehouse_for_grading(warehouse_path: Path) -> duckdb.DuckDBPyC
 
 __all__ = [
     "EXCLUDED_TOP_LEVEL",
+    "INSTALL_TIER",
+    "INSTALL_TIER_STEPS",
+    "InstallTierResult",
     "Sandbox",
     "build_sandbox",
     "install_parser",
     "open_sandbox_warehouse_for_grading",
+    "run_install_tier",
 ]
