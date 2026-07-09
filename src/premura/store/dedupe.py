@@ -26,6 +26,10 @@ if TYPE_CHECKING:
 SOURCE_PRIORITY: dict[str, int] = {
     "garmin_gdpr": 100,
     "withings": 90,
+    # fitbit_takeout is a dedicated wrist wearable: below Withings' purpose-built
+    # calibrated instruments and Garmin's higher-frequency telemetry, but above
+    # phone-aggregated Health Connect for the same metric+time.
+    "fitbit_takeout": 85,
     "health_connect": 80,
     "sleep_as_android": 60,
     "bmt": 40,

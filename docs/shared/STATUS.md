@@ -17,10 +17,10 @@
 
 **Pre-`v1` foundation — the product line is `v0.x`; the first-pipeline
 restore point is tagged `v0.1.0` (formerly `v1.0.0`, retagged 2026-06-11).**
-The ingest pipeline is operational across the five
+The ingest pipeline is operational across the six
 observation sources (Health Connect, Garmin GDPR, Sleep as Android, BMT,
-Withings) plus two intake sources (MyFitnessPal nutrition, AI-chat
-supplement/medication recall); the DuckDB
+Withings, Fitbit Takeout) plus two intake sources (MyFitnessPal nutrition,
+AI-chat supplement/medication recall); the DuckDB
 warehouse holds ~3.5 years of data including the Garmin-only metrics that
 motivated the project (HRV rMSSD overnight, stress, training load/readiness,
 VO₂ max, skin temperature, hydration, sleep score, respiration). Re-ingest is
@@ -174,6 +174,7 @@ The pinned inventory test is `tests/test_mcp_server.py`.
 | Sleep as Android parser | ✅ | Synthetic-fixture tests; DST-safe per-minute actigraphy walk. |
 | BMT parser | ✅ | Long/wide format detection; per-row units; custom metrics → `bmt_custom:*`. |
 | Withings parser | ✅ | First real third-party **observation**-seam vendor (#33, M4): zip-of-CSVs export (weight, BP, HR, steps, sleep) → `hpipe ingest --source withings`; reuses existing ontology metrics plus `fat_mass` (bare English) and `vendor:withings:pulse_wave_velocity` (fallback); dedupe priority between `garmin_gdpr` and `health_connect`. |
+| Fitbit Takeout parser | ✅ | Google Takeout `MyFitbitData/` folder or zip → `hpipe ingest --source fitbit`; filename-pattern dispatch over daily/summary files (HRV, respiration, SpO2, skin temp, sleep session/score/efficiency, active/sedentary minutes, resting HR, stress, mindfulness, menstrual period), reusing existing ontology metrics plus `active_minutes_*` / `sedentary_minutes` (bare English) and `vendor:fitbit:menstrual_period` (fallback); intraday per-minute streams deliberately skipped and surfaced in `notes`; dedupe priority between `withings` and `health_connect`. |
 | MyFitnessPal intake parser | ✅ | First real vendor intake source: per-meal nutrition aggregates → intake seam (`hpipe ingest --source mfp`); exercise/measurement columns surfaced as declared gaps, never observation rows. |
 | AI-chat recall intake parser | ✅ | Interchange contract (`premura.ai_chat_recall.v1`, see `docs/building/architecture/AI_CHAT_RECALL_CONTRACT.md`) + parser (`--source aichat`): assistant-recalled supplements/medications with explicit date precision and mandatory provenance quotes, under `source_kind=ai_chat_recall` (inventory questions only, never adherence). |
 | Loader (batch insert) | ✅ | Polars→DuckDB set-based insert; native-key + cross-source priority dedupe. |
