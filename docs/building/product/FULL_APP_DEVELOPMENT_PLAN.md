@@ -289,6 +289,14 @@ The docs already call out the parser-skill bet as risk `R2`. That risk does not 
 
 ### Phase 5: `interview + teaching MVP`
 
+> **Status: shipped 2026-07-04 (phase-1 routing only).** Slices #41-#44
+> landed: the interview-track registry, the `interview_route` MCP tool
+> (phase-1 routing for the `sleep` direction), the `human_facing` role
+> contract with the `human-facing-teaching` skill, and the disclosure
+> rubric grown to five criteria. The exit criterion below is met only for
+> phase-1 routing on the `sleep` direction. **Deferred:** interview phases
+> 2/3, teach-back + adversarial narration eval (issue #12).
+
 #### Goal
 
 Prove that Premura can teach and guide, not just ingest and analyze.
