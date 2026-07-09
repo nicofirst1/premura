@@ -521,7 +521,21 @@ class PluginParser(Parser, Protocol):
 
 
 def file_sha256(path: Path, chunk: int = 1 << 20) -> str:
-    """Stream-hash a file. Used for ingest_run idempotency."""
+    """Stream-hash a file. Used for ingest_run idempotency.
+
+    A directory (an unzipped export tree, e.g. Fitbit Takeout) is hashed over its
+    sorted member paths, sizes, and mtimes rather than its full byte content -- a
+    stable, cheap fingerprint sufficient for re-ingest idempotency without
+    reading gigabytes. Re-exporting changes file mtimes/sizes and so the hash.
+    """
+    if path.is_dir():
+        h = hashlib.sha256()
+        for member in sorted(path.rglob("*")):
+            if member.is_file():
+                stat = member.stat()
+                rel = member.relative_to(path).as_posix()
+                h.update(f"{rel}|{stat.st_size}|{int(stat.st_mtime)}\n".encode())
+        return h.hexdigest()
     h = hashlib.sha256()
     with path.open("rb") as f:
         while True:

@@ -39,6 +39,7 @@ from .parsers.ai_chat_recall import FORMAT_MARKER as AI_CHAT_RECALL_MARKER
 from .parsers.ai_chat_recall import AiChatRecallParser
 from .parsers.base import normalize_parse_output
 from .parsers.bmt import BMTParser
+from .parsers.fitbit_takeout import FitbitTakeoutParser
 from .parsers.garmin_gdpr import GarminGDPRParser
 from .parsers.health_connect import HealthConnectParser
 from .parsers.lab_pdf import LabPdfParser
@@ -76,7 +77,13 @@ PARSER_REGISTRY: dict[str, tuple[PARSER_FACTORY, str]] = {
     "mfp": (MyFitnessPalParser, "myfitnesspal"),
     "aichat": (AiChatRecallParser, "ai_chat_recall"),
     "withings": (WithingsParser, "withings"),
+    "fitbit": (FitbitTakeoutParser, "fitbit_takeout"),
 }
+
+# Sources whose input is a directory tree (unzipped export) rather than a single
+# file. Fitbit Takeout ships as a MyFitbitData/ folder; the parser also accepts a
+# .zip, but the folder is the common case the operator already has on disk.
+_DIRECTORY_SOURCES = {"fitbit"}
 
 
 # ============================================================================
@@ -87,7 +94,8 @@ PARSER_REGISTRY: dict[str, tuple[PARSER_FACTORY, str]] = {
 @app.command()
 def ingest(
     source: Annotated[
-        str, typer.Option(help="hc | garmin | saa | bmt | lab | mfp | aichat | withings | all")
+        str,
+        typer.Option(help="hc | garmin | saa | bmt | lab | mfp | aichat | withings | fitbit | all"),
     ] = "all",
     path: Annotated[
         Path | None,
@@ -115,7 +123,13 @@ def _ingest_one(conn, source_key: str, override_path: Path | None) -> None:
     if candidate is None:
         console.print(f"[yellow]no input found for {source_key}; skipping[/yellow]")
         return
-    if not candidate.is_file():
+    # Directory-tree sources (Fitbit Takeout) accept a folder or a .zip; all
+    # other sources require a single file.
+    if source_key in _DIRECTORY_SOURCES:
+        if not candidate.exists():
+            console.print(f"[red]{candidate} not found; skipping {source_key}[/red]")
+            return
+    elif not candidate.is_file():
         console.print(f"[red]{candidate} not found; skipping {source_key}[/red]")
         return
 
@@ -190,6 +204,15 @@ def _discover_input(source_key: str) -> Path | None:
     elif source_key == "aichat":
         jsons = sorted(inbox.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
         candidates = [p for p in jsons if _json_is_chat_recall(p)]
+    elif source_key == "fitbit":
+        # A MyFitbitData/ folder (unzipped Takeout) or a zip that contains one.
+        dirs = sorted(
+            (p for p in inbox.iterdir() if p.is_dir() and _dir_is_fitbit(p)),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        zips = sorted(inbox.glob("*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
+        candidates = dirs + [p for p in zips if _zip_is_fitbit(p)]
     else:
         return None
     return candidates[0] if candidates else None
@@ -239,6 +262,30 @@ def _zip_is_mfp(path: Path) -> bool:
     try:
         with zipfile.ZipFile(path) as zf:
             return any(Path(m).name.startswith("Nutrition-Summary") for m in zf.namelist())
+    except (OSError, zipfile.BadZipFile):
+        return False
+
+
+def _dir_is_fitbit(path: Path) -> bool:
+    """True when a directory looks like a Fitbit Takeout export.
+
+    Fitbit ships ``MyFitbitData/<User>/<Category>/`` -- the ``MyFitbitData``
+    folder is the stable marker, checked at the top level or one level down (an
+    inbox may hold the ``MyFitbitData`` folder directly or a wrapping folder).
+    """
+    if path.name == "MyFitbitData":
+        return True
+    try:
+        return any(child.is_dir() and child.name == "MyFitbitData" for child in path.iterdir())
+    except OSError:
+        return False
+
+
+def _zip_is_fitbit(path: Path) -> bool:
+    """True when a zip contains a Fitbit Takeout ``MyFitbitData`` tree."""
+    try:
+        with zipfile.ZipFile(path) as zf:
+            return any("MyFitbitData/" in m for m in zf.namelist())
     except (OSError, zipfile.BadZipFile):
         return False
 

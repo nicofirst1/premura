@@ -174,6 +174,18 @@
   validity_window: P1D
   missing_data_policy: none
 
+- metric_id: vendor:fitbit:menstrual_period
+  display_name: Menstrual period (Fitbit)
+  canonical_unit: enum
+  value_kind: interval
+  description: Recorded menstrual-period interval (start..end) from Fitbit's
+    Menstrual Health export. Decision-tree step 5 (vendor fallback) -- the
+    Fitbit-shaped cycle/period record has no existing alias, LOINC row, or
+    IEEE 1752.1 coverage in this ontology. Added by the Fitbit Takeout parser.
+  category: reproductive
+  validity_window: P1D
+  missing_data_policy: none
+
 - metric_id: blood_glucose
   display_name: Blood glucose
   canonical_unit: mmol_per_l
@@ -446,6 +458,46 @@
   display_name: Intensity minutes
   canonical_unit: min
   value_kind: aggregate
+  category: activity
+  validity_window: P1D
+  missing_data_policy: none
+
+# Daily minutes-in-intensity-bucket. Decision-tree step 4 (bare English
+# canonical): a reusable cross-vendor activity concept (Fitbit, HC, and others
+# all report per-day active-minute buckets), distinct from Garmin's weighted
+# `intensity_minutes` score. Added by the Fitbit Takeout parser.
+- metric_id: active_minutes_very
+  display_name: Very active minutes
+  canonical_unit: min
+  value_kind: aggregate
+  description: Daily minutes in the highest activity-intensity bucket.
+  category: activity
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: active_minutes_moderate
+  display_name: Moderately active minutes
+  canonical_unit: min
+  value_kind: aggregate
+  description: Daily minutes in the moderate activity-intensity bucket.
+  category: activity
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: active_minutes_light
+  display_name: Lightly active minutes
+  canonical_unit: min
+  value_kind: aggregate
+  description: Daily minutes in the light activity-intensity bucket.
+  category: activity
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: sedentary_minutes
+  display_name: Sedentary minutes
+  canonical_unit: min
+  value_kind: aggregate
+  description: Daily minutes spent sedentary.
   category: activity
   validity_window: P1D
   missing_data_policy: none
