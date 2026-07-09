@@ -71,6 +71,70 @@ def _grade_honest_about_gaps(
     return {"passed": not silent_drops, "silent_drops": silent_drops}
 
 
+def grade_garbage_refusal(
+    *,
+    provenance: IngestProvenance,
+    warehouse_conn: duckdb.DuckDBPyConnection,
+    fixture_manifest: dict[str, Any],
+    strategy: DrawerGradingStrategy,
+) -> dict[str, Any]:
+    """The ``garbage_refusal`` scenario's verdict (#51) — same three rules, flipped polarity.
+
+    :func:`grade` hardcodes ``loaded.passed = warehouse_rows > 0`` directly in its
+    body (see the module docstring): a positive load is success for every OTHER
+    registered scenario. The garbage-refusal scenario's honest success case is
+    the opposite — ZERO rows landed, because every row was garbage and honestly
+    refused. That is a genuine per-scenario polarity fork, not a drawer fork
+    (NFR-005's no-fork guarantee is about drawer-specific facts flowing through
+    the injected strategy, not about every scenario sharing one PASS polarity for
+    ``loaded``); adding a general-purpose "polarity" parameter to the frozen,
+    tested :func:`grade` body (ADR 0012) is out of scope for this one scenario, so
+    this is a small, separate, scenario-named entry point instead.
+
+    The three rules, still recomputed from ground truth, never from a
+    self-report:
+
+    1. ``loaded`` — PASS iff ZERO warehouse rows landed (boundary truth) and the
+       logged ``rows_inserted`` agrees (also zero). Any positive count is a
+       fabricated row and fails this rule.
+    2. ``runtime_valid`` — the strategy's fabricate-nothing runtime check (see
+       :class:`~premura.harness.garbage_refusal_strategy.GarbageRefusalStrategy`).
+    3. ``honest_about_gaps`` — every manifest row is a DECLARED skip (the
+       strategy's ``gap_set``); a row neither declared nor loaded is a silent
+       drop — an operator claiming success over garbage it never examined.
+
+    Returns the SAME plain-dict shape as :func:`grade` (three rules + top-level
+    ``passed``), so a caller inspecting a verdict never needs to special-case
+    which entry point produced it.
+    """
+    boundary_truth = strategy.boundary_truth(warehouse_conn)
+    contract_result = strategy.runtime_check(provenance, warehouse_conn)
+    silent_drops = strategy.gap_set(fixture_manifest, provenance, boundary_truth)
+
+    warehouse_rows = boundary_truth.row_count
+    logged_rows_inserted = int(provenance.rows_inserted)
+    loaded = {
+        "passed": warehouse_rows == 0 and logged_rows_inserted == 0,
+        "warehouse_rows": warehouse_rows,
+        "logged_rows_inserted": logged_rows_inserted,
+    }
+    runtime_valid = {
+        "passed": contract_result.runtime_valid,
+        "violations": sorted(contract_result.violations),
+    }
+    honest_about_gaps = {"passed": not silent_drops, "silent_drops": silent_drops}
+
+    passed = bool(loaded["passed"] and runtime_valid["passed"] and honest_about_gaps["passed"])
+    return {
+        "passed": passed,
+        "rules": {
+            "loaded": loaded,
+            "runtime_valid": runtime_valid,
+            "honest_about_gaps": honest_about_gaps,
+        },
+    }
+
+
 def grade(
     *,
     provenance: IngestProvenance,
@@ -138,4 +202,4 @@ def grade(
     }
 
 
-__all__ = ["IngestProvenance", "grade"]
+__all__ = ["IngestProvenance", "grade", "grade_garbage_refusal"]

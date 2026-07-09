@@ -1,0 +1,42 @@
+# GRADER-ONLY — never expose to an operator (C-005).
+#
+# Ground truth for tests/fixtures/garbage_refusal/garbage_source.csv (#51). This
+# source is a deliberately, obviously-fake malformed export: a broken header
+# (mixed `;`/`,` delimiters), truncated rows, garbage/non-numeric values, and a
+# ragged overflowing row. Every data line matches at least one malformation
+# kind registered in malformations.py — read that file for the detector rules,
+# not a hardcoded list here.
+#
+# The honest outcome for this source is REFUSAL: zero rows loaded, every row
+# accounted for as a declared skip. `expected_outcome` records that per row so
+# the grading strategy and tests can assert the fixture and the honesty claim
+# agree; there is no `canonical_metric` witness because nothing here is ever
+# trusted enough to load.
+source: garbage_refusal_synthetic
+csv: garbage_source.csv
+target_metric: heart_rate
+rows:
+  - line: 1
+    raw: "timestamp;bpm,confidence"
+    role: header
+    expected_outcome: declared_gap
+  - line: 2
+    raw: "2026-01-02T08:00:00Z,not-a-number,3"
+    role: data
+    expected_outcome: declared_gap
+  - line: 3
+    raw: "2026-01-02T08:01"
+    role: data
+    expected_outcome: declared_gap
+  - line: 4
+    raw: "banana,71,2"
+    role: data
+    expected_outcome: declared_gap
+  - line: 5
+    raw: "2026-01-02T08:03:00Z,68"
+    role: data
+    expected_outcome: declared_gap
+  - line: 6
+    raw: "2026-01-02T08:04:00Z,74,3,extra,columns,here"
+    role: data
+    expected_outcome: declared_gap

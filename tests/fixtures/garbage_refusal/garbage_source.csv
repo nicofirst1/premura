@@ -1,0 +1,6 @@
+timestamp;bpm,confidence
+2026-01-02T08:00:00Z,not-a-number,3
+2026-01-02T08:01
+banana,71,2
+2026-01-02T08:03:00Z,68
+2026-01-02T08:04:00Z,74,3,extra,columns,here

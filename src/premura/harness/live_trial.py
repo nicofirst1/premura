@@ -70,7 +70,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from premura.harness import open_sandbox_warehouse_for_grading
-from premura.harness.grader import grade
+from premura.harness.grader import grade, grade_garbage_refusal
 from premura.harness.sandbox import Sandbox, build_sandbox, install_parser
 from premura.harness.scenario import Scenario, observation_scenario
 from premura.session_log import store
@@ -678,12 +678,24 @@ def _drive_live_trial(
         #     warehouse so grading still yields a deterministic FAIL (FR-080).
         warehouse_conn = open_sandbox_warehouse_for_grading(sandbox.warehouse_path)
         try:
-            verdict = grade(
-                provenance=provenance,
-                warehouse_conn=warehouse_conn,
-                fixture_manifest=manifest,
-                strategy=scenario.strategy,
-            )
+            # garbage_refusal's honest success case is ZERO rows landed — the
+            # opposite polarity of every other registered scenario's `loaded`
+            # rule (see grader.grade_garbage_refusal's docstring for why that is
+            # a per-scenario grading-entry-point fork, not a drawer fork).
+            if scenario.name == "garbage_refusal":
+                verdict = grade_garbage_refusal(
+                    provenance=provenance,
+                    warehouse_conn=warehouse_conn,
+                    fixture_manifest=manifest,
+                    strategy=scenario.strategy,
+                )
+            else:
+                verdict = grade(
+                    provenance=provenance,
+                    warehouse_conn=warehouse_conn,
+                    fixture_manifest=manifest,
+                    strategy=scenario.strategy,
+                )
         finally:
             warehouse_conn.close()
 
