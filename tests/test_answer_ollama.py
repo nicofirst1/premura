@@ -5,12 +5,12 @@ substituted at its boundary with a fake, deterministic transport, and the rest
 of the seam (bounded surface, grader) runs for real through
 :func:`run_answer_trial`. Pins three paths named in the issue:
 
-* honest-pass — a model response grounded in the tool's own result passes;
-* fabricated-fail — a model response with an invented estimate fails grounding;
-* refusal — a model response mirroring an engine refusal passes.
+* honest-pass - a model response grounded in the tool's own result passes;
+* fabricated-fail - a model response with an invented estimate fails grounding;
+* refusal - a model response mirroring an engine refusal passes.
 
 No new question kinds, no judge involvement, no MCP server changes. Grading
-stays the existing deterministic ``grade_answer`` — these tests exercise it
+stays the existing deterministic ``grade_answer`` - these tests exercise it
 via the seam, not a duplicate check.
 """
 
@@ -131,7 +131,7 @@ def test_malformed_response_retries_then_honestly_refuses(
     assert result.outcome.is_refusal
     assert result.outcome.refusal_reason == "operator_malformed_response"
     # Ground truth here is available (non-empty warehouse), so refusing when the
-    # engine computed a result fails refusal_fidelity — an honest, non-fabricating
+    # engine computed a result fails refusal_fidelity - an honest, non-fabricating
     # failure, not a crash.
     assert not result.verdict.passed
     assert not result.verdict.check("refusal_fidelity").passed

@@ -10,11 +10,11 @@ instead of a script.
 
 Reuses the transport (:func:`premura.harness.live_trial_ollama._ollama`,
 stdlib-only, local-only URL validation) and its retry-on-malformed-output shape
-verbatim — no second HTTP client, no second Ollama URL policy.
+verbatim - no second HTTP client, no second Ollama URL policy.
 
 Scope (per issue #54): no new question kinds, no judge involvement, no MCP
 server changes. The operator's draft answer is graded by the EXISTING
-deterministic :func:`~premura.harness.answer_task.grade_answer` — this module
+deterministic :func:`~premura.harness.answer_task.grade_answer` - this module
 adds no grading logic of its own.
 """
 
@@ -29,7 +29,7 @@ from premura.harness.answer_task import AnalyticalSurface, AnswerOutcome, Questi
 from premura.harness.live_trial_ollama import DEFAULT_MODEL, OllamaUnavailableError, _ollama
 
 #: Bounded retry cap for a malformed (non-JSON) model response. Small: the
-#: model is asked for one structured JSON object, not code — a couple of
+#: model is asked for one structured JSON object, not code - a couple of
 #: reminders is enough to keep this a cheap seam, not a second retry loop.
 MAX_TRIES = 2
 
@@ -93,7 +93,7 @@ class OllamaAnswerOperator:
     estimate-bearing answer (never a crash, never a silent guess).
 
     Grading stays entirely with the existing deterministic
-    :func:`~premura.harness.answer_task.grade_answer` — this operator only
+    :func:`~premura.harness.answer_task.grade_answer` - this operator only
     produces the :class:`~premura.harness.answer_task.AnswerOutcome` under
     grade.
     """
@@ -163,7 +163,7 @@ def _parse_answer_json(raw_response: str) -> dict[str, Any] | None:
 
     Strips optional markdown fences (models sometimes add them despite being
     told not to), then finds the outermost ``{...}`` object and parses it.
-    Returns ``None`` on any failure — a returnable sentinel the caller retries
+    Returns ``None`` on any failure - a returnable sentinel the caller retries
     or refuses on, never an exception escaping into the trial.
     """
     text = raw_response.strip()
