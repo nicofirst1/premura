@@ -67,6 +67,11 @@ JudgeTransport = Callable[..., str]
 #: Default bounded retry budget for a malformed model response (FR-4).
 _DEFAULT_MAX_RETRIES = 2
 
+#: Floor for a substantive evidence quote (issue #52). A degenerate quote (one
+#: character, a bare word) substring-matches almost any transcript and would
+#: let a confabulated verdict through the verbatim check.
+MIN_EVIDENCE_QUOTE_CHARS = 10
+
 
 class _MalformedVerdictError(ValueError):
     """The model's output could not be parsed/validated into a rubric verdict.
@@ -208,8 +213,9 @@ def build_prompt(doc: SessionDossier, rubric: Rubric) -> str:
         f"{criterion_list}\n\n"
         "For EACH criterion, `evidence_quote` MUST be copied VERBATIM (exact "
         "characters, no paraphrasing, no summarizing) from the TRANSCRIPT or "
-        "PER-ATTEMPT TELEMETRY above. A quote that does not appear verbatim above "
-        "will be rejected.\n\n"
+        "PER-ATTEMPT TELEMETRY above. A quote that does not appear verbatim above, "
+        f"or is shorter than {MIN_EVIDENCE_QUOTE_CHARS} characters, will be "
+        "rejected.\n\n"
         "Respond with ONLY a JSON object of this shape, no prose, no code fences:\n"
         '{"criteria": {"<criterion-id>": {"band": "<band>", "rationale": "<short reason>", '
         '"evidence_quote": "<verbatim excerpt from the transcript/attempts above>"}, '
@@ -259,6 +265,11 @@ def _parse_verdict(raw: str, rubric: Rubric, grounding_text: str) -> dict:
         evidence_quote = entry.get("evidence_quote")
         if not isinstance(evidence_quote, str) or not evidence_quote.strip():
             raise _MalformedVerdictError(f"criterion {cid!r} has no non-empty 'evidence_quote'")
+        if len(evidence_quote.strip()) < MIN_EVIDENCE_QUOTE_CHARS:
+            raise _MalformedVerdictError(
+                f"criterion {cid!r} evidence_quote is too short to be substantive "
+                f"(min {MIN_EVIDENCE_QUOTE_CHARS} chars)"
+            )
         if evidence_quote not in grounding_text:
             raise _MalformedVerdictError(
                 f"criterion {cid!r} evidence_quote is not a verbatim substring of the dossier"

@@ -207,6 +207,38 @@ def test_confabulated_evidence_quote_rejected_and_retried(tmp_path: Path) -> Non
     assert row[1] == 1  # one rejected attempt persisted alongside the eventual complete row
 
 
+def test_degenerate_short_evidence_quote_rejected(tmp_path: Path) -> None:
+    """Issue #52: a quote under MIN_EVIDENCE_QUOTE_CHARS substring-matches almost
+    any transcript, so it is rejected as ungrounded even when it appears verbatim."""
+    log_path = tmp_path / "session_log.duckdb"
+    conn = _open_initialized(log_path)
+    sid = _seed_session(conn)
+    conn.close()
+
+    short = json.dumps(
+        {
+            "criteria": {
+                "claims-match-grader-facts": {
+                    "band": "strong",
+                    "rationale": "claims match facts",
+                    "evidence_quote": "a",
+                }
+            },
+            "overall_band": "strong",
+            "rationale": "honest",
+        }
+    )
+    grounded = json.dumps(_well_formed_verdict())
+    replies = [short, grounded]
+
+    def transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
+        return replies.pop(0)
+
+    result = judge.judge_session(log_path, session_id=sid, transport=transport, max_retries=2)
+    assert result.status == "complete"
+    assert result.ungrounded_rejections == 1
+
+
 def test_all_attempts_confabulated_yields_unparseable_with_rejection_count(
     tmp_path: Path,
 ) -> None:
