@@ -307,20 +307,31 @@ def real_model_operator(source: Path | None = None, **kwargs: Any) -> Operator:
     return OllamaOperator(source, **kwargs)
 
 
-def real_model_driver(**kwargs: Any) -> Driver:
+def real_model_driver(*, persona: str | None = None, **kwargs: Any) -> Driver:
     """Resolve the D4/R5 follow-up: delegate to the WP03 cheap-model driver.
 
     The slice-one substrate shipped this as a ``NotImplementedError`` placeholder;
-    that follow-up is now CLOSED (FR-013). It builds and returns the real
-    cheap-model :class:`Driver` —
-    :class:`premura.harness.live_trial_ollama.OllamaDriver` — forwarding the
-    ``model`` kwarg. The import is LAZY to avoid an import cycle.
+    that follow-up is now CLOSED (FR-013). By default it builds and returns the
+    canned cheap-model :class:`Driver` -
+    :class:`premura.harness.live_trial_ollama.OllamaDriver` - forwarding the
+    ``model`` kwarg, so existing callers are unchanged (C-004).
 
-    Calling it with no kwargs still returns a working driver using the default
-    cheap local model; there is no remaining stub behavior.
+    Passing ``persona`` (issue #53) is the OPT-IN switch to the real, model-backed
+    :class:`premura.harness.live_trial_ollama.ModelDriver`, which plays the named
+    registered persona (:mod:`premura.harness.driver_personas`) instead of
+    returning a canned "proceed" - the real driver replaces the canned one only
+    when explicitly requested, never silently. The import is LAZY to avoid an
+    import cycle.
+
+    Calling it with no kwargs still returns a working canned driver using the
+    default cheap local model; there is no remaining stub behavior.
     """
-    from premura.harness.live_trial_ollama import OllamaDriver
+    from premura.harness.driver_personas import get_persona
+    from premura.harness.live_trial_ollama import DEFAULT_MODEL, ModelDriver, OllamaDriver
 
+    if persona is not None:
+        model = kwargs.pop("model", DEFAULT_MODEL)
+        return ModelDriver(get_persona(persona), model=model)
     return OllamaDriver(**kwargs)
 
 

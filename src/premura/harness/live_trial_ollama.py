@@ -55,6 +55,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from premura.harness import live_trial
+from premura.harness.driver_personas import DriverPersona
 from premura.harness.live_trial import (
     LiveTrialConfig,
     LiveTrialResult,
@@ -751,6 +752,73 @@ class OllamaDriver:
 
 
 # --------------------------------------------------------------------------- #
+# ModelDriver — real-model persona driver (issue #53). Opt-in only.
+# --------------------------------------------------------------------------- #
+
+
+class ModelDriver:
+    """Model-backed driver that plays a :class:`DriverPersona` (issue #53).
+
+    Implements the :class:`~premura.harness.live_trial.Driver` protocol using
+    the SAME localhost-only Ollama transport (:func:`_ollama`) the operator
+    uses - no frontier-API transport, no new HTTP client. Unlike
+    :class:`OllamaDriver`'s canned "proceed", this driver calls the model for
+    every ``respond()`` up to the persona's ``max_turns`` improvisation
+    budget; once the budget is spent it falls back to "proceed" so a trial can
+    never hang on an unbounded conversation.
+
+    The honesty constraint is enforced by PROMPT CONSTRUCTION, not post-hoc
+    filtering: every prompt carries ONLY the persona's ``system_prompt`` +
+    ``fixture_facts`` + the operator's question, and explicitly instructs the
+    model to say "I don't know" rather than invent a fact outside that bounded
+    set. This is the same posture as the operator's C-005 contract-only
+    prompting - the driver never sees the grader manifest either.
+
+    ``ScriptedDriver`` remains the cheap deterministic default (see
+    ``live_trial.py``); this class is opt-in per run, never a silent
+    replacement.
+    """
+
+    def __init__(self, persona: DriverPersona, *, model: str = DEFAULT_MODEL) -> None:
+        self.persona = persona
+        self.model_id = f"model-driver:{persona.name}:{model}"
+        self._model = model
+        self._turns_used = 0
+
+    def goal(self) -> str:
+        return self.persona.goal
+
+    def respond(self, question: str) -> str:
+        """Answer one operator question via the model, within the turn budget.
+
+        Falls back to "proceed" once ``max_turns`` responses have been given
+        (the improvisation budget) or if the local model is unreachable - a
+        driver must never crash or hang a trial (mirrors the operator's
+        availability-as-a-returnable-outcome posture, NFR-001).
+        """
+        if self._turns_used >= self.persona.max_turns:
+            return "proceed"
+        self._turns_used += 1
+        prompt = self._build_prompt(question)
+        try:
+            response = _ollama(prompt, model=self._model)
+        except OllamaUnavailableError:
+            return "proceed"
+        return response.strip() or "proceed"
+
+    def _build_prompt(self, question: str) -> str:
+        facts = "\n".join(f"- {fact}" for fact in self.persona.fixture_facts)
+        return (
+            f"{self.persona.system_prompt}\n\n"
+            f"Your goal: {self.persona.goal}\n\n"
+            f"Facts you actually know about your data (do not go beyond these):\n"
+            f"{facts}\n\n"
+            f"The operator asks:\n{question}\n\n"
+            "Reply with your answer only, in one short sentence."
+        )
+
+
+# --------------------------------------------------------------------------- #
 # Source classification + run entry point. [T013 / T014]
 # --------------------------------------------------------------------------- #
 
@@ -1158,6 +1226,7 @@ __all__ = [
     "OLLAMA_URL",
     "AttemptRecord",
     "LiveTrialOutcome",
+    "ModelDriver",
     "OllamaDriver",
     "OllamaOperator",
     "OllamaUnavailableError",
