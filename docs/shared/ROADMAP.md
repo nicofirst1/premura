@@ -25,6 +25,12 @@ its sprint shipped `v0.4.0` plus operating-roles slices 1–2. Planning now
 lives in **GitHub milestones M2–M5** on `nicofirst1/premura`, and the path to
 `v1.0.0` is the milestone sequence: M2 outward-ready basics ∥ M3 operating-roles
 completion ∥ M4 parser-ecosystem proof, then M5 teaching MVP (design-gated).
+
+**M3 is complete (5/5 issues closed).** Phase 5 interview + teaching MVP
+shipped 2026-07-04 (umbrella issue #37, closed via slices #41-#44) - see
+[FULL_APP_DEVELOPMENT_PLAN.md](../building/product/FULL_APP_DEVELOPMENT_PLAN.md)
+§"Phase 5". Remaining M4: issue #34 (`ready-for-human`). Remaining M5: issue
+#10 and issue #12, both release-confidence gates for `v1.0.0`.
 Issues labeled `ready-for-agent` are groomed to the **cold-agent bar** — goal,
 functional requirements, acceptance criteria with exact commands, doc-sync
 list, out-of-scope, and the mandatory one-real-e2e-exercise gate — so any

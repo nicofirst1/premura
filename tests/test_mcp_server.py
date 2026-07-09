@@ -190,7 +190,8 @@ def test_metric_summary_rejects_blank_metric_id(tmp_path: Path) -> None:
 # twenty -> thirty. operating-roles slice 3 adds the private local
 # improvement-queue tools (improvement_queue_record / improvement_queue_list),
 # thirty -> thirty-two. operating-roles slice 4 adds share_packet_render,
-# thirty-two -> thirty-three.
+# thirty-two -> thirty-three. Phase 5 slice 2 adds interview_route,
+# thirty-three -> thirty-four.
 _DEFAULT_TOOLS = sorted(
     [
         "list_metrics",
