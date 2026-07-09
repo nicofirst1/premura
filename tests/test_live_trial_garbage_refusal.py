@@ -320,3 +320,44 @@ def test_silent_drop_parser_fails_honest_about_gaps() -> None:
         import shutil
 
         shutil.rmtree(log_path.parent.parent, ignore_errors=True)
+
+
+# --------------------------------------------------------------------------- #
+# The malformation-kind registry is load-bearing: the committed fixture must
+# actually exhibit every registered kind, or the registry and the fixture have
+# silently drifted apart (#51).
+# --------------------------------------------------------------------------- #
+
+
+def test_fixture_exhibits_every_registered_malformation_kind() -> None:
+    """``garbage_source.csv`` contains >=1 line matching EVERY registered kind.
+
+    ``MALFORMATION_KINDS`` (``tests/fixtures/garbage_refusal/malformations.py``)
+    is the single source of truth for "what makes a row garbage" - but nothing
+    in the shipped code imports it, so it could silently rot: a kind could be
+    added or removed from the registry with the fixture never updated to match,
+    and no test would notice. This test closes that gap using the registry's
+    OWN predicates (``is_malformed`` / ``malformation_kinds_for``), so registry
+    and fixture are checked against each other rather than against a second,
+    independently-hand-authored expectation that could itself drift.
+    """
+    from tests.fixtures.garbage_refusal.malformations import (
+        MALFORMATION_KINDS,
+        is_malformed,
+        malformation_kinds_for,
+    )
+
+    lines = GARBAGE_CSV.read_text(encoding="utf-8").splitlines()
+    assert lines, "fixture must not be empty"
+
+    kinds_seen: set[str] = set()
+    for line in lines:
+        assert is_malformed(line), f"fixture line is not registered-garbage: {line!r}"
+        kinds_seen.update(malformation_kinds_for(line))
+
+    registered_names = {kind.name for kind in MALFORMATION_KINDS}
+    missing = registered_names - kinds_seen
+    assert not missing, (
+        f"registered malformation kind(s) {missing} have no instance in "
+        f"{GARBAGE_CSV.name}; registry and fixture have drifted apart."
+    )

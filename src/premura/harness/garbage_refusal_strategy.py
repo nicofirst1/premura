@@ -40,6 +40,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from premura.config import REPO_ROOT
+from premura.harness.grader import grade_garbage_refusal
 from premura.harness.scenario import (
     BoundaryTruth,
     IngestProvenance,
@@ -150,6 +151,7 @@ def garbage_refusal_scenario() -> Scenario:
         manifest_path=_GARBAGE_MANIFEST,
         reference_parser=_GARBAGE_REFERENCE_PARSER,
         strategy=GarbageRefusalStrategy(),
+        grade_fn=grade_garbage_refusal,
     )
 
 
