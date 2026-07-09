@@ -141,3 +141,31 @@ def test_scripted_driver_remains_default_and_real_driver_is_opt_in() -> None:
     opted_in_driver = live_trial.real_model_driver(persona="naive_impatient", model="cheap:test")
     assert isinstance(opted_in_driver, lto.ModelDriver)
     assert opted_in_driver.persona.name == "naive_impatient"
+
+
+def test_register_persona_is_the_extension_point() -> None:
+    """A newly registered persona resolves via get_persona and can be replaced."""
+    from premura.harness.driver_personas import _PERSONAS, register_persona
+
+    custom = DriverPersona(
+        name="test_custom",
+        goal="custom goal",
+        system_prompt="custom persona",
+        max_turns=1,
+        fixture_facts=("one fact",),
+    )
+    assert "test_custom" not in _PERSONAS
+    try:
+        register_persona(custom)
+        assert get_persona("test_custom") is custom
+        replacement = DriverPersona(
+            name="test_custom",
+            goal="changed goal",
+            system_prompt="custom persona",
+            max_turns=2,
+            fixture_facts=("one fact",),
+        )
+        register_persona(replacement)
+        assert get_persona("test_custom") is replacement
+    finally:
+        _PERSONAS.pop("test_custom", None)

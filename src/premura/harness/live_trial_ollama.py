@@ -10,24 +10,24 @@ repeatable check via :func:`premura.harness.live_trial.run_live_trial_with_log`.
 
 Two verdicts are recorded (FR-014): the **independent slice-one grader** judges
 the **un-nagged attempt-1** parser AND the **final** parser. The operator's
-self-reconcile gate is SEPARATE from the grader — the model never sees the
+self-reconcile gate is SEPARATE from the grader - the model never sees the
 grader's answer key (C-005). The honesty gate is manifest-blind: it reads the
 source header directly and reconciles it against the parser's own declared gaps
 plus the source columns the parser says it mapped.
 
 Boundaries this module honours:
 
-* **NFR-004 / FR-021** — the operator only edits the sandbox *tree*; the harness
+* **NFR-004 / FR-021** - the operator only edits the sandbox *tree*; the harness
   remains the sole session-log writer. This module never opens the session log.
-* **C-005** — no prompt path ever includes ``fixture_fields.yaml`` or any
+* **C-005** - no prompt path ever includes ``fixture_fields.yaml`` or any
   ground-truth mapping. The model gets the parser contract, a small source
-  sample, the goal, and (on retry) its own failure verbatim — nothing else.
-* **C-003 / NFR-002 / FR-012** — only the committed SYNTHETIC fixture persists
+  sample, the goal, and (on retry) its own failure verbatim - nothing else.
+* **C-003 / NFR-002 / FR-012** - only the committed SYNTHETIC fixture persists
   (via WP02 :func:`persist_run`, synthetic-guarded). A real-dump source records
   NOTHING; the real-data path stays a manual, local-only exercise. The opt-in
-  ``keep_sandboxes`` inspection knob is likewise synthetic-only — a real source
+  ``keep_sandboxes`` inspection knob is likewise synthetic-only - a real source
   always tears its sandbox down so no real local data is left on disk.
-* **NFR-005** — the matching test is marked ``live_trial`` and the default suite
+* **NFR-005** - the matching test is marked ``live_trial`` and the default suite
   excludes it; a missing/failing live trial can never block CI.
 
 Run it directly::
@@ -78,7 +78,7 @@ _LOGGER = logging.getLogger(__name__)
 # Configuration (env-overridable; defaults to a locally available cheap coder).
 # --------------------------------------------------------------------------- #
 
-#: Default operator/driver model — a small local coder model (NFR-003 / FR-008).
+#: Default operator/driver model - a small local coder model (NFR-003 / FR-008).
 DEFAULT_MODEL = os.environ.get("OLLAMA_MODEL", "qwen2.5-coder:7b")
 
 #: Local Ollama generate endpoint (no third-party HTTP client; stdlib only).
@@ -109,7 +109,7 @@ _PARSER_ATTR = "LiveTrialParser"
 _MAPPED_COLUMNS_CONST = "MAPPED_SOURCE_COLUMNS"
 
 # The contract surface a real operator has from CONTRACT.md + base.py. This is
-# the contract, NOT the reference parser and NOT the manifest — the model never
+# the contract, NOT the reference parser and NOT the manifest - the model never
 # sees the answer key (C-005).
 _OBSERVATION_CONTRACT_PROMPT = f"""\
 You are writing a Premura parser plugin. Output ONE Python module, nothing else.
@@ -131,7 +131,7 @@ IngestBatch(dataclass) fields you set:
 SourceDescriptor(source_id, source_kind, device_manufacturer=...)
     EVERY source_id you put on a Measurement MUST have a matching entry in
     source_descriptors keyed by that source_id, or validate() raises.
-SkippedRow(raw_field: str, reason: str) — use raw_field for a declared-gap COLUMN.
+SkippedRow(raw_field: str, reason: str) - use raw_field for a declared-gap COLUMN.
 
 Your class MUST be named exactly:
     class {_PARSER_ATTR}:
@@ -171,7 +171,7 @@ Output ONLY the python module source. No markdown, no prose, no code fences.
 # is the CONTRACT (IntakeBatch + the intake input dataclasses), NEVER the
 # reference parser and NEVER the grader-only manifest (C-005). The model gets the
 # loadable-row shape, the gap-declaration rule, and the self-reconcile honesty
-# rule — the same three rules grade observation and intake; only the loadable
+# rule - the same three rules grade observation and intake; only the loadable
 # shape differs (FR-007 / D9).
 _INTAKE_CONTRACT_PROMPT = f"""\
 You are writing a Premura intake parser plugin. Output ONE Python module, nothing else.
@@ -198,9 +198,9 @@ A meal row -> NutritionIntakeInput(source_id, source_kind, start_utc, local_tz,
 A supplement row -> SupplementIntakeInput(source_id, source_kind, ts_utc, local_tz,
     dedupe_key, items=[SupplementItemInput(product_label, doses=[
     SupplementDoseInput(amount_num, unit)])]).
-SourceDescriptor(source_id, source_kind, app_name=...) — EVERY event source_id
+SourceDescriptor(source_id, source_kind, app_name=...) - EVERY event source_id
     MUST have a matching source_descriptors entry, or validate() raises.
-SkippedRow(raw_field: str, reason: str) — use raw_field for a declared-gap COLUMN.
+SkippedRow(raw_field: str, reason: str) - use raw_field for a declared-gap COLUMN.
 
 Your class MUST be named exactly:
     class {_PARSER_ATTR}:
@@ -235,7 +235,7 @@ class OllamaUnavailableError(RuntimeError):
 
 
 # --------------------------------------------------------------------------- #
-# Ollama client (stdlib urllib only — no third-party HTTP client). [T010]
+# Ollama client (stdlib urllib only - no third-party HTTP client). [T010]
 # --------------------------------------------------------------------------- #
 
 
@@ -339,21 +339,21 @@ class _DrawerProbe:
 
     This is the bounded *rubric* (guide-don't-enumerate, D9) that generalizes the
     probe off its observation-only gate. Each field is the SAME role for every
-    drawer — only the loadable-row shape differs:
+    drawer - only the loadable-row shape differs:
 
-    * ``contract_prompt`` — the contract surface the operator authors against
+    * ``contract_prompt`` - the contract surface the operator authors against
       (observation measurements vs intake events). Never the manifest (C-005).
-    * ``batch_selector`` — the expression (over the ``(observation, intake)`` tuple
+    * ``batch_selector`` - the expression (over the ``(observation, intake)`` tuple
       from ``normalize_parse_output``) that picks THIS drawer's batch in the probe.
-    * ``nonempty_check`` — the drawer's "produced at least one loadable row" check
+    * ``nonempty_check`` - the drawer's "produced at least one loadable row" check
       (observation: ``batch.measurements``; intake: ``len(batch)``), evaluated in
       the probe over the selected ``batch``.
-    * ``missing_msg`` / ``empty_msg`` — the probe's assertion messages.
-    * ``goal`` — the driver's PHI-safe goal sentence for this drawer (the human's
+    * ``missing_msg`` / ``empty_msg`` - the probe's assertion messages.
+    * ``goal`` - the driver's PHI-safe goal sentence for this drawer (the human's
       intent the operator authors toward).
 
     A new drawer is added by registering one of these in ``_DRAWER_PROBES`` keyed
-    by its scenario name — appending to a list, never forking the probe body.
+    by its scenario name - appending to a list, never forking the probe body.
     """
 
     contract_prompt: str
@@ -423,11 +423,11 @@ class _GateOutcome:
 # source, reads the parser's own declared gaps + its MAPPED_SOURCE_COLUMNS, and
 # runs the WP01 self_reconcile gate IN the sandbox (so the real, manifest-blind
 # WP01 code judges it). It prints a single JSON object on stdout. It never reads
-# the fixture manifest (C-005) — only the source artifact + the parser's batch.
+# the fixture manifest (C-005) - only the source artifact + the parser's batch.
 #
 # The body is DRAWER-DRIVEN, not observation-hardcoded (D9): the two drawer
-# specifics — which side of ``normalize_parse_output`` carries the batch and the
-# drawer's non-empty check — are filled in from the scenario's :class:`_DrawerProbe`
+# specifics - which side of ``normalize_parse_output`` carries the batch and the
+# drawer's non-empty check - are filled in from the scenario's :class:`_DrawerProbe`
 # rubric (``{batch_selector}`` / ``{nonempty_check}``). The self_reconcile gate is
 # drawer-agnostic already (it reads ``unmapped_metrics`` / ``skipped_rows``, both
 # present on either batch type), so it is reached identically for every drawer.
@@ -552,7 +552,7 @@ def _gate_parser(sandbox_src: Path, source: Path, probe: _DrawerProbe) -> _GateO
         return _GateOutcome(passed=True, feedback="", self_reconciliation=recon)
 
     feedback = (
-        "self-reconcile FAILED — these source columns were neither mapped nor "
+        "self-reconcile FAILED - these source columns were neither mapped nor "
         f"declared as a gap (silent drops): {recon.unaccounted}. "
         "Map each real metric column and add it to "
         f"{_MAPPED_COLUMNS_CONST}; declare every other column in unmapped_metrics."
@@ -571,13 +571,13 @@ class AttemptRecord:
 
 
 # --------------------------------------------------------------------------- #
-# OllamaOperator — the cheap operator with the self-reconcile retry loop. [T011]
+# OllamaOperator - the cheap operator with the self-reconcile retry loop. [T011]
 # --------------------------------------------------------------------------- #
 
 
 @dataclass(slots=True)
 class _OneShotTurn:
-    """One captured turn — a structural ``live_trial.TurnLike`` (m2 FR-4).
+    """One captured turn - a structural ``live_trial.TurnLike`` (m2 FR-4).
 
     The one-shot tier's exchange maps to two of these (a ``user`` prompt turn and
     an ``assistant`` response turn). ``role`` / ``content`` plus the optional
@@ -621,7 +621,7 @@ class OllamaOperator:
         self.max_tries = max_tries
         self.tries_used = 0
         self.attempts: list[AttemptRecord] = []
-        #: The FINAL prompt/response exchange of the last :meth:`operate` run —
+        #: The FINAL prompt/response exchange of the last :meth:`operate` run -
         #: the prompt sent to the model and the model's raw response. ``transcript()``
         #: maps it to a two-turn conversation for the harness to persist (m2 FR-4).
         #: Empty strings until the loop runs.
@@ -651,7 +651,7 @@ class OllamaOperator:
         the judge AI reads all tiers uniformly: a ``user`` turn carrying the
         prompt the graded parser came from, then an ``assistant`` turn carrying
         the model's raw response (the operator's model id on the response turn).
-        The operator never writes the log — the harness persists this post-run
+        The operator never writes the log - the harness persists this post-run
         (FR-021 inheritance). Empty until :meth:`operate` has run.
         """
         if not self.last_response:
@@ -701,7 +701,7 @@ class OllamaOperator:
                 "Fix the parser. Output ONLY the corrected python module, no prose, no fences."
             )
         # Cap exhausted: the final (best-effort) parser is already written; the
-        # independent grader judges it as-is — a self-reconcile miss is a
+        # independent grader judges it as-is - a self-reconcile miss is a
         # legitimate capability-floor finding, never an exception.
 
 
@@ -723,7 +723,7 @@ class _FixedCodeOperator:
 
 
 # --------------------------------------------------------------------------- #
-# OllamaDriver — fixed goal + canned response (no frontier model). [T012]
+# OllamaDriver - fixed goal + canned response (no frontier model). [T012]
 # --------------------------------------------------------------------------- #
 
 
@@ -752,7 +752,7 @@ class OllamaDriver:
 
 
 # --------------------------------------------------------------------------- #
-# ModelDriver — real-model persona driver (issue #53). Opt-in only.
+# ModelDriver - real-model persona driver (issue #53). Opt-in only.
 # --------------------------------------------------------------------------- #
 
 
@@ -847,7 +847,7 @@ def is_synthetic_source(source: Path) -> bool:
     """True iff ``source`` is a synthetic scenario source (T013/FR-012; m5 FR-6).
 
     The single decision point for whether a run persists. A source is synthetic in
-    exactly two explicit, bounded ways — never by loosening the rule for arbitrary
+    exactly two explicit, bounded ways - never by loosening the rule for arbitrary
     or real operator paths:
 
     1. It is a committed synthetic scenario source (a real local dump or a temp copy
@@ -878,7 +878,7 @@ class LiveTrialOutcome:
 
     On success, ``record`` / ``attempts`` / ``final_result`` are populated and
     ``model_unavailable`` is False. When the default operator cannot reach the
-    model server, ``model_unavailable`` is True and the run records nothing — a
+    model server, ``model_unavailable`` is True and the run records nothing - a
     returnable sentinel, not just a print, so WP05 can assert the unavailable
     edge.
     """
@@ -903,7 +903,7 @@ def _grade_one(
 
     ``scenario`` is threaded into the WP06 scenario-parametric run path so the SAME
     machinery grades the run against the selected acceptance source via the
-    scenario's injected strategy — no per-source branch here (NFR-005).
+    scenario's injected strategy - no per-source branch here (NFR-005).
     """
     return live_trial.run_live_trial_with_log(
         LiveTrialConfig(),
@@ -927,7 +927,7 @@ def _run_post_run_judge(
 
     Fully GUARDED: the judge is a separate, opt-in evaluation step that can never
     change the trial verdict or raise out of the harness. Any failure of any kind
-    — model unavailable, unparseable output, or an outright bug in the judge — is
+    - model unavailable, unparseable output, or an outright bug in the judge - is
     swallowed here. The judge's own happy/unhappy paths already record an honest
     ``log_judgment`` status row (``complete`` / ``unparseable`` /
     ``model_unavailable``); this guard catches the residual case where even
@@ -958,8 +958,8 @@ def _run_post_run_improvement(log_path: Path, *, session_id: str) -> None:
     Fully GUARDED, exactly like :func:`_run_post_run_judge`: the improvement hook
     is a separate, opt-in step that can never change the trial verdict or raise out
     of the harness. The scan is deterministic and consumes the just-recorded
-    ``log_judgment`` rows (it *proposes*; it never acts). Any failure of any kind —
-    a malformed playbook, a bug in the scan, or a write failure — is swallowed here
+    ``log_judgment`` rows (it *proposes*; it never acts). Any failure of any kind -
+    a malformed playbook, a bug in the scan, or a write failure - is swallowed here
     and logged as a warning instead of propagating. On success a one-line count of
     derived proposals is logged. The import is LAZY so the improvement module is
     only loaded when the opt-in step is actually used.
@@ -1003,7 +1003,7 @@ def run_live_trial_ollama(
     ``scenario`` selects which acceptance source the cheap model authors a parser
     for and is graded against; it defaults to the observation scenario so existing
     callers are unchanged (C-004). Passing the intake scenario makes the SAME path
-    run the intake trial — the operator authors an intake parser, the in-sandbox
+    run the intake trial - the operator authors an intake parser, the in-sandbox
     probe gates the intake batch, and the WP06 scenario-parametric run path grades
     it via the intake strategy. No per-scenario branch (FR-007 / NFR-005). The
     drawer specifics (contract prompt, probe batch/non-empty check, driver goal)
@@ -1016,13 +1016,13 @@ def run_live_trial_ollama(
     Flow:
 
     1. Run the FINAL parser via :func:`live_trial.run_live_trial_with_log` (reuse,
-       don't fork) — its verdict is the authority (FR-004).
+       don't fork) - its verdict is the authority (FR-004).
     2. Independently grade **attempt 1** (un-nagged) through the same unchanged
        machinery + grader (FR-014).
     3. Assemble a :class:`~premura.harness.scoreboard.LiveTrialRunRecord` recording
        ``run_kind="live_trial"`` + the ``operator_model`` / ``driver_model``
        identities (so tiers compare, FR-007) and, for a SYNTHETIC source only,
-       persist it + append the scoreboard (WP02). A real source records nothing —
+       persist it + append the scoreboard (WP02). A real source records nothing -
        the no-persist decision is made here and enforced by WP02's guard
        (FR-012 / C-003 / NFR-002).
 
@@ -1041,7 +1041,7 @@ def run_live_trial_ollama(
     ``judge_transport`` is the injectable judge model backend (DIRECTIVE_036): the
     default (None) uses the judge's local-only Ollama path; tests pass a scripted
     callable. Judge failure of any kind never flips the trial verdict or raises out
-    of the harness — the verdict stays the mechanical grader's.
+    of the harness - the verdict stays the mechanical grader's.
 
     ``improve_run`` is the OPT-IN post-run improvement-hook flag (improvement-hook
     m4 FR-6; default OFF). When ``judge_run`` and ``improve_run`` are both set and
@@ -1049,7 +1049,7 @@ def run_live_trial_ollama(
     scan over the recorded session and persists ``log_improvement`` proposals; the
     scan *proposes*, it never acts, and its failure (like the judge's) never flips
     the verdict or raises out of the harness. ``improve_run`` WITHOUT ``judge_run``
-    is a loud :class:`ValueError` at entry — the hook has nothing to consume.
+    is a loud :class:`ValueError` at entry - the hook has nothing to consume.
     """
     if improve_run and not judge_run:
         raise ValueError(
@@ -1069,7 +1069,7 @@ def run_live_trial_ollama(
 
     driver = OllamaDriver(model=model, goal=probe.goal)
 
-    # (1) Final run — the authority verdict (reuses the unchanged machinery).
+    # (1) Final run - the authority verdict (reuses the unchanged machinery).
     try:
         final_result = _grade_one(
             operator, driver=driver, source=source, repo_root=repo_root, scenario=scenario
@@ -1094,7 +1094,7 @@ def run_live_trial_ollama(
     # (1b) Opt-in post-run AI judge (judge-ai m3 FR-5; default OFF). It runs over
     #      the JUST-RECORDED final session (its attempts + transcript are now in
     #      the log) and persists one honest log_judgment row. Judge failure of ANY
-    #      kind — model unavailable, unparseable output, or a bug — must NEVER flip
+    #      kind - model unavailable, unparseable output, or a bug - must NEVER flip
     #      the trial verdict or raise out of the harness: the call is fully guarded
     #      and the verdict is the mechanical grader's, untouched.
     if judge_run:
@@ -1133,7 +1133,7 @@ def run_live_trial_ollama(
         final_verdict=final_verdict,
     )
 
-    # (3) Persist — synthetic-only (the no-persist decision is made HERE).
+    # (3) Persist - synthetic-only (the no-persist decision is made HERE).
     synthetic = is_synthetic_source(source)
     persisted_dir = persist_run(
         record,
@@ -1157,7 +1157,7 @@ def run_live_trial_ollama(
     kept_first_result: LiveTrialResult | None = first_result
     # keep_sandboxes is honored ONLY for the synthetic fixture: a kept sandbox
     # holds the parsed source, so retaining one for a NON-synthetic source would
-    # leave the operator's real local data on disk after the run — exactly the
+    # leave the operator's real local data on disk after the run - exactly the
     # no-persist rule enforced above for persistence (FR-012 / C-003 / NFR-002).
     # A non-synthetic source therefore always tears both sandboxes down.
     if not (keep_sandboxes and synthetic):
