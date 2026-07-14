@@ -63,6 +63,12 @@ JudgeTransport = Callable[..., str]
 #: Default bounded retry budget for a malformed model response (FR-4).
 _DEFAULT_MAX_RETRIES = 2
 
+#: Minimum substantive length for a criterion's ``evidence_quote`` (issue #67). A
+#: verbatim-substring check alone is trivially gameable: a 1-2 char quote matches
+#: almost any dossier text. Below this floor the quote is rejected as ungrounded
+#: through the same path as a non-substring quote, whatever it is a substring of.
+MIN_EVIDENCE_QUOTE_CHARS = 10
+
 
 class _MalformedVerdictError(ValueError):
     """The model's output could not be parsed/validated into a rubric verdict.
@@ -250,10 +256,13 @@ def _parse_verdict(raw: str, rubric: Rubric, grounding: str) -> dict:
     the judge side: an off-rubric id is malformed, never silently recorded.
 
     Raises the :class:`_UngroundedEvidenceError` subtype if any criterion's
-    ``evidence_quote`` is missing or is not a verbatim substring of ``grounding``
-    (the dossier text the model was shown). This is a CODE-level grounding check,
-    not a prompt-level ask: a confabulated evidence string is rejected here and
-    (being a ``_MalformedVerdictError``) retried on the existing loop.
+    ``evidence_quote`` is missing, is not a verbatim substring of ``grounding``
+    (the dossier text the model was shown), or is shorter than
+    ``MIN_EVIDENCE_QUOTE_CHARS`` (issue #67: a 1-2 char quote trivially
+    substring-matches almost any dossier, so a bare verbatim check alone is not
+    a real grounding check). This is a CODE-level grounding check, not a
+    prompt-level ask: a confabulated or trivial evidence string is rejected here
+    and (being a ``_MalformedVerdictError``) retried on the existing loop.
     """
     text = raw.strip()
     # Tolerate an accidental ```json fence the prompt asked the model to omit.
@@ -286,6 +295,11 @@ def _parse_verdict(raw: str, rubric: Rubric, grounding: str) -> dict:
         if quote not in grounding:
             raise _UngroundedEvidenceError(
                 f"criterion {cid!r} evidence_quote is not a verbatim span of the dossier"
+            )
+        if len(quote.strip()) < MIN_EVIDENCE_QUOTE_CHARS:
+            raise _UngroundedEvidenceError(
+                f"criterion {cid!r} evidence_quote is shorter than the "
+                f"{MIN_EVIDENCE_QUOTE_CHARS}-char grounding floor"
             )
         validated[cid] = {
             "band": band,
