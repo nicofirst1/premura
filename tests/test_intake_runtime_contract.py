@@ -27,13 +27,7 @@ from premura.parsers.contract_check import ContractCheckResult
 TS = datetime(2026, 1, 1, 8, 0, 0)
 
 # The contract doc the checker must stay pinned to (FR-010 invariant).
-_CONTRACT_DOC = (
-    Path(__file__).resolve().parents[1]
-    / "kitty-specs"
-    / "intake-parser-acceptance-scenario-01KTBT72"
-    / "contracts"
-    / "intake-runtime-contract.md"
-)
+_CONTRACT_DOC = Path(__file__).resolve().parent / "contracts" / "intake-runtime-contract.md"
 
 
 def _nutrition_event(
