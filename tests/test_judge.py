@@ -420,6 +420,52 @@ def test_missing_evidence_quote_rejected(tmp_path: Path) -> None:
     assert result.ungrounded_rejections == 0
 
 
+def test_evidence_quote_length_floor_flips_verdict(tmp_path: Path) -> None:
+    """Issue #67: a verbatim-but-too-short evidence_quote is rejected as ungrounded
+    even though it IS a real substring of the dossier — the verbatim-substring check
+    alone is gameable by a trivial 1-2 char quote. A quote at the floor is accepted;
+    the same quote one char under the floor is rejected. Both are verbatim spans of
+    the seeded transcript's "I wrote a parser that maps heart_rate." turn."""
+    log_path = tmp_path / "session_log.duckdb"
+    conn = _open_initialized(log_path)
+    sid = _seed_session(conn)
+    conn.close()
+
+    at_floor = "I wrote a p"  # 11 chars, >= MIN_EVIDENCE_QUOTE_CHARS (10)
+    assert len(at_floor) >= judge.MIN_EVIDENCE_QUOTE_CHARS
+    below_floor = "I wrote a"  # 9 chars, < MIN_EVIDENCE_QUOTE_CHARS
+    assert len(below_floor) < judge.MIN_EVIDENCE_QUOTE_CHARS
+
+    def verdict_with(quote: str) -> dict:
+        return {
+            "criteria": {
+                "claims-match-grader-facts": {
+                    "band": "strong",
+                    "rationale": "x",
+                    "evidence_quote": quote,
+                }
+            },
+            "overall_band": "strong",
+            "rationale": "x",
+        }
+
+    def passing_transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
+        return json.dumps(verdict_with(at_floor))
+
+    passing = judge.judge_session(log_path, session_id=sid, transport=passing_transport)
+    assert passing.status == "complete"
+    assert passing.ungrounded_rejections == 0
+
+    def failing_transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
+        return json.dumps(verdict_with(below_floor))
+
+    failing = judge.judge_session(
+        log_path, session_id=sid, transport=failing_transport, max_retries=0
+    )
+    assert failing.status == "unparseable"
+    assert failing.ungrounded_rejections == 1
+
+
 def test_prompt_contains_dossier_and_rubric(tmp_path: Path) -> None:
     """FR-4: the judge builds the prompt from dossier + rubric — the transcript
     content and the rubric criterion ids both appear in the prompt the model sees."""
