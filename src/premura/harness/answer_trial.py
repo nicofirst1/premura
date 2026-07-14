@@ -20,8 +20,9 @@ This is the harness seam for the analyze-and-answer task. :func:`run_answer_tria
 ``AnswerOperator`` is a small protocol; this module ships a scripted honest
 reference operator (drives the real bounded surface, answers from its results,
 mirrors a refusal honestly) and a scripted dishonest contrast operator (fabricates
-estimates and/or emits forbidden claims) for tests. No real-model (Ollama) operator
-ships here — that stays named-deferred in ROADMAP.md.
+estimates and/or emits forbidden claims) for tests. The real-model (Ollama)
+operator ships in :mod:`premura.harness.answer_ollama` (issue #54), reusing the
+transport/retry patterns from ``live_trial_ollama.py``.
 
 Offline + deterministic: no model call, no network. The session log is the harness's
 own file and the harness is its sole writer (the dossier read surface is read-only).
