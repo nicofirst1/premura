@@ -27,7 +27,6 @@ Clone this repo, then ask an AI coding agent to set it up and operate it for you
 
 > Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [Doctrine](docs/shared/DOCTRINE.md) · [SPEC](docs/shared/SPEC.md) · [STATUS](docs/shared/STATUS.md) · [Changelog](docs/shared/CHANGELOG.md) · [Stages](docs/building/architecture/STAGES.md) · [Roadmap](docs/shared/ROADMAP.md) · [Full Plan](docs/building/product/FULL_APP_DEVELOPMENT_PLAN.md)
 
-All four stages now ship: ingest, the deterministic signal engine, the analytical tools, and the human-facing interview layer. The remaining step to `v1.0.0` is one real monthly ingest run on the maintainer's own data; until that tag lands, releases stay on the `v0.x.0` line. (The `v0.1.0` tag marks the first pipeline foundation; it briefly carried the name `v1.0.0` and was retagged 2026-06-11.)
 
 ## Quick start
 
@@ -36,10 +35,7 @@ Fresh clone? An agent (or human) in the repo runs **one setup command first**:
 ```bash
 uv run hpipe bootstrap                      # SETUP ONLY: prepare + verify this local checkout, report reload guidance
 ```
-
-`uv run` is the entry point because `hpipe` is a console script that only exists after the package is installed - `uv run` provisions the local environment, then runs bootstrap, so it works on a brand-new clone (it needs only `uv` on PATH; absence of `uv` is reported as a bounded prerequisite, not a silent failure).
-
-`uv run hpipe bootstrap` prepares/verifies the local checkout (environment plus bundled skills), tells you whether an agent-session reload is needed, and hands off the next safe step. It is setup-only - it never ingests data, touches the warehouse, or uploads anything. Then operate normally:
+Then operate normally:
 
 ```bash
 bash ops/bootstrap.sh                       # one-time: brew installs, age keypair, optional rclone
@@ -79,14 +75,7 @@ Using an agent app other than Claude Code (OpenCode, Codex)? See [AGENT_CLIENTS.
 
 ## What asking a question looks like
 
-The first run starts with a short interview. The agent asks what you
-want to look at (sleep, cardio, stress, labs, an overview), then routes
-only to directions where live analysis exists; a dead end gets a plain
-refusal, not an improvised answer. Findings reach you through a narrator
-role that never diagnoses or names causes. Every answer must pass a
-blocking audit of that exact draft before you see it. Lifestyle facts
-(supplements, conditions, habits) are captured one confirmed item at a
-time, and nothing is silently inferred about you.
+The first run starts with a short interview. The agent asks what you want to look at (sleep, cardio, stress, labs, an overview), then routes only to directions where live analysis exists; a dead end gets a plain refusal, not an improvised answer. Findings reach you through a narrator role that never diagnoses or names causes. Every answer must pass a blocking audit of that exact draft before you see it. Lifestyle facts (supplements, conditions, habits) are captured one confirmed item at a time, and nothing is silently inferred about you.
 
 ## Pointers for your agent
 
