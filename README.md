@@ -1,8 +1,16 @@
 # Premura
 
-Your phone tracks steps, but Health Connect drops most of what your wearable actually measures: overnight heart-rate variability (HRV rMSSD), stress, body battery, training load and readiness, VO₂ max. What survives sits scattered across vendor export files that no two apps format the same way, and you have no honest way to ask "did this actually change" across sources.
+Health data does not live in one place. Nutrition sits in a food app, workouts in a sport platform, sleep and heart data in a wearable's cloud, medications in a notes file, labs in PDFs. Every vendor exports its slice in its own format, none of them agree on a standard, and most would prefer you never leave. Collecting your own health picture is work before you can learn anything from it.
 
-Premura is a local-first warehouse plus a reasoning layer built for that mess. It pulls your vendor exports into one place, keeps them encrypted under your control (nothing uploads unless you ask), and answers questions about your own data through tools that say "insufficient data" rather than guess.
+Gathering it is only half the problem. A doctor cannot give fifteen years of your data their full attention in a ten-minute visit. An AI can read all of it, but a plain AI makes things up: wrong citations, invented effect sizes, confident answers where the honest answer is "not enough data".
+
+Premura is a health AI harness built from that tension. It pulls your vendor exports into one local, encrypted warehouse (nothing uploads unless you ask) and lets an AI agent analyze them only through gated tools: deterministic statistics, refusals instead of guesses, citations only from literature the tools fetched. The AI does the reading; the harness keeps it honest.
+
+## Why I built this
+
+I struggled with weight gain and a fatty liver for fifteen years. I saw many doctors in those years and collected as many different diagnoses, and nothing helped. Then I handed all my data to an AI, and it suggested I get checked for insulin resistance. A blood test confirmed it. That gave me a concrete path to follow, and five months after that diagnosis my liver looks good and my body feels healthy.
+
+I can't describe the feeling of empowerment this gave me, and I want other people to have the same chance. The AI did not do the work for me: I changed how I eat and how I move. It gave me a place to start, and Premura exists so that start is available to anyone, with the guardrails I wish I had on day one.
 
 **Premura is not medical advice and not a diagnostic tool.** It helps you organize and understand your own health data; it does not diagnose, treat, or replace a clinician. Talk to a qualified healthcare professional about any medical decision.
 
