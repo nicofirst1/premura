@@ -62,3 +62,7 @@ skills-lock.json
 .kittify/runtime/
 .kittify/workspaces/
 .worktrees/
+
+# spec-kitty bookkeeping (local only)
+.kitty/
+kitty-specs/
