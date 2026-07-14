@@ -120,6 +120,8 @@ def test_plan_n_reps_multiply_model_tiers_but_not_install() -> None:
     plan = acceptance._plan_ladder(scenarios, ["m1"], ["k1"], n=3)
     assert len(_plan_tiers(plan, "one_shot")) == 3
     assert len(_plan_tiers(plan, "analyze_answer")) == 3
+    # the adversarial tier is one run per (model, rep): 1 model * 3 reps.
+    assert len(_plan_tiers(plan, acceptance.ADVERSARIAL_TIER)) == 3
     # install is exactly one rung regardless of n (deterministic; no repeat noise).
     assert len(_plan_tiers(plan, INSTALL_TIER)) == 1
 
@@ -162,10 +164,18 @@ def test_run_acceptance_plan_reflects_faked_registries(monkeypatch: pytest.Monke
     acceptance.run_acceptance(n=1)
 
     tiers = {run.tier for run in captured}
-    assert tiers == {"one_shot", "tool_loop", "analyze_answer", INSTALL_TIER}
+    assert tiers == {
+        "one_shot",
+        "tool_loop",
+        "analyze_answer",
+        acceptance.ADVERSARIAL_TIER,
+        INSTALL_TIER,
+    }
     # one scenario * one model per live-trial tier; one kind * one model for answer.
     assert len([r for r in captured if r.tier == "one_shot"]) == 1
     assert len([r for r in captured if r.tier == INSTALL_TIER]) == 1
+    # the adversarial tier iterates its own registry -> one run per (model, rep).
+    assert len([r for r in captured if r.tier == acceptance.ADVERSARIAL_TIER]) == 1
 
 
 def tmp_board(monkeypatch: pytest.MonkeyPatch) -> Path:
