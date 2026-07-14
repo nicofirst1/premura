@@ -1,24 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-label="Premura logo">
-  <defs>
-    <linearGradient id="s" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#14b8a6"/>
-      <stop offset="1" stop-color="#0f766e"/>
-    </linearGradient>
-  </defs>
-  <!-- staff -->
-  <line x1="120" y1="66" x2="120" y2="232" stroke="#334155" stroke-width="9" stroke-linecap="round"/>
-  <!-- orb -->
-  <circle cx="120" cy="46" r="11" fill="url(#s)"/>
-  <!-- wings -->
-  <path d="M108 74 C84 74 66 62 58 44 C76 50 90 50 102 58 C96 64 100 70 108 74 Z" fill="url(#s)"/>
-  <path d="M132 74 C156 74 174 62 182 44 C164 50 150 50 138 58 C144 64 140 70 132 74 Z" fill="url(#s)"/>
-  <!-- snakes -->
-  <path d="M120 226 C86 212 86 186 120 172 C154 158 154 132 120 118 C94 107 92 92 108 84"
-        fill="none" stroke="#14b8a6" stroke-width="8" stroke-linecap="round"/>
-  <path d="M120 226 C154 212 154 186 120 172 C86 158 86 132 120 118 C146 107 148 92 132 84"
-        fill="none" stroke="#0f766e" stroke-width="8" stroke-linecap="round"/>
-  <!-- snake heads -->
-  <circle cx="108" cy="84" r="6" fill="#14b8a6"/>
-  <circle cx="132" cy="84" r="6" fill="#0f766e"/>
-  <text x="120" y="284" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="34" letter-spacing="6" fill="#334155">PREMURA</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 260">
+  <circle cx="126" cy="130" r="62" fill="none" stroke="#0f766e" stroke-width="11"/>
+  <path d="M30 130 H74 L88 106 L106 156 L122 100 L136 130 H166" fill="none" stroke="#ffffff" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M30 130 H74 L88 106 L106 156 L122 100 L136 130 H166" fill="none" stroke="#e8707e" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
