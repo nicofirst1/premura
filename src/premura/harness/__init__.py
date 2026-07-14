@@ -14,9 +14,13 @@ from typing import TYPE_CHECKING
 
 from premura.harness.sandbox import (
     EXCLUDED_TOP_LEVEL,
+    INSTALL_TIER,
+    InstallStep,
+    InstallTierResult,
     Sandbox,
     build_sandbox,
     install_parser,
+    run_install_tier,
 )
 
 if TYPE_CHECKING:
@@ -55,8 +59,12 @@ def open_sandbox_warehouse_for_grading(warehouse_path: Path) -> duckdb.DuckDBPyC
 
 __all__ = [
     "EXCLUDED_TOP_LEVEL",
+    "INSTALL_TIER",
+    "InstallStep",
+    "InstallTierResult",
     "Sandbox",
     "build_sandbox",
     "install_parser",
     "open_sandbox_warehouse_for_grading",
+    "run_install_tier",
 ]
