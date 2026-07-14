@@ -55,6 +55,10 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from premura.harness import live_trial
+from premura.harness.driver_personas import BUDGET_EXHAUSTED_REPLY as _BUDGET_EXHAUSTED_REPLY
+from premura.harness.driver_personas import DEFAULT_PERSONA as _DEFAULT_PERSONA
+from premura.harness.driver_personas import DRIVER_PERSONAS, DriverPersona
+from premura.harness.driver_personas import persona_prompt as _persona_prompt
 from premura.harness.live_trial import (
     Driver,
     LiveTrialConfig,
@@ -814,93 +818,10 @@ class OllamaDriver:
 # PersonaDriver — the model-backed improvising driver (#53). Plays a realistic
 # naive human so the harness can find where the operator derails, something the
 # canned "proceed" driver structurally cannot exercise. Reuses the SAME
-# localhost-only Ollama transport as the operator (no second transport).
+# localhost-only Ollama transport as the operator (no second transport). The
+# persona registry/contract (DriverPersona, DRIVER_PERSONAS) lives in
+# driver_personas.py (#70); this module owns only the model transport.
 # --------------------------------------------------------------------------- #
-
-
-@dataclass(frozen=True, slots=True)
-class DriverPersona:
-    """One naive-human persona the model plays (guide-don't-enumerate contract).
-
-    A persona is the bounded rubric #10 asks for, NOT driver code: a new persona
-    is added by registering a :class:`DriverPersona` in :data:`DRIVER_PERSONAS`,
-    never by editing :class:`PersonaDriver`. Every field is the SAME role for
-    every persona:
-
-    * ``name`` — the registry key + the ``model_id`` suffix recorded on the
-      session (so persona tiers compare later, FR-031).
-    * ``goal`` — the human's intent the persona pursues (what it wants ingested).
-    * ``improv_budget`` — the max number of improvised answers before the persona
-      stops and defers to the operator. A code-enforced turn cap, so an operator
-      that keeps asking cannot make the driver improvise unboundedly.
-    * ``persona_brief`` — the character the model plays (a naive human who does not
-      speak the operator's jargon). Free prose; never contains fixture ground truth.
-    * ``known_facts`` — the ONLY data the persona is allowed to state. The honesty
-      constraint: the persona answers from these facts and REFUSES to invent
-      anything the fixture does not contain. This is what keeps a driven trial
-      grounded in the real dropped data instead of hallucinated inputs.
-    """
-
-    name: str
-    goal: str
-    improv_budget: int
-    persona_brief: str
-    known_facts: tuple[str, ...]
-
-
-# The persona registry: name -> :class:`DriverPersona`. Adding a driver persona
-# is registering an entry here (the guide-don't-enumerate surface, DOCTRINE), NOT
-# editing PersonaDriver. At least one working persona ships (#53 done-criteria).
-DRIVER_PERSONAS: dict[str, DriverPersona] = {
-    "naive_fitbit_owner": DriverPersona(
-        name="naive_fitbit_owner",
-        goal="ingest the heart-rate category from the dropped Fitbit CSV",
-        improv_budget=6,
-        persona_brief=(
-            "You are an ordinary person who exported your own Fitbit data and want "
-            "it loaded. You are NOT a programmer: you do not know what a parser, a "
-            "schema, a column mapping, or a metric_id is. Answer the operator's "
-            "questions plainly and briefly, like a real non-technical human would. "
-            "If the operator uses jargon, say you do not understand it and ask them "
-            "to handle it. Do not volunteer technical solutions."
-        ),
-        known_facts=(
-            "The export is a CSV of heart-rate readings from a Fitbit wearable.",
-            "Each row has a timestamp and a beats-per-minute value.",
-            "You only care about the heart-rate data; you did not export anything else.",
-        ),
-    ),
-}
-
-_DEFAULT_PERSONA = "naive_fitbit_owner"
-
-# The fixed reply the persona gives once its improvisation budget is spent: it
-# stops improvising and hands control back to the operator. Code-enforced, so the
-# turn cap is a real ceiling, not a prompt suggestion.
-_BUDGET_EXHAUSTED_REPLY = "That's all I can tell you - please go ahead with what you have."
-
-
-def _persona_prompt(persona: DriverPersona, question: str) -> str:
-    """Build the per-question prompt: persona brief + honesty rule + known facts.
-
-    The honesty constraint is stated explicitly AND bounded by ``known_facts``:
-    the persona is told to answer only from those facts and to refuse (say it does
-    not know) anything the facts do not cover. The prompt never contains fixture
-    ground truth beyond the persona's own ``known_facts`` (C-005 posture: no answer
-    key leaks into the driver).
-    """
-    facts = "\n".join(f"- {fact}" for fact in persona.known_facts)
-    return (
-        f"{persona.persona_brief}\n\n"
-        f"Your goal: {persona.goal}\n\n"
-        f"The ONLY things you actually know about your data:\n{facts}\n\n"
-        "HONESTY RULE: answer ONLY from the facts above. If the operator asks about "
-        "anything not covered by those facts, you MUST say you do not know / do not "
-        "have that - NEVER make up a value, a column, a date, or any detail that is "
-        "not listed above.\n\n"
-        f"The operator asks you:\n{question}\n\n"
-        "Reply in one or two short sentences, in plain non-technical language."
-    )
 
 
 class PersonaDriver:
