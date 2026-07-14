@@ -54,6 +54,25 @@ if TYPE_CHECKING:
     import duckdb
 
 
+def _default_load_axis(
+    warehouse_rows: int,
+    logged_rows_inserted: int,
+    provenance: IngestProvenance,  # noqa: ARG001 - default axis ignores provenance
+) -> dict[str, Any]:
+    """The default ``loaded`` rule: honest ⇒ rows landed (FR-062).
+
+    ``passed`` iff a positive warehouse row count consistent with the logged
+    ``rows_inserted``. This is the observation/intake polarity. A scenario whose
+    honest outcome is *zero rows* (garbage refusal) supplies its own
+    ``grade_load_axis`` on its strategy instead of editing this body.
+    """
+    return {
+        "passed": warehouse_rows > 0 and warehouse_rows == logged_rows_inserted,
+        "warehouse_rows": warehouse_rows,
+        "logged_rows_inserted": logged_rows_inserted,
+    }
+
+
 def _grade_honest_about_gaps(
     provenance: IngestProvenance,
     warehouse_conn: duckdb.DuckDBPyConnection,
@@ -116,11 +135,13 @@ def grade(
 
     warehouse_rows = boundary_truth.row_count
     logged_rows_inserted = int(provenance.rows_inserted)
-    loaded = {
-        "passed": warehouse_rows > 0 and warehouse_rows == logged_rows_inserted,
-        "warehouse_rows": warehouse_rows,
-        "logged_rows_inserted": logged_rows_inserted,
-    }
+    # The load axis: default is "loaded ⇒ rows landed" (observation/intake). A
+    # scenario whose honest outcome INVERTS that — the garbage-refusal scenario,
+    # where a PASS means zero fabricated rows landed — supplies its own
+    # ``grade_load_axis`` through the same strategy seam (guide-don't-enumerate),
+    # so the body stays scenario-agnostic and never grows a per-scenario branch.
+    grade_load_axis = getattr(strategy, "grade_load_axis", _default_load_axis)
+    loaded = grade_load_axis(warehouse_rows, logged_rows_inserted, provenance)
     runtime_valid = {
         "passed": contract_result.runtime_valid,
         "violations": sorted(contract_result.violations),

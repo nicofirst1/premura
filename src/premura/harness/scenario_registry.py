@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from premura.harness.garbage_strategy import garbage_scenario
 from premura.harness.intake_strategy import intake_scenario
 from premura.harness.scenario import observation_scenario
 
@@ -24,14 +25,14 @@ if TYPE_CHECKING:
 
 
 def all_scenarios() -> list[Scenario]:
-    """Return every registered acceptance scenario (≥ 2: observation + intake).
+    """Return every registered acceptance scenario (observation + intake + garbage).
 
     The registry surface (FR-003 / SC-003): a list a new source is appended to, not
     an ``if/elif`` over source names baked into the grader. Order is stable
-    (observation first, then intake) so callers that index or report over it are
-    deterministic.
+    (observation, intake, then garbage_refusal) so callers that index or report over
+    it are deterministic.
     """
-    return [observation_scenario(), intake_scenario()]
+    return [observation_scenario(), intake_scenario(), garbage_scenario()]
 
 
 __all__ = ["all_scenarios"]
