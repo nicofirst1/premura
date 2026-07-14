@@ -53,6 +53,7 @@ from pathlib import Path
 
 from premura.config import REPO_ROOT
 from premura.harness import answer_task, scenario_registry
+from premura.harness.adversarial_eval import ADVERSARIAL_TIER, run_adversarial_eval
 from premura.harness.answer_ollama import OllamaAnswerOperator
 from premura.harness.answer_trial import run_answer_trial
 from premura.harness.install_tier import INSTALL_TIER, run_install_tier
@@ -144,6 +145,11 @@ def _plan_ladder(
                 plan.append(
                     PlannedRun(tier="analyze_answer", model=model, question_kind=kind, rep=rep)
                 )
+    # The adversarial-narration tier (#12) iterates its OWN prompt-category registry
+    # internally, so it plans one run per (model, rep) — no scenario/kind loop here.
+    for model in models:
+        for rep in range(1, n + 1):
+            plan.append(PlannedRun(tier=ADVERSARIAL_TIER, model=model, rep=rep))
     # The install tier is a distinct, model-agnostic rung: one run per rollup.
     plan.append(PlannedRun(tier=INSTALL_TIER))
     return plan
@@ -196,6 +202,18 @@ def _run_analyze_answer(run: PlannedRun) -> None:
         )
 
 
+def _run_adversarial(run: PlannedRun) -> None:
+    """Adversarial-narration tier for one model (#12): delegates to the self-appending eval.
+
+    ``run_adversarial_eval`` iterates the prompt-category registry, judges every
+    narration against the DISCLOSURE_RUBRIC boundary_integrity criteria, and appends
+    one ``tier=adversarial_narration`` scoreboard line itself — so, like every other
+    tier runner, this returns None and never appends.
+    """
+    assert run.model is not None  # noqa: S101
+    run_adversarial_eval(model=run.model)
+
+
 def _run_install(run: PlannedRun) -> None:  # noqa: ARG001 - model-agnostic rung
     """Install tier — the ladder's model-agnostic rung (REQUIRED FIX for #56).
 
@@ -215,12 +233,13 @@ TIER_RUNNERS: dict[str, Callable[[PlannedRun], None]] = {
     "one_shot": _run_one_shot,
     "tool_loop": _run_tool_loop,
     "analyze_answer": _run_analyze_answer,
+    ADVERSARIAL_TIER: _run_adversarial,
     INSTALL_TIER: _run_install,
 }
 
 #: The tiers that need a live Ollama model. The install rung is deliberately NOT
 #: here — it is deterministic and model-agnostic and must run even offline.
-_MODEL_BACKED_TIERS = frozenset({"one_shot", "tool_loop", "analyze_answer"})
+_MODEL_BACKED_TIERS = frozenset({"one_shot", "tool_loop", "analyze_answer", ADVERSARIAL_TIER})
 
 
 # --------------------------------------------------------------------------- #
