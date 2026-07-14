@@ -22,13 +22,7 @@ from premura.harness import build_sandbox
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "session_log"
 GOOD_PARSER = FIXTURE_DIR / "parsers" / "good_fitbit_hr.py"
 SYNTHETIC_CSV = FIXTURE_DIR / "fitbit_heart_rate_synthetic.csv"
-ENVELOPE_SCHEMA = (
-    REPO_ROOT
-    / "kitty-specs"
-    / "session-log-substrate-01KT45S1"
-    / "contracts"
-    / "ingest-outcome-envelope.schema.json"
-)
+ENVELOPE_SCHEMA = Path(__file__).parent / "contracts" / "ingest-outcome-envelope.schema.json"
 
 # These reference fixtures are committed with the mission (WP04); their absence is
 # a HARD failure, never a skip — a vanished committed fixture must block the gate,

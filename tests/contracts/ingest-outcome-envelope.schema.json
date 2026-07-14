@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IngestOutcomeEnvelope",
+  "description": "Raw measured evidence emitted on stdout by the in-sandbox ingest runner. No verdict, no log writing. The parent harness records it as an ingest_run step + log_ingest_provenance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "parser_kind", "declared_metrics", "emitted_metric_ids", "unmapped_metrics", "skipped_rows"],
+  "properties": {
+    "status": { "enum": ["ok", "error"] },
+    "error": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string" },
+        "message": { "type": "string" }
+      },
+      "required": ["kind", "message"]
+    },
+    "parser_kind": { "type": "string" },
+    "batch_id": { "type": ["string", "null"] },
+    "load_stats": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "rows_inserted": { "type": "integer", "minimum": 0 },
+        "rows_skipped_dup": { "type": "integer", "minimum": 0 },
+        "rows_skipped_priority": { "type": "integer", "minimum": 0 }
+      },
+      "required": ["rows_inserted", "rows_skipped_dup", "rows_skipped_priority"]
+    },
+    "declared_metrics": { "type": "array", "items": { "type": "string" } },
+    "emitted_metric_ids": { "type": "array", "items": { "type": "string" } },
+    "unmapped_metrics": { "type": "array", "items": { "type": "string" } },
+    "skipped_rows": {
+      "description": "Each item declares the SOURCE field the parser skipped. 'raw_field' (the source-field name) is REQUIRED and is the reconciliation key the grader credits as a declared gap (a skip without it would be invisible to honesty reconciliation). Additional properties (e.g. 'reason') are allowed.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["raw_field"],
+        "properties": {
+          "raw_field": { "type": "string" }
+        }
+      }
+    }
+  }
+}
