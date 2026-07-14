@@ -443,6 +443,7 @@ def record_judgment(
     overall_band: str | None = None,
     rationale: str | None = None,
     raw_output: str | None = None,
+    ungrounded_rejections: int = 0,
 ) -> str:
     """Insert one ``log_judgment`` row and return its ``judgment_id`` (FR-1).
 
@@ -453,7 +454,11 @@ def record_judgment(
     out-of-vocabulary value raises :class:`ValueError` rather than being silently
     stored. The criterion *ids* are NOT enumerated here — they belong to the
     rubric (FR-3); ``criteria`` is stored verbatim as a JSON object mapping
-    criterion id -> ``{band, rationale}``.
+    criterion id -> ``{band, rationale, evidence_quote}`` (issue #52 — the judge
+    verified each ``evidence_quote`` is a verbatim dossier span before this call).
+    ``ungrounded_rejections`` records how many verdicts the judge rejected for a
+    confabulated (non-verbatim) ``evidence_quote`` before this one — a standing
+    measure of the judge's own confabulation rate.
 
     The judge can never alter ``contract_pass``, the scoreboard, or the trial
     verdict: this writes a separate, additive ``log_judgment`` row only. A
@@ -479,13 +484,16 @@ def record_judgment(
             f"overall_band must be one of {sorted(CRITERION_BANDS)!r} or None, "
             f"got {overall_band!r}."
         )
+    if ungrounded_rejections < 0:
+        raise ValueError(f"ungrounded_rejections must be >= 0, got {ungrounded_rejections!r}.")
     judgment_id = _mint_id()
     conn.execute(
         """
         INSERT INTO log_judgment
             (judgment_id, session_id, judged_at, judge_model, rubric_version,
-             status, criteria_json, overall_band, rationale, raw_output)
-        VALUES (?, ?, now(), ?, ?, ?, ?, ?, ?, ?)
+             status, criteria_json, overall_band, rationale, raw_output,
+             ungrounded_rejections)
+        VALUES (?, ?, now(), ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         [
             judgment_id,
@@ -497,6 +505,7 @@ def record_judgment(
             overall_band,
             rationale,
             raw_output,
+            ungrounded_rejections,
         ],
     )
     return judgment_id

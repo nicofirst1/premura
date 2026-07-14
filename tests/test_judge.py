@@ -75,11 +75,24 @@ def _seed_session(conn: duckdb.DuckDBPyConnection) -> str:
     return sid
 
 
+# A verbatim span of the seeded transcript (see _seed_session) — every well-formed
+# verdict must quote grounded evidence now (issue #52), so tests reuse this literal.
+_GROUNDED_QUOTE = "I wrote a parser that maps heart_rate."
+
+
 def _well_formed_verdict() -> dict:
     return {
         "criteria": {
-            "claims-match-grader-facts": {"band": "strong", "rationale": "claims match facts"},
-            "worked-toward-the-goal": {"band": "adequate", "rationale": "stayed on goal"},
+            "claims-match-grader-facts": {
+                "band": "strong",
+                "rationale": "claims match facts",
+                "evidence_quote": _GROUNDED_QUOTE,
+            },
+            "worked-toward-the-goal": {
+                "band": "adequate",
+                "rationale": "stayed on goal",
+                "evidence_quote": _GROUNDED_QUOTE,
+            },
         },
         "overall_band": "strong",
         "rationale": "honest and goal-directed",
@@ -130,8 +143,13 @@ def test_criteria_ids_come_from_the_rubric_not_code(tmp_path: Path) -> None:
     conn.close()
 
     rubric_ids = set(judge.load_rubric().criterion_ids)
-    # The scripted verdict bands every rubric criterion.
-    verdict = {"criteria": {cid: {"band": "adequate", "rationale": "ok"} for cid in rubric_ids}}
+    # The scripted verdict bands every rubric criterion with a grounded evidence quote.
+    verdict = {
+        "criteria": {
+            cid: {"band": "adequate", "rationale": "ok", "evidence_quote": _GROUNDED_QUOTE}
+            for cid in rubric_ids
+        }
+    }
 
     def transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
         return json.dumps(verdict)
@@ -272,6 +290,134 @@ def test_unknown_band_rejected_as_unparseable(tmp_path: Path) -> None:
 
     result = judge.judge_session(log_path, session_id=sid, transport=transport, max_retries=1)
     assert result.status == "unparseable"
+
+
+def test_grounded_evidence_quote_accepted_and_persisted(tmp_path: Path) -> None:
+    """Issue #52: a verdict whose evidence_quote is a verbatim span of the dossier
+    text is accepted, persisted with the quote, and rejects nothing (count 0)."""
+    log_path = tmp_path / "session_log.duckdb"
+    conn = _open_initialized(log_path)
+    sid = _seed_session(conn)
+    conn.close()
+
+    def transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
+        return json.dumps(_well_formed_verdict())
+
+    result = judge.judge_session(log_path, session_id=sid, transport=transport)
+    assert result.status == "complete"
+    assert result.ungrounded_rejections == 0
+
+    ro = store.connect(log_path, read_only=True)
+    row = ro.execute(
+        "SELECT criteria_json, ungrounded_rejections FROM log_judgment WHERE session_id = ?",
+        [sid],
+    ).fetchone()
+    ro.close()
+    assert row is not None
+    criteria = json.loads(row[0])
+    # The verbatim quote is persisted on every criterion entry.
+    assert all(c["evidence_quote"] == _GROUNDED_QUOTE for c in criteria.values())
+    assert row[1] == 0
+
+
+def test_confabulated_evidence_rejected_then_retried(tmp_path: Path) -> None:
+    """Issue #52: a verdict whose evidence_quote is NOT a verbatim dossier span is
+    rejected in code (not a prompt-only ask), retried on the SAME loop, and the
+    rejection is counted and persisted. A grounded retry then completes."""
+    log_path = tmp_path / "session_log.duckdb"
+    conn = _open_initialized(log_path)
+    sid = _seed_session(conn)
+    conn.close()
+
+    confabulated = {
+        "criteria": {
+            "claims-match-grader-facts": {
+                "band": "weak",
+                "rationale": "made it up",
+                # A plausible paraphrase that never appears verbatim in the dossier.
+                "evidence_quote": "the operator repeatedly claimed success",
+            }
+        },
+        "overall_band": "weak",
+        "rationale": "confabulated",
+    }
+    replies = [json.dumps(confabulated), json.dumps(_well_formed_verdict())]
+
+    def transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
+        return replies.pop(0)
+
+    result = judge.judge_session(log_path, session_id=sid, transport=transport, max_retries=2)
+    # The confabulated verdict was rejected; the grounded retry completed.
+    assert result.status == "complete"
+    assert result.ungrounded_rejections == 1
+
+    ro = store.connect(log_path, read_only=True)
+    row = ro.execute(
+        "SELECT status, ungrounded_rejections FROM log_judgment WHERE session_id = ?",
+        [sid],
+    ).fetchone()
+    ro.close()
+    assert row is not None
+    assert row[0] == "complete"
+    assert row[1] == 1  # the confabulation rate is persisted
+
+
+def test_all_confabulated_exhausts_to_unparseable_with_count(tmp_path: Path) -> None:
+    """Issue #52: if every attempt confabulates its evidence, the retry budget is
+    exhausted to an honest ``unparseable`` row and the full rejection count persists."""
+    log_path = tmp_path / "session_log.duckdb"
+    conn = _open_initialized(log_path)
+    sid = _seed_session(conn)
+    conn.close()
+
+    confabulated = {
+        "criteria": {
+            "claims-match-grader-facts": {
+                "band": "weak",
+                "rationale": "made it up",
+                "evidence_quote": "a quote that is nowhere in the dossier text",
+            }
+        }
+    }
+
+    def transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
+        return json.dumps(confabulated)
+
+    result = judge.judge_session(log_path, session_id=sid, transport=transport, max_retries=2)
+    assert result.status == "unparseable"
+    # First attempt + 2 retries all confabulated.
+    assert result.ungrounded_rejections == 3
+
+    ro = store.connect(log_path, read_only=True)
+    row = ro.execute(
+        "SELECT status, criteria_json, ungrounded_rejections "
+        "FROM log_judgment WHERE session_id = ?",
+        [sid],
+    ).fetchone()
+    ro.close()
+    assert row is not None
+    assert row[0] == "unparseable"
+    assert json.loads(row[1]) == {}  # no confabulated criterion persisted
+    assert row[2] == 3
+
+
+def test_missing_evidence_quote_rejected(tmp_path: Path) -> None:
+    """Issue #52: a criterion with no evidence_quote is malformed and rejected —
+    the grounding field is mandatory, not optional."""
+    log_path = tmp_path / "session_log.duckdb"
+    conn = _open_initialized(log_path)
+    sid = _seed_session(conn)
+    conn.close()
+
+    def transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
+        return json.dumps(
+            {"criteria": {"claims-match-grader-facts": {"band": "strong", "rationale": "x"}}}
+        )
+
+    result = judge.judge_session(log_path, session_id=sid, transport=transport, max_retries=1)
+    assert result.status == "unparseable"
+    # A missing quote is malformed, not a confabulation — the count stays 0.
+    assert result.ungrounded_rejections == 0
 
 
 def test_prompt_contains_dossier_and_rubric(tmp_path: Path) -> None:

@@ -171,8 +171,11 @@ CREATE INDEX IF NOT EXISTS ix_turn_session ON log_turn(session_id, turn_index);
 --     is an empty object, overall_band is NULL, and raw_output preserves what the
 --     model actually said (if anything).
 --   * criteria_json is a JSON object mapping rubric criterion id -> {band,
---     rationale}. The criterion IDS are rubric-owned data, NEVER enumerated in
---     code; each band is validated against CRITERION_BANDS at the store boundary.
+--     rationale, evidence_quote}. The criterion IDS are rubric-owned data, NEVER
+--     enumerated in code; each band is validated against CRITERION_BANDS at the
+--     store boundary. evidence_quote (issue #52) is a verbatim span of the dossier
+--     text the judge verified in code before recording — an ungrounded quote is
+--     rejected and retried, never persisted.
 --   * overall_band / each criterion band ∈ {strong, adequate, weak,
 --     not_applicable} (CRITERION_BANDS) — DESCRIPTIVE bands only: no numeric
 --     scores, no pass/fail language confusable with the mechanical grader verdict
@@ -193,7 +196,12 @@ CREATE TABLE IF NOT EXISTS log_judgment (
     criteria_json  VARCHAR NOT NULL,     -- {criterion_id: {band, rationale}} (JSON)
     overall_band   VARCHAR,              -- nullable; {strong, adequate, weak, not_applicable}
     rationale      VARCHAR,              -- nullable; the judge's overall rationale
-    raw_output     VARCHAR               -- nullable; verbatim model output (honest record)
+    raw_output     VARCHAR,              -- nullable; verbatim model output (honest record)
+    -- issue #52: how many verdicts this invocation rejected because a criterion's
+    -- evidence_quote was not a verbatim span of the dossier text shown to the judge
+    -- (confabulated evidence). A standing measure of the judge's own confabulation
+    -- rate; 0 for a clean or non-complete judgment.
+    ungrounded_rejections INTEGER NOT NULL DEFAULT 0
 );
 -- Fetch a session's judgments.
 CREATE INDEX IF NOT EXISTS ix_judgment_session ON log_judgment(session_id);
