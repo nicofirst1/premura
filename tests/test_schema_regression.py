@@ -5,6 +5,7 @@ Skipped if the file isn't present — keeps CI green elsewhere.
 
 from __future__ import annotations
 
+import os
 import sqlite3
 from pathlib import Path
 
@@ -17,7 +18,7 @@ from premura.parsers.health_connect import (
     HealthConnectParser,
 )
 
-REAL_EXPORT = Path("/Users/nbrandizzi/Downloads/health_connect_export.db")
+REAL_EXPORT = Path(os.environ.get("PREMURA_REAL_HC_EXPORT", "data/inbox/health_connect_export.db"))
 
 pytestmark = pytest.mark.regression
 
