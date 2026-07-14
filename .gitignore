@@ -64,7 +64,6 @@ skills-lock.json
 .worktrees/
 
 # spec-kitty bookkeeping (local only)
-.kitty
-.kitty/
+.kittify/
 kitty-specs/
 CONTEXT.md
