@@ -157,8 +157,9 @@ def test_run_acceptance_plan_reflects_faked_registries(monkeypatch: pytest.Monke
         {tier: _capture for tier in acceptance.TIER_RUNNERS},
     )
     board = tmp_board(monkeypatch)
+    monkeypatch.setattr(acceptance, "SCOREBOARD_PATH", board)
 
-    acceptance.run_acceptance(n=1, scoreboard_path=board)
+    acceptance.run_acceptance(n=1)
 
     tiers = {run.tier for run in captured}
     assert tiers == {"one_shot", "tool_loop", "analyze_answer", INSTALL_TIER}
@@ -239,7 +240,8 @@ def test_offline_run_skips_model_tiers_but_runs_install(
         },
     )
 
-    report = acceptance.run_acceptance(n=1, scoreboard_path=board)
+    monkeypatch.setattr(acceptance, "SCOREBOARD_PATH", board)
+    report = acceptance.run_acceptance(n=1)
 
     assert ran == [INSTALL_TIER]
     assert "Ollama unavailable" in report
