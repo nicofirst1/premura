@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/logo.svg" alt="Premura" width="200"></p>
+
 # Premura
 
 Health data does not live in one place. Nutrition sits in a food app, workouts in a sport platform, sleep and heart data in a wearable's cloud, medications in a notes file, labs in PDFs. Every vendor exports its slice in its own format, none of them agree on a standard, and most would prefer you never leave. Collecting your own health picture is work before you can learn anything from it.
@@ -14,12 +16,6 @@ I can't describe the feeling of empowerment this gave me, and I want other peopl
 
 **Premura is not medical advice and not a diagnostic tool.** It helps you organize and understand your own health data; it does not diagnose, treat, or replace a clinician. Talk to a qualified healthcare professional about any medical decision.
 
-```mermaid
-flowchart LR
-    A["Vendor exports<br/>(Withings, Garmin, Fitbit,<br/>MyFitnessPal, ...)"] --> B["Local encrypted<br/>DuckDB warehouse"]
-    B --> C["Agent + gated tools"]
-    C --> D["Answers to your<br/>questions, with verdicts<br/>(not guesses)"]
-```
 
 ## How you run it
 
