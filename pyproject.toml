@@ -33,6 +33,7 @@ lab-vlm = [
 dev = [
     "pytest>=8.3,<9",
     "pytest-cov>=5",
+    "pytest-xdist>=3.8,<4",
     "pre-commit>=4,<5",
     "ruff>=0.7",
     "mypy>=1.13",
@@ -60,7 +61,7 @@ select = ["E", "F", "I", "B", "UP", "N", "W"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = ["-m", "not regression and not live_trial"]
+addopts = ["-m", "not regression and not live_trial", "-n", "auto"]
 markers = [
     "regression: tests that run against real on-disk exports (skipped when files absent)",
     "live_trial: local model-driven live trials (needs a running Ollama); never in CI (NFR-005)",
