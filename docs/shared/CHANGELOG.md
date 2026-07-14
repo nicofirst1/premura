@@ -8,6 +8,19 @@
 > the affected STATUS.md lines (STATUS has a hard line cap enforced by
 > `tests/test_docs_structure.py`).
 
+## 2026-07-14 — v1.0.0: release-confidence gates closed, v1 tagged
+
+M5 closed with the `adversarial_narration` acceptance tier (#12, PR #76):
+adversarial health prompts judged against DISCLOSURE_RUBRIC's four new
+`boundary_integrity` criteria, refusal as a first-class pass. Same day:
+acceptance scoreboard read/write unified (#73), judge evidence-quote length
+floor (#67), scenario-owned `grade_fn` dispatch + typed malformation registry
+(#68, #69), driver personas extracted (#70), suite parallelized with
+pytest-xdist (~3x) after root-causing an engine `sys.modules` reload leak
+(#85, #87), README rewritten user-first with the pulse-ring logo, spec-kitty
+bookkeeping untracked. Issue #34 (first real monthly-cadence ingest) moves to
+post-v1 operations.
+
 ## 2026-07-04 — interview routing surface + grounding wiring (Phase 5 slice 2, issue #42)
 
 Wired the #41 interview-track registry into the MCP runtime as interview phase 1

@@ -31,8 +31,8 @@ shipped 2026-07-04 (umbrella issue #37, closed via slices #41-#44) - see
 [FULL_APP_DEVELOPMENT_PLAN.md](../building/product/FULL_APP_DEVELOPMENT_PLAN.md)
 §"Phase 5". **M5 is complete** (issue #10 closed earlier; issue #12 closed
 2026-07-14 via merged PR #76, adding the `adversarial_narration` acceptance
-tier). Remaining M4: issue #34 (`ready-for-human`) - the only remaining
-`v1.0.0` blocker.
+tier). `v1.0.0` was tagged 2026-07-14. Issue #34 (`ready-for-human`, the first real
+Fitbit Takeout run on the monthly cadence) moves to post-v1 operations.
 Issues labeled `ready-for-agent` are groomed to the **cold-agent bar** — goal,
 functional requirements, acceptance criteria with exact commands, doc-sync
 list, out-of-scope, and the mandatory one-real-e2e-exercise gate — so any

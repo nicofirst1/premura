@@ -15,8 +15,8 @@
 
 ## TL;DR
 
-**Pre-`v1` foundation — the product line is `v0.x`; the first-pipeline
-restore point is tagged `v0.1.0` (formerly `v1.0.0`, retagged 2026-06-11).**
+**`v1.0.0` tagged 2026-07-14 — all four stages ship a coherent user-facing
+path; the first-pipeline restore point remains tagged `v0.1.0`.**
 The ingest pipeline is operational across the six
 observation sources (Health Connect, Garmin GDPR, Sleep as Android, BMT,
 Withings, Fitbit Takeout) plus two intake sources (MyFitnessPal nutrition,

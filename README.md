@@ -41,6 +41,10 @@ Clone this repo, then ask an AI coding agent to set it up and operate it for you
 
 > Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [Doctrine](docs/shared/DOCTRINE.md) · [SPEC](docs/shared/SPEC.md) · [STATUS](docs/shared/STATUS.md) · [Changelog](docs/shared/CHANGELOG.md) · [Stages](docs/building/architecture/STAGES.md) · [Roadmap](docs/shared/ROADMAP.md) · [Full Plan](docs/building/product/FULL_APP_DEVELOPMENT_PLAN.md)
 
+All four stages ship as `v1.0.0` (tagged 2026-07-14): ingest, the deterministic signal engine, the analytical tools, and the human-facing interview layer.
+
+Premura is developed on macOS; the core pipeline and full test suite run on Linux in CI. `ops/bootstrap.sh` uses Homebrew, so on Linux install `age` (and optionally `rclone`) with your package manager instead. Desktop notifications are macOS-only and turn into no-ops elsewhere.
+
 
 ## Quick start
 
