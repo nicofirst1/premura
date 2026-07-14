@@ -29,8 +29,10 @@ completion ∥ M4 parser-ecosystem proof, then M5 teaching MVP (design-gated).
 **M3 is complete (5/5 issues closed).** Phase 5 interview + teaching MVP
 shipped 2026-07-04 (umbrella issue #37, closed via slices #41-#44) - see
 [FULL_APP_DEVELOPMENT_PLAN.md](../building/product/FULL_APP_DEVELOPMENT_PLAN.md)
-§"Phase 5". Remaining M4: issue #34 (`ready-for-human`). Remaining M5: issue
-#10 and issue #12, both release-confidence gates for `v1.0.0`.
+§"Phase 5". **M5 is complete** (issue #10 closed earlier; issue #12 closed
+2026-07-14 via merged PR #76, adding the `adversarial_narration` acceptance
+tier). Remaining M4: issue #34 (`ready-for-human`) - the only remaining
+`v1.0.0` blocker.
 Issues labeled `ready-for-agent` are groomed to the **cold-agent bar** — goal,
 functional requirements, acceptance criteria with exact commands, doc-sync
 list, out-of-scope, and the mandatory one-real-e2e-exercise gate — so any
@@ -113,8 +115,8 @@ throughout.
 #24 and #27 (harness defects — frozen; fix only when they block a run someone
 needs), #4 (lab validator UI — a visual layer, a deliberate later
 destination, not v1). #12 (adversarial narration eval) and #10 (the
-acceptance-sandbox umbrella) are no longer parked — both sit in milestone M5
-as release-confidence gates for `v1.0.0`.
+acceptance-sandbox umbrella), milestone M5's release-confidence gates for
+`v1.0.0`, are both closed as of 2026-07-14.
 
 ## Near-term residue
 
