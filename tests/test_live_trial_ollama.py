@@ -145,6 +145,160 @@ def test_one_shot_operator_exposes_two_turn_transcript(
         sandbox.teardown()
 
 
+# --------------------------------------------------------------------------- #
+# PersonaDriver: the model-backed improvising driver (#53). Default-suite tests
+# use the injectable fake ``_ollama`` transport — no live Ollama, no network.
+# --------------------------------------------------------------------------- #
+
+
+def test_persona_driver_respond_is_goal_and_persona_driven(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """#53: the driver drives the model with the persona's goal, brief, and facts.
+
+    The canned OllamaDriver returns "proceed" unconditionally; the PersonaDriver
+    instead prompts the model with the persona contract, so the prompt the operator
+    faces carries the persona's goal, the naive-human brief, and the known facts.
+    We capture the prompt the driver sends and assert those persona ingredients
+    reached the model, and that the model's improvised reply is surfaced verbatim.
+    """
+    persona = lto.DRIVER_PERSONAS[lto._DEFAULT_PERSONA]
+    seen: dict[str, str] = {}
+
+    def _fake_ollama(prompt: str, *, model: str, timeout: int = 300) -> str:  # noqa: ARG001
+        seen["prompt"] = prompt
+        return "  It's just my heart rate from my watch.  "
+
+    monkeypatch.setattr(lto, "_ollama", _fake_ollama)
+
+    driver = lto.PersonaDriver()
+    reply = driver.respond("What kind of data is in this file?")
+
+    # The improvised answer is the model's, surfaced verbatim (stripped), not a
+    # canned "proceed".
+    assert reply == "It's just my heart rate from my watch."
+    assert reply != "proceed"
+    # The persona's goal is what goal() reports, and it rode into the prompt.
+    assert driver.goal() == persona.goal
+    assert persona.goal in seen["prompt"]
+    # The naive-human brief and the operator's question are both in the prompt.
+    assert "NOT a programmer" in seen["prompt"]
+    assert "What kind of data is in this file?" in seen["prompt"]
+    # The driver records a persona-tagged model id for tier comparison.
+    assert driver.model_id.startswith("persona-driver:")
+    assert persona.name in driver.model_id
+
+
+def test_persona_driver_honesty_constraint_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """#53: the persona is bound to its known facts and refuses to invent data.
+
+    The honesty constraint has two halves, both pinned here with a fake transport:
+
+    1. The prompt STATES the honesty rule and carries ONLY the persona's
+       ``known_facts`` — the boundary of what the persona may state. It never
+       smuggles in unfixtured detail (no answer key leaks into the driver).
+    2. When the operator asks about data the fixture does not contain, a
+       persona-honest model refuses; the driver surfaces that refusal verbatim
+       rather than a fabricated value.
+    """
+    persona = lto.DRIVER_PERSONAS[lto._DEFAULT_PERSONA]
+    seen: dict[str, str] = {}
+    refusal = "I don't have any sleep data - I only exported heart rate."
+
+    def _fake_ollama(prompt: str, *, model: str, timeout: int = 300) -> str:  # noqa: ARG001
+        seen["prompt"] = prompt
+        return refusal
+
+    monkeypatch.setattr(lto, "_ollama", _fake_ollama)
+
+    driver = lto.PersonaDriver()
+    reply = driver.respond("What were your sleep hours on 2024-01-05?")
+
+    # (2) The refusal is surfaced verbatim; no invented value leaks through.
+    assert reply == refusal
+
+    prompt = seen["prompt"]
+    # (1a) The honesty rule is explicitly stated to the model.
+    assert "HONESTY RULE" in prompt
+    assert "NEVER make up" in prompt
+    # (1b) The prompt carries exactly the persona's known facts and nothing else
+    #      posing as fixture ground truth.
+    for fact in persona.known_facts:
+        assert fact in prompt
+    # A concrete unfixtured detail the operator asked about is NOT seeded into the
+    # prompt as a known fact (the persona cannot be led to invent it).
+    assert "sleep hours" not in prompt.lower().split("the operator asks you")[0]
+
+
+def test_persona_driver_improv_budget_is_code_enforced(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """#53: after the improvisation budget is spent the driver stops improvising.
+
+    The turn cap is code-enforced, not prompt-hoped: once ``improv_budget`` answers
+    have been given the driver returns the fixed hand-back reply and stops calling
+    the model, so an operator that keeps asking cannot make the driver improvise
+    unboundedly.
+    """
+    calls = {"n": 0}
+
+    def _fake_ollama(prompt: str, *, model: str, timeout: int = 300) -> str:  # noqa: ARG001
+        calls["n"] += 1
+        return f"answer {calls['n']}"
+
+    monkeypatch.setattr(lto, "_ollama", _fake_ollama)
+
+    persona = lto.DRIVER_PERSONAS[lto._DEFAULT_PERSONA]
+    driver = lto.PersonaDriver()
+
+    # Exactly ``improv_budget`` improvised answers reach the model.
+    for _ in range(persona.improv_budget):
+        assert driver.respond("keep asking").startswith("answer ")
+    assert calls["n"] == persona.improv_budget
+
+    # The next question is refused by the CODE, without another model call.
+    over_budget = driver.respond("one more?")
+    assert over_budget == lto._BUDGET_EXHAUSTED_REPLY
+    assert calls["n"] == persona.improv_budget
+
+
+def test_persona_driver_degrades_when_model_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """#53: an unreachable model is a returnable hand-back, not a harness crash."""
+
+    def _boom(prompt: str, *, model: str, timeout: int = 300) -> str:  # noqa: ARG001
+        raise lto.OllamaUnavailableError("no ollama")
+
+    monkeypatch.setattr(lto, "_ollama", _boom)
+
+    driver = lto.PersonaDriver()
+    assert driver.respond("anything?") == lto._BUDGET_EXHAUSTED_REPLY
+
+
+def test_persona_driver_unregistered_persona_is_loud() -> None:
+    """#53: selecting an unknown persona is a loud KeyError, not a silent default."""
+    with pytest.raises(KeyError, match="no driver persona registered"):
+        lto.PersonaDriver(persona="does_not_exist")
+
+
+def test_scripted_driver_is_the_default_persona_is_opt_in() -> None:
+    """#53: the cheap canned driver is the DEFAULT; PersonaDriver is opt-in.
+
+    Constructing the default driver never yields the model-backed one, and its
+    ``respond`` is the canned "proceed" (no model reached). This pins that the real
+    driver is a deliberate opt-in, never a silent replacement.
+    """
+    default_driver = lto.OllamaDriver()
+    assert not isinstance(default_driver, lto.PersonaDriver)
+    assert default_driver.respond("anything") == "proceed"
+    # The persona registry ships at least one working persona (done-criteria).
+    assert lto.DRIVER_PERSONAS
+    assert lto._DEFAULT_PERSONA in lto.DRIVER_PERSONAS
+
+
 def _assert_well_formed(verdict: dict[str, object]) -> None:
     """A verdict carries the three rules and a boolean ``passed`` (no PASS assertion)."""
     rules = verdict["rules"]

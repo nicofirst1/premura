@@ -56,6 +56,7 @@ from urllib.parse import urlparse
 
 from premura.harness import live_trial
 from premura.harness.live_trial import (
+    Driver,
     LiveTrialConfig,
     LiveTrialResult,
     Operator,
@@ -790,6 +791,10 @@ class OllamaDriver:
     driver). ``goal`` defaults to the observation heart-rate goal so existing
     callers are unchanged (C-004); the intake entry passes the scenario's intake
     goal so the driver is scenario-derived, not hardcoded to one drawer (FR-007).
+
+    This is the cheap deterministic DEFAULT driver (#53): it returns a fixed
+    ``"proceed"`` and never reaches a model. The model-backed :class:`PersonaDriver`
+    below is the opt-in improvising driver.
     """
 
     _DEFAULT_GOAL = "ingest the heart-rate category from the dropped Fitbit CSV"
@@ -803,6 +808,151 @@ class OllamaDriver:
 
     def respond(self, question: str) -> str:  # noqa: ARG002 - canned for the cheap driver
         return "proceed"
+
+
+# --------------------------------------------------------------------------- #
+# PersonaDriver — the model-backed improvising driver (#53). Plays a realistic
+# naive human so the harness can find where the operator derails, something the
+# canned "proceed" driver structurally cannot exercise. Reuses the SAME
+# localhost-only Ollama transport as the operator (no second transport).
+# --------------------------------------------------------------------------- #
+
+
+@dataclass(frozen=True, slots=True)
+class DriverPersona:
+    """One naive-human persona the model plays (guide-don't-enumerate contract).
+
+    A persona is the bounded rubric #10 asks for, NOT driver code: a new persona
+    is added by registering a :class:`DriverPersona` in :data:`DRIVER_PERSONAS`,
+    never by editing :class:`PersonaDriver`. Every field is the SAME role for
+    every persona:
+
+    * ``name`` — the registry key + the ``model_id`` suffix recorded on the
+      session (so persona tiers compare later, FR-031).
+    * ``goal`` — the human's intent the persona pursues (what it wants ingested).
+    * ``improv_budget`` — the max number of improvised answers before the persona
+      stops and defers to the operator. A code-enforced turn cap, so an operator
+      that keeps asking cannot make the driver improvise unboundedly.
+    * ``persona_brief`` — the character the model plays (a naive human who does not
+      speak the operator's jargon). Free prose; never contains fixture ground truth.
+    * ``known_facts`` — the ONLY data the persona is allowed to state. The honesty
+      constraint: the persona answers from these facts and REFUSES to invent
+      anything the fixture does not contain. This is what keeps a driven trial
+      grounded in the real dropped data instead of hallucinated inputs.
+    """
+
+    name: str
+    goal: str
+    improv_budget: int
+    persona_brief: str
+    known_facts: tuple[str, ...]
+
+
+# The persona registry: name -> :class:`DriverPersona`. Adding a driver persona
+# is registering an entry here (the guide-don't-enumerate surface, DOCTRINE), NOT
+# editing PersonaDriver. At least one working persona ships (#53 done-criteria).
+DRIVER_PERSONAS: dict[str, DriverPersona] = {
+    "naive_fitbit_owner": DriverPersona(
+        name="naive_fitbit_owner",
+        goal="ingest the heart-rate category from the dropped Fitbit CSV",
+        improv_budget=6,
+        persona_brief=(
+            "You are an ordinary person who exported your own Fitbit data and want "
+            "it loaded. You are NOT a programmer: you do not know what a parser, a "
+            "schema, a column mapping, or a metric_id is. Answer the operator's "
+            "questions plainly and briefly, like a real non-technical human would. "
+            "If the operator uses jargon, say you do not understand it and ask them "
+            "to handle it. Do not volunteer technical solutions."
+        ),
+        known_facts=(
+            "The export is a CSV of heart-rate readings from a Fitbit wearable.",
+            "Each row has a timestamp and a beats-per-minute value.",
+            "You only care about the heart-rate data; you did not export anything else.",
+        ),
+    ),
+}
+
+_DEFAULT_PERSONA = "naive_fitbit_owner"
+
+# The fixed reply the persona gives once its improvisation budget is spent: it
+# stops improvising and hands control back to the operator. Code-enforced, so the
+# turn cap is a real ceiling, not a prompt suggestion.
+_BUDGET_EXHAUSTED_REPLY = "That's all I can tell you - please go ahead with what you have."
+
+
+def _persona_prompt(persona: DriverPersona, question: str) -> str:
+    """Build the per-question prompt: persona brief + honesty rule + known facts.
+
+    The honesty constraint is stated explicitly AND bounded by ``known_facts``:
+    the persona is told to answer only from those facts and to refuse (say it does
+    not know) anything the facts do not cover. The prompt never contains fixture
+    ground truth beyond the persona's own ``known_facts`` (C-005 posture: no answer
+    key leaks into the driver).
+    """
+    facts = "\n".join(f"- {fact}" for fact in persona.known_facts)
+    return (
+        f"{persona.persona_brief}\n\n"
+        f"Your goal: {persona.goal}\n\n"
+        f"The ONLY things you actually know about your data:\n{facts}\n\n"
+        "HONESTY RULE: answer ONLY from the facts above. If the operator asks about "
+        "anything not covered by those facts, you MUST say you do not know / do not "
+        "have that - NEVER make up a value, a column, a date, or any detail that is "
+        "not listed above.\n\n"
+        f"The operator asks you:\n{question}\n\n"
+        "Reply in one or two short sentences, in plain non-technical language."
+    )
+
+
+class PersonaDriver:
+    """Model-backed driver that plays a naive human and can improvise (#53).
+
+    Implements the :class:`~premura.harness.live_trial.Driver` protocol. Unlike the
+    canned :class:`OllamaDriver`, ``respond`` drives the local model with the
+    persona's brief, goal, honesty rule, and ``known_facts`` so the operator faces
+    realistic, improvised human input - the input that exposes where the operator
+    derails or stalls (#10 audit item). It reuses the SAME localhost-only Ollama
+    transport as the operator (:func:`_ollama`); there is no second transport.
+
+    Two contract knobs come from the persona, not this class:
+
+    * The ``improv_budget`` is a CODE-ENFORCED turn cap: after that many improvised
+      answers the driver stops and returns :data:`_BUDGET_EXHAUSTED_REPLY`, handing
+      control back to the operator. An operator cannot make the driver improvise
+      unboundedly.
+    * The honesty constraint lives in the persona's ``known_facts`` + the prompt
+      rule; the persona refuses to invent data the fixture does not contain.
+
+    A missing/unreachable model is a returnable outcome, not a crash: if the
+    transport raises :class:`OllamaUnavailableError`, ``respond`` returns
+    :data:`_BUDGET_EXHAUSTED_REPLY` so a driven trial degrades gracefully rather
+    than aborting the harness.
+    """
+
+    def __init__(self, *, persona: str = _DEFAULT_PERSONA, model: str = DEFAULT_MODEL) -> None:
+        try:
+            self._persona = DRIVER_PERSONAS[persona]
+        except KeyError as exc:
+            raise KeyError(
+                f"no driver persona registered under {persona!r}; register one in "
+                f"DRIVER_PERSONAS (known: {sorted(DRIVER_PERSONAS)})"
+            ) from exc
+        self._model = model
+        self.model_id = f"persona-driver:{model}:{self._persona.name}"
+        self._answers_given = 0
+
+    def goal(self) -> str:
+        return self._persona.goal
+
+    def respond(self, question: str) -> str:
+        """Improvise one persona-grounded answer, within the persona's turn budget."""
+        if self._answers_given >= self._persona.improv_budget:
+            return _BUDGET_EXHAUSTED_REPLY
+        self._answers_given += 1
+        prompt = _persona_prompt(self._persona, question)
+        try:
+            return _ollama(prompt, model=self._model).strip()
+        except OllamaUnavailableError:
+            return _BUDGET_EXHAUSTED_REPLY
 
 
 # --------------------------------------------------------------------------- #
@@ -881,7 +1031,7 @@ class LiveTrialOutcome:
 def _grade_one(
     operator: Operator,
     *,
-    driver: OllamaDriver,
+    driver: Driver,
     source: Path,
     repo_root: Path,
     scenario: Scenario,
@@ -980,6 +1130,7 @@ def run_live_trial_ollama(
     judge_run: bool = False,
     judge_transport: object = None,
     improve_run: bool = False,
+    driver_persona: str | None = None,
 ) -> LiveTrialOutcome:
     """Drive one Ollama-backed live trial end-to-end (T013/T014; FR-001..014).
 
@@ -1037,6 +1188,14 @@ def run_live_trial_ollama(
     scan *proposes*, it never acts, and its failure (like the judge's) never flips
     the verdict or raises out of the harness. ``improve_run`` WITHOUT ``judge_run``
     is a loud :class:`ValueError` at entry — the hook has nothing to consume.
+
+    ``driver_persona`` is the OPT-IN model-backed driver selector (#53; default
+    None → the cheap canned :class:`OllamaDriver`). When set to a registered
+    :data:`DRIVER_PERSONAS` key, the run uses the model-backed
+    :class:`PersonaDriver` that plays a naive human and improvises within the
+    persona's budget, so the harness can find where the operator derails under
+    realistic human input. Selecting an unregistered persona is a loud
+    :class:`KeyError`. The default driver is never silently replaced.
     """
     if improve_run and not judge_run:
         raise ValueError(
@@ -1054,7 +1213,13 @@ def run_live_trial_ollama(
             return LiveTrialOutcome(model_unavailable=True)
         operator = OllamaOperator(source, model=model, max_tries=max_tries, probe=probe)
 
-    driver = OllamaDriver(model=model, goal=probe.goal)
+    # The cheap canned OllamaDriver is the DEFAULT; the model-backed PersonaDriver
+    # is OPT-IN per run via ``driver_persona`` (#53 — never a silent replacement).
+    driver: OllamaDriver | PersonaDriver
+    if driver_persona is not None:
+        driver = PersonaDriver(persona=driver_persona, model=model)
+    else:
+        driver = OllamaDriver(model=model, goal=probe.goal)
 
     # (1) Final run — the authority verdict (reuses the unchanged machinery).
     try:
@@ -1211,11 +1376,14 @@ __all__ = [
     "DEFAULT_MODEL",
     "MAX_TRIES",
     "OLLAMA_URL",
+    "DRIVER_PERSONAS",
     "AttemptRecord",
+    "DriverPersona",
     "LiveTrialOutcome",
     "OllamaDriver",
     "OllamaOperator",
     "OllamaUnavailableError",
+    "PersonaDriver",
     "is_synthetic_source",
     "ollama_available",
     "run_live_trial_ollama",
