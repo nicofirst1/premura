@@ -534,8 +534,14 @@ def _weak_verdict_transport(criterion_ids: tuple[str, ...]) -> object:
     improvement scan has weak evidence to turn into proposals."""
 
     def _transport(prompt: str, *, model: str) -> str:  # noqa: ARG001
+        # "contract_pass=" is a literal in judge.grounding_text's GRADER FACTS
+        # header, so it is a verbatim span of the grounding text for any session
+        # (issue #52: every criterion's evidence_quote must ground in that text).
         verdict = {
-            "criteria": {cid: {"band": "weak", "rationale": "weak"} for cid in criterion_ids},
+            "criteria": {
+                cid: {"band": "weak", "rationale": "weak", "evidence_quote": "contract_pass="}
+                for cid in criterion_ids
+            },
             "overall_band": "weak",
         }
         return _json.dumps(verdict)
