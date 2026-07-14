@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import importlib
 import sys
+from contextlib import contextmanager
 from datetime import date, datetime
 from importlib.resources import files
 
@@ -234,25 +235,81 @@ def test_missing_input_report_serializes() -> None:
 # --- T003: lazy built-in loading still behaves correctly ------------------
 
 
-def test_importing_engine_does_not_eagerly_load_signal_modules() -> None:
-    # Drop the engine package and built-in module from sys.modules, then
-    # re-import just the engine package and assert REGISTRY stays empty and the
-    # signal module was not imported as a side effect.
-    for mod in list(sys.modules):
-        if mod == "premura.engine" or mod.startswith("premura.engine."):
-            del sys.modules[mod]
+@contextmanager
+def _fresh_engine_state():
+    """Yield ``premura.engine`` reset to its pre-lazy-load state, then restore it.
 
+    The "fresh import" the lazy-load tests below want is the empty-registry,
+    nothing-lazily-imported state -- NOT a brand-new module object. Deleting
+    ``premura.engine`` (and its submodules) from ``sys.modules`` and re-importing
+    builds a SECOND module world with its own ``REGISTRY``/``RESOLVERS`` dicts;
+    the test files that bind the engine at collection time
+    (``from premura import engine`` / ``import premura.engine as engine``) keep
+    pointing at the ORPHANED originals, and once a loader repopulates the new
+    world their ``engine.*`` names still read the old, now-empty dicts. Under
+    pytest-xdist that leaks whenever such a reset test lands first on a worker
+    that later runs those siblings, and even serially it decouples the
+    ``__init__`` re-exported ``RESOLVERS`` from the live ``_registry`` dict.
+
+    Reset in place instead: clear the registries, drop the load flags, and purge
+    only the *lazily* imported implementation submodules (the built-in signal
+    modules + the ``views`` resolver modules). The core modules (``premura.engine``
+    itself, ``_registry``, ``_resolution``, ``_results``) keep their identity, so
+    every collection-time binding stays valid. Teardown restores the registries,
+    flags, and purged submodules so the reset does not leak into later tests.
+    """
     engine = importlib.import_module("premura.engine")
-    assert engine.REGISTRY == {}
-    assert "premura.engine.lab_ratios" not in sys.modules
 
-    # The static built-in module list exists and includes lab_ratios.
-    assert "premura.engine.lab_ratios" in engine._BUILTIN_SIGNAL_MODULES
+    def _lazy_names() -> set[str]:
+        names = set(engine._BUILTIN_SIGNAL_MODULES)
+        names |= {
+            name
+            for name in sys.modules
+            if name == "premura.engine.views" or name.startswith("premura.engine.views.")
+        }
+        return names
 
-    # A public helper triggers lazy loading.
-    engine.list_auto_safe()
-    assert engine.REGISTRY  # now populated
-    assert "premura.engine.lab_ratios" in sys.modules
+    saved_registry = dict(engine.REGISTRY)
+    saved_resolvers = dict(engine.RESOLVERS)
+    saved_builtins_flag = engine._BUILTINS_LOADED
+    saved_resolvers_flag = engine._RESOLVERS_LOADED
+    saved_lazy = {name: sys.modules[name] for name in _lazy_names() if name in sys.modules}
+
+    engine.REGISTRY.clear()
+    engine.RESOLVERS.clear()
+    engine._BUILTINS_LOADED = False
+    engine._RESOLVERS_LOADED = False
+    for name in list(saved_lazy):
+        del sys.modules[name]
+    try:
+        yield engine
+    finally:
+        engine.REGISTRY.clear()
+        engine.REGISTRY.update(saved_registry)
+        engine.RESOLVERS.clear()
+        engine.RESOLVERS.update(saved_resolvers)
+        engine._BUILTINS_LOADED = saved_builtins_flag
+        engine._RESOLVERS_LOADED = saved_resolvers_flag
+        for name in list(_lazy_names()):
+            sys.modules.pop(name, None)
+        sys.modules.update(saved_lazy)
+
+
+def test_importing_engine_does_not_eagerly_load_signal_modules() -> None:
+    # Reset the engine to its pre-lazy-load state (empty registry, no lazily
+    # imported signal modules) and assert using the engine keeps REGISTRY empty
+    # until a public helper triggers the lazy load.
+    with _fresh_engine_state() as engine:
+        assert engine.REGISTRY == {}
+        assert "premura.engine.lab_ratios" not in sys.modules
+
+        # The static built-in module list exists and includes lab_ratios.
+        assert "premura.engine.lab_ratios" in engine._BUILTIN_SIGNAL_MODULES
+
+        # A public helper triggers lazy loading.
+        engine.list_auto_safe()
+        assert engine.REGISTRY  # now populated
+        assert "premura.engine.lab_ratios" in sys.modules
 
 
 # --- WP01: custom pre-registration must not suppress built-ins ------------
@@ -406,23 +463,18 @@ def test_importing_engine_after_reset_does_not_populate_registry(monkeypatch) ->
     until a query or compute helper forces the lazy load.
     """
     # Reset engine state to simulate a fresh import.
-    for mod in list(sys.modules):
-        if mod == "premura.engine" or mod.startswith("premura.engine."):
-            del sys.modules[mod]
+    with _fresh_engine_state() as engine:
+        # REGISTRY is still empty -- no signal module was eagerly imported.
+        assert engine.REGISTRY == {}
+        assert "premura.engine.lab_ratios" not in sys.modules
+        assert "premura.engine.descriptive_signals" not in sys.modules
 
-    engine = importlib.import_module("premura.engine")
+        # The new helpers are accessible without triggering the loader.
+        assert hasattr(engine, "list_metric_catalog")
+        assert hasattr(engine, "metric_summary")
 
-    # REGISTRY is still empty — no signal module was eagerly imported.
-    assert engine.REGISTRY == {}
-    assert "premura.engine.lab_ratios" not in sys.modules
-    assert "premura.engine.descriptive_signals" not in sys.modules
-
-    # The new helpers are accessible without triggering the loader.
-    assert hasattr(engine, "list_metric_catalog")
-    assert hasattr(engine, "metric_summary")
-
-    # REGISTRY remains empty because we haven't called any loader-triggering helper.
-    assert engine.REGISTRY == {}
+        # REGISTRY remains empty because we haven't called any loader-triggering helper.
+        assert engine.REGISTRY == {}
 
 
 def test_catalog_helpers_do_not_populate_registry_on_call(monkeypatch) -> None:

@@ -32,7 +32,6 @@ from __future__ import annotations
 import inspect
 import json
 import re
-import sys
 from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
 from importlib import import_module
@@ -691,40 +690,22 @@ def _ensure_builtin_resolvers_loaded() -> None:
     Resolver modules under ``premura.engine.views`` register themselves as a
     side effect of import (via the ``@resolver(domain=...)`` decorator from
     :mod:`premura.engine._registry`). Unlike the signal modules, they do not
-    expose a separate ``register_builtin_signals()`` hook — registration
+    expose a separate ``register_builtin_signals()`` hook -- registration
     happens at import time, in line with how the resolver registry is
     designed.
 
-    Idempotent AND self-healing against a wholesale registry wipe. The
-    ``_RESOLVERS_LOADED`` flag short-circuits repeat loads, EXCEPT when the flag
-    is set yet ``RESOLVERS`` holds none of the built-in domains. That impossible-
-    under-normal-use state is what a snapshot/restore test fixture leaves behind
-    under pytest-xdist: a worker that ran such a fixture *before* the first real
-    load snapshots an empty ``RESOLVERS``, registers a fake, then on teardown
-    ``clear()``s the dict back to that empty snapshot — while the flag, flipped
-    True meanwhile, wrongly keeps the loader from ever re-registering. The result
-    was every dependency resolving as ``unsupported_domain`` (empty
-    ``missing_inputs``; ``nutrition_intake`` absent from ``RESOLVERS``).
-
-    The guard is deliberately "none present", not "any missing": deleting a
-    *single* built-in entry is a legitimate test of registry-driven fall-through
-    (see ``test_resolver_removal_restores_unsupported_domain_outcome``) and must
-    NOT be resurrected. Only a total wipe triggers a reload. Because these
-    modules register via import side effect, a plain re-import is a no-op once
-    cached, so we purge them from ``sys.modules`` first to make the
-    ``@resolver`` decorator fire again.
+    Idempotent: the ``_RESOLVERS_LOADED`` flag short-circuits subsequent calls.
+    The flag is only flipped to ``True`` after every module imports without
+    error, so a failed import does not leave it wrongly set.
 
     WP02 fills ``_BUILTIN_RESOLVER_MODULES`` with the concrete observation and
     profile resolver modules; each registers a resolver as a side effect of
     being imported here.
     """
     global _RESOLVERS_LOADED
-    if _RESOLVERS_LOADED and (SEMANTIC_DOMAINS & set(RESOLVERS)):
+    if _RESOLVERS_LOADED:
         return
     for module_name in _BUILTIN_RESOLVER_MODULES:
-        # Registration happens at import time via ``@resolver``; drop any cached
-        # module so a re-load actually re-registers instead of no-op importing.
-        sys.modules.pop(module_name, None)
         import_module(module_name)
     _RESOLVERS_LOADED = True
 
