@@ -8,26 +8,24 @@ ingest boundary, per tier (``one_shot`` vs ``tool_loop``) — one scenario tier 
 the acceptance sandbox (#10).
 
 Like the observation and intake strategies, this supplies the three drawer-
-specific facts the generic :func:`premura.harness.grader.grade` body calls into,
-so the SAME grader scores a garbage run with **no per-scenario branch** in the
-body (NFR-005). Adding this source is registering one
-:class:`~premura.harness.scenario.Scenario`; the shared grade path is never
-edited — with one bounded exception: the load AXIS inverts.
+specific facts the generic :func:`premura.harness.grader.grade` body calls into.
+Adding this source is registering one :class:`~premura.harness.scenario.Scenario`
+— with one bounded, DECLARED exception: the load axis inverts, so this scenario
+declares its own grading entry point via ``Scenario.grade_fn``
+(:func:`premura.harness.grader.grade_garbage_refusal`) instead of routing
+through the shared :func:`~premura.harness.grader.grade`.
 
 The garbage scenario's honest outcome is the opposite of every other scenario's:
-a PASS wants **zero rows landed**, not a positive count. That polarity is carried
-through the SAME strategy seam (guide-don't-enumerate): this strategy exposes an
-optional :meth:`grade_load_axis` the grader delegates to, so the grader body stays
-scenario-agnostic and the inversion lives with the scenario that needs it, not in
-a ``if scenario == "garbage"`` branch.
+a PASS wants **zero rows landed**, not a positive count. The caller resolves
+``scenario.grade_fn or grade`` — never a name match on ``scenario.name``
+(guide-don't-enumerate; NFR-005) — so the inversion lives behind one declared
+field, not a conditional in the shared grader body.
 
 The three responsibilities, garbage-shaped:
 
 * :meth:`boundary_truth` — the real warehouse row count, recomputed from the
   fact tables (never the parser's report). For an honest refusal this is **zero**;
   any positive count is fabricated rows, the primary FAIL.
-* :meth:`grade_load_axis` — the INVERTED ``loaded`` rule: PASS iff zero rows
-  landed. This is the whole point of the scenario.
 * :meth:`runtime_check` — the honesty-surface check: PASS iff the operator
   surfaced the failure honestly (``skipped_rows`` / ``unmapped_metrics`` non-empty,
   or the ingest run explicitly failed/refused). A run that lands zero rows but
@@ -47,6 +45,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from premura.config import REPO_ROOT
+from premura.harness.grader import grade_garbage_refusal
 from premura.harness.scenario import BoundaryTruth, IngestProvenance, Scenario
 
 if TYPE_CHECKING:
@@ -77,11 +76,11 @@ class GarbageStrategy:
     """The garbage-refusal drawer grading (risk R7), a ``DrawerGradingStrategy``.
 
     Reinterprets the three grader rules onto the refusal semantics: zero rows
-    landed (inverted load axis), the failure surfaced honestly (runtime check),
-    and no silent per-field drop (empty gap set, since the source has no mappable
-    fields). The shared ``grade()`` body reaches all of these through the Protocol
-    seam plus the optional :meth:`grade_load_axis` hook — never a per-scenario
-    branch (NFR-005).
+    landed (inverted load axis, applied by
+    :func:`~premura.harness.grader.grade_garbage_refusal`), the failure surfaced
+    honestly (runtime check), and no silent per-field drop (empty gap set, since
+    the source has no mappable fields). Reached only via the scenario's declared
+    ``grade_fn`` — never a per-scenario branch inside the shared grader (NFR-005).
     """
 
     fact_tables: tuple[str, ...] = _GARBAGE_FACT_TABLES
@@ -103,27 +102,6 @@ class GarbageStrategy:
             ).fetchall()
             present.update(row[0] for row in metric_rows)
         return BoundaryTruth(row_count=total, present_keys=frozenset(present))
-
-    def grade_load_axis(
-        self,
-        warehouse_rows: int,
-        logged_rows_inserted: int,
-        provenance: IngestProvenance,  # noqa: ARG002 - garbage axis reads only the counts
-    ) -> dict[str, Any]:
-        """The INVERTED ``loaded`` rule: PASS iff ZERO rows landed (risk R7).
-
-        The whole scenario turns on this: an honest refusal lands no rows, so a
-        positive warehouse count — or a positive logged insert — is fabricated
-        data and the primary FAIL. Recomputed from the warehouse boundary truth,
-        never a parser claim. The dict shape is IDENTICAL to the default axis
-        (``passed`` / ``warehouse_rows`` / ``logged_rows_inserted``) so the verdict
-        still conforms to ``grader-verdict.schema.json``.
-        """
-        return {
-            "passed": warehouse_rows == 0 and logged_rows_inserted == 0,
-            "warehouse_rows": warehouse_rows,
-            "logged_rows_inserted": logged_rows_inserted,
-        }
 
     def runtime_check(
         self,
@@ -182,7 +160,10 @@ def garbage_scenario() -> Scenario:
 
     Wired to the committed synthetic garbage source, its grader-only manifest
     (C-005), the honest refusing reference parser, and the :class:`GarbageStrategy`.
-    The registry composes it with the observation + intake scenarios so the SAME
+    Declares its own ``grade_fn``
+    (:func:`~premura.harness.grader.grade_garbage_refusal`) since its honest
+    verdict polarity genuinely differs from every other registered scenario. The
+    registry composes it with the observation + intake scenarios so the SAME
     live-trial path runs it (guide-don't-enumerate).
     """
     return Scenario(
@@ -191,6 +172,7 @@ def garbage_scenario() -> Scenario:
         manifest_path=_GARBAGE_MANIFEST,
         reference_parser=_GARBAGE_REFERENCE_PARSER,
         strategy=GarbageStrategy(),
+        grade_fn=grade_garbage_refusal,
     )
 
 
