@@ -267,7 +267,7 @@ def _execute_plan(plan: Sequence[PlannedRun], *, skip_model_tiers: bool) -> int:
     return executed
 
 
-def run_acceptance(*, n: int, scoreboard_path: Path = SCOREBOARD_PATH) -> str:
+def run_acceptance(*, n: int) -> str:
     """Run the whole ladder, then report over the FULL scoreboard. Returns the report.
 
     Enumerates the ladder from the real registries, runs each rung (skipping the
@@ -276,6 +276,12 @@ def run_acceptance(*, n: int, scoreboard_path: Path = SCOREBOARD_PATH) -> str:
     table plus the single 0-1 acceptance score. Reporting over the full history
     (not just this invocation's fresh lines) is deliberate: the score is a
     STANDING number that climbs across runs.
+
+    Reads and writes always share the one module-level :data:`SCOREBOARD_PATH` —
+    every tier runner self-appends to it (see :data:`TIER_RUNNERS`), so there is
+    no caller-supplied override to thread through. Tests that need isolation
+    should monkeypatch :data:`SCOREBOARD_PATH` or use the pure scoring functions
+    (:func:`acceptance_score`, :func:`current_floor`) directly.
     """
     scenarios = scenario_registry.all_scenarios()
     models = resolve_models()
@@ -291,7 +297,7 @@ def run_acceptance(*, n: int, scoreboard_path: Path = SCOREBOARD_PATH) -> str:
         )
     _execute_plan(plan, skip_model_tiers=not live)
 
-    entries = read_scoreboard(path=scoreboard_path)
+    entries = read_scoreboard(path=SCOREBOARD_PATH)
     lines.append(_format_floor(current_floor(entries)))
     lines.append("")
     lines.append(f"acceptance score (overall final-pass rate): {acceptance_score(entries):.3f}")
