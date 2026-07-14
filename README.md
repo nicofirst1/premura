@@ -1,6 +1,24 @@
-<p align="center"><img src="assets/logo.svg" alt="Premura" width="200"></p>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg">
+    <img src="assets/logo.svg" width="180" alt="Premura">
+  </picture>
+</p>
 
-# Premura
+<h1 align="center">Premura</h1>
+
+<p align="center">
+  <em>Your health data, gathered in one place and read by an AI that refuses to guess.</em>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.11%2B-0f766e?style=flat-square" alt="Python 3.11+">
+  <img src="https://img.shields.io/badge/data-local%20·%20encrypted-14b8a6?style=flat-square" alt="Local encrypted data">
+  <img src="https://img.shields.io/badge/MCP-ready-e8707e?style=flat-square" alt="MCP ready">
+  <img src="https://img.shields.io/badge/license-Apache--2.0-334155?style=flat-square" alt="Apache 2.0 license">
+</p>
+
+---
 
 Health data does not live in one place. Nutrition sits in a food app, workouts in a sport platform, sleep and heart data in a wearable's cloud, medications in a notes file, labs in PDFs. Every vendor exports its slice in its own format, none of them agree on a standard, and most would prefer you never leave. Collecting your own health picture is work before you can learn anything from it.
 
