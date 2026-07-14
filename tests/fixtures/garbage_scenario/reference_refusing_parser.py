@@ -26,21 +26,22 @@ this: zero fabricated rows AND a visible failure surface.
 == The malformation registry (DOCTRINE "design a level above") ==================
 
 The kinds of malformation this source exhibits are a small EXTENSIBLE REGISTRY,
-not a hardcoded broken-file shape: :data:`MALFORMATION_DETECTORS` maps each
-malformation-kind name (mirrored in the grader-only manifest's
-``malformation_kinds``) to a predicate over one raw line. A future agent adds a
-new malformation kind by registering a ``(kind, predicate)`` pair here (and a
-garbage line that exhibits it) — the classification loop reads the registry
-generically, never a growing ``if/elif`` ladder over shapes. The parser never
-reads the manifest (C-005); it earns its refusal from the raw bytes alone.
+not a hardcoded broken-file shape, and this parser is not where it lives:
+``malformation_kinds.py`` is the single source of truth (a typed
+:class:`~tests.fixtures.garbage_scenario.malformation_kinds.MalformationKind`
+registry) that this parser, the tests, and the fixture description all import.
+A future agent adds a new malformation kind by appending one entry there (and a
+garbage line that exhibits it) — never by editing an if/elif ladder here. This
+parser never reads the grader-only manifest (C-005); it classifies from the raw
+bytes alone via the shared registry.
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from pathlib import Path
 
 from premura.parsers.base import IngestBatch, SkippedRow, SourceDescriptor
+from tests.fixtures.garbage_scenario.malformation_kinds import classify_line
 
 SOURCE_KIND = "garbage_source"
 SOURCE_ID = "garbage_source:synthetic"
@@ -57,62 +58,6 @@ DECLARED_METRICS: tuple[str, ...] = ("heart_rate",)
 # metric. Declared via unmapped_metrics so honesty is witnessed even though the
 # source is header-less noise.
 UNMAPPED_SOURCE_COLUMNS: tuple[str, ...] = ("garbage_source",)
-
-
-# --------------------------------------------------------------------------- #
-# The malformation-kind registry: kind name -> predicate over one raw line.
-# Add a new kind by registering a (name, predicate) pair — the classify loop
-# below reads this generically (guide-don't-enumerate). Each predicate is a pure
-# function of the raw line text, so it needs no header and no manifest.
-# --------------------------------------------------------------------------- #
-
-
-def is_broken_header(line: str) -> bool:
-    """A banner / sentinel line that is not a usable CSV header."""
-    upper = line.upper()
-    return "@@@" in line or "NOT A REAL EXPORT" in upper or ";;;" in line
-
-
-def is_garbage_value_row(line: str) -> bool:
-    """A row whose cells are non-parseable noise (NaN, ???, %%%, FAKE tokens)."""
-    tokens = ("NAN", "???", "%%%", "FAKE", "XYZZY", "PLUGH", "NOTHING-HERE")
-    upper = line.upper()
-    return any(token in upper for token in tokens)
-
-
-def is_truncated_row(line: str) -> bool:
-    """A row cut short mid-record (an explicit truncation marker or a lone comma run)."""
-    return "<<<TRUNCATED" in line.upper() or line.strip(", \n") == ""
-
-
-def is_inconsistent_delimiter_row(line: str) -> bool:
-    """A row using a non-comma delimiter (';', '|', tab) the comma header does not."""
-    return ";" in line or "|" in line or "\t" in line
-
-
-#: The registry the classify loop iterates. Ordered so the first matching kind
-#: labels a line deterministically; a line matching several kinds is still
-#: honestly refused (the label is for diagnostics, refusal is unconditional).
-MALFORMATION_DETECTORS: tuple[tuple[str, Callable[[str], bool]], ...] = (
-    ("broken_header", is_broken_header),
-    ("garbage_values", is_garbage_value_row),
-    ("truncated_row", is_truncated_row),
-    ("inconsistent_delimiter", is_inconsistent_delimiter_row),
-)
-
-
-def classify_line(line: str) -> str:
-    """Return the first registered malformation kind this raw line exhibits.
-
-    Reads :data:`MALFORMATION_DETECTORS` generically — a new kind is picked up
-    by registering its predicate, never by editing this loop. A line matching no
-    registered kind falls back to ``"unrecognized"`` (still refused, never
-    loaded), so an unforeseen shape is refused honestly rather than fabricated.
-    """
-    for kind, predicate in MALFORMATION_DETECTORS:
-        if predicate(line):
-            return kind
-    return "unrecognized"
 
 
 class RefusingGarbageParser:
@@ -166,14 +111,8 @@ class RefusingGarbageParser:
 
 __all__ = [
     "DECLARED_METRICS",
-    "MALFORMATION_DETECTORS",
     "RefusingGarbageParser",
     "SOURCE_ID",
     "SOURCE_KIND",
     "UNMAPPED_SOURCE_COLUMNS",
-    "classify_line",
-    "is_broken_header",
-    "is_garbage_value_row",
-    "is_inconsistent_delimiter_row",
-    "is_truncated_row",
 ]

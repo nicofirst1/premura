@@ -67,7 +67,7 @@ import importlib
 import importlib.util
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, cast, runtime_checkable
 
 from premura.harness import open_sandbox_warehouse_for_grading
 from premura.harness.grader import grade
@@ -678,11 +678,18 @@ def _drive_live_trial(
         #     warehouse so grading still yields a deterministic FAIL (FR-080).
         warehouse_conn = open_sandbox_warehouse_for_grading(sandbox.warehouse_path)
         try:
-            verdict = grade(
-                provenance=provenance,
-                warehouse_conn=warehouse_conn,
-                fixture_manifest=manifest,
-                strategy=scenario.strategy,
+            # Scenario-owned grading dispatch (#68): each scenario declares its own
+            # grading entry point via `grade_fn` (None means "use the shared
+            # `grade()`"). No name matching on scenario.name here (NFR-005).
+            grader_fn = scenario.grade_fn or grade
+            verdict = cast(
+                "dict[str, Any]",
+                grader_fn(
+                    provenance=provenance,
+                    warehouse_conn=warehouse_conn,
+                    fixture_manifest=manifest,
+                    strategy=scenario.strategy,
+                ),
             )
         finally:
             warehouse_conn.close()
@@ -765,9 +772,9 @@ def run_live_trial(
             path under ``config.source_dir`` locally — never in a committed test
             (C-003).
         scenario: the acceptance :class:`~premura.harness.scenario.Scenario` the run
-            is graded against; its ``strategy`` is injected into the generic
-            ``grade()`` (no per-source branch, NFR-005). Defaults to the observation
-            scenario so existing callers are unchanged (C-004).
+            is graded against; dispatched via ``scenario.grade_fn or grade`` (no
+            per-source branch, NFR-005). Defaults to the observation scenario so
+            existing callers are unchanged (C-004).
 
     Returns:
         The grader :data:`Verdict` (no ids/timestamps).

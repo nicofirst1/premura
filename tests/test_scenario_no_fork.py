@@ -12,12 +12,18 @@ that fails the moment someone reintroduces a per-drawer branch:
    through the injected :class:`~premura.harness.scenario.DrawerGradingStrategy`
    seam. This is an AST + token scan over the *actual function body*, so an
    ``if intake:`` ladder added later trips it.
-2. **≥2 scenarios over ONE path (NFR-006 / SC-003).** Drive **every** registered
-   scenario from :func:`~premura.harness.scenario_registry.all_scenarios` (≥2:
-   observation + intake) through the **same** ``grade()`` entry — patched to record
-   each call — and assert both reached the one shared callable with no
-   scenario-specific code path. Proving the abstraction *carries* multiple
-   scenarios, not merely that two happen to be registered.
+2. **Declared dispatch, not name-matching (NFR-006 / SC-003).** Every
+   :class:`~premura.harness.scenario.Scenario` declares its own grading entry
+   point via ``grade_fn`` (``None`` means "use the shared ``grade()``"); the
+   caller (``live_trial.py``) resolves ``scenario.grade_fn or grade`` and never
+   name-matches ``scenario.name``. Every scenario with ``grade_fn=None`` (still
+   observation + intake) is driven through that resolution and asserted to land
+   on the ONE shared ``grade()`` callable, each with a distinct injected
+   strategy - proving the abstraction *carries* multiple scenarios through one
+   path. NOT every registered scenario shares that one callable: garbage_refusal
+   declares its own ``grade_fn`` (``grade_garbage_refusal``) because its PASS
+   polarity genuinely differs (see that function's docstring); this is asserted
+   as a declared, structural exception, not exercised through the recorder.
 
 Offline / deterministic: no network, no model server, no warehouse writes for the
 structural half (NFR-001).
@@ -34,7 +40,7 @@ import yaml
 
 import premura.harness.grader as grader_module
 from premura.harness import grader as grader_pkg
-from premura.harness.grader import grade
+from premura.harness.grader import grade, grade_garbage_refusal
 from premura.harness.scenario_registry import all_scenarios
 
 # --------------------------------------------------------------------------- #
@@ -171,22 +177,25 @@ def test_at_least_two_scenarios_registered() -> None:
     assert {"observation", "intake_alien"} <= names, names
 
 
-def test_every_scenario_grades_through_the_one_shared_grade_call(
+def test_every_scenario_grades_through_its_declared_dispatch_rule(
     monkeypatch, empty_warehouse
 ) -> None:
-    """≥2 scenarios reach the SAME ``grade()`` callable — one path, no per-source code.
+    """Every registered scenario grades through ``scenario.grade_fn or grade`` (#68).
 
-    The behavioral half of the no-fork guarantee. We wrap the single ``grade``
-    entry point with a recorder and drive **every** registered scenario through it
-    with only its own injected strategy differing. Both observation and intake
-    land on the one shared callable (asserted by the recorder), proving the
-    abstraction carries multiple scenarios through a single code path rather than
-    each having its own branch.
+    The behavioral half of the no-fork guarantee, matching what production
+    actually does (``live_trial.py``'s dispatch line): the caller never
+    name-matches ``scenario.name``, it resolves ``scenario.grade_fn or grade``
+    and calls whatever that resolves to. Scenarios that leave ``grade_fn`` unset
+    (``None``) all route to the ONE shared ``grade()`` callable - proven here by
+    driving every such scenario through a recorder wrapping ``grade`` and
+    asserting they all land on it with distinct injected strategies.
+    garbage_refusal is the one scenario that declares its own ``grade_fn``
+    (``grade_garbage_refusal``, a genuine verdict-polarity fork per its
+    docstring in ``grader.py``) - asserted here as a declared exception, not
+    exercised through the shared-``grade()`` recorder.
 
-    The warehouse is intentionally empty: this half proves *which code path each
-    scenario travels*, not the verdict value (the e2e value tests own that). A
-    drawer fork — a second grade entry for intake — would mean intake never hits
-    this recorder, failing the call-count assertion.
+    The warehouse is intentionally empty: this proves *which code path each
+    scenario travels*, not the verdict value (the e2e value tests own that).
     """
     calls: list[Any] = []
     real_grade = grade
@@ -198,9 +207,18 @@ def test_every_scenario_grades_through_the_one_shared_grade_call(
     monkeypatch.setattr(grader_pkg, "grade", _recording_grade)
 
     scenarios = all_scenarios()
+    shared_grade_scenarios = [s for s in scenarios if s.grade_fn is None]
+    assert len(shared_grade_scenarios) >= 2, shared_grade_scenarios
+
+    # garbage_refusal declares its own grading entry point - the one allowed
+    # exception to "everyone shares grade()" (a genuine polarity fork, not a
+    # drawer fork).
+    garbage_refusal = next(s for s in scenarios if s.name == "garbage_refusal")
+    assert garbage_refusal.grade_fn is grade_garbage_refusal
+
     # An empty, manifest-shaped stand-in per scenario keeps the call drawer-blind:
     # we only assert the routing, so an empty manifest (no columns/fields) is
-    # sufficient and keeps the two scenarios on identical calling code.
+    # sufficient and keeps the scenarios on identical calling code.
     empty_manifests: dict[str, dict[str, list[Any]]] = {
         "observation": {"source_fields": []},
         "intake_alien": {"columns": []},
@@ -216,22 +234,25 @@ def test_every_scenario_grades_through_the_one_shared_grade_call(
         produced = None
         error = None
 
-    for scenario in scenarios:
+    for scenario in shared_grade_scenarios:
         manifest = empty_manifests.get(scenario.name)
         if manifest is None:  # a newly registered scenario: load its real manifest
             manifest = yaml.safe_load(Path(scenario.manifest_path).read_text(encoding="utf-8"))
-        # Call THROUGH the patched module entry so the recorder witnesses routing.
-        grader_pkg.grade(
+        # Dispatch exactly as production does: `scenario.grade_fn or grade`,
+        # called THROUGH the patched module entry so the recorder witnesses routing.
+        grader_fn = scenario.grade_fn or grader_pkg.grade
+        grader_fn(
             provenance=_Prov(),
             warehouse_conn=empty_warehouse,
             fixture_manifest=manifest,
             strategy=scenario.strategy,
         )
 
-    # Both scenarios reached the one shared callable, each with a DISTINCT strategy
-    # instance — one entry point, divergence only in the injected seam.
-    assert len(calls) == len(scenarios) >= 2
+    # Every grade_fn=None scenario reached the one shared callable, each with a
+    # DISTINCT strategy instance - one entry point, divergence only in the
+    # injected seam.
+    assert len(calls) == len(shared_grade_scenarios) >= 2
     strategy_types = {type(s).__name__ for s in calls}
     assert len(strategy_types) >= 2, (
-        f"expected ≥2 distinct injected strategies through one grade() path, got {strategy_types}"
+        f"expected >=2 distinct injected strategies through one grade() path, got {strategy_types}"
     )

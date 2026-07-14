@@ -24,32 +24,9 @@ expected_outcome: refused
 # --------------------------------------------------------------------------- #
 # The malformation registry (DOCTRINE "design a level above").
 #
-# Each entry is one KIND of malformation the source exhibits, named so the
-# reference parser + tests can assert coverage by rule. A future agent adds a new
-# malformation kind by APPENDING an entry here (and a garbage line that exhibits
-# it) — NOT by editing a growing if/elif ladder in code. `detector` names the
-# module-level predicate in the reference parser that recognises a raw line of
-# this kind, so the "kinds" list and the code that reacts to them stay in sync
-# through a rule, not a hardcoded shape.
+# The KINDS of malformation this source exhibits are NOT enumerated here (#69):
+# `tests/fixtures/garbage_scenario/malformation_kinds.py` is the single typed
+# source of truth (a `MalformationKind` dataclass registry) that the reference
+# parser and the tests both import directly. A future agent adds a kind by
+# appending one entry there — never by hand-syncing a second list in this file.
 # --------------------------------------------------------------------------- #
-malformation_kinds:
-  - kind: broken_header
-    detector: is_broken_header
-    note: >-
-      The header row is not a usable CSV header (junk banner, sentinel markers,
-      inconsistent field count) so no column names can be trusted.
-  - kind: garbage_values
-    detector: is_garbage_value_row
-    note: >-
-      A data row whose cells are non-parseable noise (NaN, ???, %%%, sentinel
-      tokens) that cannot become any typed value.
-  - kind: truncated_row
-    detector: is_truncated_row
-    note: >-
-      A row cut short / missing its trailing fields, so it cannot be aligned to a
-      record even if a header existed.
-  - kind: inconsistent_delimiter
-    detector: is_inconsistent_delimiter_row
-    note: >-
-      A row using a different delimiter (';', '|', tab) than the file claims, so
-      naive comma-splitting mis-parses it.

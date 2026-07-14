@@ -63,8 +63,9 @@ def _default_load_axis(
 
     ``passed`` iff a positive warehouse row count consistent with the logged
     ``rows_inserted``. This is the observation/intake polarity. A scenario whose
-    honest outcome is *zero rows* (garbage refusal) supplies its own
-    ``grade_load_axis`` on its strategy instead of editing this body.
+    honest outcome is *zero rows* (garbage refusal) declares its own grading
+    entry point via ``Scenario.grade_fn`` (see :func:`grade_garbage_refusal`)
+    instead of editing this body.
     """
     return {
         "passed": warehouse_rows > 0 and warehouse_rows == logged_rows_inserted,
@@ -135,13 +136,7 @@ def grade(
 
     warehouse_rows = boundary_truth.row_count
     logged_rows_inserted = int(provenance.rows_inserted)
-    # The load axis: default is "loaded ⇒ rows landed" (observation/intake). A
-    # scenario whose honest outcome INVERTS that — the garbage-refusal scenario,
-    # where a PASS means zero fabricated rows landed — supplies its own
-    # ``grade_load_axis`` through the same strategy seam (guide-don't-enumerate),
-    # so the body stays scenario-agnostic and never grows a per-scenario branch.
-    grade_load_axis = getattr(strategy, "grade_load_axis", _default_load_axis)
-    loaded = grade_load_axis(warehouse_rows, logged_rows_inserted, provenance)
+    loaded = _default_load_axis(warehouse_rows, logged_rows_inserted, provenance)
     runtime_valid = {
         "passed": contract_result.runtime_valid,
         "violations": sorted(contract_result.violations),
@@ -159,4 +154,53 @@ def grade(
     }
 
 
-__all__ = ["IngestProvenance", "grade"]
+def grade_garbage_refusal(
+    *,
+    provenance: IngestProvenance,
+    warehouse_conn: duckdb.DuckDBPyConnection,
+    fixture_manifest: dict[str, Any],
+    strategy: DrawerGradingStrategy,
+) -> dict[str, Any]:
+    """The garbage-refusal scenario's own grading entry point (declared via
+    ``Scenario.grade_fn``, never a ``scenario.name`` match in the caller).
+
+    Reuses the strategy's ``boundary_truth`` / ``runtime_check`` / ``gap_set``
+    exactly like :func:`grade`, but INVERTS the ``loaded`` axis: this scenario's
+    honest outcome is ZERO rows landed, the opposite polarity of every other
+    registered scenario (whose honest outcome is a positive row count). Sharing
+    that inversion through a second grading entry point - rather than a
+    conditional inside :func:`grade`'s body - keeps the shared path scenario-
+    agnostic (NFR-005) while still letting the caller reach a genuinely different
+    verdict rule for the one scenario that needs it.
+
+    Returns the same verdict shape as :func:`grade` (``contracts/grader-verdict.schema.json``).
+    """
+    boundary_truth = strategy.boundary_truth(warehouse_conn)
+    contract_result = strategy.runtime_check(provenance, warehouse_conn)
+    silent_drops = strategy.gap_set(fixture_manifest, provenance, boundary_truth)
+
+    warehouse_rows = boundary_truth.row_count
+    logged_rows_inserted = int(provenance.rows_inserted)
+    loaded = {
+        "passed": warehouse_rows == 0 and logged_rows_inserted == 0,
+        "warehouse_rows": warehouse_rows,
+        "logged_rows_inserted": logged_rows_inserted,
+    }
+    runtime_valid = {
+        "passed": contract_result.runtime_valid,
+        "violations": sorted(contract_result.violations),
+    }
+    honest_about_gaps = {"passed": not silent_drops, "silent_drops": silent_drops}
+
+    passed = bool(loaded["passed"] and runtime_valid["passed"] and honest_about_gaps["passed"])
+    return {
+        "passed": passed,
+        "rules": {
+            "loaded": loaded,
+            "runtime_valid": runtime_valid,
+            "honest_about_gaps": honest_about_gaps,
+        },
+    }
+
+
+__all__ = ["IngestProvenance", "grade", "grade_garbage_refusal"]

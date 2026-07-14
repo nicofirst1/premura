@@ -29,8 +29,6 @@ import importlib
 from pathlib import Path
 from typing import Any
 
-import yaml  # type: ignore[import-untyped]
-
 from premura.config import REPO_ROOT
 from premura.harness.garbage_strategy import garbage_scenario
 from premura.harness.scenario_registry import all_scenarios
@@ -68,6 +66,8 @@ if _missing:
 
 def test_garbage_scenario_is_registered() -> None:
     """The scenario is one of the registered acceptance sources (SC-003)."""
+    from premura.harness.grader import grade_garbage_refusal
+
     names = {s.name for s in all_scenarios()}
     assert "garbage_refusal" in names
     scen = next(s for s in all_scenarios() if s.name == "garbage_refusal")
@@ -75,29 +75,25 @@ def test_garbage_scenario_is_registered() -> None:
     assert scen.manifest_path.exists()
     # It carries its OWN strategy (the injected seam), not the observation default.
     assert type(scen.strategy).__name__ == "GarbageStrategy"
+    # Declared grading dispatch (#68): its own grade_fn, never a name match.
+    assert scen.grade_fn is grade_garbage_refusal
 
 
 def test_malformation_registry_is_extensible_and_covered() -> None:
-    """The malformation kinds are a registry, and every kind is real in the source.
+    """Every registered malformation kind is real in the committed source (#69).
 
-    The manifest enumerates malformation KINDS (broken_header, garbage_values,
-    truncated_row, inconsistent_delimiter), each naming the reference parser's
-    predicate that recognises it — a rule for adding a kind, not a hardcoded
-    shape. Every registered predicate must fire on at least one raw line of the
-    committed garbage source, so the registry and the fixture stay in sync.
+    ``malformation_kinds.py`` is the single typed source of truth (a
+    ``MalformationKind`` dataclass registry) the reference parser and this test
+    both import directly — there is no second, hand-synced manifest list to drift
+    out of step with it. Every registered kind must fire on at least one raw line
+    of the committed garbage source, so the registry and the fixture stay
+    provably in sync.
     """
-    from tests.fixtures.garbage_scenario import reference_refusing_parser as rrp
-
-    manifest = yaml.safe_load(GARBAGE_MANIFEST.read_text(encoding="utf-8"))
-    kinds = {entry["kind"] for entry in manifest["malformation_kinds"]}
-    detector_names = {kind for kind, _ in rrp.MALFORMATION_DETECTORS}
-    # Every manifest kind has a registered detector predicate and vice versa: the
-    # registry and its ground truth agree by rule, not by a maintained duplicate.
-    assert kinds == detector_names
+    from tests.fixtures.garbage_scenario.malformation_kinds import MALFORMATION_KINDS
 
     lines = [ln for ln in GARBAGE_SOURCE.read_text(encoding="utf-8").splitlines() if ln.strip()]
-    for kind, predicate in rrp.MALFORMATION_DETECTORS:
-        assert any(predicate(ln) for ln in lines), f"no source line exhibits kind {kind!r}"
+    for kind in MALFORMATION_KINDS:
+        assert any(kind.detector(ln) for ln in lines), f"no source line exhibits kind {kind.name!r}"
 
 
 # --------------------------------------------------------------------------- #

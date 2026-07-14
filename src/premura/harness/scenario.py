@@ -25,6 +25,7 @@ registry that lists ≥ 2 scenarios is WP04's ``scenario_registry.py``.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol
@@ -137,6 +138,11 @@ class Scenario:
         manifest_path: grader-only ground-truth field manifest (C-005).
         reference_parser: the layer-1 known-good parser import target.
         strategy: the :class:`DrawerGradingStrategy` supplying drawer specifics.
+        grade_fn: the scenario's own grading entry point, or ``None`` to use the
+            shared :func:`premura.harness.grader.grade` (the default for every
+            scenario except one with genuinely different verdict polarity).
+            Dispatch is ``scenario.grade_fn or grade`` - never a name match on
+            ``scenario.name`` (guide-don't-enumerate; NFR-005).
     """
 
     name: str
@@ -144,6 +150,7 @@ class Scenario:
     manifest_path: Path
     reference_parser: str
     strategy: DrawerGradingStrategy
+    grade_fn: Callable[..., dict[str, Any]] | None = None
 
 
 # --------------------------------------------------------------------------- #
