@@ -535,6 +535,7 @@ def test_model_unavailable_first_call_returns_outcome_and_persists_nothing(
 # --------------------------------------------------------------------------- #
 
 
+@pytest.mark.xdist_group("sandbox-tempdir-scan")
 def test_tool_calls_unsupported_mid_conversation_leaves_no_sandbox_behind(
     persistence_paths: tuple[Path, Path],
 ) -> None:
@@ -543,6 +544,12 @@ def test_tool_calls_unsupported_mid_conversation_leaves_no_sandbox_behind(
     The outcome is the explicit ``tool_calls_unsupported`` state, nothing is
     persisted, and the sandbox temp area is CLEAN: no premura sandbox tree
     created during the trial survives it.
+
+    xdist_group: this test diffs the *shared OS tempdir* glob
+    ``premura-sandbox-*`` before/after, so any other test creating a sandbox
+    concurrently on another worker produces a false positive. Serialize it
+    onto one worker rather than weaken the (correct) global-cleanliness
+    assertion.
     """
     runs_dir, scoreboard_path = persistence_paths
     backend = _RaisesAfterFirstReply(
