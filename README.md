@@ -38,20 +38,24 @@ I can't describe the feeling of empowerment this gave me, and I want other peopl
 
 ## Quick start
 
-Fresh clone? An agent (or human) in the repo runs **one setup command first**:
+Connect Premura to your coding agent with one command. It needs only [`uv`](https://docs.astral.sh/uv/) - no clone, no PyPI install:
 
 ```bash
-uv run premura bootstrap                    # SETUP ONLY: prepare + verify this local checkout, report reload guidance
+uvx --from git+https://github.com/nicofirst1/premura premura install-client claude   # or: opencode | codex
 ```
 
-Then operate normally:
+That registers Premura's default (safe, validity-gated) agent surface with the app. Now open that agent and ask it to help with your health data: the first run interviews you about what you want to learn and what devices you have, then guides you through collecting and reading it.
+
+Other agent apps, the raw-SQL operator surface, or editing config by hand: see [AGENT_CLIENTS.md](docs/using/AGENT_CLIENTS.md).
+
+**Developing on Premura's code?** Clone the repo, then work locally instead of through `uvx`:
 
 ```bash
+uv run premura bootstrap                    # SETUP ONLY: prepare + verify this checkout, report reload guidance
 bash ops/bootstrap.sh                       # one-time: brew installs, age keypair, optional rclone; puts `premura` on your PATH
 premura doctor                              # verify environment
 # drop inputs into data/inbox/, then:
 premura run-monthly                         # ingest + encrypt (no auto-upload)
-premura upload --month YYYY-MM              # OPT-IN — push to Drive only when you say so
 ```
 
 ## age key storage
@@ -78,9 +82,7 @@ The default path is an agent operating Premura through tools, not raw SQL:
 - **`premura-mcp`** - the default, validity-gated agent surface (34 tools). Every tool delegates to the deterministic signal engine (no raw `hp.*` SQL), and tools return structured `available` / `missing_input` / `stale_input` / `insufficient_data` verdicts instead of free-form claims. Six analytical tools (change point, smoothed average, correlation, rolling mean, paired t-test, condition paired t-test) disclose their confounds and refuse thin samples. The literature tools `pubmed_search` and `pubmed_fetch` enforce one rule: search hits are discovery candidates only, and final answers may cite only fetched PMID records.
 - **`premura-mcp-operator --ack`** - a lower-guarantee expert fallback that adds a raw-SQL escape hatch. It refuses to start without explicit acknowledgement, so it is never the silent default.
 
-For the full `premura` CLI reference and the complete MCP tool inventory, see [OPERATIONS.md](docs/using/OPERATIONS.md). Direct DuckDB and notebook access remain available as expert fallbacks.
-
-Using an agent app other than Claude Code (OpenCode, Codex)? See [AGENT_CLIENTS.md](docs/using/AGENT_CLIENTS.md) for the MCP config recipe per client and what each one reads for skills.
+For the `premura` CLI and how the two servers differ, see [OPERATIONS.md](docs/using/OPERATIONS.md). Direct DuckDB and notebook access remain available as expert fallbacks.
 
 ## What asking a question looks like
 
