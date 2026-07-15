@@ -44,9 +44,7 @@ Connect Premura to your coding agent with one command. It needs only [`uv`](http
 uvx --from git+https://github.com/nicofirst1/premura premura install-client claude   # or: opencode | codex
 ```
 
-That registers Premura's default (safe, validity-gated) agent surface with the app. Now open that agent and ask it to help with your health data: the first run interviews you about what you want to learn and what devices you have, then guides you through collecting and reading it.
-
-Other agent apps, the raw-SQL operator surface, or editing config by hand: see [AGENT_CLIENTS.md](docs/using/AGENT_CLIENTS.md).
+That registers Premura's default (safe, validity-gated) agent surface with the app. Now open that agent and ask it to help with your health data: the first run interviews you about what you want to learn and what devices you have, then guides you through collecting and reading it. The raw-SQL operator surface is never registered this way - see [OPERATIONS.md](docs/using/OPERATIONS.md#the-two-mcp-servers).
 
 **Developing on Premura's code?** Clone the repo, then work locally instead of through `uvx`:
 
@@ -57,6 +55,8 @@ premura doctor                              # verify environment
 # drop inputs into data/inbox/, then:
 premura run-monthly                         # ingest + encrypt (no auto-upload)
 ```
+
+To point your agent at your local edits, register `uv run premura-mcp` (via `uv run premura install-client <app>`) instead of the published `uvx` form above.
 
 ## age key storage
 

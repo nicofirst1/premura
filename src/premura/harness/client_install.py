@@ -10,7 +10,7 @@ Security rail (non-negotiable): only the validity-gated default surface
 (``premura-mcp``) is ever written here. The operator surface
 (``premura-mcp-operator --ack``, the raw-SQL escape hatch) is NEVER
 auto-registered — registering it stays a deliberate, user-approved manual step,
-documented in ``docs/using/AGENT_CLIENTS.md``. The launch args below are fixed
+documented in ``docs/using/OPERATIONS.md``. The launch args below are fixed
 to ``premura-mcp``; there is no code path that emits ``--ack`` or the operator
 script name.
 """
@@ -30,7 +30,7 @@ REPO_URL = "git+https://github.com/nicofirst1/premura"
 # needs no clone and no PyPI publish (uv is the only prerequisite). The durable
 # XDG data dir (see premura.config) means the ephemeral uvx env never touches the
 # warehouse. A developer working in a clone registers `uv run premura-mcp`
-# manually instead (that uses local edits); see docs/using/AGENT_CLIENTS.md and
+# manually instead (that uses local edits); see the README quick start and
 # ADR 0016.
 _LAUNCH = ["uvx", "--from", REPO_URL, "premura-mcp"]
 
