@@ -216,7 +216,7 @@ A non-refusal analytical result must carry its confound checklist drawn from the
 
 ### Literature is authoring/review context, never runtime
 
-PubMed or other literature tooling may help an agent **author or review** an analytical tool — picking a defensible lag ceiling, sanity-checking the band language, deciding whether a large lag is plausible — and that rationale belongs in the research note and caveat text. The analytical engine must **never** call PubMed or any network service at runtime: computation is pure over the prepared inputs the caller passes. PubMed grounding and a session-scoped reproducible research trace / multiplicity audit are **separate, deferred missions** (see [ROADMAP.md](../../../docs/shared/ROADMAP.md) and design decision note `0008`), not part of this tool — per-call honesty cannot see an agent that ran many hypotheses and surfaced the one that fit, which is a stateful session-layer concern by design.
+PubMed or other literature tooling may help an agent **author or review** an analytical tool — picking a defensible lag ceiling, sanity-checking the band language, deciding whether a large lag is plausible — and that rationale belongs in the research note and caveat text. The analytical engine must **never** call PubMed or any network service at runtime: computation is pure over the prepared inputs the caller passes. PubMed grounding and a session-scoped reproducible research trace / multiplicity audit are **separate, deferred missions** (see design decision note `0008`), not part of this tool — per-call honesty cannot see an agent that ran many hypotheses and surfaced the one that fit, which is a stateful session-layer concern by design.
 
 ## Tests and review notes a contributor must include
 
