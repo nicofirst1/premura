@@ -15,10 +15,9 @@ import sys
 import tarfile
 import time
 import zipfile
-from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Protocol
+from typing import Annotated
 
 import typer
 from jinja2 import Template
@@ -36,16 +35,8 @@ from .config import settings
 from .mcp import server as mcp_server
 from .ops import encrypt, notify, upload
 from .parsers.ai_chat_recall import FORMAT_MARKER as AI_CHAT_RECALL_MARKER
-from .parsers.ai_chat_recall import AiChatRecallParser
 from .parsers.base import normalize_parse_output
-from .parsers.bmt import BMTParser
-from .parsers.fitbit_takeout import FitbitTakeoutParser
-from .parsers.garmin_gdpr import GarminGDPRParser
-from .parsers.health_connect import HealthConnectParser
-from .parsers.lab_pdf import LabPdfParser
-from .parsers.myfitnesspal import MyFitnessPalParser
-from .parsers.sleep_as_android import SleepAsAndroidParser
-from .parsers.withings import WithingsParser
+from .parsers.registry import PARSER_REGISTRY
 from .store import duck
 from .store.loader import already_ingested, load
 from .store.profile_intake import persist_intake_batch
@@ -61,24 +52,6 @@ log = logging.getLogger("premura")
 READY_TIMEOUT_DAYS = 7
 READY_POLL_SECS = 3600  # 1 hour
 
-
-class _Parser(Protocol):
-    def parse(self, path: Path): ...
-
-
-PARSER_FACTORY = Callable[[], _Parser]
-
-PARSER_REGISTRY: dict[str, tuple[PARSER_FACTORY, str]] = {
-    "hc": (HealthConnectParser, "health_connect"),
-    "garmin": (GarminGDPRParser, "garmin_gdpr"),
-    "saa": (SleepAsAndroidParser, "sleep_as_android"),
-    "bmt": (BMTParser, "bmt"),
-    "lab": (LabPdfParser, "lab_pdf"),
-    "mfp": (MyFitnessPalParser, "myfitnesspal"),
-    "aichat": (AiChatRecallParser, "ai_chat_recall"),
-    "withings": (WithingsParser, "withings"),
-    "fitbit": (FitbitTakeoutParser, "fitbit_takeout"),
-}
 
 # Sources whose input is a directory tree (unzipped export) rather than a single
 # file. Fitbit Takeout ships as a MyFitbitData/ folder; the parser also accepts a
@@ -838,14 +811,12 @@ def install_client(
     validity-gated) server into the client's config file, so a human never edits
     config by hand. Re-running is a no-op. The operator surface
     (``premura-mcp-operator --ack``) is never auto-registered — that stays a
-    deliberate manual step (see ``docs/using/AGENT_CLIENTS.md``).
+    deliberate manual step (see ``docs/using/OPERATIONS.md``).
     """
     from .harness.client_install import CLIENTS, register_client
 
     if client not in CLIENTS:
-        raise typer.BadParameter(
-            f"unknown client: {client}; choose from {', '.join(CLIENTS)}"
-        )
+        raise typer.BadParameter(f"unknown client: {client}; choose from {', '.join(CLIENTS)}")
     result = register_client(client, Path.cwd(), Path.home())
     verb = "registered" if result.changed else "already registered — no changes"
     console.print(f"{verb}: premura ({client}) -> {result.config_path}")

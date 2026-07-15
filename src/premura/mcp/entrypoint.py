@@ -277,6 +277,9 @@ def _register_default_tools(
     # Inject the engine-backed interview route resolver + seed the STAGES-8 (#41
     # leaves this to MCP startup; Stage 4 imports no engine). Idempotent.
     warehouse_server.install_interview_route_resolver()
+    # Inject the parser-backed device-track resolver + seed the device branch
+    # (onboarding arc gap #2; Stage 4 imports no ingest code). Idempotent.
+    warehouse_server.install_device_track_resolver()
 
     @mcp.tool()
     def list_metrics(
@@ -828,6 +831,29 @@ def _register_default_tools(
         than fabricating a route — interview before metrics, never a dead end.
         """
         return warehouse_server.interview_route(direction, warehouse_path=warehouse_path)
+
+    # --- Interview device branch (onboarding arc gap #2) ------------------- #
+    # Interview phase 1b (Devices): after learning what the human wants to know,
+    # inventory what data/devices they HAVE and guide collection. Mirrors
+    # interview_route but pointed at the ingest side - the bounded-open device
+    # registry + resolving-parser safety rail live in ``premura.ui.device_tracks``;
+    # the parser-backed resolver is injected at server build. Pure proposal: it
+    # writes nothing and only guides toward data a registered parser can read.
+
+    @mcp.tool()
+    def interview_devices(device: str | None = None) -> dict[str, Any]:
+        """Inventory collectable data sources, or resolve one to collection guidance.
+
+        Call with no argument to get the full inventory of data sources Premura
+        can ingest - each with a ``source_kind`` and a ``collection_hint`` telling
+        the human where/how to gather it ("Garmin -> request your data export").
+        Pass a ``device`` (e.g. ``garmin``) to resolve just that one. A device
+        with no parser behind it is refused (``status='refused'``) rather than
+        guiding the human to collect data nothing can read. Writes NOTHING.
+        """
+        if device is None:
+            return warehouse_server.device_inventory()
+        return warehouse_server.device_route(device)
 
     # --- Agent-mediated condition-episode capture ------------------------- #
     # The warehouse home for operator-declared condition episodes, so off/on

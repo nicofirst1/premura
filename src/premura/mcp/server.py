@@ -55,6 +55,7 @@ from ..engine import (
 )
 from ..engine import _query as engine_query
 from ..engine.policies._defaults import builtin_policies
+from ..parsers.registry import registered_source_kinds
 from ..profile_fields import (
     SUPPORTED_PROFILE_FIELDS,
     UnsupportedProfileFieldError,
@@ -63,7 +64,7 @@ from ..profile_fields import (
 from ..session_log import store as session_log_store
 from ..store import condition_episodes as condition_episodes_store
 from ..store import duck, profile_intake
-from ..ui import improvement_kinds, interview_tracks
+from ..ui import device_tracks, improvement_kinds, interview_tracks
 from ..ui import roles as ui_roles
 from . import pubmed
 
@@ -580,6 +581,102 @@ def _missing_profile_slots(required_slots: Sequence[str], warehouse_path: Path |
             ]
         except duckdb.CatalogException:
             return list(allowlisted)
+
+
+# --------------------------------------------------------------------------- #
+# Device-interview surface (onboarding arc gap #2).
+#
+# The interview's device branch: what data / devices does the human HAVE, and how
+# do they collect it. The bounded-open device-track registry and its
+# resolving-parser safety rail live in ``premura.ui.device_tracks``; Stage 4
+# imports no ingest code, so the parser resolver is INJECTED here at the MCP
+# boundary. A track's ``source_kind`` resolves iff a parser is registered for it
+# (``parsers.registry.registered_source_kinds`` - pure identity metadata, no
+# ingest). Guiding a human to gather data no parser can read is the dead end the
+# safety rail refuses. The tool writes NOTHING - it proposes what to collect.
+# --------------------------------------------------------------------------- #
+
+
+def _parser_source_kind_resolver(source_kind: str) -> bool:
+    """Resolve a device track's ``source_kind`` against the parser registry.
+
+    Returns True iff a parser is registered for ``source_kind`` - the never-a-
+    dead-end rail the device-track registry enforces at registration.
+    """
+    return source_kind in registered_source_kinds()
+
+
+def install_device_track_resolver() -> None:
+    """Install the parser-backed resolver and seed the device tracks.
+
+    Called once at MCP startup (idempotent). ``device_tracks`` leaves seeding to
+    "once a real resolver is installed"; its own seeder is resilient (a device
+    whose parser is not registered is skipped, not fatal), so seeding here is a
+    single call.
+    """
+    device_tracks.set_parser_resolver(_parser_source_kind_resolver)
+
+
+def device_inventory() -> dict[str, Any]:
+    """List every device track Premura can ingest, with how to collect each.
+
+    The device-branch inventory the interview presents ("what do you have?"):
+    each entry is a ``track_id``, the parser ``source_kind`` its export lands in,
+    and the ``collection_hint`` guiding the human to gather it. Only tracks whose
+    parser is registered appear (the safety rail), so nothing here is a dead end.
+    """
+    return {
+        "status": "inventory",
+        "devices": [
+            {
+                "track_id": t.track_id,
+                "source_kind": t.source_kind,
+                "collection_hint": t.collection_hint,
+            }
+            for t in device_tracks.list_device_tracks()
+        ],
+    }
+
+
+def device_route(device: str) -> dict[str, Any]:
+    """Resolve one named device to its collection guidance.
+
+    Give the device/data source the human has (e.g. ``garmin``). Returns its
+    ``source_kind`` and ``collection_hint``. A device that is not a registered
+    track is admitted on the spot iff its name is itself a registered parser
+    ``source_kind`` (the documented add rule) - but with no curated hint, so
+    prefer :func:`device_inventory` for the seeded set. A device with no parser
+    behind it is refused with a dead-end reason rather than guiding the human to
+    collect data nothing can read.
+    """
+    if not isinstance(device, str) or not device.strip():
+        return {
+            "status": "refused",
+            "device": device,
+            "reason": "device must be a non-empty string",
+        }
+    requested = device.strip()
+    track = device_tracks.get_device_track(requested)
+    if track is None:
+        try:
+            track = device_tracks.register_device_track(
+                device_tracks.DeviceTrack(
+                    track_id=requested,
+                    source_kind=requested,
+                    collection_hint=(
+                        f"Provide a {requested} export; Premura has a registered parser for it."
+                    ),
+                )
+            )
+        except ValueError as exc:
+            return {"status": "refused", "device": requested, "reason": str(exc)}
+    return {
+        "status": "routed",
+        "track_id": track.track_id,
+        "source_kind": track.source_kind,
+        "collection_hint": track.collection_hint,
+        "required_slots": list(track.required_slots),
+    }
 
 
 # --------------------------------------------------------------------------- #
