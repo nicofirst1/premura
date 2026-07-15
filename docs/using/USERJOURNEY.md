@@ -2,8 +2,7 @@
 
 > Status: authoritative. Source of truth for the intended human experience over time.
 >
-> Companion to [DOCTRINE.md](../shared/DOCTRINE.md) (product stance), [SPEC.md](../shared/SPEC.md) (what the system must do), [../history/architecture/ARCHITECTURE_HISTORY.md](../history/architecture/ARCHITECTURE_HISTORY.md) (how it was built), [STATUS.md](../shared/STATUS.md) (what works today), and [ROADMAP.md](../shared/ROADMAP.md) (what's next).
-> This document is the source of truth for **the human experience over time**. Per [DOCTRINE.md](../shared/DOCTRINE.md), the human is the primary beneficiary even though the agent is the default operational client.
+> Companion to [DOCTRINE.md](../shared/DOCTRINE.md) (product stance), [SPEC.md](../shared/SPEC.md) (what the system must do), [../history/architecture/ARCHITECTURE_HISTORY.md](../history/architecture/ARCHITECTURE_HISTORY.md) (how it was built), [STATUS.md](../shared/STATUS.md) (what works today), and [ROADMAP.md](../shared/ROADMAP.md) (what's next). This document is the source of truth for **the human experience over time**. Per [DOCTRINE.md](../shared/DOCTRINE.md), the human is the primary beneficiary even though the agent is the default operational client.
 
 ## Persona
 
@@ -11,13 +10,13 @@
 
 Wears four hats over the system's lifetime:
 
-| Hat | When | What they care about |
-|---|---|---|
-| **Subject** | Continuously, passively | Their data exists and is accurate |
-| **Operator** | Once per month, ~10 min | Pipeline runs cleanly, low ceremony |
-| **Beneficiary** | Anytime, ad-hoc | The agent helps them understand, compare, and explain their own data |
-| **Analyst** | Occasionally, expert fallback | Fast SQL/Polars over years of metrics when the direct path is needed |
-| **Recovery actor** | Rarely, on lost hardware | Encrypted Drive backups + the age key are enough to rebuild |
+| Hat                | When                          | What they care about                                                 |
+| ------------------ | ----------------------------- | -------------------------------------------------------------------- |
+| **Subject**        | Continuously, passively       | Their data exists and is accurate                                    |
+| **Operator**       | Once per month, ~10 min       | Pipeline runs cleanly, low ceremony                                  |
+| **Beneficiary**    | Anytime, ad-hoc               | The agent helps them understand, compare, and explain their own data |
+| **Analyst**        | Occasionally, expert fallback | Fast SQL/Polars over years of metrics when the direct path is needed |
+| **Recovery actor** | Rarely, on lost hardware      | Encrypted Drive backups + the age key are enough to rebuild          |
 
 ## Pain points this system solves
 
@@ -31,6 +30,7 @@ Wears four hats over the system's lifetime:
 ## Journey 1 — First-time setup (~30 minutes, once)
 
 ### Goal
+
 Get to "the checkout is ready, the local keys are backed up, and the monthly path is understood" with no hidden setup steps.
 
 ### Steps
@@ -44,11 +44,13 @@ Get to "the checkout is ready, the local keys are backed up, and the monthly pat
 7. **(Optional) Open your project wiki hub page** — if you keep a personal knowledge wiki, add a hub page for this project per PLAN §"Wiki integration".
 
 ### Success criteria
+
 - `premura status` shows non-zero row counts.
 - `launchctl list | grep premura` shows the agent loaded.
 - A test row from a known weight measurement queries correctly: `SELECT ts_utc, value_num, unit FROM hp.fact_measurement WHERE metric_id='weight' ORDER BY ts_utc DESC LIMIT 5;`
 
 ### Common stumbles to anticipate
+
 - Forgetting to back up the `age.key`. The bootstrap script blocks until the user types `confirmed`.
 - Picking `drive` (full) instead of `drive.file` (app-sandboxed) scope during `rclone config`. The bootstrap prompts explicitly.
 - Python version drift if uv picks a different interpreter than expected. The `.python-version` file pins the supported interpreter.
@@ -56,7 +58,8 @@ Get to "the checkout is ready, the local keys are backed up, and the monthly pat
 ## Journey 2 — Monthly run (~10 minutes user time, every month)
 
 ### Trigger
-On the 1st at 10:00 local, launchd fires `premura run-monthly`. A macOS notification appears: *"Premura: request fresh Garmin GDPR dump, drop available exports in `data/inbox/`, then `touch data/inbox/.ready`."*
+
+On the 1st at 10:00 local, launchd fires `premura run-monthly`. A macOS notification appears: _"Premura: request fresh Garmin GDPR dump, drop available exports in `data/inbox/`, then `touch data/inbox/.ready`."_
 
 ### Steps the user performs
 
@@ -82,9 +85,11 @@ export snapshot  →  age encrypt  →  local retention cleanup  →  notify
 ```
 
 ### Success notification
-*"Premura 2026-05: +X rows · HRV+Y · HR+Z · sleep+W. Encrypted artifact ready locally."*
+
+_"Premura 2026-05: +X rows · HRV+Y · HR+Z · sleep+W. Encrypted artifact ready locally."_
 
 ### Failure modes
+
 - **No `.ready` after 7 days**: agent renotifies and exits. No data ingested. User must re-trigger when ready.
 - **Garmin zip never arrived**: skip Garmin this month; HC + SAA + BMT still get ingested. Next month's Garmin GDPR will cover the gap (Garmin always exports a rolling window).
 - **rclone auth expired**: monthly ingest/export still completes locally. The explicit upload step fails until the user runs `rclone config reconnect gdrive:` and retries `uv run premura upload --month YYYY-MM`.
@@ -93,6 +98,7 @@ export snapshot  →  age encrypt  →  local retention cleanup  →  notify
 ## Journey 3 — Agent-mediated analysis (default, anytime)
 
 ### Goal
+
 Answer a personal question against years of unified data without the human needing to write SQL or stitch data manually.
 
 ### Default flow
@@ -105,39 +111,46 @@ Answer a personal question against years of unified data without the human needi
 
 ### Example questions the warehouse should make trivial
 
-| Question | Sketch |
-|---|---|
-| "How does my HRV correlate with deep-sleep minutes over the last 90 days?" | Join `fact_measurement WHERE metric_id='hrv_rmssd_overnight'` with `fact_interval WHERE metric_id='sleep_stage' AND value_text='deep'` on `date_trunc('day', ts_utc) = date_trunc('day', start_utc)`. |
-| "What was my weight trajectory during the January-to-April 2026 cut?" | `SELECT date_trunc('week', ts_utc), avg(value_num) FROM fact_measurement WHERE metric_id='weight' AND ts_utc BETWEEN '2026-01-01' AND '2026-05-01' GROUP BY 1 ORDER BY 1;` |
-| "On which days did Body Battery cross 50 by 09:00 vs. 12:00?" | Filter `metric_id='body_battery'` to first reading per day in each hour window. |
-| "Which weeks had the highest avg respiratory rate? Were those also high-stress weeks?" | Two CTEs, weekly avg per metric, joined on week. |
+| Question                                                                               | Sketch                                                                                                                                                                                                |
+| -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "How does my HRV correlate with deep-sleep minutes over the last 90 days?"             | Join `fact_measurement WHERE metric_id='hrv_rmssd_overnight'` with `fact_interval WHERE metric_id='sleep_stage' AND value_text='deep'` on `date_trunc('day', ts_utc) = date_trunc('day', start_utc)`. |
+| "What was my weight trajectory during the January-to-April 2026 cut?"                  | `SELECT date_trunc('week', ts_utc), avg(value_num) FROM fact_measurement WHERE metric_id='weight' AND ts_utc BETWEEN '2026-01-01' AND '2026-05-01' GROUP BY 1 ORDER BY 1;`                            |
+| "On which days did Body Battery cross 50 by 09:00 vs. 12:00?"                          | Filter `metric_id='body_battery'` to first reading per day in each hour window.                                                                                                                       |
+| "Which weeks had the highest avg respiratory rate? Were those also high-stress weeks?" | Two CTEs, weekly avg per metric, joined on week.                                                                                                                                                      |
 
 ### Default tools the agent picks
+
 - MCP signal-backed tools first.
 - Raw MCP warehouse tools only when the question falls outside the grounded signal surface.
 
 ### Expert fallback tools the human picks
+
 - Quick: `duckdb data/duck/health.duckdb` in the shell.
 - Notebook: `import duckdb; con = duckdb.connect("data/duck/health.duckdb", read_only=True)` then Polars/Plotly.
 - Dashboard (deferred to v2): export to Parquet, point Grafana/Metabase at it.
 
 ### Constraint
+
 Read-only access during analysis — never let analytics writes touch the warehouse. The pipeline owns writes; analysis is `read_only=True` by convention whether the caller is an agent or a human expert.
 
 ## Journey 4 — Expert fallback analysis (occasional)
 
 ### Goal
+
 Let the human inspect the warehouse directly when they want to go beyond the current agent-facing analytical surface.
 
 ### Positioning
+
 This is a valid path, but not the default product flow. It exists for expert users who want raw DuckDB, notebooks, or custom analysis outside the current grounded tool surface.
 
 ## Journey 5 — Catastrophic recovery (rare, critical)
 
 ### Scenario
+
 The Mac dies. The user buys a new one.
 
 ### Steps
+
 1. New Mac: `brew install age rclone uv`.
 2. Restore `~/.config/premura/age.key` from password manager (this is the single secret without which the backups are dead).
 3. `rclone config` a fresh `gdrive` remote with `drive.file` scope.
@@ -150,6 +163,7 @@ The Mac dies. The user buys a new one.
 **Time to recovery**: roughly 30 minutes plus Drive download time. **Data lost**: at most one monthly window if recovery happens before the next scheduled run.
 
 ### What recovery does NOT depend on
+
 - Garmin Connect being online
 - Sleep as Android still existing
 - Health Connect schema being unchanged
@@ -167,20 +181,20 @@ The encrypted Drive snapshot + the age key + this repo are sufficient. That's th
 
 ## Touchpoints summary
 
-| Touchpoint | Frequency | User effort |
-|---|---|---|
-| `uv run premura bootstrap` | once per fresh clone | <5 min |
-| `bash ops/bootstrap.sh` | once per workstation | 15 min |
-| Password-manager backup of age.key | once | 2 min |
-| `rclone config` for gdrive | once | 5 min |
-| `premura install-launchd` | once | <1 min |
-| Garmin GDPR request → download | monthly | 2 min request + wait |
-| HC/SAA/BMT exports → drop in inbox | monthly | varies |
-| Lab files → drop in inbox | occasional | varies |
-| `touch data/inbox/.ready` | monthly | <1 min |
-| Read success notification | monthly | passive |
-| Ad-hoc query | as needed | varies |
-| Catastrophic recovery | rare | 30 min + bandwidth |
+| Touchpoint                         | Frequency            | User effort          |
+| ---------------------------------- | -------------------- | -------------------- |
+| `uv run premura bootstrap`         | once per fresh clone | <5 min               |
+| `bash ops/bootstrap.sh`            | once per workstation | 15 min               |
+| Password-manager backup of age.key | once                 | 2 min                |
+| `rclone config` for gdrive         | once                 | 5 min                |
+| `premura install-launchd`          | once                 | <1 min               |
+| Garmin GDPR request → download     | monthly              | 2 min request + wait |
+| HC/SAA/BMT exports → drop in inbox | monthly              | varies               |
+| Lab files → drop in inbox          | occasional           | varies               |
+| `touch data/inbox/.ready`          | monthly              | <1 min               |
+| Read success notification          | monthly              | passive              |
+| Ad-hoc query                       | as needed            | varies               |
+| Catastrophic recovery              | rare                 | 30 min + bandwidth   |
 
 Total recurring user-time burden: **~5 minutes per month** after the first setup. Everything else is automated or already-in-the-app behaviour.
 

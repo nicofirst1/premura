@@ -1,92 +1,21 @@
 # Claim-to-trace binding is an inline-marker extractor plus a call-lookup query beside audit check 5
 
-The 2026-07-04 maintainer design-interview promoted the claim-to-trace binding
-named-later-slice work of
-[`OPERATING_ROLES.md`](../architecture/OPERATING_ROLES.md) (issue #31) by
-answering its open design question — *what deterministically marks a "claim" in
-prose?* — and locking the binding's shape. Today audit check 1 proves only that
-the named session recorded analytical work; a draft could pass while its claims
-rest on calls unrelated to that session. Binding closes that gap as a second
-deterministic extractor-and-query pair **beside** check 5's citation binding,
-never a fork of the audit flow. This note is the decision note the spec required
-before implementation (issue #32) may build; the concept lineage is decision
-notes [0009](0009-session-research-trace-and-multiplicity-disclosure.md) (the
-trace and its measured disclosure) and
-[0013](0013-operating-roles-promotion-decisions.md) (the blocking, deterministic
-audit gate).
+The 2026-07-04 maintainer design-interview promoted the claim-to-trace binding named-later-slice work of [`OPERATING_ROLES.md`](../architecture/OPERATING_ROLES.md) (issue #31) by answering its open design question — _what deterministically marks a "claim" in prose?_ — and locking the binding's shape. Today audit check 1 proves only that the named session recorded analytical work; a draft could pass while its claims rest on calls unrelated to that session. Binding closes that gap as a second deterministic extractor-and-query pair **beside** check 5's citation binding, never a fork of the audit flow. This note is the decision note the spec required before implementation (issue #32) may build; the concept lineage is decision notes [0009](0009-session-research-trace-and-multiplicity-disclosure.md) (the trace and its measured disclosure) and [0013](0013-operating-roles-promotion-decisions.md) (the blocking, deterministic audit gate).
 
 The decisions:
 
-- **The claim marker is an inline structured marker the runtime contract obliges
-  the drafting agent to emit.** A claim is marked in the draft prose itself,
-  carrying the reference(s) to the recorded trace call(s) it rests on by
-  `call_id` — not sentence-level NLP guessing and not an envelope-carried side
-  list. The canonical recognized form is a bracketed `[trace: <call_id>]` suffix
-  on the claim sentence, where `<call_id>` is one or more recorded call ids (the
-  minted `call_<hex>` form), comma-separated for a claim resting on several
-  calls. This mirrors check 5: the gate binds only what the agent wrote in a
-  recognized form, and the runtime contract obliges agents to write in one.
+- **The claim marker is an inline structured marker the runtime contract obliges the drafting agent to emit.** A claim is marked in the draft prose itself, carrying the reference(s) to the recorded trace call(s) it rests on by `call_id` — not sentence-level NLP guessing and not an envelope-carried side list. The canonical recognized form is a bracketed `[trace: <call_id>]` suffix on the claim sentence, where `<call_id>` is one or more recorded call ids (the minted `call_<hex>` form), comma-separated for a claim resting on several calls. This mirrors check 5: the gate binds only what the agent wrote in a recognized form, and the runtime contract obliges agents to write in one.
 
-- **Recognized marker forms are a documented pattern registry with an
-  add-a-form rule, not an enumerated variant list.** Exactly as the
-  citation-extraction contract documents its recognized PMID forms
-  (`_extract_cited_pmids`), the binding documents its recognized marker
-  pattern(s); the canonical `[trace: <call_id>]` is the first and only shipped
-  form. Adding a recognized form is a documented edit to that pattern set under
-  a stated rule (a new form must be an unambiguous, self-delimiting textual
-  marker that yields a set of `call_id`s and cannot collide with ordinary
-  prose), never a scatter of ad-hoc regexes. Over-matching is safe because the
-  binding fails CLOSED (below), the same reason check 5 extracts generously.
+- **Recognized marker forms are a documented pattern registry with an add-a-form rule, not an enumerated variant list.** Exactly as the citation-extraction contract documents its recognized PMID forms (`_extract_cited_pmids`), the binding documents its recognized marker pattern(s); the canonical `[trace: <call_id>]` is the first and only shipped form. Adding a recognized form is a documented edit to that pattern set under a stated rule (a new form must be an unambiguous, self-delimiting textual marker that yields a set of `call_id`s and cannot collide with ordinary prose), never a scatter of ad-hoc regexes. Over-matching is safe because the binding fails CLOSED (below), the same reason check 5 extracts generously.
 
-- **The trace query is a bounded per-marker call lookup: the referenced call
-  exists in the named session with `terminal_status = available`.** For each
-  extracted `call_id` the gate verifies one `trace.tool_call` row exists whose
-  `session_id` is the draft's named session and whose `terminal_status` is
-  `available` — the same measured-not-trusted shape as
-  `fetched_citation_pmids`. No new schema, no new statistics, nothing in `hp.*`;
-  the store and columns already exist (ADR 0009/0011).
+- **The trace query is a bounded per-marker call lookup: the referenced call exists in the named session with `terminal_status = available`.** For each extracted `call_id` the gate verifies one `trace.tool_call` row exists whose `session_id` is the draft's named session and whose `terminal_status` is `available` — the same measured-not-trusted shape as `fetched_citation_pmids`. No new schema, no new statistics, nothing in `hp.*`; the store and columns already exist (ADR 0009/0011).
 
-- **Analytical calls are the target; evidence-source citation binding stays
-  check 5's job.** A marker may reference *any* recorded call that finished
-  `available`, including an `evidence_source` row — the query does not filter on
-  `call_kind`. But citation-form checking (which PMIDs a draft cites, and
-  whether each was fetched) remains check 5's exclusive responsibility: this
-  binding never re-derives the fetched-PMID set and never inspects citation
-  prose. The two checks share the trace store and stand side by side; neither
-  forks nor duplicates the other.
+- **Analytical calls are the target; evidence-source citation binding stays check 5's job.** A marker may reference _any_ recorded call that finished `available`, including an `evidence_source` row — the query does not filter on `call_kind`. But citation-form checking (which PMIDs a draft cites, and whether each was fetched) remains check 5's exclusive responsibility: this binding never re-derives the fetched-PMID set and never inspects citation prose. The two checks share the trace store and stand side by side; neither forks nor duplicates the other.
 
-- **An unbindable marked claim FAILS the gate.** Any marked claim whose
-  `call_id` is unknown, belongs to a different session, or names a call not in
-  `terminal_status = available` is appended to `failures`, sets `passed=false`,
-  and routes through the existing single revision loop under the unchanged
-  boundary priority `answer_audit` > `analysis` > `human_facing`. There is no
-  per-claim downgrade mechanism: a draft either binds every marked claim or it
-  does not pass. This is the same fail-closed stance as an unfetched cited PMID.
+- **An unbindable marked claim FAILS the gate.** Any marked claim whose `call_id` is unknown, belongs to a different session, or names a call not in `terminal_status = available` is appended to `failures`, sets `passed=false`, and routes through the existing single revision loop under the unchanged boundary priority `answer_audit` > `analysis` > `human_facing`. There is no per-claim downgrade mechanism: a draft either binds every marked claim or it does not pass. This is the same fail-closed stance as an unfetched cited PMID.
 
-- **Scope honesty: unmarked prose is invisible, and the disclosure says so.**
-  Prose the agent did not mark in a recognized form is outside this check
-  entirely. The audit's disclosure line states its coverage as *claims in
-  recognized marker form only* — mirroring `_citation_disclosure_line`'s scoped
-  wording ("recognized PMID forms") — and never asserts total claim coverage.
-  The runtime contract obliges agents to mark the claims that rest on traced
-  analysis; the gate vouches for exactly those and no more.
+- **Scope honesty: unmarked prose is invisible, and the disclosure says so.** Prose the agent did not mark in a recognized form is outside this check entirely. The audit's disclosure line states its coverage as _claims in recognized marker form only_ — mirroring `_citation_disclosure_line`'s scoped wording ("recognized PMID forms") — and never asserts total claim coverage. The runtime contract obliges agents to mark the claims that rest on traced analysis; the gate vouches for exactly those and no more.
 
-Explicit non-changes (so a cold implementer does not over-reach): the advisory
-rubric (`research-trace-audit`'s `AUDIT_RUBRIC.md`) is unchanged by this note —
-binding is a new *deterministic* extractor-and-query pair, not a rubric edit;
-`mark_surfaced` stays advisory and unchanged (surfaced-marking is presentation
-intent, not claim binding); no new statistics and nothing lands in `hp.*` (ADR
-0009); and the binding is added **beside** check 5, never as a fork of the audit
-flow.
+Explicit non-changes (so a cold implementer does not over-reach): the advisory rubric (`research-trace-audit`'s `AUDIT_RUBRIC.md`) is unchanged by this note — binding is a new _deterministic_ extractor-and-query pair, not a rubric edit; `mark_surfaced` stays advisory and unchanged (surfaced-marking is presentation intent, not claim binding); no new statistics and nothing lands in `hp.*` (ADR 0009); and the binding is added **beside** check 5, never as a fork of the audit flow.
 
-This combination won for the same reasons the trace and the gate did. Marking
-claims in the draft (over inferring them) keeps the gate deterministic and
-measured rather than resting on prose NLP the threat model cannot trust — the
-same stance ADR 0009 took against self-reported counts. Failing closed on an
-unbindable marker (over a per-claim downgrade) preserves the honest guarantee
-that anything carrying Premura's verified envelope was bound to recorded calls.
-Scoping the disclosure to recognized-form claims (over asserting full coverage)
-keeps the check from overclaiming what it can structurally see, exactly as check
-5 scopes its citation line. And keeping it a pair beside check 5 (over a fork)
-preserves the audit flow's single shape: a documented extractor over the draft
-plus a bounded trace query it resolves against.
+This combination won for the same reasons the trace and the gate did. Marking claims in the draft (over inferring them) keeps the gate deterministic and measured rather than resting on prose NLP the threat model cannot trust — the same stance ADR 0009 took against self-reported counts. Failing closed on an unbindable marker (over a per-claim downgrade) preserves the honest guarantee that anything carrying Premura's verified envelope was bound to recorded calls. Scoping the disclosure to recognized-form claims (over asserting full coverage) keeps the check from overclaiming what it can structurally see, exactly as check 5 scopes its citation line. And keeping it a pair beside check 5 (over a fork) preserves the audit flow's single shape: a documented extractor over the draft plus a bounded trace query it resolves against.

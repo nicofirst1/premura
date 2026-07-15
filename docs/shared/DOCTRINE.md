@@ -8,8 +8,7 @@
 
 Premura is a local-first, agent-operable health reasoning substrate built to help a human understand their own data.
 
-The agent is the primary operational client.
-The human is the primary beneficiary.
+The agent is the primary operational client. The human is the primary beneficiary.
 
 ## In one paragraph
 
@@ -42,10 +41,9 @@ The two failure modes, in the maintainer's words:
 - **Too broad / under-specified** → "the agents will end up creating their own custom conventions and then PR becomes impossible."
 - **Too narrow / over-enumerated** → "the agent might decide it's too strict and limiting and come up with their own solution anyway, or violate the boundaries."
 
-The target is the middle: *guide agents to create their own policies; don't strictly limit them, but don't give so much freedom that they invent random stuff.* When you catch yourself listing every domain, metric, question, or policy, stop and define the abstraction that lets an agent add the next one correctly without a central edit.
+The target is the middle: _guide agents to create their own policies; don't strictly limit them, but don't give so much freedom that they invent random stuff._ When you catch yourself listing every domain, metric, question, or policy, stop and define the abstraction that lets an agent add the next one correctly without a central edit.
 
-**Right (a level above):** the federated parser seam — a `PluginParser` contract, a fixed `suggest_metric()` resolution order, and an `unmapped_metrics` surface — so any agent can add a vendor without anyone editing a central list.
-**Wrong (enumerated):** an `if source == "garmin" … elif source == "fitbit" …` ladder, or a spec that lists every supported metric instead of the rule for admitting a new one.
+**Right (a level above):** the federated parser seam — a `PluginParser` contract, a fixed `suggest_metric()` resolution order, and an `unmapped_metrics` surface — so any agent can add a vendor without anyone editing a central list. **Wrong (enumerated):** an `if source == "garmin" … elif source == "fitbit" …` ladder, or a spec that lists every supported metric instead of the rule for admitting a new one.
 
 ## Docs altitude: separate the audiences
 
@@ -57,7 +55,7 @@ Premura is roughly **agent-first in execution, human-first in purpose** ("~80% f
 
 Building and using a parser for the operator's own data is part of operating an installed Premura: at runtime an agent may build a parser and use it immediately for the operator's own data, with no reviewer. Review enters only if the human consents to contribute that parser back — the PR (the contributor audience above), not the local use, goes through the existing development/review process.
 
-**Single home per shipped-state fact.** A count or inventory of what is shipped (tool counts, signal lists, test totals) has exactly one home — [STATUS.md](STATUS.md) — and every other doc links there instead of restating it; a restated count is a future stale count. Mission narratives are append-only entries in [CHANGELOG.md](CHANGELOG.md); STATUS.md stays a bounded, rewritable snapshot (its line cap is pinned by `tests/test_docs_structure.py`). The self-check, applied whenever a doc is written or reviewed alongside the altitude test above: *does this doc restate a fact that already has a home?*
+**Single home per shipped-state fact.** A count or inventory of what is shipped (tool counts, signal lists, test totals) has exactly one home — [STATUS.md](STATUS.md) — and every other doc links there instead of restating it; a restated count is a future stale count. Mission narratives are append-only entries in [CHANGELOG.md](CHANGELOG.md); STATUS.md stays a bounded, rewritable snapshot (its line cap is pinned by `tests/test_docs_structure.py`). The self-check, applied whenever a doc is written or reviewed alongside the altitude test above: _does this doc restate a fact that already has a home?_
 
 ## What Premura is not
 
@@ -72,7 +70,7 @@ Building and using a parser for the operator's own data is part of operating an 
 
 Two write paths exist for the personal-context and intake domains, and they have deliberately different shapes:
 
-- **Baseline profile context** is captured by the agent through a bounded interview. The supported attributes are a small, closed allowlist (`birth_date`, `sex`, `standing_height_cm` today); the agent records one fact at a time, each new value supersedes the prior one while history is kept, and unsupported or derived keys (such as `age`) are rejected. This is *agent-mediated capture*, not a human form, and not an open attribute store.
+- **Baseline profile context** is captured by the agent through a bounded interview. The supported attributes are a small, closed allowlist (`birth_date`, `sex`, `standing_height_cm` today); the agent records one fact at a time, each new value supersedes the prior one while history is kept, and unsupported or derived keys (such as `age`) are rejected. This is _agent-mediated capture_, not a human form, and not an open attribute store.
 - **Nutrition and supplement consumption** is bulk data that arrives through the **parser/plugin path** — the same federated-parser seam the wearable sources use. The warehouse now has concrete homes for this data, but turning a specific source (a meal-logging app export, a supplement log) into those rows is follow-on parser work, not a built-in importer that already ships.
 
 The point of stating this explicitly: earlier planning kept drifting back into "the human fills out a form" and "we'll add a built-in nutrition importer." Both are wrong defaults. Capture is agent-mediated; new source support is parser/plugin work.
