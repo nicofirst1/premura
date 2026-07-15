@@ -67,3 +67,6 @@ skills-lock.json
 .kittify/
 kitty-specs/
 CONTEXT.md
+
+# Local throwaway Docker sandbox (Dockerfile, run.sh, Claude Code)
+throwawaydocker/

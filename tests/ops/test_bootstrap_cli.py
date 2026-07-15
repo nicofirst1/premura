@@ -41,6 +41,8 @@ from premura.bootstrap import (
     BootstrapRun,
     BootstrapSummary,
     CheckStatus,
+    KeypairSetupState,
+    KeypairStatus,
     SkillSetupState,
     SummaryStatus,
 )
@@ -73,6 +75,16 @@ def _skill_state(*, reload_required: bool) -> SkillSetupState:
         install_path=path,
         reload_required=False,
         message="Skills already current. Reload not required for skill visibility.",
+    )
+
+
+def _keypair_state() -> KeypairSetupState:
+    path = Path("/tmp/fresh-clone/.config/premura")
+    return KeypairSetupState(
+        status=KeypairStatus.PRESENT,
+        key_path=path / "age.key",
+        recipients_path=path / "recipients.txt",
+        message="age keypair already present.",
     )
 
 
@@ -130,6 +142,7 @@ def _ready_run() -> BootstrapRun:
         checks=checks,
         actions=actions,
         skill_setup=_skill_state(reload_required=False),
+        keypair=_keypair_state(),
         summary=summary,
     )
 
@@ -199,6 +212,7 @@ def _partial_run() -> BootstrapRun:
         checks=checks,
         actions=actions,
         skill_setup=_skill_state(reload_required=True),
+        keypair=_keypair_state(),
         summary=summary,
     )
 
@@ -259,6 +273,7 @@ def _blocked_run() -> BootstrapRun:
         checks=checks,
         actions=actions,
         skill_setup=_skill_state(reload_required=False),
+        keypair=_keypair_state(),
         summary=summary,
     )
 

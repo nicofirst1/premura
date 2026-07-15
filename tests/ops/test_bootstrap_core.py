@@ -20,6 +20,8 @@ from premura.bootstrap import (
     BootstrapRun,
     CheckStatus,
     CommandOutcome,
+    KeypairSetupState,
+    KeypairStatus,
     SkillSetupState,
     SummaryStatus,
     run_bootstrap,
@@ -67,6 +69,20 @@ def _available_tools(*names: str):
         return tool in present
 
     return _probe
+
+
+def fake_keypair(status: KeypairStatus = KeypairStatus.PRESENT):
+    """A keypair-installer double: never touches disk or the real `age` binary."""
+
+    def _install(tool_probe) -> KeypairSetupState:  # noqa: ANN001 - test double
+        return KeypairSetupState(
+            status=status,
+            key_path=Path("/tmp/premura-test/age.key"),
+            recipients_path=Path("/tmp/premura-test/recipients.txt"),
+            message=f"keypair {status.value}",
+        )
+
+    return _install
 
 
 def _surfaces(*, broken: set[str] | None = None):
@@ -138,6 +154,7 @@ def test_bootstrap_idempotent_when_everything_current(tmp_path: Path) -> None:
         command_runner=runner,
         skill_installer=fake_installer([]),
         tool_probe=_available_tools("uv", "rclone"),
+        keypair_installer=fake_keypair(KeypairStatus.PRESENT),
     )
 
     assert run.summary.status is SummaryStatus.READY
@@ -259,6 +276,66 @@ def test_skill_setup_reports_installed_and_changed_state(tmp_path: Path) -> None
     assert state.install_path == tmp_path / ".claude" / "skills"
 
 
+# ---------------------------------------------------------------------------
+# age keypair (the single secret): portable setup, warning-not-blocker
+# ---------------------------------------------------------------------------
+
+
+def _run_with_keypair(tmp_path: Path, status: KeypairStatus) -> BootstrapRun:
+    return run_bootstrap(
+        tmp_path,
+        command_runner=FakeRunner(),
+        skill_installer=fake_installer([]),
+        tool_probe=_available_tools("uv", "rclone"),
+        keypair_installer=fake_keypair(status),
+    )
+
+
+def test_missing_age_is_a_warning_not_a_blocker(tmp_path: Path) -> None:
+    # No `age` on PATH: encryption is unavailable, but the checkout is still
+    # usable for the agent surface, so this must never block operation.
+    run = _run_with_keypair(tmp_path, KeypairStatus.AGE_MISSING)
+    assert run.summary.status is SummaryStatus.PARTIAL
+    assert run.summary.ready_for_operation is True
+    assert run.summary.blockers == []
+    assert any("age" in w.lower() for w in run.summary.warnings)
+    assert run.keypair.status is KeypairStatus.AGE_MISSING
+
+
+def test_generated_keypair_warns_to_back_it_up(tmp_path: Path) -> None:
+    # The run that creates the secret is the one that must tell you to back it up.
+    run = _run_with_keypair(tmp_path, KeypairStatus.GENERATED)
+    assert run.summary.status is SummaryStatus.PARTIAL
+    assert any("back it up" in w.lower() for w in run.summary.warnings)
+    assert any(
+        a.name == "ensure_age_keypair" and a.result is ActionResult.CHANGED for a in run.actions
+    )
+
+
+def test_present_keypair_is_a_clean_pass(tmp_path: Path) -> None:
+    run = _run_with_keypair(tmp_path, KeypairStatus.PRESENT)
+    assert run.summary.status is SummaryStatus.READY
+    assert not any("age keypair" in w.lower() for w in run.summary.warnings)
+
+
+def test_generate_keypair_writes_key_and_recipients(tmp_path: Path) -> None:
+    # Real end-to-end via the `age` binary; skip where it isn't installed.
+    from premura.ops import encrypt
+
+    if not encrypt.is_available():
+        import pytest as _pytest
+
+        _pytest.skip("age / age-keygen not installed")
+    key = tmp_path / "cfg" / "age.key"
+    recipients = tmp_path / "cfg" / "recipients.txt"
+    pub = encrypt.generate_keypair(key_path=key, recipients_path=recipients)
+    assert key.exists() and recipients.exists()
+    assert pub.startswith("age1")
+    assert recipients.read_text().strip() == pub
+    # The generated pair actually round-trips (encrypt with recipients, decrypt with key).
+    assert encrypt.roundtrip_check(recipients_file=recipients, identity_file=key) is None
+
+
 def test_core_service_does_not_touch_health_data_operations(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -307,6 +384,7 @@ def test_core_surfaces_are_verified_when_dependencies_ready(tmp_path: Path) -> N
         skill_installer=fake_installer([]),
         tool_probe=_available_tools("uv", "rclone"),
         surface_probe=_surfaces(),
+        keypair_installer=fake_keypair(KeypairStatus.PRESENT),
     )
 
     surface_checks = [

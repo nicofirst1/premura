@@ -34,7 +34,7 @@ I can't describe the feeling of empowerment this gave me, and I want other peopl
 
 **Premura is not medical advice and not a diagnostic tool.** It helps you organize and understand your own health data; it does not diagnose, treat, or replace a clinician. Talk to a qualified healthcare professional about any medical decision.
 
-> Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [Doctrine](docs/shared/DOCTRINE.md) · [SPEC](docs/shared/SPEC.md) · [Changelog](docs/shared/CHANGELOG.md) · [Stages](docs/building/architecture/STAGES.md)
+> Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [Doctrine](docs/shared/DOCTRINE.md) · [SPEC](docs/shared/SPEC.md) · [Changelog](docs/shared/CHANGELOG.md) · [Stages](docs/building/STAGES.md)
 
 ## Quick start
 
@@ -44,28 +44,20 @@ Premura is operated _and improved_ from a local clone, so the fastest start is t
 
 That lands you in a working clone with the safe agent surface registered. Open a fresh agent session and ask it to help with your health data: the first run interviews you about what you want to learn and what devices you have, then guides you through collecting and reading it. The raw-SQL operator surface is never registered this way - see [OPERATIONS.md](docs/using/OPERATIONS.md#the-two-mcp-servers).
 
-Once cloned, the setup and monthly commands are:
+Once cloned, the setup and monthly commands work on any OS. First install [`uv`](https://docs.astral.sh/uv/), then run the rest:
 
 ```bash
-uv run premura bootstrap                    # SETUP ONLY: prepare + verify this checkout, report reload guidance
-bash ops/bootstrap.sh                       # one-time: brew installs, age keypair, optional rclone; puts `premura` on your PATH
-premura doctor                              # verify environment
+uv tool install --editable .
+premura bootstrap                    # SETUP: sync deps, install skills, create the age keypair
+premura install-client claude        # register the safe MCP surface (or: opencode | codex)
+premura doctor                        # verify environment
 # drop inputs into data/inbox/, then:
-premura run-monthly                         # ingest + encrypt (no auto-upload)
+premura run-monthly                   # ingest + encrypt (no auto-upload)
 ```
 
-**Just trying it, without a clone?** You can register the published surface straight from git with only [`uv`](https://docs.astral.sh/uv/) - but a clone is what lets you add parsers and improve Premura:
+`bootstrap` creates the `age` keypair for you at `$HOME/.config/premura/age.key` when the `age` binary is present (macOS: `brew install age`; Debian/Ubuntu: `apt install age`). The `age` private key is the single secret. Lose it = lose all encrypted backups.
 
-```bash
-uvx --from git+https://github.com/nicofirst1/premura premura install-client claude   # or: opencode | codex
-```
-
-## age key storage
-
-The `age` private key at `$HOME/premura/age.key` is the single secret. Lose it = lose all encrypted backups. Two recommended options:
-
-1. **Local backed-up file** (Time Machine, external drive). Default.
-2. **Bitwarden secure note** - `bootstrap.sh` prints a `bw create item …` recipe you can run after `bw login`. Retrieve later with `bw get notes 'premura age key' > $HOME/premura/age.key && chmod 600 …`.
+**macOS operator automation (optional).** `bash ops/bootstrap.sh` adds the Mac-only extras on top: Homebrew prerequisites, a launchd job for the monthly run, and rclone/Drive upload. It is not needed to try or use Premura.
 
 ## What's in the warehouse
 
@@ -79,16 +71,12 @@ duckdb -readonly data/duck/health.duckdb
 
 ## Surfaces
 
-The default path is an agent operating Premura through tools, not raw SQL:
+The default path is an agent operating Premura through the mcp:
 
-- **`premura-mcp`** - the default, validity-gated agent surface (34 tools). Every tool delegates to the deterministic signal engine (no raw `hp.*` SQL), and tools return structured `available` / `missing_input` / `stale_input` / `insufficient_data` verdicts instead of free-form claims. Six analytical tools (change point, smoothed average, correlation, rolling mean, paired t-test, condition paired t-test) disclose their confounds and refuse thin samples. The literature tools `pubmed_search` and `pubmed_fetch` enforce one rule: search hits are discovery candidates only, and final answers may cite only fetched PMID records.
-- **`premura-mcp-operator --ack`** - a lower-guarantee expert fallback that adds a raw-SQL escape hatch. It refuses to start without explicit acknowledgement, so it is never the silent default.
+- **`premura-mcp`** - the default, validity-gated agent surface. Every tool delegates to a deterministic signal engine, and tools return structured `available` / `missing_input` / `stale_input` / `insufficient_data` verdicts.
+- **`premura-mcp-operator --ack`** - a lower-guarantee expert fallback that adds a raw-SQL escape hatch. It refuses to start without explicit acknowledgement.
 
 For the `premura` CLI and how the two servers differ, see [OPERATIONS.md](docs/using/OPERATIONS.md). Direct DuckDB and notebook access remain available as expert fallbacks.
-
-## What asking a question looks like
-
-The first run starts with a short interview. The agent asks what you want to look at (sleep, cardio, stress, labs, an overview), then routes only to directions where live analysis exists; a dead end gets a plain refusal, not an improvised answer. Findings reach you through a narrator role that never diagnoses or names causes. Every answer must pass a blocking audit of that exact draft before you see it. Lifestyle facts (supplements, conditions, habits) are captured one confirmed item at a time, and nothing is silently inferred about you.
 
 ## Pointers for your agent
 

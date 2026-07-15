@@ -16,6 +16,40 @@ def is_available() -> bool:
     return shutil.which("age") is not None and shutil.which("age-keygen") is not None
 
 
+def _public_key(key_path: Path) -> str | None:
+    """The ``age1…`` recipient from an ``age-keygen`` identity file, or None."""
+    for line in key_path.read_text().splitlines():
+        if line.startswith("# public key:"):
+            return line.split(":", 1)[1].strip()
+    return None
+
+
+def generate_keypair(*, key_path: Path, recipients_path: Path) -> str:
+    """Create an age identity at ``key_path`` and write its public key to
+    ``recipients_path`` (0600 both). Returns the public recipient string.
+
+    Portable equivalent of the macOS ``ops/bootstrap.sh`` keygen step, so any
+    OS can create the single secret via ``premura bootstrap``. Raises
+    :class:`AgeError` if ``age-keygen`` is absent or generation fails.
+    """
+    if shutil.which("age-keygen") is None:
+        raise AgeError("age-keygen not installed")
+    key_path.parent.mkdir(parents=True, exist_ok=True)
+    res = subprocess.run(
+        ["age-keygen", "-o", str(key_path)], capture_output=True, text=True, check=False
+    )
+    if res.returncode != 0:
+        raise AgeError(f"age-keygen failed (rc={res.returncode}): {res.stderr.strip()}")
+    key_path.chmod(0o600)
+    pub = _public_key(key_path)
+    if pub is None:
+        raise AgeError(f"could not read public key from {key_path}")
+    recipients_path.parent.mkdir(parents=True, exist_ok=True)
+    recipients_path.write_text(pub + "\n")
+    recipients_path.chmod(0o600)
+    return pub
+
+
 def encrypt_file(input_path: Path, output_path: Path, *, recipients_file: Path) -> Path:
     """`age -R recipients.txt -o output.age input` — overwrites output."""
     if not recipients_file.is_file():
@@ -80,6 +114,7 @@ __all__ = [
     "AgeError",
     "decrypt_file",
     "encrypt_file",
+    "generate_keypair",
     "is_available",
     "recipient_fingerprint",
     "roundtrip_check",

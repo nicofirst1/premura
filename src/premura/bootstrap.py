@@ -49,6 +49,8 @@ __all__ = [
     "BootstrapCheck",
     "BootstrapAction",
     "SkillSetupState",
+    "KeypairStatus",
+    "KeypairSetupState",
     "BootstrapSummary",
     "BootstrapRun",
     "run_bootstrap",
@@ -104,6 +106,14 @@ class ActionResult(StrEnum):
     NOT_ATTEMPTED = "not_attempted"
 
 
+class KeypairStatus(StrEnum):
+    """State of the age keypair (the single secret) after setup."""
+
+    GENERATED = "generated"  # created this run -> back it up
+    PRESENT = "present"  # already existed -> no change
+    AGE_MISSING = "age_missing"  # `age` not installed -> warn, do not block
+
+
 # ---------------------------------------------------------------------------
 # Injectable boundaries
 # ---------------------------------------------------------------------------
@@ -138,6 +148,12 @@ SkillInstaller = Callable[[Path], list[Path]]
 
 #: A tool probe answers "is this CLI tool available on PATH?".
 ToolProbe = Callable[[str], bool]
+
+#: A keypair installer ensures the age identity (the single secret) exists,
+#: given a tool probe for age availability, and returns a
+#: :class:`KeypairSetupState`. Tests inject a fake so no real key is generated;
+#: the default generates one via ``age`` when present.
+KeypairInstaller = Callable[["ToolProbe"], "KeypairSetupState"]
 
 #: A surface probe answers "does this ``module:attribute`` import target resolve?"
 #: It returns ``(ok, detail)`` so a caller can classify a core-surface check
@@ -257,6 +273,16 @@ class SkillSetupState:
 
 
 @dataclass
+class KeypairSetupState:
+    """age-keypair setup outcome derived from the installer boundary."""
+
+    status: KeypairStatus
+    key_path: Path
+    recipients_path: Path
+    message: str
+
+
+@dataclass
 class BootstrapSummary:
     """The final handoff object a caller renders verbatim."""
 
@@ -278,6 +304,7 @@ class BootstrapRun:
     checks: list[BootstrapCheck]
     actions: list[BootstrapAction]
     skill_setup: SkillSetupState
+    keypair: KeypairSetupState
     summary: BootstrapSummary
 
 
@@ -333,9 +360,11 @@ def _build_skill_setup_state(written: list[Path], install_path: Path) -> SkillSe
         )
         reload_required = False
     else:
+        # Caveat only: the factual "installed N files" belongs on the action
+        # ledger (derived from installed_count/install_path). Keeping it out of
+        # here stops the same sentence printing under both actions and warnings.
         message = (
-            f"Installed or updated {installed_count} skill file(s) under {install_path}. "
-            "Reload required: start a fresh agent session to see the new skills."
+            "Skills changed - reload required: start a fresh agent session to see the new skills."
         )
         reload_required = True
     return SkillSetupState(
@@ -344,6 +373,121 @@ def _build_skill_setup_state(written: list[Path], install_path: Path) -> SkillSe
         install_path=install_path,
         reload_required=reload_required,
         message=message,
+    )
+
+
+#: Cross-platform remediation when `age` is not installed. Kept a level above a
+#: single OS: name a couple of package managers plus the upstream, so a new
+#: platform is one more clause, not a rewrite.
+_AGE_INSTALL_HINT = (
+    "Install `age` (macOS: `brew install age`; Debian/Ubuntu: `apt install age`; "
+    "others: https://github.com/FiloSottile/age), then re-run bootstrap. Encrypted "
+    "backups (run-monthly) are unavailable until then."
+)
+
+
+def _default_keypair_installer(tool_probe: ToolProbe) -> KeypairSetupState:
+    """Ensure the age keypair exists at the configured paths (real side effects).
+
+    Owns the portable half of what the macOS ``ops/bootstrap.sh`` did: generate
+    the single secret on any OS. Absence of `age` is a warning, never a blocker -
+    the agent surface works without encryption; only encrypted backups need it.
+    Imports config/encrypt lazily so the module stays import-light and tests can
+    inject a fake without touching real settings or the `age` binary.
+    """
+    from premura.config import settings
+    from premura.ops import encrypt
+
+    key_path = settings.age_key_file
+    recipients_path = settings.age_recipients_file
+    if not (tool_probe("age") and tool_probe("age-keygen")):
+        return KeypairSetupState(
+            KeypairStatus.AGE_MISSING, key_path, recipients_path, _AGE_INSTALL_HINT
+        )
+    if key_path.exists():
+        return KeypairSetupState(
+            KeypairStatus.PRESENT,
+            key_path,
+            recipients_path,
+            f"age keypair already present at {key_path}.",
+        )
+    try:
+        encrypt.generate_keypair(key_path=key_path, recipients_path=recipients_path)
+    except encrypt.AgeError as exc:
+        return KeypairSetupState(
+            KeypairStatus.AGE_MISSING,
+            key_path,
+            recipients_path,
+            f"age keypair generation failed: {exc}. {_AGE_INSTALL_HINT}",
+        )
+    return KeypairSetupState(
+        KeypairStatus.GENERATED,
+        key_path,
+        recipients_path,
+        f"New age keypair generated at {key_path}. BACK IT UP - without it every "
+        "encrypted backup is unrecoverable.",
+    )
+
+
+def _keypair_action(state: KeypairSetupState) -> BootstrapAction:
+    """The action-ledger entry for keypair setup: what happened, factually."""
+    if state.status is KeypairStatus.GENERATED:
+        return BootstrapAction(
+            name="ensure_age_keypair",
+            scope="local checkout/environment",
+            result=ActionResult.CHANGED,
+            detail=(
+                f"Generated age keypair at {state.key_path}; recipients at {state.recipients_path}."
+            ),
+        )
+    if state.status is KeypairStatus.PRESENT:
+        return BootstrapAction(
+            name="ensure_age_keypair",
+            scope="local checkout/environment",
+            result=ActionResult.NO_CHANGE,
+            detail=state.message,
+        )
+    return BootstrapAction(
+        name="ensure_age_keypair",
+        scope="external/system",
+        result=ActionResult.NOT_ATTEMPTED,
+        detail="`age` not installed; age keypair not created.",
+    )
+
+
+def _keypair_check(state: KeypairSetupState) -> BootstrapCheck:
+    """The readiness entry for keypair setup. A generated key warns (back it up);
+    a missing `age` warns (encryption unavailable); an existing key passes. The
+    caveat lives here, not on the action, so the same sentence never prints twice.
+    """
+    if state.status is KeypairStatus.PRESENT:
+        return BootstrapCheck(
+            name="age keypair",
+            category=CATEGORY_OPTIONAL_CAPABILITY,
+            status=CheckStatus.PASS,
+            observed=f"present at {state.key_path}",
+        )
+    if state.status is KeypairStatus.GENERATED:
+        # The back-it-up warning is structural to a fresh key, not something the
+        # installer has to remember to say — author it here from the key path.
+        return BootstrapCheck(
+            name="age keypair backup",
+            category=CATEGORY_OPTIONAL_CAPABILITY,
+            status=CheckStatus.WARNING,
+            observed=f"new keypair at {state.key_path}",
+            next_action=(
+                f"New age keypair at {state.key_path}. BACK IT UP - without it every "
+                "encrypted backup is unrecoverable."
+            ),
+            local_action_allowed=True,
+        )
+    return BootstrapCheck(
+        name="age encryption",
+        category=CATEGORY_OPTIONAL_CAPABILITY,
+        status=CheckStatus.WARNING,
+        observed="`age` not on PATH",
+        next_action=state.message,
+        local_action_allowed=False,
     )
 
 
@@ -468,6 +612,7 @@ def run_bootstrap(
     skill_installer: SkillInstaller = skills.install_skills,
     tool_probe: ToolProbe | None = None,
     surface_probe: SurfaceProbe | None = None,
+    keypair_installer: KeypairInstaller = _default_keypair_installer,
 ) -> BootstrapRun:
     """Inspect and prepare a local Premura checkout, returning a report.
 
@@ -590,7 +735,12 @@ def run_bootstrap(
             name="install_or_verify_skills",
             scope="local checkout/environment",
             result=ActionResult.CHANGED if not skill_setup.unchanged else ActionResult.NO_CHANGE,
-            detail=skill_setup.message,
+            detail=(
+                f"Installed or updated {skill_setup.installed_count} skill file(s) "
+                f"under {skill_setup.install_path}."
+                if not skill_setup.unchanged
+                else skill_setup.message
+            ),
         )
     )
     checks.append(
@@ -607,6 +757,13 @@ def run_bootstrap(
         )
     )
 
+    # 3b) The age keypair (the single secret). Portable, so bootstrap owns it
+    #     rather than the macOS-only ops/bootstrap.sh. Missing `age` is a
+    #     warning (encryption unavailable), never a blocker.
+    keypair = keypair_installer(probe)
+    actions.append(_keypair_action(keypair))
+    checks.append(_keypair_check(keypair))
+
     # 4) Optional capabilities — warnings only.
     checks.extend(_classify_optional_capabilities(probe))
 
@@ -618,6 +775,7 @@ def run_bootstrap(
         checks=checks,
         actions=actions,
         skill_setup=skill_setup,
+        keypair=keypair,
         summary=summary,
     )
 

@@ -469,7 +469,11 @@ def export(
 
     # 3. encrypt both
     if not encrypt.is_available():
-        console.print("[red]age CLI not installed — run ops/bootstrap.sh first[/red]")
+        console.print(
+            "[red]age CLI not installed. Install `age` (macOS: `brew install age`; "
+            "Debian/Ubuntu: `apt install age`), then run `premura bootstrap` to create "
+            "the keypair.[/red]"
+        )
         raise typer.Exit(code=1)
     if not settings.age_recipients_file.exists():
         console.print(f"[red]recipients file missing: {settings.age_recipients_file}[/red]")
