@@ -1,4 +1,4 @@
-"""`hpipe` CLI — entry point for the premura pipeline.
+"""`premura` CLI — entry point for the premura pipeline.
 
 Verbs: bootstrap, ingest, inspect, status, export, upload, run-monthly, doctor,
 gc, install-launchd, uninstall-launchd, install-skills.
@@ -56,7 +56,7 @@ app = typer.Typer(
     help="Personal health data warehouse.",
 )
 console = Console()
-log = logging.getLogger("hpipe")
+log = logging.getLogger("premura")
 
 READY_TIMEOUT_DAYS = 7
 READY_POLL_SECS = 3600  # 1 hour
@@ -403,7 +403,7 @@ def inspect(
 def status() -> None:
     """Summary of ingest_run + row counts per metric."""
     if not settings.warehouse_path.exists():
-        console.print("[yellow]warehouse does not exist yet — run `hpipe ingest` first[/yellow]")
+        console.print("[yellow]warehouse does not exist yet — run `premura ingest` first[/yellow]")
         raise typer.Exit(code=0)
     conn = duck.connect(settings.warehouse_path, read_only=True)
     try:
@@ -546,7 +546,7 @@ def _do_upload(month: str) -> None:
     local_dir = settings.exports_dir / month
     if not local_dir.is_dir():
         console.print(
-            f"[red]no export dir {local_dir} — run `hpipe export --month {month}` first[/red]"
+            f"[red]no export dir {local_dir} — run `premura export --month {month}` first[/red]"
         )
         raise typer.Exit(code=1)
     if not upload.is_available():
@@ -739,7 +739,7 @@ def run_monthly() -> None:
             title="Premura",
             body=(
                 f"{month}: ingest + encrypt done. Encrypted artifact ready at "
-                f"{out_dir}. Run `hpipe upload --month {month}` to push to Drive when ready."
+                f"{out_dir}. Run `premura upload --month {month}` to push to Drive when ready."
             ),
         )
     finally:
@@ -778,7 +778,7 @@ def install_launchd() -> None:
     program = shutil.which("uv") or "/opt/homebrew/bin/uv"
     rendered = Template(template_text).render(
         label=settings.launchd_label,
-        program_args=[program, "run", "hpipe", "run-monthly"],
+        program_args=[program, "run", "premura", "run-monthly"],
         working_dir=str(Path.cwd()),
         log_out=str(settings.log_dir / "out.log"),
         log_err=str(settings.log_dir / "err.log"),
@@ -810,7 +810,7 @@ def install_skills() -> None:
     Idempotent: re-running prints ``no changes`` when on-disk files already
     match the shipped package data (sha256-compared). Intended to be invoked
     from a project root; ``bootstrap.sh`` calls this automatically on
-    interactive shells unless ``HPIPE_SKIP_SKILLS=1``.
+    interactive shells unless ``PREMURA_SKIP_SKILLS=1``.
     """
     written = skills.install_skills(Path.cwd())
     if not written:

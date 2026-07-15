@@ -1,6 +1,6 @@
 """Structural routing-preview capability (m7 WP1).
 
-`hpipe inspect` consumes a *structural* parser capability — a parser that can
+`premura inspect` consumes a *structural* parser capability — a parser that can
 preview routing exposes ``preview_routing(member_names) -> RoutingPreview`` — and
 never special-cases any vendor. These tests pin the capability shape and the
 Garmin implementation that delegates to its existing dispatcher (FR-1.1, FR-1.4).

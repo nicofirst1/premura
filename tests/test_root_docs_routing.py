@@ -54,7 +54,7 @@ def test_readme_routes_the_human_operator() -> None:
     assert "health" in low
     # How to run it locally on a fresh clone — a runnable command, not a bare
     # console script.
-    assert "uv run hpipe bootstrap" in low
+    assert "uv run premura bootstrap" in low
     # Where to go next: the docs guide and the contributor path.
     assert "docs/README.md" in text
     assert "CONTRIBUTING.md" in text
@@ -81,7 +81,7 @@ def test_agents_md_routes_the_coding_agent() -> None:
     assert "CONTEXT.md" in text
     assert "CONTRIBUTING.md" in text
     # Explicit first step on a fresh clone.
-    assert "uv run hpipe bootstrap" in low
+    assert "uv run premura bootstrap" in low
     # How to make a change safely / prepare a PR — routed, not restated.
     assert "pull request" in low or "pr" in low.split()
     # Runtime operation is a different audience: route it onward, do not absorb it.
@@ -96,7 +96,7 @@ def test_contributing_owns_dev_and_pr_handoff() -> None:
     text = _read(CONTRIBUTING)
     low = text.lower()
     # Development setup that actually runs on a fresh clone.
-    assert "uv run hpipe bootstrap" in low
+    assert "uv run premura bootstrap" in low
     # The changed-scope check set must survive here.
     for check in ("pytest", "ruff", "mypy"):
         assert check in low, f"CONTRIBUTING dropped the {check} dev check"

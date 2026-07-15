@@ -174,22 +174,22 @@ The pinned inventory test is `tests/test_mcp_server.py`.
 | Garmin GDPR parser | ✅ | UDS, sleepData, healthStatus, BP, hydration, training load/readiness, max-met, summarizedActivities; unknown filenames surfaced in `ingest_run.notes`. |
 | Sleep as Android parser | ✅ | Synthetic-fixture tests; DST-safe per-minute actigraphy walk. |
 | BMT parser | ✅ | Long/wide format detection; per-row units; custom metrics → `bmt_custom:*`. |
-| Withings parser | ✅ | First real third-party **observation**-seam vendor (#33, M4): zip-of-CSVs export (weight, BP, HR, steps, sleep) → `hpipe ingest --source withings`; reuses existing ontology metrics plus `fat_mass` (bare English) and `vendor:withings:pulse_wave_velocity` (fallback); dedupe priority between `garmin_gdpr` and `health_connect`. |
-| Fitbit Takeout parser | ✅ | Google Takeout `MyFitbitData/` folder or zip → `hpipe ingest --source fitbit`; filename-pattern dispatch over daily/summary files (HRV, respiration, SpO2, skin temp, sleep session/score/efficiency, active/sedentary minutes, resting HR, stress, mindfulness, menstrual period), reusing existing ontology metrics plus `active_minutes_*` / `sedentary_minutes` (bare English) and `vendor:fitbit:menstrual_period` (fallback); intraday per-minute streams deliberately skipped and surfaced in `notes`; dedupe priority between `withings` and `health_connect`. |
-| MyFitnessPal intake parser | ✅ | First real vendor intake source: per-meal nutrition aggregates → intake seam (`hpipe ingest --source mfp`); exercise/measurement columns surfaced as declared gaps, never observation rows. |
+| Withings parser | ✅ | First real third-party **observation**-seam vendor (#33, M4): zip-of-CSVs export (weight, BP, HR, steps, sleep) → `premura ingest --source withings`; reuses existing ontology metrics plus `fat_mass` (bare English) and `vendor:withings:pulse_wave_velocity` (fallback); dedupe priority between `garmin_gdpr` and `health_connect`. |
+| Fitbit Takeout parser | ✅ | Google Takeout `MyFitbitData/` folder or zip → `premura ingest --source fitbit`; filename-pattern dispatch over daily/summary files (HRV, respiration, SpO2, skin temp, sleep session/score/efficiency, active/sedentary minutes, resting HR, stress, mindfulness, menstrual period), reusing existing ontology metrics plus `active_minutes_*` / `sedentary_minutes` (bare English) and `vendor:fitbit:menstrual_period` (fallback); intraday per-minute streams deliberately skipped and surfaced in `notes`; dedupe priority between `withings` and `health_connect`. |
+| MyFitnessPal intake parser | ✅ | First real vendor intake source: per-meal nutrition aggregates → intake seam (`premura ingest --source mfp`); exercise/measurement columns surfaced as declared gaps, never observation rows. |
 | AI-chat recall intake parser | ✅ | Interchange contract (`premura.ai_chat_recall.v1`, see `docs/building/architecture/AI_CHAT_RECALL_CONTRACT.md`) + parser (`--source aichat`): assistant-recalled supplements/medications with explicit date precision and mandatory provenance quotes, under `source_kind=ai_chat_recall` (inventory questions only, never adherence). |
 | Loader (batch insert) | ✅ | Polars→DuckDB set-based insert; native-key + cross-source priority dedupe. |
-| CLI (`hpipe`) | ✅ | `bootstrap`, `ingest`, `inspect` (read-only routing preview), `status`, `export`, `upload`, `doctor` (incl. age-key + backup round-trip checks), `gc` (`--dry-run`, opt-in `--raw`), `run-monthly`, launchd install/uninstall, `install-skills`, `profile-fields` / `profile-record`. |
+| CLI (`premura`) | ✅ | `bootstrap`, `ingest`, `inspect` (read-only routing preview), `status`, `export`, `upload`, `doctor` (incl. age-key + backup round-trip checks), `gc` (`--dry-run`, opt-in `--raw`), `run-monthly`, launchd install/uninstall, `install-skills`, `profile-fields` / `profile-record`. |
 | Idempotency | ✅ | sha256 skip in `hp.ingest_run` + `dedupe_key UNIQUE` + intra-batch dedupe. |
 | Export artifact encryption | ✅ | Live round-trip verified 2026-05-21; per-test keypair regression suite; `doctor` re-proves the key/recipients pair on demand. |
-| Drive upload (opt-in) | ⚠️ Code complete, not auto | `hpipe upload` runs only on explicit invocation. |
+| Drive upload (opt-in) | ⚠️ Code complete, not auto | `premura upload` runs only on explicit invocation. |
 | launchd monthly run | ✅ | `com.nbrandizzi.premura.monthly` bootstrapped and verified 2026-05-21. |
 | CI quality gates | ✅ | GitHub Actions on every push/PR: pytest (default suite), `ruff check`, `ruff format --check`, `mypy src/` (clean), `uv lock --check`, tracked-data guard. |
 | Tests | ✅ | 1,044 default-suite tests green in CI (the `regression` / `live_trial` marked tests run locally only, by design). |
 
 ## Warehouse contents (shape illustration, one operator's run)
 
-Run `uv run hpipe status` for live numbers. `hp.fact_measurement` coverage:
+Run `uv run premura status` for live numbers. `hp.fact_measurement` coverage:
 heart_rate, spo2, resting_hr, hrv_rmssd_overnight (Garmin-only), stress,
 resp_rate, training_readiness, training_load, sleep_rating, sleep_deep_pct,
 skin_temperature, intensity_minutes, weight, hydration, bmr, bp_systolic /
@@ -221,7 +221,7 @@ exercise_session, sleep_session, daily_wellness, active_kcal.
 
 ## Setup and operations
 
-`uv run hpipe bootstrap` prepares and verifies a fresh clone (environment +
+`uv run premura bootstrap` prepares and verifies a fresh clone (environment +
 bundled skills; setup-only — it never ingests, uploads, or touches the
 warehouse). Day-to-day runbook: [OPERATIONS.md](../using/OPERATIONS.md).
 

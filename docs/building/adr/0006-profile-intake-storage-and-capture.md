@@ -26,7 +26,7 @@ This mission picks the storage and the first write path. The decision:
   boundary and stamps `source_kind="agent_profile_capture"`. The surface is the
   default MCP tools `profile_context_supported_fields` /
   `profile_context_record` (`src/premura/mcp/`), mirrored by the expert CLI
-  `hpipe profile-fields` / `hpipe profile-record`. The derived key `age` is
+  `premura profile-fields` / `premura profile-record`. The derived key `age` is
   rejected, not stored — it is computed from `birth_date` and the evaluation
   date so the two can never drift.
 - **Nutrition/supplement source adaptation is parser/plugin follow-on work.**

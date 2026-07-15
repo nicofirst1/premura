@@ -5,8 +5,8 @@ Not committed: ``*.zip`` is gitignored repo-wide and
 text-format (see ``csv_content.py``'s docstring). Run once with
 ``uv run python tests/fixtures/parsers/withings/build_fixture.py`` to produce
 ``withings_export_synthetic.zip`` alongside this script, then point the
-issue #33 acceptance commands (``hpipe ingest --source withings <path>`` /
-``hpipe inspect <path>``) at that output. The parser's own pytest suite never
+issue #33 acceptance commands (``premura ingest --source withings <path>`` /
+``premura inspect <path>``) at that output. The parser's own pytest suite never
 depends on this file existing -- it builds the same content in ``tmp_path``.
 """
 

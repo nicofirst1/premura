@@ -95,7 +95,7 @@ Other principles, still the target shape:
 
 Everything the human encounters: CLI today, MCP-backed chat, eventual UI. This stage is human-critical in purpose even though it is not the main execution surface.
 
-- **Interview** (VISION Pillar 4) — first contact asks the user *what direction* (sleep, cardio, metabolic, stress, mental, gut, lab/cardiometabolic, overview). Output is a routing decision that calls the signal selector. No "analyse everything at once" by default. The same agent-mediated interview shape is how baseline profile facts are captured: the agent records one allowlisted attribute at a time through the profile-capture tools (mirrored as the expert CLI verbs `hpipe profile-fields` / `hpipe profile-record`), never via a human-filled form.
+- **Interview** (VISION Pillar 4) — first contact asks the user *what direction* (sleep, cardio, metabolic, stress, mental, gut, lab/cardiometabolic, overview). Output is a routing decision that calls the signal selector. No "analyse everything at once" by default. The same agent-mediated interview shape is how baseline profile facts are captured: the agent records one allowlisted attribute at a time through the profile-capture tools (mirrored as the expert CLI verbs `premura profile-fields` / `premura profile-record`), never via a human-filled form.
 - **Teaching** (VISION Pillar 5) — a content + interaction *style* (plain-language metric introductions, progressive disclosure, dual coding of insight + number), not a screen. It lands first in the agent's **text narration** through a coding-agent client (CLI/MCP today — Claude Code, OpenCode), and transfers to a **custom UI when one is built later**. The narration-level half (the caption that names the insight, the plain-English gloss) applies now; *dual-coded charts* specifically are a later-UI affordance. Applies to every metric surfaced, blood markers especially. See [`teaching-disclosure-research.md`](../planning/teaching-disclosure-research.md) for the parked evidence-base backlog.
 - The UI stage is the only stage that does presentation, unit display preferences, and prose. It is the layer where the human receives help, teaching, and guided interpretation from the agent-mediated workflow — **today that surface is the agent's text through a coding-agent client; a custom UI is a deliberate later destination, not UI-free.**
 
@@ -187,7 +187,7 @@ today, but the data is *meant* differently:
 - **Stages 3–4 (MCP, UI)** surface whatever Stage 2 produces and **also host the
   agent-mediated profile-capture write path**: the default MCP surface exposes
   `profile_context_supported_fields` / `profile_context_record`, mirrored by the
-  expert CLI `hpipe profile-fields` / `hpipe profile-record`. This is the bounded
+  expert CLI `premura profile-fields` / `premura profile-record`. This is the bounded
   *capture* path (writing declared baseline facts against the closed allowlist),
   not a reach into observation data — it does not let an agent read
   `fact_measurement` directly any more than the signal tools do.

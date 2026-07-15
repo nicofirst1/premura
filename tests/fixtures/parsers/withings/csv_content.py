@@ -12,7 +12,7 @@ data").
 Shared by ``tests/test_parsers/test_withings.py`` (builds an equivalent zip in
 ``tmp_path`` for every assertion) and ``build_fixture.py`` (materializes the
 same zip on disk for the issue #33 CLI acceptance commands:
-``hpipe ingest --source withings`` / ``hpipe inspect`` -- run the builder
+``premura ingest --source withings`` / ``premura inspect`` -- run the builder
 once locally, then point those commands at its output).
 
 Each CSV below intentionally carries a happy-path row, a blank-cell row

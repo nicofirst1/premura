@@ -190,7 +190,7 @@ the wording per assistant is free:
 ## Ingesting the result
 
 Save the assistant's JSON reply to a file and ingest it like any other source
-artifact (`hpipe ingest --source aichat <file>`, or drop it in the inbox).
+artifact (`premura ingest --source aichat <file>`, or drop it in the inbox).
 A reply wrapped in one whole-document markdown code fence (assistants do this
 despite the "nothing else" instruction) is tolerated; JSON buried in
 surrounding prose is not — re-ask the assistant for the bare object.

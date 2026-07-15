@@ -1376,7 +1376,7 @@ def _parse_args(
         type=Path,
         help=(
             "Explicit path to the DuckDB warehouse file. Defaults to "
-            "HPIPE_DATA_DIR/duck/health.duckdb."
+            "PREMURA_DATA_DIR/duck/health.duckdb."
         ),
     )
     parser.add_argument(

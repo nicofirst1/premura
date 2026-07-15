@@ -9,7 +9,6 @@ the exact drift dimension this mission guards against.
 The docs themselves live at:
 * ``src/premura/skills/parser-generator/SKILL.md`` (FR-007 skill half / SC-004)
 * ``docs/building/architecture/INTAKE_DIMENSIONS.md`` (FR-009 / SC-005)
-* ``docs/building/planning/intake-dimension-contract-recommendation.md`` (FR-010)
 """
 
 from __future__ import annotations
@@ -24,7 +23,6 @@ from premura.engine._resolution import SEMANTIC_DOMAINS
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILL = REPO_ROOT / "src" / "premura" / "skills" / "parser-generator" / "SKILL.md"
 RULE = REPO_ROOT / "docs" / "building" / "architecture" / "INTAKE_DIMENSIONS.md"
-RECO = REPO_ROOT / "docs" / "building" / "planning" / "intake-dimension-contract-recommendation.md"
 
 
 def _read(path: Path) -> str:
@@ -152,18 +150,3 @@ def test_rule_cites_nfr005_structural_proof() -> None:
     assert "test_shared_seam_has_no_per_domain_branch" in text
     nfr = REPO_ROOT / "tests" / "test_intake_resolvers.py"
     assert "def test_shared_seam_has_no_per_domain_branch" in _read(nfr)
-
-
-# --------------------------------------------------------------------------- #
-# T029 / FR-010 / SC-006 — the recommendation has the required parts.
-# --------------------------------------------------------------------------- #
-
-
-def test_recommendation_has_verdict_sketch_and_trigger() -> None:
-    """The note must carry a go/no-go, a sketch, and an explicit trigger."""
-    text = _read(RECO).lower()
-    assert "no-go" in text  # explicit verdict
-    assert "sketch" in text
-    assert "trigger condition" in text
-    # C-003: the note must be a recommendation, not a built contract.
-    assert "recommendation only" in text

@@ -1,4 +1,4 @@
-"""`hpipe gc` — prune data/raw/ + --dry-run (m7 WP2).
+"""`premura gc` — prune data/raw/ + --dry-run (m7 WP2).
 
 gc applies one cutoff rule (mtime older than --keep months) to N roots: the
 exports dir always, and settings.raw_dir only when the opt-in --raw flag is

@@ -109,10 +109,10 @@ INSTALL_TIER_STEPS: tuple[InstallStep, ...] = (
         argv=lambda ctx: ["uv", "sync", "--extra", "dev"],
     ),
     InstallStep(
-        name="hpipe_bootstrap",
-        # AGENTS.md "First steps in this clone" step 1: `uv run hpipe bootstrap`.
-        doc_ref="AGENTS.md First steps in this clone step 1 (uv run hpipe bootstrap)",
-        argv=lambda ctx: ["uv", "run", "hpipe", "bootstrap"],
+        name="premura_bootstrap",
+        # AGENTS.md "First steps in this clone" step 1: `uv run premura bootstrap`.
+        doc_ref="AGENTS.md First steps in this clone step 1 (uv run premura bootstrap)",
+        argv=lambda ctx: ["uv", "run", "premura", "bootstrap"],
     ),
     InstallStep(
         name="install_reference_parser",

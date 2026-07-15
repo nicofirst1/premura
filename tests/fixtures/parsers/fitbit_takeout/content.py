@@ -178,7 +178,7 @@ MEMBERS: dict[str, str] = {
 def write_tree(root: Path) -> Path:
     """Materialize the synthetic export tree under ``root``.
 
-    Returns the export-root folder path -- what ``hpipe ingest --source fitbit``
+    Returns the export-root folder path -- what ``premura ingest --source fitbit``
     (and the parser) is pointed at.
     """
     base = root / ROOT / USER

@@ -482,11 +482,11 @@ class RoutingPreview:
 
 
 class RoutingPreviewParser(Protocol):
-    """Structural capability a parser may expose so ``hpipe inspect`` can preview
+    """Structural capability a parser may expose so ``premura inspect`` can preview
     its routing without ingesting.
 
     A parser opts in purely by defining ``preview_routing`` with this signature —
-    no registry edit, no isinstance ladder. ``hpipe inspect`` discovers the
+    no registry edit, no isinstance ladder. ``premura inspect`` discovers the
     capability structurally (``hasattr`` / this Protocol). The rule for adding the
     capability to another parser is exactly: expose this method.
     """

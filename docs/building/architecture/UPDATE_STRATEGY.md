@@ -25,7 +25,7 @@ one of them.
 A new file lands in `data/inbox/`; one of the existing parsers (`hc`,
 `garmin`, `saa`, `bmt`) reads it and appends rows.
 
-- Mechanism: `hpipe ingest [--source ...]`.
+- Mechanism: `premura ingest [--source ...]`.
 - Idempotency: `ingest_run.source_sha256` + `dedupe_key UNIQUE` per row.
 - Stage: 1 (Ingest).
 
@@ -51,7 +51,7 @@ aliases, LOINC / IEEE 1752.1 cross-references). On every bootstrap,
 UPDATE.
 
 - Adding a row, fixing a unit, growing the `aliases` list, attaching a LOINC
-  code: edit `dim_metric.yaml`, run any `hpipe` command, the row is
+  code: edit `dim_metric.yaml`, run any `premura` command, the row is
   refreshed.
 - Constraint: rows MAY be added or updated; rows MUST NOT be removed in this
   mission, since `hp.fact_measurement` references them. Vocabulary
@@ -66,10 +66,10 @@ revalidation command.
 
 - The `revision` field on `SignalSpec` (see `src/premura/engine/_registry.py`)
   is stored in the `raw_payload` of each persisted derived row at compute
-  time, so a future `hpipe revalidate` command can identify outputs whose
+  time, so a future `premura revalidate` command can identify outputs whose
   spec revision no longer matches and recompute them.
 - Today: re-deriving requires deleting the stale `derived:*` rows manually
-  and re-running ingest. A first-class `hpipe revalidate` verb is queued
+  and re-running ingest. A first-class `premura revalidate` verb is queued
   for a follow-up mission.
 
 ### (e) Full rebuild from raw — **deferred**
@@ -85,7 +85,7 @@ that retroactively reinterpret historical rows.
   the cost of supporting in-place rewrite logic forever is not.
 - Concrete near-term consumer: the legacy v1 `metric_id` → final canonical
   vocabulary rename happens via rebuild, not in-place migration.
-- Today: there is no `hpipe rebuild` verb. The follow-up mission that owns
+- Today: there is no `premura rebuild` verb. The follow-up mission that owns
   the canonical-vocabulary rewrite will introduce it.
 
 ### (f) Parser updates — **deferred**
@@ -111,11 +111,11 @@ re-derived.
 
 | Update kind                       | Handled now | Mechanism                                                |
 |-----------------------------------|-------------|----------------------------------------------------------|
-| (a) new ingest                    | yes         | `hpipe ingest`                                           |
+| (a) new ingest                    | yes         | `premura ingest`                                           |
 | (b) schema migration              | yes         | `src/premura/store/migrations/NNN_*.sql`                  |
 | (c) ontology seed refresh         | yes         | `src/premura/dim_metric.yaml` + `seed_dim_metric`         |
-| (d) derived-signal invalidation   | deferred    | future `hpipe revalidate` keyed on `SignalSpec.revision` |
-| (e) full rebuild from raw         | deferred    | future `hpipe rebuild` over `data/raw/`                   |
+| (d) derived-signal invalidation   | deferred    | future `premura revalidate` keyed on `SignalSpec.revision` |
+| (e) full rebuild from raw         | deferred    | future `premura rebuild` over `data/raw/`                   |
 | (f) parser updates                | deferred    | future re-ingest / rebuild flow                          |
 
 ## Why the split
@@ -181,7 +181,7 @@ pretend declarations have a raw artifact to rebuild from (they do not).
 ### What ships today and what remains deferred
 
 Baseline profile assertions now have a concrete mechanism: dedicated profile
-tables, `hpipe profile-fields` / `hpipe profile-record`, and the matching
+tables, `premura profile-fields` / `premura profile-record`, and the matching
 agent-mediated MCP capture tools record one allowlisted profile fact at a time
 and supersede the prior open assertion while keeping history.
 

@@ -9,29 +9,29 @@
 
 ```bash
 # put inputs in data/inbox/ (HC .db, Garmin GDPR .zip, SAA/BMT .csv, lab files), then:
-uv run hpipe ingest                      # autodiscovers all supported sources
-uv run hpipe status                      # current row counts
-uv run hpipe export --month 2026-05      # snapshot + tarball + age-encrypt
-uv run hpipe upload --month 2026-05      # opt-in upload step
-uv run hpipe doctor                      # preflight checks
-uv run hpipe install-launchd             # macOS scheduled run on day 1 @ 10:00
+uv run premura ingest                      # autodiscovers all supported sources
+uv run premura status                      # current row counts
+uv run premura export --month 2026-05      # snapshot + tarball + age-encrypt
+uv run premura upload --month 2026-05      # opt-in upload step
+uv run premura doctor                      # preflight checks
+uv run premura install-launchd             # macOS scheduled run on day 1 @ 10:00
 ```
 
-## Full `hpipe` command reference
+## Full `premura` command reference
 
 ```
-hpipe bootstrap                     # setup readiness (on a fresh clone use `uv run hpipe bootstrap`; setup only — no ingest/upload)
-hpipe ingest [--source all|hc|garmin|saa|bmt|lab|mfp] [PATH]
-hpipe status
-hpipe export --month YYYY-MM        # snapshot + tarball staged raws, age-encrypt
-hpipe upload --month YYYY-MM        # OPT-IN rclone push (not run automatically)
-hpipe doctor
-hpipe gc --keep N
-hpipe run-monthly                   # full ingest+encrypt pipeline (no upload step)
-hpipe install-launchd / uninstall-launchd
+premura bootstrap                     # setup readiness (on a fresh clone use `uv run premura bootstrap`; setup only — no ingest/upload)
+premura ingest [--source all|hc|garmin|saa|bmt|lab|mfp] [PATH]
+premura status
+premura export --month YYYY-MM        # snapshot + tarball staged raws, age-encrypt
+premura upload --month YYYY-MM        # OPT-IN rclone push (not run automatically)
+premura doctor
+premura gc --keep N
+premura run-monthly                   # full ingest+encrypt pipeline (no upload step)
+premura install-launchd / uninstall-launchd
 ```
 
-Experimental: `hpipe ingest --source lab PATH` uses local docling extraction for real PDFs. Install the base extractor stack with `uv sync --extra lab` or `pip install premura[lab]`. The Apple-Silicon stool-report VLM path is separate: `uv sync --extra lab-vlm` or `pip install premura[lab-vlm]`. Plain-text lab fixtures are still accepted for parser testing.
+Experimental: `premura ingest --source lab PATH` uses local docling extraction for real PDFs. Install the base extractor stack with `uv sync --extra lab` or `pip install premura[lab]`. The Apple-Silicon stool-report VLM path is separate: `uv sync --extra lab-vlm` or `pip install premura[lab-vlm]`. Plain-text lab fixtures are still accepted for parser testing.
 
 ## MCP surfaces
 
@@ -44,7 +44,7 @@ uv run premura-mcp
 uv run premura-mcp --warehouse-path /absolute/path/to/health.duckdb
 ```
 
-By default it resolves the warehouse from `HPIPE_DATA_DIR/duck/health.duckdb`.
+By default it resolves the warehouse from `PREMURA_DATA_DIR/duck/health.duckdb`.
 
 Tools exposed:
 

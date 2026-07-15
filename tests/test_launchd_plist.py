@@ -17,7 +17,7 @@ def _render(**overrides: str) -> str:
     template_text = resources.files("premura.ops").joinpath("launchd.plist.j2").read_text()
     ctx = {
         "label": "com.example.premura.monthly",
-        "program_args": ["/opt/homebrew/bin/uv", "run", "hpipe", "run-monthly"],
+        "program_args": ["/opt/homebrew/bin/uv", "run", "premura", "run-monthly"],
         "working_dir": "/Users/test/repos/premura",
         "log_out": "/Users/test/Library/Logs/premura/out.log",
         "log_err": "/Users/test/Library/Logs/premura/err.log",
@@ -34,7 +34,7 @@ def test_plist_renders_all_required_keys() -> None:
     assert parsed["ProgramArguments"] == [
         "/opt/homebrew/bin/uv",
         "run",
-        "hpipe",
+        "premura",
         "run-monthly",
     ]
     assert parsed["WorkingDirectory"] == "/Users/test/repos/premura"
@@ -74,7 +74,7 @@ def test_rendered_plist_passes_plutil_lint(tmp_path: Path) -> None:
 
 @pytest.mark.skipif(sys.platform != "darwin", reason="install-launchd is macOS-only")
 def test_install_launchd_writes_valid_plist(tmp_path: Path, monkeypatch) -> None:
-    """`hpipe install-launchd` writes a plutil-valid plist into the operator's LaunchAgents dir."""
+    """`premura install-launchd` writes a plutil-valid plist into the LaunchAgents dir."""
     fake_home = tmp_path / "home"
     fake_log = tmp_path / "logs"
     (fake_home / "Library" / "LaunchAgents").mkdir(parents=True)

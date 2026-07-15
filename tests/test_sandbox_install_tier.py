@@ -5,7 +5,7 @@ ingest - NO real network/subprocess - and cover step derivation, the result
 envelope (pass and a failing-step case), and the scoreboard tier round-trip.
 
 One regression-marked end-to-end test actually clones HEAD, runs ``uv sync`` +
-``uv run hpipe bootstrap`` + the smoke ingest for real. It is slow and needs
+``uv run premura bootstrap`` + the smoke ingest for real. It is slow and needs
 network for the uv package download, so it carries the ``regression`` marker and
 is excluded from the default suite (pyproject addopts ``-m "not regression ..."``).
 """
@@ -39,7 +39,7 @@ def test_steps_are_in_documented_order() -> None:
     """The onboarding sequence is uv sync -> bootstrap -> install parser -> ingest."""
     assert [s.name for s in INSTALL_TIER_STEPS] == [
         "uv_sync",
-        "hpipe_bootstrap",
+        "premura_bootstrap",
         "install_reference_parser",
         "smoke_ingest",
     ]
@@ -55,11 +55,11 @@ def test_every_step_cites_a_doc_and_has_exactly_one_action() -> None:
 
 
 def test_bootstrap_step_mirrors_agents_md() -> None:
-    """The bootstrap step runs `uv run hpipe bootstrap` and cites AGENTS.md step 1."""
-    step = next(s for s in INSTALL_TIER_STEPS if s.name == "hpipe_bootstrap")
+    """The bootstrap step runs `uv run premura bootstrap` and cites AGENTS.md step 1."""
+    step = next(s for s in INSTALL_TIER_STEPS if s.name == "premura_bootstrap")
     ctx = InstallStepContext(clone_root=Path("/clone"), warehouse_path=Path("/clone/wh.duckdb"))
     assert step.argv is not None
-    assert step.argv(ctx) == ["uv", "run", "hpipe", "bootstrap"]
+    assert step.argv(ctx) == ["uv", "run", "premura", "bootstrap"]
     assert "AGENTS.md" in step.doc_ref
 
 
@@ -183,7 +183,7 @@ def test_record_false_writes_nothing(tmp_path: Path) -> None:
 
 @pytest.mark.regression
 def test_install_tier_end_to_end_real_clone(tmp_path: Path) -> None:
-    """Really clone HEAD, `uv sync`, `uv run hpipe bootstrap`, and smoke ingest.
+    """Really clone HEAD, `uv sync`, `uv run premura bootstrap`, and smoke ingest.
 
     This is the regression guard on the documented cold-clone onboarding path
     (issue #55): if any documented step breaks from a cold env, this fails and

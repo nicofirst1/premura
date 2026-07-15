@@ -1,7 +1,7 @@
 """Settings: paths, encryption recipient, rclone remote, per-parser overrides.
 
-Override any field via env var: HPIPE_DATA_DIR=/tmp/x, HPIPE_RCLONE_REMOTE=mygdrive, …
-Nested fields use a double underscore: HPIPE_PARSERS__BMT__WEIGHT_UNIT=lb.
+Override any field via env var: PREMURA_DATA_DIR=/tmp/x, PREMURA_RCLONE_REMOTE=mygdrive, …
+Nested fields use a double underscore: PREMURA_PARSERS__BMT__WEIGHT_UNIT=lb.
 """
 
 from __future__ import annotations
@@ -25,10 +25,10 @@ class ParserSettings(BaseModel):
 
 
 class Settings(BaseSettings):
-    """Top-level config for hpipe."""
+    """Top-level config for premura."""
 
     model_config = SettingsConfigDict(
-        env_prefix="HPIPE_",
+        env_prefix="PREMURA_",
         env_nested_delimiter="__",
         extra="ignore",
     )

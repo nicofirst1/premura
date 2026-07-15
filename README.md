@@ -34,27 +34,24 @@ I can't describe the feeling of empowerment this gave me, and I want other peopl
 
 **Premura is not medical advice and not a diagnostic tool.** It helps you organize and understand your own health data; it does not diagnose, treat, or replace a clinician. Talk to a qualified healthcare professional about any medical decision.
 
-
-
-
 > Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [Doctrine](docs/shared/DOCTRINE.md) · [SPEC](docs/shared/SPEC.md) · [STATUS](docs/shared/STATUS.md) · [Changelog](docs/shared/CHANGELOG.md) · [Stages](docs/building/architecture/STAGES.md) · [Roadmap](docs/shared/ROADMAP.md) · [Full Plan](docs/building/product/FULL_APP_DEVELOPMENT_PLAN.md)
-
 
 ## Quick start
 
 Fresh clone? An agent (or human) in the repo runs **one setup command first**:
 
 ```bash
-uv run hpipe bootstrap                      # SETUP ONLY: prepare + verify this local checkout, report reload guidance
+uv run premura bootstrap                    # SETUP ONLY: prepare + verify this local checkout, report reload guidance
 ```
+
 Then operate normally:
 
 ```bash
-bash ops/bootstrap.sh                       # one-time: brew installs, age keypair, optional rclone
-uv run hpipe doctor                         # verify environment
+bash ops/bootstrap.sh                       # one-time: brew installs, age keypair, optional rclone; puts `premura` on your PATH
+premura doctor                              # verify environment
 # drop inputs into data/inbox/, then:
-uv run hpipe run-monthly                    # ingest + encrypt (no auto-upload)
-uv run hpipe upload --month YYYY-MM         # OPT-IN — push to Drive only when you say so
+premura run-monthly                         # ingest + encrypt (no auto-upload)
+premura upload --month YYYY-MM              # OPT-IN — push to Drive only when you say so
 ```
 
 ## age key storage
@@ -81,7 +78,7 @@ The default path is an agent operating Premura through tools, not raw SQL:
 - **`premura-mcp`** - the default, validity-gated agent surface (34 tools). Every tool delegates to the deterministic signal engine (no raw `hp.*` SQL), and tools return structured `available` / `missing_input` / `stale_input` / `insufficient_data` verdicts instead of free-form claims. Six analytical tools (change point, smoothed average, correlation, rolling mean, paired t-test, condition paired t-test) disclose their confounds and refuse thin samples. The literature tools `pubmed_search` and `pubmed_fetch` enforce one rule: search hits are discovery candidates only, and final answers may cite only fetched PMID records.
 - **`premura-mcp-operator --ack`** - a lower-guarantee expert fallback that adds a raw-SQL escape hatch. It refuses to start without explicit acknowledgement, so it is never the silent default.
 
-For the full `hpipe` CLI reference and the complete MCP tool inventory, see [OPERATIONS.md](docs/using/OPERATIONS.md). Direct DuckDB and notebook access remain available as expert fallbacks.
+For the full `premura` CLI reference and the complete MCP tool inventory, see [OPERATIONS.md](docs/using/OPERATIONS.md). Direct DuckDB and notebook access remain available as expert fallbacks.
 
 Using an agent app other than Claude Code (OpenCode, Codex)? See [AGENT_CLIENTS.md](docs/using/AGENT_CLIENTS.md) for the MCP config recipe per client and what each one reads for skills.
 

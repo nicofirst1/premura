@@ -1,7 +1,7 @@
 """Bootstrap core service for a freshly cloned Premura checkout.
 
 This module is the *setup-only* service layer that powers the future
-``hpipe bootstrap`` CLI command. :func:`run_bootstrap` inspects the local
+``premura bootstrap`` CLI command. :func:`run_bootstrap` inspects the local
 checkout, attempts the small set of *safe local* setup actions, installs or
 verifies the bundled project skills, and returns a :class:`BootstrapRun` report
 that a caller can format, test, and reason about without re-deriving any status.
@@ -312,7 +312,7 @@ _OPTIONAL_TOOLS: tuple[tuple[str, str], ...] = (
 #: surface that fails to import is a real blocker: the environment cannot start
 #: it before normal operation.
 _CORE_SURFACES: tuple[tuple[str, str], ...] = (
-    ("hpipe CLI", "premura.cli:app"),
+    ("premura CLI", "premura.cli:app"),
     ("Premura MCP server", "premura.mcp.entrypoint:main"),
     ("Premura operator MCP server", "premura.mcp.entrypoint:main_operator"),
 )

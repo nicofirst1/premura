@@ -34,7 +34,7 @@ phrasing.
   and the same-PR ontology rule.
 - **Claude Code skill (parser-generation walkthrough):**
   `src/premura/skills/parser-generator/SKILL.md` — installable via
-  `hpipe install-skills`, which copies the skill into `./.claude/skills/` in
+  `premura install-skills`, which copies the skill into `./.claude/skills/` in
   the current project root.
 - **General development guide:** `CONTRIBUTING.md`
 - **Four-stage data flow:** `docs/building/architecture/STAGES.md` — Ingest (parsers) → Engine →

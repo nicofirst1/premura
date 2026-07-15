@@ -45,7 +45,7 @@ optional context; it is the thing agents most often get wrong.
 
 You are inside a working clone of the repo. Before changing anything:
 
-1. **Bootstrap once.** Run `uv run hpipe bootstrap` — it prepares and verifies
+1. **Bootstrap once.** Run `uv run premura bootstrap` — it prepares and verifies
    this checkout (environment + bundled skills) and tells you whether an
    agent-session reload is needed. It is setup-only; it never ingests, uploads,
    or touches the warehouse.

@@ -41,7 +41,7 @@ dev = [
 ]
 
 [project.scripts]
-hpipe = "premura.cli:app"
+premura = "premura.cli:app"
 premura-mcp = "premura.mcp.entrypoint:main"
 premura-mcp-operator = "premura.mcp.entrypoint:main_operator"
 

@@ -1,4 +1,4 @@
-"""Lightweight docs-drift guards for the shipped ``hpipe bootstrap`` command.
+"""Lightweight docs-drift guards for the shipped ``premura bootstrap`` command.
 
 These tests do not freeze prose. They assert only stable command names and
 boundary words so the docs cannot silently drop the fresh-clone setup command or
@@ -24,32 +24,32 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def test_readme_mentions_hpipe_bootstrap() -> None:
-    """The root README must route a fresh clone to ``hpipe bootstrap``."""
+def test_readme_mentions_premura_bootstrap() -> None:
+    """The root README must route a fresh clone to ``premura bootstrap``."""
     text = _read(README).lower()
-    assert "hpipe bootstrap" in text
+    assert "premura bootstrap" in text
     # The command lives in the setup / quick-start area, not buried elsewhere.
     assert "quick start" in text
 
 
 def test_readme_fresh_clone_entry_point_is_runnable() -> None:
-    """The fresh-clone entry point must be the runnable ``uv run hpipe bootstrap``.
+    """The fresh-clone entry point must be the runnable ``uv run premura bootstrap``.
 
-    A bare ``hpipe bootstrap`` is not executable on a fresh clone because
-    ``hpipe`` is a console script that only exists after the package is
+    A bare ``premura bootstrap`` is not executable on a fresh clone because
+    ``premura`` is a console script that only exists after the package is
     installed. The quick-start command must carry the ``uv run`` prefix so a
     fresh-clone agent does not have to invent a missing pre-step (FR-001/SC-001).
     """
     text = _read(README).lower()
-    assert "uv run hpipe bootstrap" in text
+    assert "uv run premura bootstrap" in text
 
 
 def test_contributing_mentions_bootstrap_without_dropping_dev_checks() -> None:
     """CONTRIBUTING names bootstrap AND keeps the dev validation guidance."""
     text = _read(CONTRIBUTING).lower()
-    assert "hpipe bootstrap" in text
+    assert "premura bootstrap" in text
     # The documented fresh-clone path must be runnable, not the bare console script.
-    assert "uv run hpipe bootstrap" in text
+    assert "uv run premura bootstrap" in text
     # Development validation guidance must survive.
     for check in ("pytest", "ruff", "mypy"):
         assert check in text, f"CONTRIBUTING dropped the {check} dev check"
@@ -58,7 +58,7 @@ def test_contributing_mentions_bootstrap_without_dropping_dev_checks() -> None:
 def test_status_records_setup_only_boundary() -> None:
     """STATUS records bootstrap as setup-only, not as ingest/upload/analysis."""
     text = _read(STATUS).lower()
-    assert "hpipe bootstrap" in text
+    assert "premura bootstrap" in text
     assert "setup" in text
     # The shipped boundary: bootstrap is not a runtime health-data operation.
     # Guard against the doc describing it as the things it must never do.

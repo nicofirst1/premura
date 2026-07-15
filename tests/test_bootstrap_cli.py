@@ -1,4 +1,4 @@
-"""Acceptance-first CLI tests for ``hpipe bootstrap`` (WP02).
+"""Acceptance-first CLI tests for ``premura bootstrap`` (WP02).
 
 These tests lock the observable behavior of the ``bootstrap`` command before it
 is implemented. They drive the command through Typer's ``CliRunner`` and
@@ -14,7 +14,7 @@ Coverage map (subtasks T007-T012):
   reload guidance, one next step).
 * T010 — summary status -> exit code mapping (ready=0, partial-warning=0,
   blocked!=0).
-* T011 — installed console-script coverage (``hpipe bootstrap`` invokable).
+* T011 — installed console-script coverage (``premura bootstrap`` invokable).
 * T012 — setup-only safety: bootstrap never calls a health-data operation path.
 
 Assertions target exact high-value phrases, not the whole Rich layout, so the
@@ -469,8 +469,8 @@ def test_cli_does_not_swallow_service_errors(monkeypatch: pytest.MonkeyPatch) ->
 # ---------------------------------------------------------------------------
 
 
-def test_hpipe_bootstrap_console_script_is_invokable(tmp_path: Path) -> None:
-    """``hpipe bootstrap`` is invokable end-to-end as the installed console script.
+def test_premura_bootstrap_console_script_is_invokable(tmp_path: Path) -> None:
+    """``premura bootstrap`` is invokable end-to-end as the installed console script.
 
     Follows the existing ``tests/test_skeleton.py`` pattern: locate the installed
     binary next to ``sys.executable`` and skip if it is absent (do not fail
@@ -483,21 +483,21 @@ def test_hpipe_bootstrap_console_script_is_invokable(tmp_path: Path) -> None:
     proves the command exists and emits bootstrap output (overall status +
     reload guidance), not a "no such command" error.
     """
-    hpipe_bin = Path(sys.executable).parent / "hpipe"
-    if not hpipe_bin.is_file():
-        pytest.skip(f"hpipe console script not installed at {hpipe_bin}")
+    premura_bin = Path(sys.executable).parent / "premura"
+    if not premura_bin.is_file():
+        pytest.skip(f"premura console script not installed at {premura_bin}")
 
     project_root = tmp_path / "project"
     project_root.mkdir()
 
-    # Empty PATH (plus the dir holding hpipe so the binary itself resolves) makes
+    # Empty PATH (plus the dir holding premura so the binary itself resolves) makes
     # `uv` look missing, so bootstrap takes its blocked path without installing.
     env = {
-        "PATH": str(hpipe_bin.parent),
+        "PATH": str(premura_bin.parent),
         "HOME": str(tmp_path),
     }
     result = subprocess.run(
-        [str(hpipe_bin), "bootstrap"],
+        [str(premura_bin), "bootstrap"],
         cwd=project_root,
         capture_output=True,
         text=True,
@@ -507,14 +507,14 @@ def test_hpipe_bootstrap_console_script_is_invokable(tmp_path: Path) -> None:
     combined = (result.stdout + result.stderr).lower()
     # The command must exist (not "No such command 'bootstrap'").
     assert "no such command" not in combined, (
-        f"hpipe bootstrap is not registered as a console command:\n{combined}"
+        f"premura bootstrap is not registered as a console command:\n{combined}"
     )
     # It must emit real bootstrap handoff output: an overall status word and
     # reload guidance. Either ready/partial/blocked is acceptable here.
     assert any(word in combined for word in ("ready", "partial", "blocked")), (
-        f"hpipe bootstrap did not print an overall status:\n{combined}"
+        f"premura bootstrap did not print an overall status:\n{combined}"
     )
-    assert "reload" in combined, f"hpipe bootstrap did not print reload guidance:\n{combined}"
+    assert "reload" in combined, f"premura bootstrap did not print reload guidance:\n{combined}"
 
 
 def test_bootstrap_module_is_importable() -> None:

@@ -7,7 +7,7 @@
 
 ## Persona
 
-**Nicolò** — single user, single subject, single operator. EU resident (GDPR jurisdiction applies). Wears a Garmin watch daily, logs body measurements in BMT, sleeps tracked by Sleep as Android, Android phone with Health Connect installed. Comfortable on the macOS terminal; runs Python and SQL day-to-day; familiar with `age`, `rclone`, and DuckDB. Does NOT want to: build an Android app, run a server, pay a SaaS, depend on a third-party bridge that might disappear or be acquired.
+**Nico** — single user, single subject, single operator. EU resident (GDPR jurisdiction applies). Wears a Garmin watch daily, logs body measurements in BMT, sleeps tracked by Sleep as Android, Android phone with Health Connect installed. Comfortable on the macOS terminal; runs Python and SQL day-to-day; familiar with `age`, `rclone`, and DuckDB. Does NOT want to: build an Android app, run a server, pay a SaaS, depend on a third-party bridge that might disappear or be acquired.
 
 Wears four hats over the system's lifetime:
 
@@ -36,15 +36,15 @@ Get to "the checkout is ready, the local keys are backed up, and the monthly pat
 ### Steps
 
 1. **Clone / open the repo** at `~/repos/personal/premura/`.
-2. **Run the fresh-clone setup check**: `uv run hpipe bootstrap`. This prepares/verifies the local checkout and bundled skills, confirms the core project surfaces import, and tells the agent whether a session reload is needed. It is setup-only: it does not ingest, analyze, query the warehouse, or upload.
+2. **Run the fresh-clone setup check**: `uv run premura bootstrap`. This prepares/verifies the local checkout and bundled skills, confirms the core project surfaces import, and tells the agent whether a session reload is needed. It is setup-only: it does not ingest, analyze, query the warehouse, or upload.
 3. **Run the operator bootstrap script**: `bash ops/bootstrap.sh`. This handles workstation prerequisites such as `age`, optional `rclone`, and the local `age` keypair. Back up `~/.config/premura/age.key` before relying on encrypted artifacts; without it, backups are unrecoverable.
-4. **Run `uv run hpipe doctor`** — verifies the local environment and configured operational prerequisites. Optional upload gaps are not the same as ingest readiness.
-5. **First HC ingest** (sanity check): drop the latest HC export (e.g. `~/Downloads/health_connect_export.db`) into `data/inbox/`, run `uv run hpipe ingest --source hc`. Expect rows plus a printed coverage summary by metric.
-6. **Install launchd agent**: `uv run hpipe install-launchd`. The agent is now scheduled for the 1st of every month at 10:00 local.
+4. **Run `uv run premura doctor`** — verifies the local environment and configured operational prerequisites. Optional upload gaps are not the same as ingest readiness.
+5. **First HC ingest** (sanity check): drop the latest HC export (e.g. `~/Downloads/health_connect_export.db`) into `data/inbox/`, run `uv run premura ingest --source hc`. Expect rows plus a printed coverage summary by metric.
+6. **Install launchd agent**: `uv run premura install-launchd`. The agent is now scheduled for the 1st of every month at 10:00 local.
 7. **(Optional) Open your project wiki hub page** — if you keep a personal knowledge wiki, add a hub page for this project per PLAN §"Wiki integration".
 
 ### Success criteria
-- `hpipe status` shows non-zero row counts.
+- `premura status` shows non-zero row counts.
 - `launchctl list | grep premura` shows the agent loaded.
 - A test row from a known weight measurement queries correctly: `SELECT ts_utc, value_num, unit FROM hp.fact_measurement WHERE metric_id='weight' ORDER BY ts_utc DESC LIMIT 5;`
 
@@ -56,7 +56,7 @@ Get to "the checkout is ready, the local keys are backed up, and the monthly pat
 ## Journey 2 — Monthly run (~10 minutes user time, every month)
 
 ### Trigger
-On the 1st at 10:00 local, launchd fires `hpipe run-monthly`. A macOS notification appears: *"Premura: request fresh Garmin GDPR dump, drop available exports in `data/inbox/`, then `touch data/inbox/.ready`."*
+On the 1st at 10:00 local, launchd fires `premura run-monthly`. A macOS notification appears: *"Premura: request fresh Garmin GDPR dump, drop available exports in `data/inbox/`, then `touch data/inbox/.ready`."*
 
 ### Steps the user performs
 
@@ -67,7 +67,7 @@ On the 1st at 10:00 local, launchd fires `hpipe run-monthly`. A macOS notificati
 5. **Health Connect**: export or copy the current HC `.db` into `data/inbox/` when you want it included.
 6. **Lab files, if any**: drop supported lab files into `data/inbox/` only after the local lab extras are installed.
 7. **Mark ready**: `touch data/inbox/.ready`.
-8. **Wait**: pipeline polls hourly. On next tick it ingests available source artifacts, runs cross-source dedupe, snapshots the warehouse, encrypts with `age`, garbage-collects local exports older than the configured retention window, and emits a done notification. Upload is not automatic; run `uv run hpipe upload --month YYYY-MM` only when you want to push encrypted artifacts to Drive.
+8. **Wait**: pipeline polls hourly. On next tick it ingests available source artifacts, runs cross-source dedupe, snapshots the warehouse, encrypts with `age`, garbage-collects local exports older than the configured retention window, and emits a done notification. Upload is not automatic; run `uv run premura upload --month YYYY-MM` only when you want to push encrypted artifacts to Drive.
 
 ### Steps the system performs (invisible to user)
 
@@ -87,8 +87,8 @@ export snapshot  →  age encrypt  →  local retention cleanup  →  notify
 ### Failure modes
 - **No `.ready` after 7 days**: agent renotifies and exits. No data ingested. User must re-trigger when ready.
 - **Garmin zip never arrived**: skip Garmin this month; HC + SAA + BMT still get ingested. Next month's Garmin GDPR will cover the gap (Garmin always exports a rolling window).
-- **rclone auth expired**: monthly ingest/export still completes locally. The explicit upload step fails until the user runs `rclone config reconnect gdrive:` and retries `uv run hpipe upload --month YYYY-MM`.
-- **Disk full**: pipeline halts before encrypting. `hpipe gc --keep 1` frees ~2 months of local exports.
+- **rclone auth expired**: monthly ingest/export still completes locally. The explicit upload step fails until the user runs `rclone config reconnect gdrive:` and retries `uv run premura upload --month YYYY-MM`.
+- **Disk full**: pipeline halts before encrypting. `premura gc --keep 1` frees ~2 months of local exports.
 
 ## Journey 3 — Agent-mediated analysis (default, anytime)
 
@@ -144,7 +144,7 @@ The Mac dies. The user buys a new one.
 4. `git clone` this repo to a working directory of your choice.
 5. `rclone copy gdrive:/backups/premura/$(date +%Y/%m)/ data/exports/restore/` — fetch the latest encrypted snapshot.
 6. `age -d -i ~/.config/premura/age.key data/exports/restore/health.duckdb.age > data/duck/health.duckdb`.
-7. `hpipe doctor` to verify.
+7. `premura doctor` to verify.
 8. Resume monthly cadence.
 
 **Time to recovery**: roughly 30 minutes plus Drive download time. **Data lost**: at most one monthly window if recovery happens before the next scheduled run.
@@ -169,11 +169,11 @@ The encrypted Drive snapshot + the age key + this repo are sufficient. That's th
 
 | Touchpoint | Frequency | User effort |
 |---|---|---|
-| `uv run hpipe bootstrap` | once per fresh clone | <5 min |
+| `uv run premura bootstrap` | once per fresh clone | <5 min |
 | `bash ops/bootstrap.sh` | once per workstation | 15 min |
 | Password-manager backup of age.key | once | 2 min |
 | `rclone config` for gdrive | once | 5 min |
-| `hpipe install-launchd` | once | <1 min |
+| `premura install-launchd` | once | <1 min |
 | Garmin GDPR request → download | monthly | 2 min request + wait |
 | HC/SAA/BMT exports → drop in inbox | monthly | varies |
 | Lab files → drop in inbox | occasional | varies |

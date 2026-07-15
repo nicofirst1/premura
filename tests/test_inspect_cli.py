@@ -1,4 +1,4 @@
-"""`hpipe inspect <path>` — read-only routing preview (m7 WP1).
+"""`premura inspect <path>` — read-only routing preview (m7 WP1).
 
 inspect is the read-only twin of ingest discovery: it resolves the parser for a
 path with the SAME logic ingest uses, enumerates member names without ingesting,

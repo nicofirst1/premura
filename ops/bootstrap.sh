@@ -8,7 +8,7 @@ set -euo pipefail
 CONFIG_DIR="${HOME}/.config/premura"
 AGE_KEY="${CONFIG_DIR}/age.key"
 RECIPIENTS="${CONFIG_DIR}/recipients.txt"
-RCLONE_REMOTE="${HPIPE_RCLONE_REMOTE:-gdrive}"
+RCLONE_REMOTE="${PREMURA_RCLONE_REMOTE:-gdrive}"
 
 echo ">>> Step 1/5: Homebrew dependencies"
 if ! command -v brew >/dev/null 2>&1; then
@@ -23,35 +23,40 @@ for pkg in age uv; do
         echo "    ${pkg} already installed"
     fi
 done
-# rclone is OPTIONAL — only needed if you want `hpipe upload` to push to Drive.
-# Skip the prompt by setting HPIPE_SKIP_RCLONE=1.
-if [[ "${HPIPE_SKIP_RCLONE:-0}" != "1" ]]; then
+# rclone is OPTIONAL — only needed if you want `premura upload` to push to Drive.
+# Skip the prompt by setting PREMURA_SKIP_RCLONE=1.
+if [[ "${PREMURA_SKIP_RCLONE:-0}" != "1" ]]; then
     if ! command -v rclone >/dev/null 2>&1; then
         read -r -p "Install rclone for optional Drive upload? [y/N] " WANT_RCLONE
         if [[ "${WANT_RCLONE}" =~ ^[Yy]$ ]]; then
             brew install rclone
         else
-            echo "    skipping rclone — `hpipe upload` will not be available until installed"
+            echo "    skipping rclone — `premura upload` will not be available until installed"
         fi
     fi
 fi
 
 echo ">>> Step 2/5: Python deps (uv sync)"
 # Reinstall the local `premura` editable wheel so console scripts declared in
-# `[project.scripts]` (e.g. `hpipe`) are always materialized in `.venv/bin/`.
+# `[project.scripts]` (e.g. `premura`) are always materialized in `.venv/bin/`.
 # Plain `uv sync` is incremental and will NOT rewrite bin scripts when the
 # entry_points table changes without a version bump, which has left stale
-# checkouts unable to invoke `uv run hpipe`.
+# checkouts unable to invoke `uv run premura`.
 uv sync --reinstall-package premura
 uv sync --extra dev --reinstall-package premura
 
+# Expose the CLI on PATH so you can run `premura …` from anywhere instead of
+# `uv run premura …`. Isolated uv-tool env; --editable tracks this checkout,
+# --force re-points a global install at the current clone.
+uv tool install --editable . --force
+
 # Install bundled Claude Code skills into ./.claude/skills/.
-# Skip when HPIPE_SKIP_SKILLS=1 or when stdin is not a TTY (CI / pipelines).
-if [[ "${HPIPE_SKIP_SKILLS:-0}" != "1" && -t 0 ]]; then
+# Skip when PREMURA_SKIP_SKILLS=1 or when stdin is not a TTY (CI / pipelines).
+if [[ "${PREMURA_SKIP_SKILLS:-0}" != "1" && -t 0 ]]; then
     echo "    Installing bundled Claude Code skills"
-    uv run hpipe install-skills
+    uv run premura install-skills
 else
-    echo "    Skipping 'hpipe install-skills' (non-interactive or HPIPE_SKIP_SKILLS=1)"
+    echo "    Skipping 'premura install-skills' (non-interactive or PREMURA_SKIP_SKILLS=1)"
 fi
 
 echo ">>> Step 3/5: Config directory"
@@ -89,9 +94,9 @@ if [[ "${ACK}" != "confirmed" ]]; then
     exit 1
 fi
 
-echo ">>> Step 5/5: rclone remote (OPTIONAL — only needed for \`hpipe upload\`)"
+echo ">>> Step 5/5: rclone remote (OPTIONAL — only needed for \`premura upload\`)"
 if ! command -v rclone >/dev/null 2>&1; then
-    echo "    rclone not installed — skipping. \`hpipe upload\` will be unavailable until you install it."
+    echo "    rclone not installed — skipping. \`premura upload\` will be unavailable until you install it."
 elif rclone listremotes | grep -q "^${RCLONE_REMOTE}:$"; then
     echo "    rclone remote '${RCLONE_REMOTE}' already configured"
 else
@@ -110,7 +115,7 @@ fi
 
 echo
 echo "Bootstrap complete. Next steps:"
-echo "  1. hpipe doctor                 # verify environment"
+echo "  1. premura doctor                 # verify environment"
 echo "  2. drop inputs into data/inbox/ and 'touch data/inbox/.ready'"
-echo "  3. hpipe run-monthly            # ingest + encrypt (no auto-upload)"
-echo "  4. hpipe upload --month YYYY-MM # push to Drive only when YOU choose to"
+echo "  3. premura run-monthly            # ingest + encrypt (no auto-upload)"
+echo "  4. premura upload --month YYYY-MM # push to Drive only when YOU choose to"

@@ -29,7 +29,7 @@ a tool server:
      never register it without the flag, and treat registering it at all as
      a deliberate, user-approved step — see
      [OPERATIONS.md](OPERATIONS.md#operator-fallback-surface-premura-mcp-operator).
-3. **Optional env / working directory** — `HPIPE_DATA_DIR` if the warehouse
+3. **Optional env / working directory** — `PREMURA_DATA_DIR` if the warehouse
    isn't at the default location, or pass `--warehouse-path
    /absolute/path/to/health.duckdb` as an extra arg instead.
 
@@ -110,7 +110,7 @@ args = ["run", "premura-mcp-operator", "--ack"]
 
 ## Skills story per client
 
-`hpipe install-skills` (run by `hpipe bootstrap`) materializes every shipped
+`premura install-skills` (run by `premura bootstrap`) materializes every shipped
 skill under the single home `.claude/skills/` — that one target is a
 deliberate decision, not an oversight (see
 [ROADMAP.md](../shared/ROADMAP.md), 2026-06-12 entry): **Claude Code and

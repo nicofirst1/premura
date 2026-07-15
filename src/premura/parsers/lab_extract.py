@@ -121,7 +121,7 @@ def _build_docling_converter() -> Any:
     except ImportError as exc:
         raise RuntimeError(
             "docling is required for real PDF lab ingestion; install it before using "
-            "`hpipe ingest --source lab` on PDFs"
+            "`premura ingest --source lab` on PDFs"
         ) from exc
 
     pipeline_options = PdfPipelineOptions()

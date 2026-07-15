@@ -483,46 +483,46 @@ def test_parser_contract_md_documents_standards_first_ladder() -> None:
 
 
 def test_cli_registers_install_skills_verb() -> None:
-    """FR-013: ``hpipe install-skills`` is registered on the Typer app."""
+    """FR-013: ``premura install-skills`` is registered on the Typer app."""
     cli = importlib.import_module("premura.cli")
     commands = {cmd.name for cmd in cli.app.registered_commands}
     assert "install-skills" in commands, f"expected install-skills verb, got {sorted(commands)}"
 
 
-def test_hpipe_console_script_is_wired_and_invokable(tmp_path: Path) -> None:
-    """FR-013: the ``hpipe`` console script is wired via ``[project.scripts]``
-    in ``pyproject.toml`` and ``hpipe install-skills`` is actually invokable
+def test_premura_console_script_is_wired_and_invokable(tmp_path: Path) -> None:
+    """FR-013: the ``premura`` console script is wired via ``[project.scripts]``
+    in ``pyproject.toml`` and ``premura install-skills`` is actually invokable
     end-to-end (not just registered on the Typer app object).
 
     Layer 1 — entry-point wiring: confirm ``importlib.metadata.entry_points``
-    exposes a ``console_scripts`` entry named ``hpipe`` resolving to
+    exposes a ``console_scripts`` entry named ``premura`` resolving to
     ``premura.cli:app``. If the ``[project.scripts]`` table is removed from
     ``pyproject.toml`` (or the entry is renamed), this assertion fails.
 
-    Layer 2 — runtime invocation: shell out to the installed ``hpipe``
-    binary in ``.venv/bin/hpipe`` and confirm ``hpipe install-skills``
+    Layer 2 — runtime invocation: shell out to the installed ``premura``
+    binary in ``.venv/bin/premura`` and confirm ``premura install-skills``
     materializes the skill files in a temp project root with exit code 0
     and is idempotent on the second invocation. This catches packaging
-    failures like ``Failed to spawn: hpipe`` that the Typer-registry check
+    failures like ``Failed to spawn: premura`` that the Typer-registry check
     cannot.
 
     Mutation guarantee: deleting the ``[project.scripts]`` table from
-    ``pyproject.toml`` (or removing the ``hpipe`` line under it) causes
+    ``pyproject.toml`` (or removing the ``premura`` line under it) causes
     both layers to fail.
     """
     # ------------------------------------------------------------------
     # Layer 1 — console_scripts entry point is declared and resolves.
     # ------------------------------------------------------------------
     eps = entry_points(group="console_scripts")
-    hpipe_eps = [ep for ep in eps if ep.name == "hpipe"]
-    assert hpipe_eps, (
-        "no console_scripts entry named 'hpipe' — is [project.scripts] hpipe "
+    premura_eps = [ep for ep in eps if ep.name == "premura"]
+    assert premura_eps, (
+        "no console_scripts entry named 'premura' — is [project.scripts] premura "
         "= 'premura.cli:app' still present in pyproject.toml?"
     )
-    assert len(hpipe_eps) == 1, f"expected exactly one hpipe console_script, got {hpipe_eps}"
-    ep = hpipe_eps[0]
+    assert len(premura_eps) == 1, f"expected exactly one premura console_script, got {premura_eps}"
+    ep = premura_eps[0]
     assert ep.value == "premura.cli:app", (
-        f"hpipe console_script points to {ep.value!r}, expected 'premura.cli:app'"
+        f"premura console_script points to {ep.value!r}, expected 'premura.cli:app'"
     )
     # Loading the entry point must produce the Typer app (real import, not stub).
     loaded = ep.load()
@@ -532,41 +532,41 @@ def test_hpipe_console_script_is_wired_and_invokable(tmp_path: Path) -> None:
     # ------------------------------------------------------------------
     # Layer 2 — invoke the installed console script as a real subprocess.
     # ------------------------------------------------------------------
-    hpipe_bin = Path(sys.executable).parent / "hpipe"
-    if not hpipe_bin.is_file():
-        pytest.skip(f"hpipe console script not installed at {hpipe_bin}")
+    premura_bin = Path(sys.executable).parent / "premura"
+    if not premura_bin.is_file():
+        pytest.skip(f"premura console script not installed at {premura_bin}")
 
     project_root = tmp_path / "project"
     project_root.mkdir()
 
     # First invocation: should write the skill file and exit 0.
     result = subprocess.run(
-        [str(hpipe_bin), "install-skills"],
+        [str(premura_bin), "install-skills"],
         cwd=project_root,
         capture_output=True,
         text=True,
         timeout=60,
     )
     assert result.returncode == 0, (
-        f"hpipe install-skills exited {result.returncode}\n"
+        f"premura install-skills exited {result.returncode}\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
     skill_file = project_root / ".claude" / "skills" / "parser-generator" / "SKILL.md"
     assert skill_file.is_file(), (
-        f"hpipe install-skills did not materialize {skill_file}; stdout={result.stdout}"
+        f"premura install-skills did not materialize {skill_file}; stdout={result.stdout}"
     )
     first_bytes = skill_file.read_bytes()
 
     # Second invocation: must be idempotent — exit 0, "no changes", file untouched.
     result2 = subprocess.run(
-        [str(hpipe_bin), "install-skills"],
+        [str(premura_bin), "install-skills"],
         cwd=project_root,
         capture_output=True,
         text=True,
         timeout=60,
     )
     assert result2.returncode == 0, (
-        f"second hpipe install-skills exited {result2.returncode}\n"
+        f"second premura install-skills exited {result2.returncode}\n"
         f"stdout:\n{result2.stdout}\nstderr:\n{result2.stderr}"
     )
     assert "no changes" in result2.stdout, (
