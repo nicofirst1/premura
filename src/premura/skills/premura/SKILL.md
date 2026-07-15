@@ -18,7 +18,7 @@ The chain is the _rule_, not a script. You generate each question; the registrie
 
 ### 1. Install-check
 
-Confirm the default MCP surface is reachable by calling `interview_devices` with no argument. If the interview tools respond, Premura is installed - continue.
+Confirm the default MCP surface is reachable by calling `interview_devices` with no argument. If the interview tools respond, Premura is installed - keep this inventory response; step 3 reuses it rather than calling again.
 
 If they are absent, the human has not registered the server yet. Tell them to run one command for their harness and reload:
 
@@ -41,7 +41,7 @@ interview_route(direction=<their goal>)
 
 ### 3. Devices - what data you have
 
-Now inventory what the human can actually supply. Call `interview_devices` with no argument for the full set of sources Premura has a parser for:
+Use the step-1 inventory - the full set of sources Premura has a parser for:
 
 ```
 interview_devices()  ->  {status: "inventory", devices: [{track_id, source_kind, collection_hint}, ...]}
@@ -54,17 +54,19 @@ interview_devices(device=<name>)
 ```
 
 - `status: "routed"` -> relay its `collection_hint` (step 4).
-- `status: "refused"` -> Premura has no parser for that source yet. Do not pretend it works. This is an **improvement candidate** (RUNTIME_AGENT "Proposing changes"): note it, and remember a runtime agent may build-and-use a new parser for the human's own data with no review (the `premura-parser-generator` skill) if they want to go that far now.
+- `status: "refused"` -> Premura has no parser for that source yet. Do not pretend it works. This is an **improvement candidate** (RUNTIME_AGENT "Proposing changes"): note it, and remember a runtime agent may build-and-use a new parser for the human's own data with no review (the `parser-generator` skill) if they want to go that far now.
 
 ### 4. Collection guidance
 
-Relay each resolved `collection_hint` and let the human gather or export the data on their own machine. Once they have the file(s), ingest locally:
+Relay each resolved `collection_hint` and let the human gather or export the data on their own machine - collection is local, never an upload. Once they have the file(s), ingest each one with its source key:
 
 ```
-uv run premura ingest <path>
+uv run premura ingest --source <key> <path>
 ```
 
-Never ask a human to upload, export off-machine, or post anything to satisfy this step - collection is local. Follow the RUNTIME_AGENT sensitive-action rule for anything that leaves the machine.
+`--source` is required for a path: `uv run premura ingest <path>` alone defaults to `--source all`, which **ignores the path** and autodiscovers the inbox instead. Get the authoritative `<key>` list from `uv run premura ingest --help` and match it to the source you resolved in step 3 (do not guess the key from the `source_kind` string - they differ, e.g. Health Connect is `hc`). Alternatively, drop the file into Premura's inbox and run `uv run premura ingest` with no arguments to parse everything there.
+
+Never ask a human to upload, export off-machine, or post anything to satisfy this step. Follow the RUNTIME_AGENT sensitive-action rule for anything that leaves the machine.
 
 ### 5. Analysis
 
