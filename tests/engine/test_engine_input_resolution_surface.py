@@ -178,7 +178,7 @@ def test_registered_resolver_domains_dispatch_through_registry(empty_warehouse: 
     observation_history / profile_context plus the mission's new
     nutrition_intake / supplement_intake — shows up in RESOLVERS. Behavioral
     verification lives in ``tests/test_engine_resolvers.py`` and
-    ``tests/test_intake_resolvers.py``.
+    ``tests/intake/test_intake_resolvers.py``.
     """
     from premura.engine import (
         RESOLVERS,

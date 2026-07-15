@@ -5,7 +5,7 @@ never blocks CI; the companion edges module pins that exclusion by an actual
 subprocess collection run, SC-004). Run it deliberately, locally, against a
 running Ollama with a TOOL-CAPABLE model pulled::
 
-    uv run pytest -q -m live_trial tests/test_live_trial_tool_loop_real.py -s
+    uv run pytest -q -m live_trial tests/live_trial/test_live_trial_tool_loop_real.py -s
 
 These tests assert **harness honesty, never model capability**: a cheap local
 model may legitimately FAIL the trial — that is a capability-floor finding the

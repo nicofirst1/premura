@@ -536,9 +536,10 @@ def test_model_unavailable_first_call_returns_outcome_and_persists_nothing(
 # --------------------------------------------------------------------------- #
 
 
-@pytest.mark.xdist_group("sandbox-tempdir-scan")
 def test_tool_calls_unsupported_mid_conversation_leaves_no_sandbox_behind(
     persistence_paths: tuple[Path, Path],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Contract §4: one valid reply, then the template rejects tools mid-trial.
 
@@ -546,13 +547,17 @@ def test_tool_calls_unsupported_mid_conversation_leaves_no_sandbox_behind(
     persisted, and the sandbox temp area is CLEAN: no premura sandbox tree
     created during the trial survives it.
 
-    xdist_group: this test diffs the *shared OS tempdir* glob
-    ``premura-sandbox-*`` before/after, so any other test creating a sandbox
-    concurrently on another worker produces a false positive. Serialize it
-    onto one worker rather than weaken the (correct) global-cleanliness
-    assertion.
+    The before/after ``premura-sandbox-*`` scan runs against an isolated
+    tempdir (``tempfile.tempdir`` redirected to this test's ``tmp_path``), so a
+    sandbox created concurrently on another xdist worker cannot leak into the
+    diff - the global-cleanliness assertion stays correct without serializing
+    the test onto a single worker.
     """
     runs_dir, scoreboard_path = persistence_paths
+    # Sandboxes are created via tempfile.mkdtemp() under gettempdir(), which
+    # _sandbox_roots() also scans; point both at a per-test dir so the diff is
+    # immune to sandboxes other -n auto workers create in the shared OS tempdir.
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
     backend = _RaisesAfterFirstReply(
         _reply_with_calls(_tool_call("read_context", {"path": str(_SYNTHETIC_CSV.resolve())})),
         tlc.ToolCallsUnsupportedError("model template lacks tool support"),
@@ -670,7 +675,7 @@ def test_real_model_module_is_not_collected_by_the_default_suite() -> None:
             "pytest",
             "--collect-only",
             "-q",
-            "tests/test_live_trial_tool_loop_real.py",
+            "tests/live_trial/test_live_trial_tool_loop_real.py",
         ],
         cwd=_REPO_ROOT,
         capture_output=True,
