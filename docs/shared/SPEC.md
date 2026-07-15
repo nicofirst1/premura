@@ -10,32 +10,22 @@ Build a single, locally-owned warehouse and tool substrate for the user's person
 
 ## 2. Scope
 
-**In scope (current pre-v1 line):** monthly-cadence ingestion of the supported sources (Garmin Connect GDPR `.zip`, Health Connect `.db`, Sleep as Android CSV, Body Measurement Tracker CSV, local lab files) into a unified long-format star schema in **DuckDB**; deterministic cross-source deduplication; `age`-encryption of exported snapshots and staged raws (recipient key held by the user); opt-in Drive backup via `rclone`; a macOS **launchd** agent that runs on a calendar trigger, notifies when inputs are needed, and waits for a user sentinel; a `premura` CLI; and an agent-facing MCP/tool surface as the default analytical interface, with CLI/SQL as expert fallback.
+**In scope:** monthly-cadence ingestion of whatever the registered parsers support into a unified long-format star schema in **DuckDB**; deterministic cross-source deduplication; `age`-encryption of exported snapshots and staged raws (recipient key held by the user); opt-in Drive backup via `rclone`; a macOS **launchd** agent that runs on a calendar trigger, notifies when inputs are needed, and waits for a user sentinel; a `premura` CLI; and an agent-facing MCP/tool surface as the default analytical interface, with CLI/SQL as expert fallback.
 
-**Out of scope (v1):** live API pulls from any vendor; writing back into Health Connect; mobile/Android components; multi-user support; real-time/streaming ingestion; per-activity FIT-stream decoding; Apple Health / iOS sources; a graphical dashboard.
+**Out of scope:** live API pulls from any vendor; writing back into Health Connect; mobile/Android components; multi-user support; real-time/streaming ingestion; per-activity FIT-stream decoding; Apple Health / iOS sources; a graphical dashboard.
 
-## 3. Functional requirements
+## 3. Ingest invariants
 
-| ID    | Requirement                                                                                                                                                                                                           |
-| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FR-1  | Ingest a Health Connect `.db` (`user_version=20` or compatible) into `hp.fact_measurement` / `hp.fact_interval` for every supported metric type.                                                                      |
-| FR-2  | Ingest a Garmin GDPR `.zip`: HRV (overnight + snapshot), respiratory rate, stress, Body Battery, SpO2, training load/status/readiness, daily wellness, and summarized activities, each with the correct `value_kind`. |
-| FR-3  | Ingest a Sleep as Android CSV into per-minute actigraphy plus session intervals, using the `Tz` column as the authoritative IANA time zone (sleep stays continuous across a DST boundary).                            |
-| FR-4  | Ingest a Body Measurement Tracker CSV, converting units per `config.parsers.bmt.*` and assigning unknown columns to `bmt_custom:<slug>` with `unit='unknown'`.                                                        |
-| FR-5  | Deduplicate within a source (UNIQUE native/synthesized key) and across sources (priority-ordered match by metric_id + ±2s + ±0.01 value).                                                                             |
-| FR-6  | Produce encrypted `health.duckdb.age` and `raw.tar.gz.age` recoverable with the user's `age` private key.                                                                                                             |
-| FR-7  | Upload encrypted artifacts to `gdrive:/backups/premura/YYYY/MM/` only on explicit opt-in, verified via `rclone lsl`.                                                                                                  |
-| FR-8  | Run unattended-or-notify on macOS via launchd, calendar-triggered monthly, acting only when the user has touched `data/inbox/.ready`.                                                                                 |
-| FR-9  | Be idempotent: re-running any ingest with the same input (matched by sha256) is a no-op for rows already written.                                                                                                     |
-| FR-10 | Preserve historical rows even when a fresher dump no longer contains them (Garmin's 2-/5-year horizon).                                                                                                               |
+Per-source parsing behavior is the parser [CONTRACT](../../src/premura/parsers/CONTRACT.md)'s job, not this spec's. The durable, source-independent invariants are:
+
+- **Idempotent.** Re-running any ingest with the same input (matched by sha256) is a no-op for rows already written.
+- **Historical rows are preserved** even when a fresher dump no longer contains them (e.g. Garmin's 2-/5-year horizon).
 
 ## 4. Non-functional requirements
 
-- **Security.** GDPR Article 9 special-category data. Drive artifacts encrypted at rest, cleartext never on Drive. `age` key `0600` + git-excluded. `rclone` remote uses `drive.file` scope. No analytics/telemetry. Upload `manifest.json` carries non-PHI metadata only.
-- **Durability.** The DuckDB warehouse is the system of record post-ingestion; stage/raw files gc'd via `premura gc --keep N` (default 3 months). Garmin GDPR exports expire in 3 days, so the encrypted raw tarball is the durable copy. `age` key loss = total backup loss (warn at setup, remind periodically).
-- **Observability.** Each ingest writes an `hp.ingest_run` row (timestamps, source_kind/path/sha256, rows inserted/skipped). Structured `structlog` JSON logs. `premura doctor` reports `age`, `rclone`, `uv`, DuckDB presence, key fingerprint, rclone reachability, free disk.
-- **Portability.** Warehouse opens on any DuckDB ≥1.1 platform (no platform-specific extensions); artifacts decrypt with stock `age`.
-- **Performance (soft).** ~200 MB HC ingest <60 s (M-series); monthly run <10 min for a ~500 MB GDPR zip; warehouse <1 GB after 5 years.
+- **Security.** GDPR Article 9 special-category data. Off-machine artifacts are `age`-encrypted at rest; cleartext never leaves the machine. No analytics or telemetry.
+- **Durability.** The DuckDB warehouse is the system of record post-ingestion. The `age` key is the single secret; its loss is total backup loss (warned at setup). Source exports are transient (Garmin GDPR links expire in days), so the encrypted raw tarball is the durable copy.
+- **Portability.** The warehouse opens on any DuckDB ≥1.1 platform with no platform-specific extensions; artifacts decrypt with stock `age`.
 
 ## 5. Data contract
 
@@ -114,4 +104,4 @@ All commands MUST emit a non-zero exit code on any failure that breaks the contr
 
 - **HC HR-series uniqueness collisions**: ~3 sibling rows share `parent_uuid + epoch_millis`; deduped in-batch, invisible in stats. Cosmetic.
 - **Wide-format BMT without `Time`**: timestamps land at 00:00:00 local.
-- **No FIT-file (per-activity stream) ingestion**: out of scope for the v1 line.
+- **No FIT-file (per-activity stream) ingestion**: out of scope by design (see §2).
