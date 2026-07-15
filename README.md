@@ -34,7 +34,7 @@ I can't describe the feeling of empowerment this gave me, and I want other peopl
 
 **Premura is not medical advice and not a diagnostic tool.** It helps you organize and understand your own health data; it does not diagnose, treat, or replace a clinician. Talk to a qualified healthcare professional about any medical decision.
 
-> Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [Doctrine](docs/shared/DOCTRINE.md) · [SPEC](docs/shared/SPEC.md) · [STATUS](docs/shared/STATUS.md) · [Changelog](docs/shared/CHANGELOG.md) · [Stages](docs/building/architecture/STAGES.md)
+> Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [Doctrine](docs/shared/DOCTRINE.md) · [SPEC](docs/shared/SPEC.md) · [Changelog](docs/shared/CHANGELOG.md) · [Stages](docs/building/architecture/STAGES.md)
 
 ## Quick start
 
@@ -67,7 +67,7 @@ The `age` private key at `$HOME/premura/age.key` is the single secret. Lose it =
 
 ## What's in the warehouse
 
-`hp.fact_measurement` (point-in-time) and `hp.fact_interval` (bounded events), joined to `hp.dim_metric` + `hp.dim_source`. Shipped parsers cover Health Connect, Garmin, Sleep as Android, Withings, Fitbit Takeout, and MyFitnessPal, plus AI-chat recall for supplements and medication. See [STATUS.md](docs/shared/STATUS.md) for live row counts and [SPEC.md §5](docs/shared/SPEC.md) for the data contract.
+`hp.fact_measurement` (point-in-time) and `hp.fact_interval` (bounded events), joined to `hp.dim_metric` + `hp.dim_source`. Shipped parsers cover Health Connect, Garmin, Sleep as Android, Withings, Fitbit Takeout, and MyFitnessPal, plus AI-chat recall for supplements and medication. Run `premura status` for live row counts; see [SPEC.md §5](docs/shared/SPEC.md) for the data contract.
 
 Query directly:
 

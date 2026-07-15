@@ -2,7 +2,7 @@
 
 > Status: authoritative. Source of truth for cross-stage architecture boundaries.
 >
-> Companion to [DOCTRINE.md](../../shared/DOCTRINE.md), [SPEC.md](../../shared/SPEC.md), and [STATUS.md](../../shared/STATUS.md). Captured 2026-05-21. The stages below are the _data-flow shape_: a feature is located in stages by where it sits in the pipeline.
+> Companion to [DOCTRINE.md](../../shared/DOCTRINE.md) and [SPEC.md](../../shared/SPEC.md). Captured 2026-05-21. The stages below are the _data-flow shape_: a feature is located in stages by where it sits in the pipeline.
 
 ## The four stages
 
@@ -71,7 +71,7 @@ Signal processing has no external dependencies. No network, no LLM. It must be i
 
 The MCP server exposes Stage 2 signal functions as tools an LLM can call. Per [DOCTRINE.md](../../shared/DOCTRINE.md), this is the **primary operational interface** of the product: the human brings artifacts, goals, and approvals; the agent works mainly through this tool surface. The first bounded analytical tool set is now complete — `change_point`, `smoothed_average`, `correlate`, `rolling_mean`, `paired_t_test`, and the three session research trace tools have shipped. The first **PubMed literature-grounding slice** — `pubmed_search` and `pubmed_fetch` — has now shipped too (see below). The **interview routing surface** — `interview_route(direction)` — has now shipped as well: it resolves a chosen health direction to its track through an engine-backed route resolver (`engine.list_by_domain`), which is the first slice of the signal selector; broader selector routing (a direction fanning out to every relevant signal with a `missing_inputs_report`) is the remaining future work. Today two entrypoints exist (`src/premura/mcp/server.py`, `entrypoint.py`):
 
-**Default agent surface (`premura-mcp`)** — the live tool count and pinned inventory are in [STATUS.md](../../shared/STATUS.md) §"Shipped surface"; the tool groups and their semantics:
+**Default agent surface (`premura-mcp`)** — the live tool count and pinned inventory live in the test suite (`tests/mcp/test_mcp_server.py`); the tool groups and their semantics:
 
 - **Two catalog/summary tools** — `list_metrics`, `metric_summary`. These delegate entirely to the Stage 2 engine (no direct `hp.*` SQL) and return structured validity/imputation envelopes with machine-branchable fields.
 - **Eight signal-backed tools** — `resting_hr_status`, `resting_hr_trend`, `steps_trend`, `weight_trend`, `sleep_deep_pct_baseline`, `hrv_change_around_date`, plus the two usable-intake signals `supplement_intake_adherence` (coverage "logged on K of the last N days" for a caller-declared supplement matcher) and `nutrition_intake_trend` (up/down/flat for a caller-declared nutrient/energy key, never imputing missing days). Each opens the warehouse read-only and **delegates to the Stage 2 engine** instead of running its own SQL against the fact tables. They return a structured payload whose `status` field (`available` / `missing_input` / `stale_input` / `insufficient_data`) keeps each refusal reason distinct.

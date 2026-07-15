@@ -2,7 +2,7 @@
 
 > Status: live reference. How an agent operates a **developed** Premura on behalf of a human — through tools, without editing the repo.
 >
-> Companion to [../shared/DOCTRINE.md](../shared/DOCTRINE.md) (why Premura is agent-first in execution, human-first in purpose), [../../README.md](../../README.md) (install + surfaces), and [STATUS.md](../shared/STATUS.md) (what is shipped today). If you are instead changing Premura's code, this is the wrong guide — read [../../AGENTS.md](../../AGENTS.md) and [../../CONTRIBUTING.md](../../CONTRIBUTING.md).
+> Companion to [../shared/DOCTRINE.md](../shared/DOCTRINE.md) (why Premura is agent-first in execution, human-first in purpose), [../../README.md](../../README.md) (install + surfaces), and [CHANGELOG.md](../shared/CHANGELOG.md) (what shipped when). If you are instead changing Premura's code, this is the wrong guide — read [../../AGENTS.md](../../AGENTS.md) and [../../CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 ## Who this is for
 

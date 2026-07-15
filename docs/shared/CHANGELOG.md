@@ -1,6 +1,6 @@
 # premura — Changelog
 
-> One block per released version, newest first, capability-level highlights only. The current-state snapshot (counts, tables, what works today) lives in [STATUS.md](STATUS.md); the per-change narrative history lives in git.
+> One block per released version, newest first, capability-level highlights only. The per-change narrative history lives in git.
 
 ## 2026-07-14 — v1.0.0
 

@@ -2,7 +2,7 @@
 
 > Status: authoritative. Source of truth for what the system must do.
 >
-> Companion to [DOCTRINE.md](DOCTRINE.md) (product stance), [USERJOURNEY.md](../using/USERJOURNEY.md) (experience), and [STATUS.md](STATUS.md) (what works today). This document is the source of truth for **what the system must do**, not how.
+> Companion to [DOCTRINE.md](DOCTRINE.md) (product stance) and [USERJOURNEY.md](../using/USERJOURNEY.md) (experience). This document is the source of truth for **what the system must do**, not how.
 
 ## 1. Purpose
 
@@ -84,7 +84,7 @@ Build a single, locally-owned warehouse and tool substrate for the user's person
 
 ### Primary analytical interface — agent-facing tool surface
 
-The system SHALL expose a programmatic analytical surface for an AI agent acting on the user's behalf. The shipped shape is the MCP surface described in `docs/building/architecture/STAGES.md` and `docs/shared/STATUS.md`.
+The system SHALL expose a programmatic analytical surface for an AI agent acting on the user's behalf. The shipped shape is the MCP surface described in `docs/building/architecture/STAGES.md`.
 
 ### Operator interface — CLI surface (`premura`)
 
@@ -109,3 +109,9 @@ All commands MUST emit a non-zero exit code on any failure that breaks the contr
 - A full monthly run from a fresh checkout completes the verification ladder with no manual fix-ups beyond the one-time bootstrap.
 - A random month's encrypted artifact decrypts to a DuckDB file whose row counts match the local warehouse at that point in time (same for any uploaded copy).
 - `premura doctor` reports green on the operator's Mac and on a second clean Mac (no implicit state outside the repo + `~/.config/premura/`).
+
+## 8. Known limitations
+
+- **HC HR-series uniqueness collisions**: ~3 sibling rows share `parent_uuid + epoch_millis`; deduped in-batch, invisible in stats. Cosmetic.
+- **Wide-format BMT without `Time`**: timestamps land at 00:00:00 local.
+- **No FIT-file (per-activity stream) ingestion**: out of scope for the v1 line.

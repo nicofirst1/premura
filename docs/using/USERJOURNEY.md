@@ -2,7 +2,7 @@
 
 > Status: authoritative. Source of truth for the **intended human experience over time**.
 >
-> Companion to [DOCTRINE.md](../shared/DOCTRINE.md) (product stance), [SPEC.md](../shared/SPEC.md) (what the system must do), and [STATUS.md](../shared/STATUS.md) (what works today). Per DOCTRINE, the human is the primary beneficiary; the agent is the default operational client. The human supplies data, goals, and approvals - the agent operates the pipeline and explains findings.
+> Companion to [DOCTRINE.md](../shared/DOCTRINE.md) (product stance) and [SPEC.md](../shared/SPEC.md) (what the system must do). Per DOCTRINE, the human is the primary beneficiary; the agent is the default operational client. The human supplies data, goals, and approvals - the agent operates the pipeline and explains findings.
 
 ## Persona
 

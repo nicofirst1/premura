@@ -2,7 +2,7 @@
 
 > How to run premura day to day, and the two MCP servers. Written for a human to read.
 >
-> See also: [../README.md](../../README.md) for first-time setup, [STATUS.md](../shared/STATUS.md) for what currently works.
+> See also: [../README.md](../../README.md) for first-time setup, and [CHANGELOG.md](../shared/CHANGELOG.md) for what shipped when.
 
 ## The commands
 

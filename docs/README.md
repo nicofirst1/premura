@@ -24,19 +24,18 @@ The runtime agent and the coding agent are **not** the same audience: one operat
 
 - `shared/DOCTRINE.md` — product identity: agent-primary execution, human-primary purpose.
 - `shared/SPEC.md` — product and data-contract requirements.
-- `shared/STATUS.md` — what is currently true and shipped.
 - `building/architecture/STAGES.md` — architecture boundaries between parsers, engine, MCP, and UI.
 - `../src/premura/engine/CONTRACT.md` — what Stage 2 signals may and may not claim.
 - `../src/premura/parsers/CONTRACT.md` — the parser plugin contract.
 
 ## Live reference
 
-- `shared/STATUS.md` — bounded snapshot of shipped state; single home for shipped-state counts.
+- Shipped-state counts (tools, signals, tests) live in no doc — read them from `premura --help`, `premura status`, and the test suite.
 - `shared/CHANGELOG.md` — append-only mission-by-mission narratives (what shipped when, and why).
 - `using/OPERATIONS.md` — operator commands and day-to-day run surface.
 - `using/USERJOURNEY.md` — intended operator experience over time.
 
-Direction and what's next live in GitHub milestones and `shared/STATUS.md`, not in a standalone roadmap doc.
+Direction and what's next live in GitHub milestones, not in a standalone roadmap doc.
 
 ## Guidance
 
