@@ -6,7 +6,7 @@ It is a **registry of criteria organized under four closed categories, plus the 
 
 ## What grounds every judgment
 
-The audit reads the structured **Session Disclosure** object (`docs/building/architecture/AUDIT_CONSUMER_CONTRACT.md`) and the **final answer text**. Counts come from the structured fields only: `raw_analytical_call_count`, `unique_hypothesis_count` (`N`), `surfaced`, `refusal_breakdown`, and the per-call `terminal_status`. The `disclosure_text` field is a convenience rendering and is **never** the source of a count, and a surfaced count is **never** inferred when `surfaced.status = unavailable` (C-002). The output shape is defined by `SKILL.md` §"Audit result shape" — the single authoritative home for it.
+The audit reads the structured **Session Disclosure** object (`src/premura/AUDIT_CONSUMER_CONTRACT.md`) and the **final answer text**. Counts come from the structured fields only: `raw_analytical_call_count`, `unique_hypothesis_count` (`N`), `surfaced`, `refusal_breakdown`, and the per-call `terminal_status`. The `disclosure_text` field is a convenience rendering and is **never** the source of a count, and a surfaced count is **never** inferred when `surfaced.status = unavailable` (C-002). The output shape is defined by `SKILL.md` §"Audit result shape" — the single authoritative home for it.
 
 ## The four closed categories
 

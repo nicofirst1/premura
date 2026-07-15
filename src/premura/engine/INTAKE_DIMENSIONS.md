@@ -2,13 +2,13 @@
 
 > **Audience:** an agent (or contributor) making a _declared_ intake dimension actually **usable** — resolvable through the input-resolution seam and answerable on the default agent surface.
 >
-> **Altitude (DOCTRINE, "guide, don't enumerate"):** this is the **rule** for adding an intake dimension, not a list of nutrients or supplements. Every step below is domain-agnostic. The two shipped domains (`nutrition_intake`, `supplement_intake`) are cited only as _proof the rule generalizes_ — not as the catalogue of what intake can be.
+> **Altitude (DOCTRINE, "guide, don't enumerate"):** this is the **rule** for adding an intake dimension, not a list of nutrients or supplements. Every step below is domain-agnostic. The two reference domains (`nutrition_intake`, `supplement_intake`) are cited only as _proof the rule generalizes_ — not as the catalogue of what intake can be.
 
 ## What "usable" means here
 
-A semantic domain can already be _declared_ (a signal may say it `depends_on_domain="<domain>"`) and its rows can already be _stored_ long before anything can _read_ them. Premura shipped `nutrition_intake` and `supplement_intake` in exactly that half-built state: declarable storage targets with a working `IntakeBatch -> persist_intake_batch` load path, but every declared dependency resolved to the explicit `unsupported_domain` outcome, so no signal could use them and no agent tool could answer over them.
+A semantic domain can already be _declared_ (a signal may say it `depends_on_domain="<domain>"`) and its rows can already be _stored_ long before anything can _read_ them. A domain can sit in exactly that half-built state: a declarable storage target with a working `IntakeBatch -> persist_intake_batch` load path, but every declared dependency resolving to an explicit non-usable outcome, so no signal can use it and no agent tool can answer over it. `nutrition_intake` and `supplement_intake` each began there, before their resolvers were added.
 
-Making a declared intake dimension _usable_ means closing that gap **without adding a new abstraction layer** — by riding the existing `@resolver(domain=...)` seam, the existing signal registry, and the existing default MCP surface. This document is the written rule for doing that; it is the generalization the two shipped domains validate.
+Making a declared intake dimension _usable_ means closing that gap **without adding a new abstraction layer** — by riding the existing `@resolver(domain=...)` seam, the existing signal registry, and the existing default MCP surface. This document is the written rule for doing that; it is the generalization the two reference domains validate.
 
 ## The rule — four domain-agnostic steps
 
@@ -50,9 +50,9 @@ Add a **thin** tool to the default agent (MCP) surface so the signal is genuinel
 - is registered on the default surface by a `@mcp.tool()`-decorated shim in `_register_default_tools(...)` in `src/premura/mcp/entrypoint.py`, following the same validity-gated pattern as the existing signal-backed tools;
 - passes the four engine states straight through, so an empty / stale / too-thin domain comes back as an honest refusal with its own state.
 
-## Both shipped domains followed exactly these steps — and the shared seam did not change
+## Both reference domains follow exactly these steps — and the shared seam does not change
 
-This is the proof: adding the _next_ intake dimension requires the four steps above and **no change to the shared resolution seam**, because both shipped domains rode exactly those steps.
+This is the proof: adding the _next_ intake dimension requires the four steps above and **no change to the shared resolution seam**, because both reference domains followed exactly those steps.
 
 | Step                                         | `nutrition_intake` (worked example)                                                                                                           | `supplement_intake` (worked example)                                                                                                             |
 | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -65,7 +65,7 @@ This is the proof: adding the _next_ intake dimension requires the four steps ab
 
 ## Caller-declared selector semantics (the matcher / quantity key)
 
-Step 2 says the resolver interprets a _caller-declared selector_. To keep the rule honest about what "selector" means — and so no later domain re-invents it — the two shipped selectors are pinned **once, authoritatively, in code**:
+Step 2 says the resolver interprets a _caller-declared selector_. To keep the rule honest about what "selector" means — and so no later domain re-invents it — the two reference selectors are pinned **once, authoritatively, in code**:
 
 - **Supplement matcher** — the single authoritative implementation is `matches_supplement(matcher, product_label, ingredient_label)` in `src/premura/engine/views/supplement_intake.py`. Its semantics (also stated in that module's docstring) are:
   - **no hardcoded supplement list** — the caller declares the matcher;

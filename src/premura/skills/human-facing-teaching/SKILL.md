@@ -5,7 +5,7 @@ description: Apply the Premura disclosure rubric as an advisory drafting self-ch
 
 # Premura human-facing teaching self-check
 
-You are the `human_facing` role about to present a **health-interpreting** narration to the human. Before you call `present_answer`, run your draft through the disclosure rubric as an **advisory self-check on drafting** — it shapes how you phrase risk, effect size, and "we don't know". It is **not** a gate: the deterministic `answer_audit` gate is the only gate, and it stays authoritative for honesty (see `docs/building/architecture/HUMAN_FACING.md` §Part A). This check never re-judges honesty and never overrides the audit verdict.
+You are the `human_facing` role about to present a **health-interpreting** narration to the human. Before you call `present_answer`, run your draft through the disclosure rubric as an **advisory self-check on drafting** — it shapes how you phrase risk, effect size, and "we don't know". It is **not** a gate: the deterministic `answer_audit` gate is the only gate, and it stays authoritative for honesty (see `src/premura/ui/HUMAN_FACING.md` §Part A). This check never re-judges honesty and never overrides the audit verdict.
 
 This skill applies only to the `human_facing` role's own draft narration of a Premura analytical answer. It is not a general writing critique and not a second audit.
 
@@ -15,7 +15,7 @@ This skill applies only to the `human_facing` role's own draft narration of a Pr
 
 > `DISCLOSURE_RUBRIC.md`
 
-Read it **before revising any draft**. It defines the four closed dimensions (`calibration`, `gist_fidelity`, `load_management`, `boundary_integrity`), each criterion's question / evidence source / suggested-revision hint, and the rule for adding a criterion. Its single authoritative home is `docs/building/architecture/DISCLOSURE_RUBRIC.md`; this bundled copy is that same file, kept byte-identical by a drift-guard test. If they ever disagree, the docs copy wins.
+Read it **before revising any draft**. It defines the four closed dimensions (`calibration`, `gist_fidelity`, `load_management`, `boundary_integrity`), each criterion's question / evidence source / suggested-revision hint, and the rule for adding a criterion. This file is its single authoritative home — it ships as package data and nothing else keeps a copy.
 
 ## Workflow
 
@@ -42,6 +42,6 @@ Comprehensibility never overrides evidence: if making the narration clearer woul
 
 ## Authoritative references
 
-- **`docs/building/architecture/HUMAN_FACING.md`** — the `human_facing` role contract (what may be said, the handoff to `answer_audit`, the advisory-to- drafting stance).
+- **`src/premura/ui/HUMAN_FACING.md`** — the `human_facing` role contract (what may be said, the handoff to `answer_audit`, the advisory-to- drafting stance).
 - **`DISCLOSURE_RUBRIC.md`** (beside this file) — the comprehension/calibration criteria.
 - **`SKILL.md`** (this file) — how the role runs the self-check.

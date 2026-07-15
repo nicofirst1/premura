@@ -17,7 +17,7 @@ A parser produces data for one of **two** persistence seams. Pick by meaning, no
 
 A single parser may emit **both** an `IngestBatch` (observations) and an `IntakeBatch` (intake) from one source artifact when the artifact genuinely carries both kinds of data. It must not fold one into the other. See "Parser runtime output: observation, intake, or both" below for how `parse()` returns each and how the runtime routes them.
 
-One source class has its own interchange contract layered on top of this one: AI-chat recalled supplement/medication intake (`source_kind = "ai_chat_recall"`) is defined by `docs/building/architecture/AI_CHAT_RECALL_CONTRACT.md` — a documented JSON format any assistant's paste-prompt can target, consumed by `parsers/ai_chat_recall.py` through this same intake seam.
+One source class has its own interchange contract layered on top of this one: AI-chat recalled supplement/medication intake (`source_kind = "ai_chat_recall"`) is defined by `src/premura/parsers/AI_CHAT_RECALL_CONTRACT.md` — a documented JSON format any assistant's paste-prompt can target, consumed by `parsers/ai_chat_recall.py` through this same intake seam.
 
 Baseline profile facts (birth date, biological sex, declared height) are **not** a parser concern at all: they are captured through the bounded agent-mediated path `premura.store.profile_intake.record_profile_context`, which validates against the closed allowlist in `premura.profile_fields`. Parsers never emit profile assertions.
 

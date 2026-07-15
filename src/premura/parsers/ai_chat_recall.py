@@ -7,7 +7,7 @@ produced by a paste-prompt derived from the interchange contract) and emits an
 recalled item, which maps onto one :class:`SupplementIntakeInput` with one
 item and at most one dose.
 
-Authoritative format: ``docs/building/architecture/AI_CHAT_RECALL_CONTRACT.md``.
+Authoritative format: ``src/premura/parsers/AI_CHAT_RECALL_CONTRACT.md``.
 The parser knows the format, never the assistant: each export names its
 ``assistant``, which becomes a distinct provenance source
 ``ai_chat_recall:<slug>`` without any registry edit.

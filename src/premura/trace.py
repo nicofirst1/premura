@@ -55,7 +55,7 @@ if TYPE_CHECKING:
 TRACE_SCHEMA_VERSION = "1"
 
 # The audit-consumer contract object version (see
-# ``docs/building/architecture/AUDIT_CONSUMER_CONTRACT.md``). Stable for downstream readers.
+# ``src/premura/AUDIT_CONSUMER_CONTRACT.md``). Stable for downstream readers.
 DISCLOSURE_CONTRACT_VERSION = "1"
 
 # Default cap on the number of call records a disclosure inlines. A large

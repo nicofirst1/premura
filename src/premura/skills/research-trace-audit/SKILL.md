@@ -15,7 +15,7 @@ The audit is **offline**: it reads only the two inputs you are handed. It issues
 
 You cannot issue a real audit without **both** of these:
 
-1. **The structured Session Disclosure object** from `research_trace_disclosure` — the contract object defined by `docs/building/architecture/AUDIT_CONSUMER_CONTRACT.md` (see it for the full field list). Accept it as JSON-like structured data or a faithfully pasted object. All counts come from its structured fields — **never** from the `disclosure_text` prose, which is a convenience rendering only.
+1. **The structured Session Disclosure object** from `research_trace_disclosure` — the contract object defined by `src/premura/AUDIT_CONSUMER_CONTRACT.md` (see it for the full field list). Accept it as JSON-like structured data or a faithfully pasted object. All counts come from its structured fields — **never** from the `disclosure_text` prose, which is a convenience rendering only.
 2. **The final analytical answer text** — the answer the operator would see, built from that session.
 
 If the structured disclosure is **missing**, the correct result is `blocked` (or a request for the disclosure) — never a best-effort prose critique.
@@ -62,7 +62,7 @@ This is the single authoritative definition of the output shape — emit exactly
 
 Precedence — three files, three jobs:
 
-- **`docs/building/architecture/AUDIT_CONSUMER_CONTRACT.md`** — defines the **trace input shape** (the Session Disclosure object and its fields).
+- **`src/premura/AUDIT_CONSUMER_CONTRACT.md`** — defines the **trace input shape** (the Session Disclosure object and its fields).
 - **`AUDIT_RUBRIC.md`** (beside this file) — defines the **audit criteria**.
 - **`SKILL.md`** (this file) — defines **how an agent runs the audit**.
 

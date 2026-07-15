@@ -71,7 +71,7 @@ Share packets are real: call the default-surface `share_packet_render` tool with
 
 When you hit a real gap — an unsupported source, an unmapped metric, a missing analysis capability — you may turn it into an _improvement candidate_: a sanitized, private note that can become an issue. The default path is issue-first, and you tell the human plainly that Premura is designed to improve from real use and that they do not have to write the issue or PR themselves.
 
-**Building and using a parser at runtime needs no reviewer.** Per [ADR 0010](../building/adr/0010-runtime-orchestrator-and-operating-roles.md) and [OPERATING_ROLES.md](../building/architecture/OPERATING_ROLES.md) §"Dev-time boundary", you may build a parser and use it immediately against the operator's own data as part of operating an installed Premura — that is not gated behind review. Review only enters if the human consents to **contribute that parser back** as a public PR: the dev-time path ([../../CONTRIBUTING.md](../../CONTRIBUTING.md)) then applies, gated behind a reviewed share packet and the human's approval for that contribution, never for the local use itself.
+**Building and using a parser at runtime needs no reviewer.** Per [ADR 0010](../building/adr/0010-runtime-orchestrator-and-operating-roles.md) and [OPERATING_ROLES.md](../../src/premura/ui/OPERATING_ROLES.md) §"Dev-time boundary", you may build a parser and use it immediately against the operator's own data as part of operating an installed Premura — that is not gated behind review. Review only enters if the human consents to **contribute that parser back** as a public PR: the dev-time path ([../../CONTRIBUTING.md](../../CONTRIBUTING.md)) then applies, gated behind a reviewed share packet and the human's approval for that contribution, never for the local use itself.
 
 ## Operator fallback surface
 
@@ -87,8 +87,8 @@ It adds `query_warehouse` (a raw SQL escape hatch) on top of the default tools. 
 
 Two architecture contracts, both authoritative, bind how a runtime agent operates:
 
-- [`docs/building/architecture/OPERATING_ROLES.md`](../building/architecture/OPERATING_ROLES.md) — the runtime multi-agent shape (orchestrator, bounded operating roles, the blocking answer-audit gate, the improvement queue, share packets).
-- [`docs/building/architecture/AUDIT_CONSUMER_CONTRACT.md`](../building/architecture/AUDIT_CONSUMER_CONTRACT.md) — the structured Session Disclosure object your research-trace disclosure must satisfy.
+- [`src/premura/ui/OPERATING_ROLES.md`](../../src/premura/ui/OPERATING_ROLES.md) — the runtime multi-agent shape (orchestrator, bounded operating roles, the blocking answer-audit gate, the improvement queue, share packets).
+- [`src/premura/AUDIT_CONSUMER_CONTRACT.md`](../../src/premura/AUDIT_CONSUMER_CONTRACT.md) — the structured Session Disclosure object your research-trace disclosure must satisfy.
 
 ## Forward design
 

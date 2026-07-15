@@ -682,7 +682,7 @@ def device_route(device: str) -> dict[str, Any]:
 # --------------------------------------------------------------------------- #
 # Runtime orchestrator: roles, handoff trace, and the blocking answer gate.
 #
-# Slice 1 of docs/building/architecture/OPERATING_ROLES.md (decision note
+# Slice 1 of src/premura/ui/OPERATING_ROLES.md (decision note
 # 0013): the operating agent is the intelligence; this thin deterministic
 # layer owns the two things that must not depend on agent goodwill — the
 # handoff trace (session-log file, never the research trace) and the

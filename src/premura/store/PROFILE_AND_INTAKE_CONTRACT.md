@@ -2,21 +2,21 @@
 
 > Status: authoritative. Source of truth for what counts as baseline profile context, nutrition intake, and supplement intake, and how each stays distinct from observed measurements and narrative notes.
 >
-> Companion to [STAGES.md](STAGES.md) and [UPDATE_STRATEGY.md](UPDATE_STRATEGY.md). The machine-readable surfaces that this document explains in prose live next to it under `docs/building/architecture/contracts/`: [profile_and_intake_entities.yaml](contracts/profile_and_intake_entities.yaml), [profile_and_intake_examples.yaml](contracts/profile_and_intake_examples.yaml), [profile_and_intake_invariants.yaml](contracts/profile_and_intake_invariants.yaml), and [profile_and_intake_dependencies.yaml](contracts/profile_and_intake_dependencies.yaml). Captured 2026-05-27.
+> Companion to [STAGES.md](../../../docs/building/architecture/STAGES.md) and [UPDATE_STRATEGY.md](UPDATE_STRATEGY.md). The machine-readable surfaces that this document explains in prose live next to it under `profile_intake_contracts/`: [profile_and_intake_entities.yaml](profile_intake_contracts/profile_and_intake_entities.yaml), [profile_and_intake_examples.yaml](profile_intake_contracts/profile_and_intake_examples.yaml), [profile_and_intake_invariants.yaml](profile_intake_contracts/profile_and_intake_invariants.yaml), and [profile_and_intake_dependencies.yaml](profile_intake_contracts/profile_and_intake_dependencies.yaml).
 
 ## What this document is, and is not
 
 This is a meaning contract. It says where each kind of personal-context and intake data lives in Premura's model, what each entity means, and how to tell these domains apart from the data Premura already stores. It is the agreed shape of what these domains contain — the thing later ingest, signal-processing, and user-facing work can build on without re-deciding the boundary each time.
 
-This document is the **meaning contract**, not the storage design. It does not choose the DuckDB layout — but a concrete storage adapter that satisfies this contract now exists (see "Concrete storage now exists" below). The rule for this surface is unchanged:
+This document is the **meaning contract**, not the storage design. It does not choose the DuckDB layout; a concrete storage adapter that satisfies it exists (see "Storage adapter" below). The rule for this surface:
 
 - **Meaning is strict and authoritative here.** Whatever the storage adapter does, the meaning below must survive unchanged.
 - **Storage is the adapter's choice.** This document is still the fixed point; a future adapter could re-shape the tables as long as it preserves these meanings. The current adapter is the _first_ such choice, not a constraint baked into the contract.
 
 Two things follow from that, and they matter for review:
 
-- These three domains are **not** a new fifth stage. Premura still has four stages — ingest, signal processing, MCP, and user interface (see [STAGES.md](STAGES.md)). Profile context and intake are data domains that later stages read; they are not a new step in the pipeline.
-- The shipped capability is bounded. Baseline profile context now has a real **agent-mediated capture** path; nutrition and supplement intake have real **storage and a normalized load path**, but **no built-in importer for any specific nutrition/supplement source ships** — adapting a particular source into these tables is follow-on parser/plugin work. The first cross-domain Stage 2 consumer — **BMI** — now ships as a proof consumer of the input-resolution seam (declared height from profile context plus weight from observation history); age-adjusted interpretation remains deferred. What is and is not built is itemized under "Concrete storage now exists" and "What stays deferred".
+- These three domains are **not** a new fifth stage. Premura still has four stages — ingest, signal processing, MCP, and user interface (see [STAGES.md](../../../docs/building/architecture/STAGES.md)). Profile context and intake are data domains that later stages read; they are not a new step in the pipeline.
+- The capability is bounded. Baseline profile context has an **agent-mediated capture** path; nutrition and supplement intake have **storage, a normalized load path, and concrete resolvers**, but **no built-in importer for any specific nutrition/supplement source** — adapting a particular source into these tables is follow-on parser/plugin work. A BMI signal is the worked cross-domain example over the input-resolution seam (declared height from profile context plus weight from observation history); age-adjusted interpretation is not yet built. What is and is not built is itemized under "Storage adapter" and "What stays deferred".
 
 ## The three new domains
 
@@ -55,7 +55,7 @@ Supplement intake covers **supplement products, their ingredients, and the doses
 
 A supplement record stays honest about how much it knows. It may describe a branded product whose full ingredient breakdown is unknown, a single named ingredient, or a multi-ingredient stack. The model preserves the **dose that was actually taken** even when the underlying ingredients are not all known, and it never fabricates an ingredient list from a brand name alone.
 
-> **Declarable today, resolved later.** `nutrition_intake` and `supplement_intake` are valid declaration targets in the Stage 2 input-resolution surface **today**: a future consumer may name them in a `DependencyDeclaration`, and the seam will accept the declaration. The declaration resolves to an explicit `unsupported_domain` outcome (`usable=False`, `absence_reason="unsupported_domain"`) until a future change ships a concrete resolver backed by real parser-produced rows. The contract is deliberately strict here: the declaration surface stays open, but unresolved domains do not silently fall back into observation history.
+> **Declaration and resolution.** `nutrition_intake` and `supplement_intake` are valid declaration targets in the Stage 2 input-resolution surface, and each has a concrete resolver behind it (see [INTAKE_DIMENSIONS.md](../engine/INTAKE_DIMENSIONS.md)). A consumer names a domain in a `DependencyDeclaration` and the seam resolves it; a declaration with no matching, fresh row resolves to an explicit non-usable outcome (`usable=False`, `absence_reason="missing"` or `"stale"`). The contract is deliberately strict here: an unresolved domain never silently falls back into observation history.
 
 ## Domain-vs-shape rubric
 
@@ -73,7 +73,7 @@ These rules also govern whether a proposal needs a **new resolver**. A new resol
 
 Premura already has two well-defined homes that this contract must not absorb. The lines are:
 
-- **Observation history** is what a device or lab _measured_, stored as canonical rows in `hp.fact_measurement` / `hp.fact_interval` with provenance (see [STAGES.md](STAGES.md), Ingest). A smart scale's height reading and a wearable's daily `total_kcal` are observations. They are facts about a measurement event.
+- **Observation history** is what a device or lab _measured_, stored as canonical rows in `hp.fact_measurement` / `hp.fact_interval` with provenance (see [STAGES.md](../../../docs/building/architecture/STAGES.md), Ingest). A smart scale's height reading and a wearable's daily `total_kcal` are observations. They are facts about a measurement event.
 - **Note history** is narrative free text that cannot be normalized into a structured value. A clinical comment in prose is a note. Notes are not a catch-all that absorbs anything the structured domains find inconvenient.
 
 Against those, the new domains draw three clean lines:
@@ -90,7 +90,7 @@ The hard cases are the ones where the _same real-world subject_ shows up in more
 - **Meal energy vs wearable total kcal.** Both are "calories," but a meal's energy is nutrition intake (a quantity attributed to something consumed) while a wearable's daily total is an observation (energy expenditure the device reported). They never merge into one number.
 - **Age vs birth date.** Age is not stored or asserted; it is derived from birth date at evaluation time, so the two cannot drift apart.
 
-The governing rule is one-home classification: every normalized example has exactly **one** canonical home — `profile_context`, `nutrition_intake`, `supplement_intake`, `observation_history`, or `note_history`. There is no `context`, `misc`, or `metadata` bucket. If something seems to need two homes, that is a sign two different meanings are being conflated, and the model keeps them apart. The worked examples are enumerated in [profile_and_intake_examples.yaml](contracts/profile_and_intake_examples.yaml).
+The governing rule is one-home classification: every normalized example has exactly **one** canonical home — `profile_context`, `nutrition_intake`, `supplement_intake`, `observation_history`, or `note_history`. There is no `context`, `misc`, or `metadata` bucket. If something seems to need two homes, that is a sign two different meanings are being conflated, and the model keeps them apart. The worked examples are enumerated in [profile_and_intake_examples.yaml](profile_intake_contracts/profile_and_intake_examples.yaml).
 
 ## Provenance and time semantics
 
@@ -104,21 +104,21 @@ Every first-class entity in these domains names both where it came from and when
 
 A future signal-processing or interpretation function that needs profile or intake data must **declare that dependency explicitly**. It states which domains it draws on, the exact keys it needs (for example `standing_height_declared`, `protein_g`, or `dose_amount`), and how it behaves honestly when a prerequisite is missing, stale, partial, or unknown.
 
-The point of the declaration is to stop functions from quietly assuming a value happens to be present. Finding a height row in observation history is **not** a substitute for declaring that a function needs declared profile height — the same adapter could store things differently tomorrow, and the meaning of the requirement must not depend on that. The required shape and worked examples (BMI, a protein-intake summary, a supplement-adherence summary) are in [profile_and_intake_dependencies.yaml](contracts/profile_and_intake_dependencies.yaml).
+The point of the declaration is to stop functions from quietly assuming a value happens to be present. Finding a height row in observation history is **not** a substitute for declaring that a function needs declared profile height — the same adapter could store things differently tomorrow, and the meaning of the requirement must not depend on that. The required shape and worked examples (BMI, a protein-intake summary, a supplement-adherence summary) are in [profile_and_intake_dependencies.yaml](profile_intake_contracts/profile_and_intake_dependencies.yaml).
 
 ## Why meaning was fixed before storage
 
-Premura fixed meaning early and deferred mechanism. If this document had committed to tables and columns up front, every later storage choice would have had to re-open the boundary question to change them. By contracting on meaning first, the storage adapter below could pick a persistence shape that represents the entities, honours the invariants, and answers the declared dependencies — without re-litigating which domain anything belongs to. The contract stays the fixed point; the storage adapter sits underneath it.
+Meaning was fixed before mechanism. If this document had committed to tables and columns up front, every later storage choice would have had to re-open the boundary question. By contracting on meaning first, a storage adapter can pick a persistence shape that represents the entities, honours the invariants, and answers the declared dependencies — without re-litigating which domain anything belongs to. The contract stays the fixed point; the storage adapter sits underneath it.
 
-## Concrete storage now exists
+## Storage adapter
 
-A storage adapter that satisfies this contract now exists. It lives in migration `src/premura/store/migrations/004_profile_intake.sql` and is exercised through `src/premura/store/profile_intake.py`. The semantic vocabulary above maps onto it as follows (the contract names are the _meaning_; the table/column names are the _current adapter_):
+A storage adapter that satisfies this contract lives in migration `src/premura/store/migrations/004_profile_intake.sql` and is exercised through `src/premura/store/profile_intake.py`. The semantic vocabulary above maps onto it as follows (the contract names are the _meaning_; the table/column names are the _current adapter_):
 
 - **Baseline profile context** → `hp.profile_capture_session` (one bounded capture session, bookkeeping only) and `hp.profile_context_assertion` (one recorded assertion per row). A profile _attribute_ is a key in the closed allowlist (`src/premura/profile_fields.py`: `birth_date`, `sex`, `standing_height_cm`); a profile _assertion_ is a row. Correction lineage is the `supersedes_assertion_id` self-reference plus the closed `effective_end_utc` of the superseded row — the append/supersede semantics the contract requires, enforced in `record_profile_context`. The declared-height attribute ships as `standing_height_cm` (the contract's `standing_height_declared` meaning).
 - **Nutrition intake** → `hp.nutrition_intake_event` → `hp.nutrition_intake_item` → `hp.nutrition_quantity`. An intake event, an intake item, and a nutrition fact respectively. Quantity keys (e.g. `energy`, `protein`) stay distinct from body-observation `metric_id`s; partial records are allowed (unknown nutrients are absent, never zero).
 - **Supplement intake** → `hp.supplement_intake_event` → `hp.supplement_item` → `hp.supplement_dose`. The dose preserves the amount actually taken even when the ingredient breakdown is unknown.
 
-Two contract rules are now **structural**, not just prose:
+Two contract rules are **structural**, not just prose:
 
 - **One-home separation.** Each domain has its own tables under `hp.`; there is deliberately no JSON catch-all bucket and nothing writes these meanings into `hp.fact_measurement` / `hp.fact_interval` / note storage. The back-door the contract forbids is unavailable because no such column exists.
 - **Bounded capture.** `record_profile_context` validates every write against the allowlist at the store boundary; an unsupported or derived key (such as `age`) raises before any row is written. Provenance for the agent path is `source_kind="agent_profile_capture"`.
@@ -127,11 +127,10 @@ What the adapter does **not** add: any built-in importer for a specific nutritio
 
 ## What stays deferred
 
-Storage and the agent-mediated profile-capture path now ship. The Stage 2 **input-resolution seam** is also now wired (see [`src/premura/engine/_resolution.py`](../../../src/premura/engine/_resolution.py) and `src/premura/engine/CONTRACT.md`'s "Declaring dependencies through the input-resolution seam"): observation history and profile context have concrete resolvers, and **BMI ships as the first cross-domain Stage 2 proof consumer** that uses them. What is **still** deferred to later changes:
+Storage, the agent-mediated profile-capture path, and the Stage 2 **input-resolution seam** are implemented (see [`src/premura/engine/_resolution.py`](../engine/_resolution.py) and `src/premura/engine/CONTRACT.md`): observation history, profile context, and both intake domains have concrete resolvers, and a BMI signal is the worked cross-domain consumer. Not yet built:
 
 - parsers/plugins that adapt a specific nutrition or supplement source into the intake tables (there is a load path and a normalized seam, but no built-in importer for any particular source),
-- concrete resolvers for `nutrition_intake` and `supplement_intake` (the declarations stay valid in the seam today; they currently return an explicit `unsupported_domain` outcome rather than being silently coerced into another domain),
-- further profile-dependent Stage 2 signals beyond BMI — **age-adjusted interpretation** remains the next deferred candidate (`age` remains derived from `birth_date`, never stored),
+- further profile-dependent Stage 2 signals beyond BMI — **age-adjusted interpretation** is the next candidate (`age` stays derived from `birth_date`, never stored),
 - user-facing teaching copy for the captured domains.
 
 When those changes are made, the open questions should be implementation and workflow choices only — not a re-litigation of which domain profile and intake data belong to, nor of how the data is stored.

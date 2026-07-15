@@ -55,7 +55,7 @@ class SignalSpec:
     revision: str = "1"
     """Bump when the function's derivation logic materially changes. Stored in
     raw_payload of any persisted derived:* row, so a future `premura revalidate`
-    command can identify stale outputs. See docs/building/architecture/UPDATE_STRATEGY.md."""
+    command can identify stale outputs. See src/premura/store/UPDATE_STRATEGY.md."""
 
     fn: Callable | None = None
     """The actual function. Set by the @signal(...) decorator. None at definition

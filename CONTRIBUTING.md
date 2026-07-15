@@ -6,8 +6,7 @@ This is the main development guide for Premura contributors, whether you are a h
 
 - Read `README.md` for bootstrap and CLI usage.
 - Read `docs/building/architecture/STAGES.md` before moving logic across package boundaries.
-- Read `.kittify/charter/charter.md` for the current quality gates and risk boundaries.
-- If you are adding a new parser, also read `docs/building/architecture/PARSER_CONTRIBUTING.md` and `src/premura/parsers/CONTRACT.md`.
+- If you are adding a new parser, also read `src/premura/parsers/PARSER_CONTRIBUTING.md` and `src/premura/parsers/CONTRACT.md`.
 
 ## Setup
 
@@ -34,7 +33,7 @@ uv run mypy <changed-paths>
 
 The default pytest loop excludes tests marked `regression` so local agent feedback stays fast even when private real-export files exist. Objective: the default `uv run python -m pytest -q -x --tb=short` feedback command should stay under 90 seconds on the maintainer's M-series Mac; if it exceeds that, profile the slow tests before merging more work.
 
-Before review handoff, the relevant `ruff`, `mypy`, and `pytest` checks must be green for the changed scope. Run `-m regression` explicitly when changing parser schemas, real-export handling, or release validation.
+Run `-m regression` explicitly when changing parser schemas, real-export handling, or release validation.
 
 The pre-commit hook runs the fast linting phase (`ruff check` and `ruff format --check`) on staged Python files before each commit. It is a local guardrail, not a replacement for the changed-scope `mypy` and `pytest` checks above.
 
@@ -48,6 +47,8 @@ Premura is split into four stages. Keep changes inside the right stage unless th
 - `ui`: presentation, interview flow, and teaching. Do not read raw warehouse tables directly from here.
 
 Authoritative stage guidance lives in `docs/building/architecture/STAGES.md`.
+
+Package docs live beside their code, not in a `docs/` subtree. An `ALL_CAPS.md` next to a package is that package's contract or guide (e.g. `parsers/CONTRACT.md`); a `*_RUBRIC.md` or `*_PLAYBOOK.md` is loaded at runtime by its sibling module via `importlib.resources`, so moving or renaming it breaks code, not just doc citations.
 
 ## Health-data and security rules
 
@@ -69,7 +70,7 @@ Authoritative stage guidance lives in `docs/building/architecture/STAGES.md`.
 This guide owns the contribution path for both humans and coding agents. Before opening a pull request:
 
 1. Keep the change scoped to one coherent unit of work (see §"Change style").
-2. Run the changed-scope checks above and make them green: `uv run ruff check .`, `uv run ruff format --check .`, `uv run mypy <changed-paths>`, and the fast `uv run python -m pytest -q -x --tb=short` loop. Run `-m regression` when you touch parser schemas, real-export handling, or release validation.
+2. Run the changed-scope checks from §"Daily commands" above and make them green.
 3. Update the docs touched by the behavior change in the same PR.
 4. Open the pull request with a summary of intent, the checks you ran, and any follow-up left out of scope. A reviewer (human or agent) should be able to verify the change against the relevant contract without reconstructing it.
 
@@ -79,7 +80,7 @@ Coding agents working inside the repo reach this section through [`AGENTS.md`](A
 
 - Product and data-contract intent: `docs/shared/SPEC.md`
 - Stage boundaries and architecture: `docs/building/architecture/STAGES.md`
-- Warehouse update policy: `docs/building/architecture/UPDATE_STRATEGY.md`
+- Warehouse update policy: `src/premura/store/UPDATE_STRATEGY.md`
 - Parser plugin contract: `src/premura/parsers/CONTRACT.md`
 - Parser-generation skill: `src/premura/skills/parser-generator/SKILL.md`
 

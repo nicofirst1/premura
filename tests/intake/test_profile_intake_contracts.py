@@ -1,7 +1,7 @@
 """Machine-applicable validation harness for the profile/intake contract (WP02).
 
 These tests read the *shipped* contract artifacts under
-``docs/building/architecture/contracts/`` as an external consumer would, and turn the
+``src/premura/store/profile_intake_contracts/`` as an external consumer would, and turn the
 load-bearing planning invariants into pass/fail gates an agent reviewer can rely
 on.
 
@@ -23,8 +23,8 @@ import yaml
 
 from tests import REPO_ROOT
 
-CONTRACTS_DIR = REPO_ROOT / "docs" / "building" / "architecture" / "contracts"
-PROSE_CONTRACT = REPO_ROOT / "docs" / "building" / "architecture" / "PROFILE_AND_INTAKE_CONTRACT.md"
+CONTRACTS_DIR = REPO_ROOT / "src" / "premura" / "store" / "profile_intake_contracts"
+PROSE_CONTRACT = REPO_ROOT / "src" / "premura" / "store" / "PROFILE_AND_INTAKE_CONTRACT.md"
 
 ENTITIES_FILE = CONTRACTS_DIR / "profile_and_intake_entities.yaml"
 EXAMPLES_FILE = CONTRACTS_DIR / "profile_and_intake_examples.yaml"

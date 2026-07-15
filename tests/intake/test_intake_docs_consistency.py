@@ -8,7 +8,7 @@ the exact drift dimension this mission guards against.
 
 The docs themselves live at:
 * ``src/premura/skills/parser-generator/SKILL.md`` (FR-007 skill half / SC-004)
-* ``docs/building/architecture/INTAKE_DIMENSIONS.md`` (FR-009 / SC-005)
+* ``src/premura/engine/INTAKE_DIMENSIONS.md`` (FR-009 / SC-005)
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from premura.engine._resolution import SEMANTIC_DOMAINS
 from tests import REPO_ROOT
 
 SKILL = REPO_ROOT / "src" / "premura" / "skills" / "parser-generator" / "SKILL.md"
-RULE = REPO_ROOT / "docs" / "building" / "architecture" / "INTAKE_DIMENSIONS.md"
+RULE = REPO_ROOT / "src" / "premura" / "engine" / "INTAKE_DIMENSIONS.md"
 
 
 def _read(path: Path) -> str:

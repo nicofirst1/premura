@@ -252,7 +252,7 @@ CREATE INDEX IF NOT EXISTS ix_improvement_session ON log_improvement(session_id)
 
 -- ----------------------------------------------------------------------------
 -- log_handoff — the runtime orchestrator's dispatch/handoff trace
--- (docs/building/architecture/OPERATING_ROLES.md). One row per cross-role
+-- (src/premura/ui/OPERATING_ROLES.md). One row per cross-role
 -- handoff; compact PHI-safe references, never raw health data. Deliberately
 -- NOT FK-bound to log_session: runtime operating sessions are identified by
 -- the caller's stable id (typically the research-trace session id) and exist
@@ -295,7 +295,7 @@ CREATE INDEX IF NOT EXISTS ix_laa_draft ON log_answer_audit(draft_sha256);
 
 -- ----------------------------------------------------------------------------
 -- log_improvement_item — the runtime `improvement_scan` role's PRIVATE, LOCAL
--- queue (docs/building/architecture/OPERATING_ROLES.md "Improvement scan,
+-- queue (src/premura/ui/OPERATING_ROLES.md "Improvement scan,
 -- queue, sharing", operating-roles slice 3). One row per improvement
 -- candidate the role turns runtime friction (refusals, unmapped metrics,
 -- audit failures, repeated handoff loops) into. The item shape is exactly

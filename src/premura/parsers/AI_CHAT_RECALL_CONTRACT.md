@@ -1,6 +1,6 @@
 # AI-chat recall interchange contract (`premura.ai_chat_recall.v1`)
 
-> Status: live reference, authoritative for the `ai_chat_recall` source class. Companion to [`src/premura/parsers/CONTRACT.md`](../../../src/premura/parsers/CONTRACT.md) (the federated parser contract) and [`PROFILE_AND_INTAKE_CONTRACT.md`](PROFILE_AND_INTAKE_CONTRACT.md) (the intake seam this source lands in).
+> Status: live reference, authoritative for the `ai_chat_recall` source class. Companion to [`src/premura/parsers/CONTRACT.md`](CONTRACT.md) (the federated parser contract) and [`PROFILE_AND_INTAKE_CONTRACT.md`](../store/PROFILE_AND_INTAKE_CONTRACT.md) (the intake seam this source lands in).
 
 People discuss supplements and oral medications with AI assistants. This contract defines **one JSON interchange format** an assistant can produce from the user's own chat history, and which Premura ingests through the standard federated-parser seam as supplement intake.
 

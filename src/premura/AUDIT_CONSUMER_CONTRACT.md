@@ -1,6 +1,6 @@
 # Audit-Consumer Contract
 
-> Status: live contract. The stable structured surface the research trace audit skill (`src/premura/skills/research-trace-audit/`) reads. See design decision note [0009](../adr/0009-session-research-trace-and-multiplicity-disclosure.md).
+> Status: live contract. The stable structured surface the research trace audit skill (`src/premura/skills/research-trace-audit/`) reads. See design decision note [0009](../../docs/building/adr/0009-session-research-trace-and-multiplicity-disclosure.md).
 
 The audit-consumer contract is the stable structured surface the research trace audit skill reads.
 

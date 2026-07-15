@@ -10,7 +10,7 @@ You are opening a human's first Premura session over a coding-agent surface. Pre
 Two contracts bind everything you do, and this skill does not restate them - read them and stay inside them:
 
 - `docs/operating/RUNTIME_AGENT.md` - how to operate an installed Premura honestly (validity-gated tools, structured verdicts, ask-before-sensitive-actions, never route around a refusal, never send data off-machine). If it disagrees with this skill, it wins.
-- `docs/building/architecture/HUMAN_FACING.md` Part B - the interview invariants: **interview before metrics**, one question at a time, agent-mediated capture (never a silent profile write, never a human form), presentation-agnostic.
+- `src/premura/ui/HUMAN_FACING.md` Part B - the interview invariants: **interview before metrics**, one question at a time, agent-mediated capture (never a silent profile write, never a human form), presentation-agnostic.
 
 The chain is the _rule_, not a script. You generate each question; the registries behind the tools decide what resolves. Do not enumerate devices or directions from memory - ask the tools.
 

@@ -24,7 +24,7 @@ Aliases recorded in `dim_metric.yaml` are restricted to **clinically standard na
 - **Claude Code skill (parser-generation walkthrough):** `src/premura/skills/parser-generator/SKILL.md` — installable via `premura install-skills`, which copies the skill into `./.claude/skills/` in the current project root.
 - **General development guide:** `CONTRIBUTING.md`
 - **Four-stage data flow:** `docs/building/architecture/STAGES.md` — Ingest (parsers) → Engine → MCP → UI. Each stage's importable Python package documents its layering rule in its `__init__.py` docstring (notably: Stage 3 MCP never reads `hp.fact_measurement` directly; Stage 4 UI never reads it or calls the engine directly).
-- **Warehouse update policy:** `docs/building/architecture/UPDATE_STRATEGY.md` — the six update kinds and which ones the current architecture handles versus defers.
+- **Warehouse update policy:** `src/premura/store/UPDATE_STRATEGY.md` — the six update kinds and which ones the current architecture handles versus defers.
 
 If `CONTRACT.md` ever disagrees with this file, `CONTRACT.md` wins.
 

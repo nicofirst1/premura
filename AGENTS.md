@@ -15,8 +15,9 @@ Premura is **operated and extended by AI agents**, for a human beneficiary (agen
 
 - Before producing prose, planning docs, or onboarding material, read `CONTEXT.md` §"Maintainer mental model" and §"Planning" — they define the canonical vocabulary and explain when to prefer plain English over SE/agile jargon.
 - If you are changing Premura's codebase, start with `CONTRIBUTING.md`.
-- If you are adding or reviewing a federated parser, read `docs/building/architecture/PARSER_CONTRIBUTING.md`, then `src/premura/parsers/CONTRACT.md`.
+- If you are adding or reviewing a federated parser, read `src/premura/parsers/PARSER_CONTRIBUTING.md`, then `src/premura/parsers/CONTRACT.md`.
 - If you are using Claude Code to generate a parser, also read `src/premura/skills/parser-generator/SKILL.md`.
+- Package contracts and rubrics live beside their code (an `ALL_CAPS.md` next to a package is its contract); see `CONTRIBUTING.md` §"Architecture boundaries" for the naming rule and which of them are load-bearing at runtime.
 
 ## First steps in this clone
 
@@ -36,17 +37,3 @@ For parser work, resolve vendor fields in this order and stop at the first match
 If no step applies, skip the field at parse time and surface it via `IngestBatch.unmapped_metrics` for human review. If a field _does_ resolve to a canonical metric but still cannot become a loadable row, surface it via `IngestBatch.skipped_rows` instead.
 
 - Never copy real operator PDFs, extracted PHI, or generated private report artifacts into this repo or a git commit while doing parser or extractor work.
-
-## Agent skills
-
-### Issue tracker
-
-Issues for this repo are tracked in GitHub Issues for `nicofirst1/premura`.
-
-### Triage labels
-
-This repo uses the canonical triage labels `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`.
-
-### Domain docs
-
-This repo is configured as single-context: skills should look for a root `CONTEXT.md` and `docs/building/adr/` when present.

@@ -27,6 +27,7 @@ The runtime agent and the coding agent are **not** the same audience: one operat
 - `building/architecture/STAGES.md` — architecture boundaries between parsers, engine, MCP, and UI.
 - `../src/premura/engine/CONTRACT.md` — what Stage 2 signals may and may not claim.
 - `../src/premura/parsers/CONTRACT.md` — the parser plugin contract.
+- Operating, interview, storage, and domain contracts live beside their code under `../src/premura/{ui,store,engine,parsers}/`; `building/architecture/STAGES.md` indexes them.
 
 ## Live reference
 

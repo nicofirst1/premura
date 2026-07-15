@@ -52,9 +52,9 @@ When a signal answers a user-facing question, declare the contributor metadata s
 
 ## Declaring profile and intake prerequisites
 
-Some future signals will need **baseline profile context** (e.g. a declared standing height), **nutrition intake** (e.g. `protein_g`), or **supplement intake** (e.g. a dose amount). The meaning of these domains and how they stay distinct from observations is fixed in [`docs/building/architecture/PROFILE_AND_INTAKE_CONTRACT.md`](../../../docs/building/architecture/PROFILE_AND_INTAKE_CONTRACT.md). None of these domains is consumed by a shipped Stage 2 signal today, and none is a new execution stage — they are semantic data domains later stages may read.
+Some future signals will need **baseline profile context** (e.g. a declared standing height), **nutrition intake** (e.g. `protein_g`), or **supplement intake** (e.g. a dose amount). The meaning of these domains and how they stay distinct from observations is fixed in [`src/premura/store/PROFILE_AND_INTAKE_CONTRACT.md`](../store/PROFILE_AND_INTAKE_CONTRACT.md). None of these domains is consumed by a shipped Stage 2 signal today, and none is a new execution stage — they are semantic data domains later stages may read.
 
-When such a signal is eventually written, it **must declare that profile/intake prerequisite explicitly**, using the dependency-declaration shape in [`docs/building/architecture/contracts/profile_and_intake_dependencies.yaml`](../../../docs/building/architecture/contracts/profile_and_intake_dependencies.yaml). A declaration names:
+When such a signal is eventually written, it **must declare that profile/intake prerequisite explicitly**, using the dependency-declaration shape in [`src/premura/store/profile_intake_contracts/profile_and_intake_dependencies.yaml`](../store/profile_intake_contracts/profile_and_intake_dependencies.yaml). A declaration names:
 
 - `consumer_name` — the signal/tool that has the dependency,
 - `depends_on_domain` — which of `profile_context`, `nutrition_intake`, `supplement_intake`, `observation_history` it draws on,
@@ -73,8 +73,8 @@ Dispatch is **registry-driven**, not an `if`/`elif` chain. `RESOLVERS` is the st
 
 - `observation_history` — concrete resolver shipped (`premura.engine.views.observation`).
 - `profile_context` — concrete resolver shipped (`premura.engine.views.profile`).
-- `nutrition_intake` — valid declaration target; resolves to `usable=False, absence_reason="unsupported_domain"` until a future mission ships a concrete resolver backed by real rows.
-- `supplement_intake` — valid declaration target; same explicit `unsupported_domain` outcome until a future mission ships its resolver.
+- `nutrition_intake` — concrete resolver shipped (`premura.engine.views.nutrition_intake`); a no-matching-row case resolves to `usable=False, absence_reason="missing"` (or `"stale"`), never a fallback into observation history.
+- `supplement_intake` — concrete resolver shipped (`premura.engine.views.supplement_intake`); the same explicit missing/stale outcome, no cross-domain fallback.
 
 Dispatch is **open** by design: adding a new supported domain means landing one new module under `premura/engine/views/` that registers itself through `@resolver(domain=...)` and appending its dotted name to `_BUILTIN_RESOLVER_MODULES`. Existing resolvers are not touched. There is no filesystem scanning and no third-party plugin loader.
 

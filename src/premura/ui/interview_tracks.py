@@ -1,6 +1,6 @@
 """Stage 4 — the interview-track registry + resolving-route safety rail.
 
-The track registry locked by ``docs/building/architecture/HUMAN_FACING.md``
+The track registry locked by ``src/premura/ui/HUMAN_FACING.md``
 §"The track registry" (ADR 0015 decision 3). First contact asks the user *what
 direction* to look at — sleep, cardio, metabolic, stress, mental, gut, lab,
 overview (STAGES.md §Interview) — and the answer is a routing decision that

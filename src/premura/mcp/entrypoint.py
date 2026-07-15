@@ -930,7 +930,7 @@ def _register_default_tools(
         )
 
     # --- Runtime orchestrator: roles, handoff trace, blocking answer gate -- #
-    # Slice 1 of docs/building/architecture/OPERATING_ROLES.md (decision note
+    # Slice 1 of src/premura/ui/OPERATING_ROLES.md (decision note
     # 0013). The operating agent is the intelligence; these tools are the thin
     # deterministic layer: the role registry (discovery), the handoff trace
     # (session-log file, never the research trace), and the audit gate whose
