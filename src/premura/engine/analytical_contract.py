@@ -12,7 +12,7 @@ It is the structural twin of the Stage 2 signal and resolver registries in
 Importing this module never imports any tool implementation; the registry is
 empty until a tool opts in via :func:`analytical_tool`.
 
-Design constraints (see ``docs/history/research/STAGE3_ANALYTICAL_TOOLS_RESEARCH.md``):
+Design constraints (see ADR 0008 and ``engine/CONTRACT.md``):
 
 * **MCP-agnostic and warehouse-agnostic.** This module imports nothing from the
   MCP layer and nothing from the warehouse/DuckDB layer. The result envelopes

@@ -15,8 +15,7 @@ and lipid-like markers are both integrated long-term-control families). Adding a
 new family should usually mean *calling an existing shape builder with new
 parameters*, never writing a fresh bespoke clinical rule table.
 
-Rationale and ``source_notes`` are informational only. They point at
-``docs/history/research/STAGE2_EVIDENCE_ADMISSIBILITY_RESEARCH.md`` and general
+Rationale and ``source_notes`` are informational only. They point at general
 source anchors for review; the evaluator never reads them at runtime and they
 never become evidence.
 
@@ -45,10 +44,10 @@ from premura.engine.policies._model import (
 )
 
 # Shared source anchor. Informational only — never read at runtime.
-_RESEARCH = "docs/history/research/STAGE2_EVIDENCE_ADMISSIBILITY_RESEARCH.md"
+_RESEARCH = "docs/building/adr/0007-evidence-admissibility-as-a-declared-contract.md"
 
 # Conservative default raw paired-sample floor for the lagged-association
-# (correlate) question, from CORRELATE_METHODOLOGY_RESEARCH.md Q3: below 20
+# (correlate) question, from the correlate methodology (see ADR 0008): below 20
 # paired observations a correlation point estimate carries essentially no
 # information and the band spans nearly the whole range, so the default refuses.
 # This is the *raw* paired floor declared at the policy layer; the stricter

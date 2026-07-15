@@ -586,7 +586,7 @@ def points_for_computation(series: AnalyticalInputSeries) -> tuple[PreparedPoint
 # validated, refusal-aware, imputation-annotated paired bundle.
 
 
-# Lag bands (ADR-0008 + CORRELATE_METHODOLOGY_RESEARCH.md Q5): |lag| <= 3 is free;
+# Lag bands (see ADR-0008): |lag| <= 3 is free;
 # 4..14 requires a stated justification the agent supplies; > 14 is refused.
 LAG_FREE_ABS_MAX = 3
 LAG_JUSTIFIED_ABS_MAX = 14

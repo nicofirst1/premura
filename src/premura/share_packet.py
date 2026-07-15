@@ -10,7 +10,7 @@ warehouse, or GitHub. Producing a packet and posting it are two separate acts
 (see :data:`NOT_POSTED_NOTICE`); this module only ever does the first.
 
 The three sharing levels are the draft's
-(``docs/building/planning/operating-agent-roles.md`` "Supported sharing
+(``docs/building/architecture/OPERATING_ROLES.md`` "Supported sharing
 levels"); see the structural branch's HONESTY NOTE for the one place the
 frozen queue-item shape cannot yet deliver the draft's named fields. Each
 level's allowed content is documented as a RULE next to the

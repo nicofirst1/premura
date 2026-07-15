@@ -1,9 +1,8 @@
 """Stage 4 — the improvement-item **kind** registry (OPERATING_ROLES.md).
 
-The runtime improvement queue's item shape (`docs/building/planning/
-operating-agent-roles.md` §"Improvement scan and queue", adopted unchanged by
-`docs/building/architecture/OPERATING_ROLES.md` §"Improvement scan, queue,
-sharing") names six seeded ``kind`` values plus "the documented rule for
+The runtime improvement queue's item shape (`docs/building/architecture/
+OPERATING_ROLES.md` §"Improvement scan, queue, sharing") names six seeded
+``kind`` values plus "the documented rule for
 adding one" — never a closed enumeration (DOCTRINE.md rule 2: *design a level
 above — guide, don't enumerate*). This module is that rule made concrete: a
 bounded, OPEN registry, mirroring :mod:`premura.ui.roles` exactly (a
