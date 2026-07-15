@@ -27,7 +27,7 @@ Read that file before you write any code. It defines:
 - Rules for `unmapped_metrics`, `language_detected`, `confidence`, and strict batch validation.
 - How `dim_metric.yaml` extensions interact with the parser.
 
-If `CONTRACT.md` ever disagrees with this skill, `CONTRACT.md` wins.
+If `src/premura/parsers/CONTRACT.md` ever disagrees with this skill, `src/premura/parsers/CONTRACT.md` wins.
 
 ## Workflow
 
@@ -55,7 +55,7 @@ Emit intake, not an observation, when the source row is an eating/drinking or su
 
 Return `ParseOutput(intake=<IntakeBatch>, observation=<IngestBatch | None>)` — part of the `ParserOutput = IngestBatch | ParseOutput` union — instead of a bare `IngestBatch` whenever you emit intake. Every entry point normalizes either shape via `normalize_parse_output` and persists the intake half through `premura.store.profile_intake.persist_intake_batch`; you never call either yourself.
 
-An `IntakeBatch` carries `nutrition_events` (`NutritionIntakeInput` with `NutritionItemInput` / `NutritionQuantityInput`), `supplement_events` (`SupplementIntakeInput` with `SupplementItemInput` / `SupplementDoseInput`), `source_descriptors` (`SourceDescriptor`), and the review surfaces `unmapped_metrics` / `skipped_rows` (`SkippedRow`) — see `base.py` for exact shapes.
+An `IntakeBatch` carries `nutrition_events` (`NutritionIntakeInput` with `NutritionItemInput` / `NutritionQuantityInput`), `supplement_events` (`SupplementIntakeInput` with `SupplementItemInput` / `SupplementDoseInput`), `source_descriptors` (`SourceDescriptor`), and the review surfaces `unmapped_metrics` / `skipped_rows` (`SkippedRow`) — see `src/premura/parsers/base.py` for exact shapes.
 
 **Build-and-use boundary (no review for own data).** A runtime agent may build-and-use an intake parser on the operator's own data with no review; review gates only a parser later contributed back as a public PR.
 

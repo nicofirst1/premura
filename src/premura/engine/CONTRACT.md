@@ -151,7 +151,7 @@ Literature tooling (e.g. a PubMed MCP) may help an agent **author or review** a 
 2. Reuse an existing `QuestionType` and `PolicyShape` where the question fits.
 3. Add a family-level `MetricFamilyPolicy` to the built-in defaults, with a `QuestionRule` per relevant question type.
 4. Capture rationale, caveats, and at least one admissible and one refusal `PolicyExample` so the intent survives without reading the mission folder.
-5. Run the policy model, evaluator, and defaults tests (`tests/test_engine_policy_model.py`, `tests/test_engine_policy_evaluator.py`, `tests/test_engine_policy_defaults.py`) plus the public-surface test.
+5. Run the policy model, evaluator, and defaults tests (`tests/engine/test_engine_policy_model.py`, `tests/engine/test_engine_policy_evaluator.py`, `tests/engine/test_engine_policy_defaults.py`) plus the public-surface test.
 
 ### What not to do (this mission)
 

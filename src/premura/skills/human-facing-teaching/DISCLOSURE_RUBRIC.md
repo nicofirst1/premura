@@ -2,7 +2,7 @@
 
 > Status: **authoritative specification** for how the `human_facing` role explains a health finding to a non-expert without misleading. Promoted in a maintainer design-interview (issue #35); the locked decisions are decision note [0015](../../../../docs/building/adr/0015-teaching-disclosure-and-human-facing-promotion.md).
 >
-> Companion reading: [`DOCTRINE.md`](../../../../docs/shared/DOCTRINE.md) (the two rules), the sibling [`AUDIT_RUBRIC.md`](../research-trace-audit/AUDIT_RUBRIC.md) (same shape, the honesty question this one builds on), [`AUDIT_CONSUMER_CONTRACT.md`](../../AUDIT_CONSUMER_CONTRACT.md) (the structured Session Disclosure fields), [`HUMAN_FACING.md`](../../ui/HUMAN_FACING.md) (the role that consumes this rubric as advisory-to-drafting).
+> Companion reading: [`docs/shared/DOCTRINE.md`](../../../../docs/shared/DOCTRINE.md) (the two rules), the sibling [`src/premura/skills/research-trace-audit/AUDIT_RUBRIC.md`](../research-trace-audit/AUDIT_RUBRIC.md) (same shape, the honesty question this one builds on), [`AUDIT_CONSUMER_CONTRACT.md`](../../AUDIT_CONSUMER_CONTRACT.md) (the structured Session Disclosure fields), [`src/premura/ui/HUMAN_FACING.md`](../../ui/HUMAN_FACING.md) (the role that consumes this rubric as advisory-to-drafting).
 
 ## What this is (one line)
 
@@ -12,7 +12,7 @@ The audit rubric asks _"is this answer honest?"_ This rubric asks the next quest
 
 This is a **single artifact** with two readers, not a narration rubric plus a separate eval rubric:
 
-1. **Agent self-check.** The `human_facing` role applies these criteria to its own draft narration before submitting it to `present_answer` — as an **advisory input to drafting**, never a second gate (the deterministic answer-audit gate stays the only gate; see [`HUMAN_FACING.md`](../../ui/HUMAN_FACING.md)).
+1. **Agent self-check.** The `human_facing` role applies these criteria to its own draft narration before submitting it to `present_answer` — as an **advisory input to drafting**, never a second gate (the deterministic answer-audit gate stays the only gate; see [`src/premura/ui/HUMAN_FACING.md`](../../ui/HUMAN_FACING.md)).
 2. **Eval read (issue #12).** The adversarial narration eval scores a draft against the _same file_ — no forked copy, no drift between what the agent aims at and what the eval measures.
 
 **How comprehension is measured without a human (issue #12's mechanism).** "Understood" is scored by an adversarial **naive-reader model** that must restate the finding's gist from the narration alone; its restatement is checked against the verbatim structured tool output. The dimension it scores against is `gist_fidelity` below. This is the eval mechanism issue #12 implements; this rubric supplies its criteria, not the eval harness.
