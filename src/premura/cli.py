@@ -821,6 +821,37 @@ def install_skills() -> None:
 
 
 # ============================================================================
+# install-client
+# ============================================================================
+
+
+@app.command(name="install-client")
+def install_client(
+    client: Annotated[
+        str,
+        typer.Argument(help="Agent client to register: claude | opencode | codex"),
+    ],
+) -> None:
+    """Register Premura's default MCP surface with a coding-agent client.
+
+    One-command front door: an idempotent merge of the ``premura-mcp`` (default,
+    validity-gated) server into the client's config file, so a human never edits
+    config by hand. Re-running is a no-op. The operator surface
+    (``premura-mcp-operator --ack``) is never auto-registered — that stays a
+    deliberate manual step (see ``docs/using/AGENT_CLIENTS.md``).
+    """
+    from .harness.client_install import CLIENTS, register_client
+
+    if client not in CLIENTS:
+        raise typer.BadParameter(
+            f"unknown client: {client}; choose from {', '.join(CLIENTS)}"
+        )
+    result = register_client(client, Path.cwd(), Path.home())
+    verb = "registered" if result.changed else "already registered — no changes"
+    console.print(f"{verb}: premura ({client}) -> {result.config_path}")
+
+
+# ============================================================================
 # bootstrap (fresh-clone setup readiness — thin presenter over the service)
 # ============================================================================
 #

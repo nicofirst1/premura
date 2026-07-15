@@ -6,6 +6,7 @@ Nested fields use a double underscore: PREMURA_PARSERS__BMT__WEIGHT_UNIT=lb.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Literal
 
@@ -13,6 +14,17 @@ from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent  # …/premura
+
+# Durable, XDG-respecting home for user data and config. The warehouse must NOT
+# default into the checkout: when the MCP server is launched via `uvx` its code
+# lives in uv's disposable cache, so a repo-relative default would put private
+# health data somewhere uv can garbage-collect. XDG paths persist across every
+# launch regardless of how the server was started. Override with
+# PREMURA_DATA_DIR / PREMURA_CONFIG_DIR.
+_XDG_DATA_HOME = Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local" / "share")
+_XDG_CONFIG_HOME = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config")
+_DATA_HOME = _XDG_DATA_HOME / "premura"
+_CONFIG_HOME = _XDG_CONFIG_HOME / "premura"
 
 
 class BmtParserSettings(BaseModel):
@@ -34,15 +46,14 @@ class Settings(BaseSettings):
     )
 
     # --- paths ---
-    data_dir: Path = Field(default=REPO_ROOT / "data")
-    config_dir: Path = Field(default=Path.home() / ".config" / "premura")
+    data_dir: Path = Field(default=_DATA_HOME)
+    config_dir: Path = Field(default=_CONFIG_HOME)
+    # Logs stay under the macOS convention (launchd integration writes here).
     log_dir: Path = Field(default=Path.home() / "Library" / "Logs" / "premura")
 
     # --- encryption ---
-    age_recipients_file: Path = Field(
-        default=Path.home() / ".config" / "premura" / "recipients.txt"
-    )
-    age_key_file: Path = Field(default=Path.home() / ".config" / "premura" / "age.key")
+    age_recipients_file: Path = Field(default=_CONFIG_HOME / "recipients.txt")
+    age_key_file: Path = Field(default=_CONFIG_HOME / "age.key")
 
     # --- upload ---
     rclone_remote: str = Field(default="gdrive")

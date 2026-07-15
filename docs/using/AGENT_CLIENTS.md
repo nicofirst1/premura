@@ -12,46 +12,46 @@ Every MCP-capable agent app needs the same three facts to register Premura as a 
 
 1. **A server name** — `premura` (or `premura-operator` if you also register the operator surface).
 2. **A launch command + args** — one of:
-   - `uv run premura-mcp` — the default, validity-gated surface. Safe to register by default.
-   - `uv run premura-mcp-operator --ack` — the operator fallback surface. It **refuses to start without `--ack`** (or `PREMURA_OPERATOR_ACK=1`), so never register it without the flag, and treat registering it at all as a deliberate, user-approved step — see [OPERATIONS.md](OPERATIONS.md#operator-fallback-surface-premura-mcp-operator).
-3. **Optional env / working directory** — `PREMURA_DATA_DIR` if the warehouse isn't at the default location, or pass `--warehouse-path /absolute/path/to/health.duckdb` as an extra arg instead.
+   - `uvx --from git+https://github.com/nicofirst1/premura premura-mcp` — the default, validity-gated surface. This is the **portable** form: uvx fetches and runs it straight from the public repo, so it needs no clone and no PyPI publish (uv is the only prerequisite). Safe to register by default. Pin a release with `@vX.Y.Z` on the URL for reproducibility. _Working in a clone?_ Use `uv run premura-mcp` instead, which runs your local edits.
+   - `uvx --from git+https://github.com/nicofirst1/premura premura-mcp-operator --ack` — the operator fallback surface. It **refuses to start without `--ack`** (or `PREMURA_OPERATOR_ACK=1`), so never register it without the flag, and treat registering it at all as a deliberate, user-approved step — see [OPERATIONS.md](OPERATIONS.md#operator-fallback-surface-premura-mcp-operator).
+3. **Optional env / working directory** — the warehouse defaults to a durable XDG path (`$XDG_DATA_HOME/premura`), independent of where the server is launched from; set `PREMURA_DATA_DIR` only to point at a non-default location (see [ADR 0016](../building/adr/0016-one-command-install-uvx-and-durable-data-dir.md)).
 
-Each client below just spells those three facts in its own config syntax. Run the commands from the repo root (or an installed Premura checkout) so `uv run` resolves the project environment.
-
-For the **default surface**, one command does the config merge for you — no hand-editing:
+**The one-command path.** `premura install-client <client>` does the config merge for you — no hand-editing — and can itself run without a clone:
 
 ```bash
-premura install-client claude   # or: opencode | codex
+uvx --from git+https://github.com/nicofirst1/premura premura install-client claude   # or: opencode | codex
 ```
 
-It writes the same entry the manual recipes below spell out, idempotently (re-running is a no-op). By design it only ever registers the default `premura-mcp` surface; the operator surface stays a deliberate manual step (its recipes below). The manual snippets remain here as reference for what gets written and for the operator surface.
+It writes the portable entry the manual recipes below spell out, idempotently (re-running is a no-op). By design it only ever registers the default `premura-mcp` surface; the operator surface stays a deliberate manual step (its recipes below). Each client below spells the same three facts in its own config syntax — the manual snippets remain as reference for what gets written and for the operator surface.
 
 ## Claude Code
 
-Project-scoped, shared via version control: add to `.mcp.json` at the repo root —
+Register it from the CLI (no clone needed):
+
+```bash
+claude mcp add --transport stdio premura -- uvx --from git+https://github.com/nicofirst1/premura premura-mcp
+```
+
+Or write `.mcp.json` at the repo root directly (project-scoped, shared via version control):
 
 ```json
 {
   "mcpServers": {
     "premura": {
-      "command": "uv",
-      "args": ["run", "premura-mcp"]
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/nicofirst1/premura", "premura-mcp"]
     }
   }
 }
 ```
 
-Or register it from the CLI (writes to the same project scope):
+Operator surface, same pattern with the required flag (deliberate, manual only):
 
 ```bash
-claude mcp add --transport stdio premura -- uv run premura-mcp
+claude mcp add --transport stdio premura-operator -- uvx --from git+https://github.com/nicofirst1/premura premura-mcp-operator --ack
 ```
 
-Operator surface, same pattern with the required flag:
-
-```bash
-claude mcp add --transport stdio premura-operator -- uv run premura-mcp-operator --ack
-```
+_Developing in a clone?_ Swap the command for `uv run premura-mcp` to run your local edits.
 
 Claude Code prompts for approval on project-scoped `.mcp.json` servers the first time you trust the workspace — see the [MCP reference](https://code.claude.com/docs/en/mcp) for scopes and approval details.
 
@@ -65,14 +65,14 @@ Add to `opencode.json` (project root) or `~/.config/opencode/opencode.json` (use
   "mcp": {
     "premura": {
       "type": "local",
-      "command": ["uv", "run", "premura-mcp"],
+      "command": ["uvx", "--from", "git+https://github.com/nicofirst1/premura", "premura-mcp"],
       "enabled": true
     }
   }
 }
 ```
 
-Operator surface: same shape, `"command": ["uv", "run", "premura-mcp-operator", "--ack"]`.
+Operator surface: same shape, appending `"premura-mcp-operator", "--ack"` in place of `"premura-mcp"`. Clone dev: `["uv", "run", "premura-mcp"]`.
 
 ## Codex
 
@@ -80,17 +80,19 @@ Add a `[mcp_servers.<name>]` table to `~/.codex/config.toml`:
 
 ```toml
 [mcp_servers.premura]
-command = "uv"
-args = ["run", "premura-mcp"]
+command = "uvx"
+args = ["--from", "git+https://github.com/nicofirst1/premura", "premura-mcp"]
 ```
 
-Operator surface:
+Operator surface (deliberate, manual only):
 
 ```toml
 [mcp_servers.premura-operator]
-command = "uv"
-args = ["run", "premura-mcp-operator", "--ack"]
+command = "uvx"
+args = ["--from", "git+https://github.com/nicofirst1/premura", "premura-mcp-operator", "--ack"]
 ```
+
+Clone dev: `command = "uv"`, `args = ["run", "premura-mcp"]`.
 
 ## Skills story per client
 
@@ -105,7 +107,9 @@ If an operator later needs Codex to auto-load skills natively via `.agents/skill
 Whatever client you configured, confirm the tool list loads before trusting it:
 
 ```bash
-uv run premura-mcp   # should start and stay running (it waits silently on stdin); Ctrl-C to stop
+# no clone:
+uvx --from git+https://github.com/nicofirst1/premura premura-mcp   # starts and waits silently on stdin; Ctrl-C to stop
+# in a clone: uv run premura-mcp
 ```
 
 Then, from the client itself, ask it to list available tools and confirm the default-surface tool names from [OPERATIONS.md](OPERATIONS.md#default-agent-facing-surface-premura-mcp) appear.
