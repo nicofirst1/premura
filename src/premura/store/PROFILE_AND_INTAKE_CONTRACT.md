@@ -2,7 +2,7 @@
 
 > Status: authoritative. Source of truth for what counts as baseline profile context, nutrition intake, and supplement intake, and how each stays distinct from observed measurements and narrative notes.
 >
-> Companion to [STAGES.md](../../../docs/building/architecture/STAGES.md) and [UPDATE_STRATEGY.md](UPDATE_STRATEGY.md). The machine-readable surfaces that this document explains in prose live next to it under `profile_intake_contracts/`: [profile_and_intake_entities.yaml](profile_intake_contracts/profile_and_intake_entities.yaml), [profile_and_intake_examples.yaml](profile_intake_contracts/profile_and_intake_examples.yaml), [profile_and_intake_invariants.yaml](profile_intake_contracts/profile_and_intake_invariants.yaml), and [profile_and_intake_dependencies.yaml](profile_intake_contracts/profile_and_intake_dependencies.yaml).
+> Companion to [STAGES.md](../../../docs/building/STAGES.md) and [UPDATE_STRATEGY.md](UPDATE_STRATEGY.md). The machine-readable surfaces that this document explains in prose live next to it under `profile_intake_contracts/`: [profile_and_intake_entities.yaml](profile_intake_contracts/profile_and_intake_entities.yaml), [profile_and_intake_examples.yaml](profile_intake_contracts/profile_and_intake_examples.yaml), [profile_and_intake_invariants.yaml](profile_intake_contracts/profile_and_intake_invariants.yaml), and [profile_and_intake_dependencies.yaml](profile_intake_contracts/profile_and_intake_dependencies.yaml).
 
 ## What this document is, and is not
 
@@ -15,7 +15,7 @@ This document is the **meaning contract**, not the storage design. It does not c
 
 Two things follow from that, and they matter for review:
 
-- These three domains are **not** a new fifth stage. Premura still has four stages — ingest, signal processing, MCP, and user interface (see [STAGES.md](../../../docs/building/architecture/STAGES.md)). Profile context and intake are data domains that later stages read; they are not a new step in the pipeline.
+- These three domains are **not** a new fifth stage. Premura still has four stages — ingest, signal processing, MCP, and user interface (see [STAGES.md](../../../docs/building/STAGES.md)). Profile context and intake are data domains that later stages read; they are not a new step in the pipeline.
 - The capability is bounded. Baseline profile context has an **agent-mediated capture** path; nutrition and supplement intake have **storage, a normalized load path, and concrete resolvers**, but **no built-in importer for any specific nutrition/supplement source** — adapting a particular source into these tables is follow-on parser/plugin work. A BMI signal is the worked cross-domain example over the input-resolution seam (declared height from profile context plus weight from observation history); age-adjusted interpretation is not yet built. What is and is not built is itemized under "Storage adapter" and "What stays deferred".
 
 ## The three new domains
@@ -73,7 +73,7 @@ These rules also govern whether a proposal needs a **new resolver**. A new resol
 
 Premura already has two well-defined homes that this contract must not absorb. The lines are:
 
-- **Observation history** is what a device or lab _measured_, stored as canonical rows in `hp.fact_measurement` / `hp.fact_interval` with provenance (see [STAGES.md](../../../docs/building/architecture/STAGES.md), Ingest). A smart scale's height reading and a wearable's daily `total_kcal` are observations. They are facts about a measurement event.
+- **Observation history** is what a device or lab _measured_, stored as canonical rows in `hp.fact_measurement` / `hp.fact_interval` with provenance (see [STAGES.md](../../../docs/building/STAGES.md), Ingest). A smart scale's height reading and a wearable's daily `total_kcal` are observations. They are facts about a measurement event.
 - **Note history** is narrative free text that cannot be normalized into a structured value. A clinical comment in prose is a note. Notes are not a catch-all that absorbs anything the structured domains find inconvenient.
 
 Against those, the new domains draw three clean lines:

@@ -2,7 +2,7 @@
 
 > Status: **authoritative specification** for Premura's Stage 4 runtime multi-agent surface. The five locked decisions are decision note [0013](../../../docs/building/adr/0013-operating-roles-promotion-decisions.md), on the concept locked by [0010](../../../docs/building/adr/0010-runtime-orchestrator-and-operating-roles.md).
 >
-> Companion reading: [`docs/shared/DOCTRINE.md`](../../../docs/shared/DOCTRINE.md) (the two rules), [`docs/building/architecture/STAGES.md`](../../../docs/building/architecture/STAGES.md) (Stage 4 owns interview/conversation/ presentation and never reads `hp.fact_measurement` or calls the engine directly), [`docs/operating/RUNTIME_AGENT.md`](../../../docs/operating/RUNTIME_AGENT.md) (the runtime contract that binds operating agents to this surface).
+> Companion reading: [`docs/shared/DOCTRINE.md`](../../../docs/shared/DOCTRINE.md) (the two rules), [`docs/building/STAGES.md`](../../../docs/building/STAGES.md) (Stage 4 owns interview/conversation/ presentation and never reads `hp.fact_measurement` or calls the engine directly), [`docs/operating/RUNTIME_AGENT.md`](../../../docs/operating/RUNTIME_AGENT.md) (the runtime contract that binds operating agents to this surface).
 
 ## What this is
 

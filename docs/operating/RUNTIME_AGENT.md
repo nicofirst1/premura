@@ -1,6 +1,6 @@
 # Runtime-agent operating guide
 
-> Status: live reference. How an agent operates a **developed** Premura on behalf of a human — through tools, without editing the repo.
+> Status: live reference. How an agent operates Premura on behalf of a human — through tools, without editing the repo.
 >
 > Companion to [../shared/DOCTRINE.md](../shared/DOCTRINE.md) (why Premura is agent-first in execution, human-first in purpose), [../../README.md](../../README.md) (install + surfaces), and [CHANGELOG.md](../shared/CHANGELOG.md) (what shipped when). If you are instead changing Premura's code, this is the wrong guide — read [../../AGENTS.md](../../AGENTS.md) and [../../CONTRIBUTING.md](../../CONTRIBUTING.md).
 
@@ -10,7 +10,7 @@ You are a runtime agent operating an installed Premura for a human. You are **no
 
 If operating Premura reveals that a code change would help, that becomes an _improvement candidate_ and a hand-off to dev-time work, not something you do inline. See "Proposing changes" below.
 
-## Default path: MCP/tool use, not raw SQL
+## Default path is MCP/tool use
 
 The default operating surface is the validity-gated MCP server, `premura-mcp`:
 
@@ -90,6 +90,3 @@ Two architecture contracts, both authoritative, bind how a runtime agent operate
 - [`src/premura/ui/OPERATING_ROLES.md`](../../src/premura/ui/OPERATING_ROLES.md) — the runtime multi-agent shape (orchestrator, bounded operating roles, the blocking answer-audit gate, the improvement queue, share packets).
 - [`src/premura/AUDIT_CONSUMER_CONTRACT.md`](../../src/premura/AUDIT_CONSUMER_CONTRACT.md) — the structured Session Disclosure object your research-trace disclosure must satisfy.
 
-## Forward design
-
-`OPERATING_ROLES.md` above was promoted from pre-spec design to an authoritative specification on 2026-06-12 ([ADR 0013](../building/adr/0013-operating-roles-promotion-decisions.md)). This guide describes how to operate the shipped surface honestly today.

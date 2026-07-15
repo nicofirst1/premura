@@ -2,7 +2,7 @@
 
 > Status: **authoritative specification** for Premura's Stage 4 human-facing surface — the `human_facing` operating role's contract plus the first-run interview flow. The locked decisions are decision note [0015](../../../docs/building/adr/0015-teaching-disclosure-and-human-facing-promotion.md).
 >
-> Read first: [`docs/shared/DOCTRINE.md`](../../../docs/shared/DOCTRINE.md) (agent-first; guide don't enumerate). Companion: [`OPERATING_ROLES.md`](OPERATING_ROLES.md) (the role registry this fills in, the answer-audit gate it hands off to), [`docs/building/architecture/STAGES.md`](../../../docs/building/architecture/STAGES.md) §UI (Interview + Teaching), [`src/premura/skills/human-facing-teaching/DISCLOSURE_RUBRIC.md`](../skills/human-facing-teaching/DISCLOSURE_RUBRIC.md) (the #35 rubric this role consumes as advisory-to-drafting).
+> Read first: [`docs/shared/DOCTRINE.md`](../../../docs/shared/DOCTRINE.md) (agent-first; guide don't enumerate). Companion: [`OPERATING_ROLES.md`](OPERATING_ROLES.md) (the role registry this fills in, the answer-audit gate it hands off to), [`docs/building/STAGES.md`](../../../docs/building/STAGES.md) §UI (Interview + Teaching), [`src/premura/skills/human-facing-teaching/DISCLOSURE_RUBRIC.md`](../skills/human-facing-teaching/DISCLOSURE_RUBRIC.md) (the #35 rubric this role consumes as advisory-to-drafting).
 
 ## What this is
 

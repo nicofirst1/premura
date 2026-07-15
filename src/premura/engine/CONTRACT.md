@@ -1,6 +1,6 @@
 # Premura Stage 2 engine contributor contract
 
-> Audience: humans and AI agents adding a grounded Stage 2 **signal function** under `src/premura/engine/`. Authority: this file ships with the package and is the source of truth for what a Stage 2 signal may do and claim. Its sibling is `src/premura/parsers/CONTRACT.md` (the parser-side contract). See `docs/building/architecture/STAGES.md` for where Stage 2 sits in the four-stage architecture.
+> Audience: humans and AI agents adding a grounded Stage 2 **signal function** under `src/premura/engine/`. Authority: this file ships with the package and is the source of truth for what a Stage 2 signal may do and claim. Its sibling is `src/premura/parsers/CONTRACT.md` (the parser-side contract). See `docs/building/STAGES.md` for where Stage 2 sits in the four-stage architecture.
 
 ## What Stage 2 is
 

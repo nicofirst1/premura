@@ -5,7 +5,7 @@ This is the main development guide for Premura contributors, whether you are a h
 ## Start here
 
 - Read `README.md` for bootstrap and CLI usage.
-- Read `docs/building/architecture/STAGES.md` before moving logic across package boundaries.
+- Read `docs/building/STAGES.md` before moving logic across package boundaries.
 - If you are adding a new parser, also read `src/premura/parsers/PARSER_CONTRIBUTING.md` and `src/premura/parsers/CONTRACT.md`.
 
 ## Setup
@@ -46,7 +46,7 @@ Premura is split into four stages. Keep changes inside the right stage unless th
 - `mcp`: tool boundary for model-facing operations. This is the only stage that may make model or user-initiated network calls.
 - `ui`: presentation, interview flow, and teaching. Do not read raw warehouse tables directly from here.
 
-Authoritative stage guidance lives in `docs/building/architecture/STAGES.md`.
+Authoritative stage guidance lives in `docs/building/STAGES.md`.
 
 Package docs live beside their code, not in a `docs/` subtree. An `ALL_CAPS.md` next to a package is that package's contract or guide (e.g. `parsers/CONTRACT.md`); a `*_RUBRIC.md` or `*_PLAYBOOK.md` is loaded at runtime by its sibling module via `importlib.resources`, so moving or renaming it breaks code, not just doc citations.
 
@@ -79,7 +79,7 @@ Coding agents working inside the repo reach this section through [`AGENTS.md`](A
 ## Source of truth
 
 - Product and data-contract intent: `docs/shared/SPEC.md`
-- Stage boundaries and architecture: `docs/building/architecture/STAGES.md`
+- Stage boundaries and architecture: `docs/building/STAGES.md`
 - Warehouse update policy: `src/premura/store/UPDATE_STRATEGY.md`
 - Parser plugin contract: `src/premura/parsers/CONTRACT.md`
 - Parser-generation skill: `src/premura/skills/parser-generator/SKILL.md`

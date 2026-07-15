@@ -74,7 +74,7 @@ Per-source parsing behavior is the parser [CONTRACT](../../src/premura/parsers/C
 
 ### Primary analytical interface — agent-facing tool surface
 
-The system SHALL expose a programmatic analytical surface for an AI agent acting on the user's behalf. The shipped shape is the MCP surface described in `docs/building/architecture/STAGES.md`.
+The system SHALL expose a programmatic analytical surface for an AI agent acting on the user's behalf. The shipped shape is the MCP surface described in `docs/building/STAGES.md`.
 
 ### Operator interface — CLI surface (`premura`)
 

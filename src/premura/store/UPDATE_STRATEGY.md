@@ -2,7 +2,7 @@
 
 > Status: authoritative. Source of truth for warehouse update kinds and support level.
 >
-> Companion to [STAGES.md](../../../docs/building/architecture/STAGES.md) and the engine surface at `src/premura/engine/__init__.py`. Defines the six shapes a warehouse update can take and which are implemented versus designed but not yet built.
+> Companion to [STAGES.md](../../../docs/building/STAGES.md) and the engine surface at `src/premura/engine/__init__.py`. Defines the six shapes a warehouse update can take and which are implemented versus designed but not yet built.
 
 A "warehouse update" is anything that changes the rows in `hp.fact_measurement` / `hp.fact_interval` / `hp.dim_metric`, or the meaning of those rows, after the warehouse already exists. The six shapes below are intentionally exhaustive — every plausible change to **observation history** collapses into one of them.
 
