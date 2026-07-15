@@ -1,8 +1,7 @@
 """Bootstrap core service for a freshly cloned Premura checkout.
 
 This module is the *setup-only* service layer that powers the future
-``hpipe bootstrap`` CLI command (WP02 owns the CLI registration). It is
-deliberately boring and data-shaped: :func:`run_bootstrap` inspects the local
+``hpipe bootstrap`` CLI command. :func:`run_bootstrap` inspects the local
 checkout, attempts the small set of *safe local* setup actions, installs or
 verifies the bundled project skills, and returns a :class:`BootstrapRun` report
 that a caller can format, test, and reason about without re-deriving any status.

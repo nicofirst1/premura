@@ -35,15 +35,9 @@ I can't describe the feeling of empowerment this gave me, and I want other peopl
 **Premura is not medical advice and not a diagnostic tool.** It helps you organize and understand your own health data; it does not diagnose, treat, or replace a clinician. Talk to a qualified healthcare professional about any medical decision.
 
 
-## How you run it
 
-Clone this repo, then ask an AI coding agent to set it up and operate it for you. You point it at your data exports and approve sensitive actions (uploads, deletes) when it asks; it handles ingest, analysis, and explanation through the tools below. You do not need the planning or history docs to start - that path is this file plus [AGENT_CLIENTS.md](docs/using/AGENT_CLIENTS.md) if your agent isn't Claude Code.
 
 > Docs live in [`docs/`](docs/): [Guide](docs/README.md) · [Doctrine](docs/shared/DOCTRINE.md) · [SPEC](docs/shared/SPEC.md) · [STATUS](docs/shared/STATUS.md) · [Changelog](docs/shared/CHANGELOG.md) · [Stages](docs/building/architecture/STAGES.md) · [Roadmap](docs/shared/ROADMAP.md) · [Full Plan](docs/building/product/FULL_APP_DEVELOPMENT_PLAN.md)
-
-All four stages ship as `v1.0.0` (tagged 2026-07-14): ingest, the deterministic signal engine, the analytical tools, and the human-facing interview layer.
-
-Premura is developed on macOS; the core pipeline and full test suite run on Linux in CI. `ops/bootstrap.sh` uses Homebrew, so on Linux install `age` (and optionally `rclone`) with your package manager instead. Desktop notifications are macOS-only and turn into no-ops elsewhere.
 
 
 ## Quick start
@@ -65,10 +59,10 @@ uv run hpipe upload --month YYYY-MM         # OPT-IN — push to Drive only when
 
 ## age key storage
 
-The `age` private key at `~/.config/premura/age.key` is the single secret. Lose it = lose all encrypted backups. Two recommended options:
+The `age` private key at `$HOME/premura/age.key` is the single secret. Lose it = lose all encrypted backups. Two recommended options:
 
 1. **Local backed-up file** (Time Machine, external drive). Default.
-2. **Bitwarden secure note** - `bootstrap.sh` prints a `bw create item …` recipe you can run after `bw login`. Retrieve later with `bw get notes 'premura age key' > ~/.config/premura/age.key && chmod 600 …`.
+2. **Bitwarden secure note** - `bootstrap.sh` prints a `bw create item …` recipe you can run after `bw login`. Retrieve later with `bw get notes 'premura age key' > $HOME/premura/age.key && chmod 600 …`.
 
 ## What's in the warehouse
 
