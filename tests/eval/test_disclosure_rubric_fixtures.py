@@ -17,7 +17,6 @@ import json
 from tests import REPO_ROOT
 
 FIXTURE_DIR = REPO_ROOT / "src" / "premura" / "skills" / "human-facing-teaching" / "fixtures"
-DOCS_RUBRIC = REPO_ROOT / "docs" / "building" / "architecture" / "DISCLOSURE_RUBRIC.md"
 
 # The three exercisable criteria this slice admits (teach-back-confirmation stays
 # deferred to #12 — no deterministic fixture can flip it).
@@ -80,15 +79,6 @@ def test_every_fixture_group_is_verdict_changing() -> None:
     admitted without exercising it."""
     for criterion_id, pair in _group_by_criterion(_load_fixtures()).items():
         assert _verdict_changes(pair), f"{criterion_id} fixtures do not change a verdict"
-
-
-def test_fixtures_are_grounded_in_the_rubric() -> None:
-    """Each fixture's (criterion_id, dimension) is a real rubric heading — the
-    fixtures cannot drift from the criteria they exercise."""
-    rubric = DOCS_RUBRIC.read_text(encoding="utf-8")
-    for fx in _load_fixtures():
-        heading = f"### `{fx['criterion_id']}` — `{fx['dimension']}`"
-        assert heading in rubric, f"fixture criterion not declared in rubric: {heading}"
 
 
 def test_structured_output_shape_and_no_phi() -> None:

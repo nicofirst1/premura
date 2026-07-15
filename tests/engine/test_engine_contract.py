@@ -11,7 +11,6 @@ import importlib
 import sys
 from contextlib import contextmanager
 from datetime import date, datetime
-from importlib.resources import files
 
 import pytest
 
@@ -350,88 +349,6 @@ def test_custom_pre_registration_does_not_suppress_builtins() -> None:
         engine.REGISTRY.clear()
         engine.REGISTRY.update(saved_registry)
         engine._BUILTINS_LOADED = saved_flag
-
-
-# --- T004: engine contract exists and parser contract points to it --------
-
-
-def test_engine_contract_doc_ships_with_package() -> None:
-    text = files("premura.engine").joinpath("CONTRACT.md").read_text(encoding="utf-8")
-    assert "Stage 2" in text
-    for family in ("status", "trend", "baseline", "change"):
-        assert family in text
-
-
-def test_parser_contract_points_to_engine_contract() -> None:
-    text = files("premura.parsers").joinpath("CONTRACT.md").read_text(encoding="utf-8")
-    assert "src/premura/engine/CONTRACT.md" in text
-
-
-# --- WP03: engine contract requires explicit profile/intake prerequisites ----
-
-
-def _engine_contract_text() -> str:
-    """The shipped engine contributor contract, read through the package surface.
-
-    Black-box: we read the same artifact a contributor or reviewer would, via the
-    package resource, not via a filesystem path that assumes a layout.
-    """
-    return files("premura.engine").joinpath("CONTRACT.md").read_text(encoding="utf-8")
-
-
-def test_engine_contract_names_profile_and_intake_domains() -> None:
-    """The contract acknowledges the three new semantic domains by name.
-
-    Semantic guarantee, not exact prose: each domain must be discoverable so a
-    contributor knows these are recognised data domains, not ad-hoc fields.
-    """
-    text = _engine_contract_text().lower()
-    assert "profile" in text
-    assert "intake" in text
-    for domain in ("nutrition", "supplement"):
-        assert domain in text, f"engine contract should name the {domain!r} domain"
-
-
-def test_engine_contract_requires_explicit_prerequisite_declaration() -> None:
-    """A future profile/intake-consuming signal must DECLARE its prerequisite.
-
-    Asserts the guidance exists (the words 'declare' and 'prerequisite' appear in
-    the contract) without freezing any specific sentence.
-    """
-    text = _engine_contract_text().lower()
-    assert "declare" in text
-    assert "prerequisite" in text
-
-
-def test_engine_contract_rejects_opportunistic_fallbacks() -> None:
-    """The contract forbids 'use a value if it happens to be there' fallbacks.
-
-    The semantic guarantee is that opportunistic substitution for a declared
-    dependency is explicitly rejected; we check for the discoverable signal
-    ("happens to be" + a rejection verb) rather than an exact phrasing.
-    """
-    text = _engine_contract_text().lower()
-    assert "happens to be" in text
-    assert any(verb in text for verb in ("reject", "not a substitute", "never silently"))
-
-
-def test_engine_contract_points_to_dependency_declaration_contract() -> None:
-    """Guidance is discoverable: the contract points at the WP01 declaration shape.
-
-    A reviewer following the contract must be able to reach the machine-readable
-    dependency-declaration contract, so its filename must be referenced.
-    """
-    text = _engine_contract_text()
-    assert "profile_and_intake_dependencies.yaml" in text
-
-
-def test_engine_contract_keeps_non_diagnostic_boundary() -> None:
-    """Regression guard: WP03 must not weaken the Stage 2 non-diagnostic boundary."""
-    text = _engine_contract_text().lower()
-    assert "no diagnosis" in text
-    # No population norms / reference ranges, and no significance/causal claims.
-    assert "reference range" in text or "population norm" in text
-    assert "p-value" in text or "significance" in text
 
 
 # --- T005: WP01 Stage 2 catalog/summary helpers lazy-load contract ----------

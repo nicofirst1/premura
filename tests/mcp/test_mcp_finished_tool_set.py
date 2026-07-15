@@ -63,6 +63,7 @@ def _ensure_live_analytical_registry() -> None:
 # (improvement_queue_record / improvement_queue_list) -> 32.
 # operating-roles slice 4 adds share_packet_render -> 33.
 # Phase 5 slice 2 adds interview_route (interview phase-1 routing) -> 34.
+# Onboarding arc gap #2 adds interview_devices (interview device branch) -> 35.
 _DEFAULT_TOOLS_FINISHED = sorted(
     [
         "list_metrics",
@@ -81,6 +82,7 @@ _DEFAULT_TOOLS_FINISHED = sorted(
         "condition_episode_list",
         "condition_episode_retract",
         "interview_route",
+        "interview_devices",
         "operating_roles",
         "orchestrator_handoff",
         "answer_audit",
@@ -179,7 +181,7 @@ def test_default_surface_lists_exactly_the_pinned_tools() -> None:
         server_ = build_server()
         names = sorted(tool.name for tool in await server_.list_tools())
         assert names == _DEFAULT_TOOLS_FINISHED
-        assert len(names) == 34
+        assert len(names) == 35
 
     asyncio.run(run())
 

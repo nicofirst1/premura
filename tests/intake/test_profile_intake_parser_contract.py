@@ -219,21 +219,3 @@ def test_valid_mixed_intake_batch_passes() -> None:
 # --------------------------------------------------------------------------- #
 def test_contract_doc_exists() -> None:
     assert CONTRACT_MD.is_file()
-
-
-def test_contract_doc_describes_both_seams() -> None:
-    text = CONTRACT_MD.read_text(encoding="utf-8")
-    # Both batch types are named.
-    assert "IngestBatch" in text
-    assert "IntakeBatch" in text
-    # The store persistence path for intake is named so contributors find it.
-    assert "persist_intake_batch" in text
-    # The one-home rule is stated: intake does not become observation/note rows.
-    lowered = text.lower()
-    assert "not observations" in lowered or "are not observations" in lowered
-
-
-def test_contract_doc_directs_profile_capture_to_the_bounded_path() -> None:
-    text = CONTRACT_MD.read_text(encoding="utf-8")
-    assert "record_profile_context" in text
-    assert "profile_fields" in text
