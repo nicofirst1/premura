@@ -38,15 +38,13 @@ I can't describe the feeling of empowerment this gave me, and I want other peopl
 
 ## Quick start
 
-Connect Premura to your coding agent with one command. It needs only [`uv`](https://docs.astral.sh/uv/) - no clone, no PyPI install:
+Premura is operated _and improved_ from a local clone, so the fastest start is to let your coding agent set it up. Paste this into your agent:
 
-```bash
-uvx --from git+https://github.com/nicofirst1/premura premura install-client claude   # or: opencode | codex
-```
+> Clone https://github.com/nicofirst1/premura and `cd` into it. Run `uv run premura bootstrap` to prepare the checkout, then `uv run premura install-client claude` to register Premura's default, validity-gated MCP surface with this agent (swap `claude` for `opencode` or `codex`). Reload if it tells you to.
 
-That registers Premura's default (safe, validity-gated) agent surface with the app. Now open that agent and ask it to help with your health data: the first run interviews you about what you want to learn and what devices you have, then guides you through collecting and reading it. The raw-SQL operator surface is never registered this way - see [OPERATIONS.md](docs/using/OPERATIONS.md#the-two-mcp-servers).
+That lands you in a working clone with the safe agent surface registered. Open a fresh agent session and ask it to help with your health data: the first run interviews you about what you want to learn and what devices you have, then guides you through collecting and reading it. The raw-SQL operator surface is never registered this way - see [OPERATIONS.md](docs/using/OPERATIONS.md#the-two-mcp-servers).
 
-**Developing on Premura's code?** Clone the repo, then work locally instead of through `uvx`:
+Once cloned, the setup and monthly commands are:
 
 ```bash
 uv run premura bootstrap                    # SETUP ONLY: prepare + verify this checkout, report reload guidance
@@ -56,7 +54,11 @@ premura doctor                              # verify environment
 premura run-monthly                         # ingest + encrypt (no auto-upload)
 ```
 
-To point your agent at your local edits, register `uv run premura-mcp` (via `uv run premura install-client <app>`) instead of the published `uvx` form above.
+**Just trying it, without a clone?** You can register the published surface straight from git with only [`uv`](https://docs.astral.sh/uv/) - but a clone is what lets you add parsers and improve Premura:
+
+```bash
+uvx --from git+https://github.com/nicofirst1/premura premura install-client claude   # or: opencode | codex
+```
 
 ## age key storage
 

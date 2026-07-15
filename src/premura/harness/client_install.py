@@ -6,6 +6,16 @@ server entry into that client's config file — so adding a fourth harness is on
 registry entry (``CLIENTS``), not a new code path. This is DOCTRINE rule 2
 (guide, don't enumerate) applied to the installer.
 
+Launch command: from a Premura clone (a directory whose ``pyproject.toml``
+names the ``premura`` project), register the clone-local server (`uv run
+--directory <clone> premura-mcp`) so the operator's own edits - new parsers,
+fixes - reach the running server. From a cold directory with no clone, fall
+back to the portable form that fetches and runs the published surface via
+``uvx`` straight from the public repo, so a cold user needs no clone and no
+PyPI publish (uv is the only prerequisite). The durable XDG data dir (see
+premura.config) means the ephemeral uvx env never touches the warehouse.
+See ``ADR 0016``.
+
 Security rail (non-negotiable): only the validity-gated default surface
 (``premura-mcp``) is ever written here. The operator surface
 (``premura-mcp-operator --ack``, the raw-SQL escape hatch) is NEVER
@@ -25,14 +35,28 @@ from pathlib import Path
 
 SERVER_NAME = "premura"
 REPO_URL = "git+https://github.com/nicofirst1/premura"
-# The one launch command every client points at — the *portable* form: fetch and
-# run the default surface straight from the public repo via uvx, so a cold user
-# needs no clone and no PyPI publish (uv is the only prerequisite). The durable
-# XDG data dir (see premura.config) means the ephemeral uvx env never touches the
-# warehouse. A developer working in a clone registers `uv run premura-mcp`
-# manually instead (that uses local edits); see the README quick start and
-# ADR 0016.
-_LAUNCH = ["uvx", "--from", REPO_URL, "premura-mcp"]
+
+
+def _launch_command(root: Path) -> list[str]:
+    """MCP launch argv for a client registered from ``root``.
+
+    From a Premura clone, register the clone-local server (`uv run --directory
+    <clone> premura-mcp`) so the operator's own edits — new parsers, fixes — go
+    live. From a cold directory with no clone, fall back to the portable uvx
+    form that fetches and runs the published surface straight from the public
+    repo (uv the only prerequisite, no clone, no PyPI publish). Either form
+    launches only `premura-mcp`; the durable XDG data dir (premura.config) keeps
+    the env off the warehouse.
+    """
+    pyproject = root / "pyproject.toml"
+    if pyproject.is_file():
+        try:
+            meta = tomllib.loads(pyproject.read_text())
+        except (OSError, tomllib.TOMLDecodeError):
+            meta = {}
+        if meta.get("project", {}).get("name") == "premura":
+            return ["uv", "run", "--directory", str(root), "premura-mcp"]
+    return ["uvx", "--from", REPO_URL, "premura-mcp"]
 
 
 @dataclass(frozen=True)
@@ -59,31 +83,34 @@ def _merge_json(path: Path, container_key: str, entry: dict, defaults: dict | No
     return True
 
 
-_CODEX_TABLE = (
-    f'[mcp_servers.{SERVER_NAME}]\ncommand = "{_LAUNCH[0]}"\nargs = {json.dumps(_LAUNCH[1:])}\n'
-)
+def _codex_table(launch: list[str]) -> str:
+    args = json.dumps(launch[1:])
+    return f'[mcp_servers.{SERVER_NAME}]\ncommand = "{launch[0]}"\nargs = {args}\n'
 
 
 def _register_claude(root: Path, home: Path) -> InstallResult:
     # Claude Code reads project-scoped .mcp.json directly (same target the
     # `claude mcp add` CLI writes) — writing it is idempotent and binary-free.
+    launch = _launch_command(root)
     path = root / ".mcp.json"
-    changed = _merge_json(path, "mcpServers", {"command": _LAUNCH[0], "args": _LAUNCH[1:]})
+    changed = _merge_json(path, "mcpServers", {"command": launch[0], "args": launch[1:]})
     return InstallResult("claude", path, changed)
 
 
 def _register_opencode(root: Path, home: Path) -> InstallResult:
+    launch = _launch_command(root)
     path = root / "opencode.json"
     changed = _merge_json(
         path,
         "mcp",
-        {"type": "local", "command": _LAUNCH, "enabled": True},
+        {"type": "local", "command": launch, "enabled": True},
         defaults={"$schema": "https://opencode.ai/config.json"},
     )
     return InstallResult("opencode", path, changed)
 
 
 def _register_codex(root: Path, home: Path) -> InstallResult:
+    launch = _launch_command(root)
     path = home / ".codex" / "config.toml"
     if path.exists():
         parsed = tomllib.loads(path.read_text())
@@ -92,10 +119,11 @@ def _register_codex(root: Path, home: Path) -> InstallResult:
         # Append the table at EOF: a header applies until the next header/EOF,
         # so appending is a safe merge without a TOML writer dependency.
         text = path.read_text().rstrip("\n")
-        path.write_text(f"{text}\n\n{_CODEX_TABLE}" if text else _CODEX_TABLE)
+        table = _codex_table(launch)
+        path.write_text(f"{text}\n\n{table}" if text else table)
     else:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(_CODEX_TABLE)
+        path.write_text(_codex_table(launch))
     return InstallResult("codex", path, True)
 
 

@@ -48,6 +48,8 @@ def test_registers_then_idempotent(tmp_path: Path, client: str) -> None:
 
 @pytest.mark.parametrize("client", sorted(CLIENTS))
 def test_writes_portable_uvx_command(tmp_path: Path, client: str) -> None:
+    """Cold user (no clone): a bare tmp dir has no pyproject.toml, so the
+    installer falls back to the portable uvx form."""
     root = tmp_path / "repo"
     home = tmp_path / "home"
     root.mkdir()
@@ -59,6 +61,28 @@ def test_writes_portable_uvx_command(tmp_path: Path, client: str) -> None:
     assert "uvx" in blob
     assert REPO_URL in blob
     assert "premura-mcp" in blob
+
+
+@pytest.mark.parametrize("client", sorted(CLIENTS))
+def test_clone_registers_local_uv_run(tmp_path: Path, client: str) -> None:
+    """From a Premura clone (pyproject.toml names the premura project), the
+    installer registers the clone-local server so the operator's own edits
+    reach the running server, instead of the published uvx form."""
+    root = tmp_path / "repo"
+    home = tmp_path / "home"
+    root.mkdir()
+    home.mkdir()
+    (root / "pyproject.toml").write_text('[project]\nname = "premura"\n')
+
+    register_client(client, root, home)
+    blob = _all_configs(root, home)
+
+    assert "uvx" not in blob
+    assert REPO_URL not in blob
+    assert "uv" in blob
+    assert "run" in blob
+    assert "premura-mcp" in blob
+    assert str(root) in blob
 
 
 def test_codex_append_preserves_existing_table(tmp_path: Path) -> None:

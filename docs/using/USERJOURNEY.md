@@ -14,7 +14,7 @@ The human does not have to be a terminal or SQL user. Anyone who can install a t
 
 Everything below is one continuous flow. The human is interviewed, then guided, then answered - they never hand-run the pipeline.
 
-1. **Install once.** One command registers premura's default (validity-gated) MCP surface with whatever coding-agent harness the human already uses. The human reads no config. The raw-SQL operator surface is never auto-registered - it stays behind a deliberate step.
+1. **Install once.** The human pastes a short prompt into their coding agent, which clones Premura and registers its default (validity-gated) MCP surface with the harness. The human reads no config. The raw-SQL operator surface is never auto-registered - it stays behind a deliberate step.
 2. **Launch with `/premura`** in that harness (Claude Code, OpenCode, Codex, …).
 3. **Interview - what to know.** The session opens by asking what the human wants to understand about their health. Each direction resolves to real analysis behind it; a direction with nothing to answer it is refused, not offered, so the interview never dead-ends. (Open registry, not a fixed menu - see DOCTRINE rule 2.)
 4. **Interview - what data exists.** The agent inventories what devices and exports the human has and guides collection toward only the sources premura can actually parse (same never-a-dead-end rail, keyed on registered parsers). "Android → enable bedtime mode → sleep data"; "Garmin → here's the GDPR export."
