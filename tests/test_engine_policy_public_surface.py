@@ -27,31 +27,56 @@ import pytest
 # ---------------------------------------------------------------------------
 
 
-def test_policy_surface_imports_from_premura_engine() -> None:
-    """The stable policy vocabulary + dataclasses are reachable publicly.
+# Every name a policy author reaches for: locking these means a refactor that
+# demotes one to a private module (or drops it from ``__all__``) is caught.
+_POLICY_SURFACE_NAMES = (
+    "QuestionType",
+    "EvidenceStatus",
+    "RejectionReason",
+    "FreshnessMode",
+    "Admissibility",
+    "TemporalMeaning",
+    "PolicyShape",
+    "MissingDataBehavior",
+    "RefusalMode",
+    "CAVEAT_REQUIRED_SHAPES",
+    "FreshnessRule",
+    "SufficiencyRule",
+    "QuestionRule",
+    "PolicyExample",
+    "MetricFamilyPolicy",
+    "EvidenceCandidate",
+    "EvidenceOutcome",
+    "EvaluationResult",
+    "evaluate_evidence",
+    "BUILTIN_POLICIES",
+    "builtin_policies",
+    "PolicyRegistry",
+    "DuplicatePolicyError",
+    "build_builtin_registry",
+)
 
-    A policy author imports these names to *author* a declaration; locking them
-    here means a refactor that demotes one to a private module is caught.
-    """
+
+@pytest.mark.parametrize("name", _POLICY_SURFACE_NAMES)
+def test_policy_surface_name_is_public_and_exported(name: str) -> None:
+    """Each policy name imports from ``premura.engine`` and is in ``__all__``."""
+    import premura.engine as engine
+
+    assert getattr(engine, name) is not None
+    assert name in engine.__all__
+
+
+def test_authoring_dataclasses_are_frozen_and_vocabularies_are_populated() -> None:
+    """Structural (non-naming) guarantees: frozen declarations, real enums."""
     from premura.engine import (
-        CAVEAT_REQUIRED_SHAPES,
-        Admissibility,
-        EvaluationResult,
-        EvidenceCandidate,
-        EvidenceOutcome,
         EvidenceStatus,
-        FreshnessMode,
         FreshnessRule,
         MetricFamilyPolicy,
-        MissingDataBehavior,
         PolicyExample,
-        PolicyShape,
         QuestionRule,
         QuestionType,
-        RefusalMode,
         RejectionReason,
         SufficiencyRule,
-        TemporalMeaning,
     )
 
     # Closed vocabularies are real enums with members, not bare placeholders.
@@ -65,51 +90,6 @@ def test_policy_surface_imports_from_premura_engine() -> None:
     assert FreshnessRule.__dataclass_params__.frozen is True
     assert SufficiencyRule.__dataclass_params__.frozen is True
     assert PolicyExample.__dataclass_params__.frozen is True
-
-    # The remaining names exist as the contributor surface promises.
-    assert Admissibility is not None
-    assert FreshnessMode is not None
-    assert MissingDataBehavior is not None
-    assert RefusalMode is not None
-    assert PolicyShape is not None
-    assert TemporalMeaning is not None
-    assert EvidenceCandidate is not None
-    assert EvidenceOutcome is not None
-    assert EvaluationResult is not None
-    assert CAVEAT_REQUIRED_SHAPES is not None
-
-
-def test_policy_surface_names_are_listed_in_engine_all() -> None:
-    """Every policy export is in ``__all__`` so ``import *`` and tooling see it."""
-    import premura.engine as engine
-
-    expected = {
-        "QuestionType",
-        "EvidenceStatus",
-        "RejectionReason",
-        "FreshnessMode",
-        "Admissibility",
-        "TemporalMeaning",
-        "PolicyShape",
-        "MissingDataBehavior",
-        "RefusalMode",
-        "CAVEAT_REQUIRED_SHAPES",
-        "FreshnessRule",
-        "SufficiencyRule",
-        "QuestionRule",
-        "PolicyExample",
-        "MetricFamilyPolicy",
-        "EvidenceCandidate",
-        "EvidenceOutcome",
-        "EvaluationResult",
-        "evaluate_evidence",
-        "BUILTIN_POLICIES",
-        "builtin_policies",
-        "PolicyRegistry",
-        "DuplicatePolicyError",
-        "build_builtin_registry",
-    }
-    assert expected <= set(engine.__all__)
 
 
 # ---------------------------------------------------------------------------

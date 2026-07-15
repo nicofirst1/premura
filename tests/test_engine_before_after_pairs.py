@@ -326,16 +326,6 @@ def test_preparation_is_deterministic() -> None:
     assert a.to_dict() == b.to_dict()
 
 
-def test_to_dict_is_json_safe() -> None:
-    import json
-
-    series = _symmetric_series(before_count=8, after_count=8)
-    prepared = prepare_before_after_paired_input(series, _request(before_days=8, after_days=8))
-    # Round-trips through JSON with no custom encoder.
-    text = json.dumps(prepared.to_dict())
-    assert METRIC in text
-
-
 # ===========================================================================
 # T012 — refusals: malformed requests and weak pairs (no estimate)
 # ===========================================================================

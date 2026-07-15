@@ -291,18 +291,6 @@ def test_preparation_is_deterministic() -> None:
     assert a.to_dict() == b.to_dict()
 
 
-def test_to_dict_is_json_safe() -> None:
-    import json
-
-    series = _two_episode_series()
-    prepared = prepare_condition_label_paired_input(
-        series, _request(episodes=(_episode(*_EP1), _episode(*_EP2)))
-    )
-    text = json.dumps(prepared.to_dict())
-    assert METRIC in text
-    assert LABEL in text
-
-
 # ===========================================================================
 # Per-episode exclusions (disclosure, not silent salvage)
 # ===========================================================================

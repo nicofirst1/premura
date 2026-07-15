@@ -198,79 +198,51 @@ def test_single_series_overlap_equals_usable_window() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T012: stale input refusal
+# T012: every distinct pre-computation refusal reason, one case each
 # ---------------------------------------------------------------------------
 
 
-def test_stale_evidence_is_refused_before_computation() -> None:
+def _stale_series() -> AnalyticalInputSeries:
     # Observed 90 days ago, but the policy window is 30 days -> stale.
     stale_at = REFERENCE - timedelta(days=90)
-    pts = _points(10, end=stale_at)
-    series = prepare_input_series(
+    return prepare_input_series(
         METRIC,
         AnalyticalQuestionType.LEVEL_SHIFT_DETECTION,
         candidate=_candidate(observed_at=stale_at, point_count=10),
         policies=_recent_trend_policy(max_age=timedelta(days=30)),
-        points=pts,
+        points=_points(10, end=stale_at),
         reference_time=REFERENCE,
     )
-    assert not series.is_usable
-    assert series.refusal is not None
-    assert series.refusal.reason == InputRefusalReason.STALE_FOR_QUESTION.value
-    assert series.points == ()
-    assert series.sample_size == 0
 
 
-# ---------------------------------------------------------------------------
-# T012: insufficient data refusal
-# ---------------------------------------------------------------------------
-
-
-def test_insufficient_evidence_is_refused() -> None:
+def _insufficient_series() -> AnalyticalInputSeries:
     # Policy needs >= 8 observations; candidate has 3.
-    pts = _points(3)
-    series = prepare_input_series(
+    return prepare_input_series(
         METRIC,
         AnalyticalQuestionType.LEVEL_SHIFT_DETECTION,
         candidate=_candidate(observed_at=REFERENCE, point_count=3),
         policies=_recent_trend_policy(min_observations=8),
-        points=pts,
+        points=_points(3),
         reference_time=REFERENCE,
     )
-    assert not series.is_usable
-    assert series.refusal is not None
-    assert series.refusal.reason == InputRefusalReason.INSUFFICIENT_DATA.value
-    assert series.points == ()
 
 
-def test_parameter_bound_refused_before_computation() -> None:
+def _unsupported_parameter_series() -> AnalyticalInputSeries:
     # Evidence is admissible, but the analytical parameter bound (min 12 points)
     # is not met -> unsupported_parameter, refused before computation.
-    pts = _points(6)
-    series = prepare_input_series(
+    return prepare_input_series(
         METRIC,
         AnalyticalQuestionType.SMOOTHED_PATTERN,
         candidate=_candidate(observed_at=REFERENCE, point_count=6),
         policies=_recent_trend_policy(),
-        points=pts,
+        points=_points(6),
         reference_time=REFERENCE,
         min_observations=12,
     )
-    assert not series.is_usable
-    assert series.refusal is not None
-    assert series.refusal.reason == InputRefusalReason.UNSUPPORTED_PARAMETER.value
-    assert series.refusal.parameter_name == "min_observations"
-    assert series.points == ()
 
 
-# ---------------------------------------------------------------------------
-# T012: rejected / inadmissible input refusal
-# ---------------------------------------------------------------------------
-
-
-def test_inadmissible_family_is_refused() -> None:
-    pts = _points(10)
-    series = prepare_input_series(
+def _inadmissible_series() -> AnalyticalInputSeries:
+    return prepare_input_series(
         METRIC,
         AnalyticalQuestionType.LEVEL_SHIFT_DETECTION,
         candidate=_candidate(observed_at=REFERENCE, point_count=10),
@@ -278,17 +250,13 @@ def test_inadmissible_family_is_refused() -> None:
             admissibility=Admissibility.INADMISSIBLE,
             default_rejection_reasons=(RejectionReason.WRONG_EVIDENCE_KIND,),
         ),
-        points=pts,
+        points=_points(10),
         reference_time=REFERENCE,
     )
-    assert not series.is_usable
-    assert series.refusal is not None
-    assert series.refusal.reason == InputRefusalReason.INADMISSIBLE_FOR_QUESTION.value
-    assert series.points == ()
 
 
-def test_missing_evidence_is_refused() -> None:
-    series = prepare_input_series(
+def _missing_evidence_series() -> AnalyticalInputSeries:
+    return prepare_input_series(
         METRIC,
         AnalyticalQuestionType.LEVEL_SHIFT_DETECTION,
         candidate=_candidate(observed_at=REFERENCE, point_count=0),
@@ -296,13 +264,9 @@ def test_missing_evidence_is_refused() -> None:
         points=[],
         reference_time=REFERENCE,
     )
-    assert not series.is_usable
-    assert series.refusal is not None
-    assert series.refusal.reason == InputRefusalReason.EVIDENCE_MISSING.value
-    assert series.points == ()
 
 
-def test_unsupported_question_when_no_policy_for_family() -> None:
+def _unsupported_question_series() -> AnalyticalInputSeries:
     # The policy is declared for a different family, so the evaluator finds no
     # rule for the candidate's family -> unsupported_policy -> unsupported_question.
     other_policy = MetricFamilyPolicy(
@@ -315,7 +279,7 @@ def test_unsupported_question_when_no_policy_for_family() -> None:
             QuestionType.RECENT_TREND: QuestionRule(admissibility=Admissibility.ADMISSIBLE)
         },
     )
-    series = prepare_input_series(
+    return prepare_input_series(
         METRIC,
         AnalyticalQuestionType.LEVEL_SHIFT_DETECTION,
         candidate=_candidate(observed_at=REFERENCE, point_count=10),
@@ -323,9 +287,35 @@ def test_unsupported_question_when_no_policy_for_family() -> None:
         points=_points(10),
         reference_time=REFERENCE,
     )
+
+
+@pytest.mark.parametrize(
+    ("build_series", "expected_reason", "expected_parameter_name"),
+    [
+        (_stale_series, InputRefusalReason.STALE_FOR_QUESTION, None),
+        (_insufficient_series, InputRefusalReason.INSUFFICIENT_DATA, None),
+        (
+            _unsupported_parameter_series,
+            InputRefusalReason.UNSUPPORTED_PARAMETER,
+            "min_observations",
+        ),
+        (_inadmissible_series, InputRefusalReason.INADMISSIBLE_FOR_QUESTION, None),
+        (_missing_evidence_series, InputRefusalReason.EVIDENCE_MISSING, None),
+        (_unsupported_question_series, InputRefusalReason.UNSUPPORTED_QUESTION, None),
+    ],
+)
+def test_input_refused_before_computation_with_distinct_reason(
+    build_series, expected_reason: InputRefusalReason, expected_parameter_name: str | None
+) -> None:
+    # Each distinct pre-computation refusal reason: refuses, carries the
+    # machine-readable reason, and hands back no points to compute over.
+    series = build_series()
     assert not series.is_usable
     assert series.refusal is not None
-    assert series.refusal.reason == InputRefusalReason.UNSUPPORTED_QUESTION.value
+    assert series.refusal.reason == expected_reason.value
+    assert series.points == ()
+    if expected_parameter_name is not None:
+        assert series.refusal.parameter_name == expected_parameter_name
 
 
 def test_recent_trend_rule_does_not_serve_analytical_questions() -> None:

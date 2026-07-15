@@ -35,7 +35,6 @@ from premura.engine.analytical_contract import (
     AnalyticalQuestionType,
     AnalyticalStatus,
     ConfoundKey,
-    dispatch,
 )
 from premura.engine.analytical_inputs import (
     AnalyticalInputSeries,
@@ -249,11 +248,13 @@ def test_tool_registers_against_the_contract() -> None:
     assert set(spec.confound_keys) <= CONFOUND_KEYS
 
 
-def test_tool_invokes_through_shared_dispatch() -> None:
-    prepared = _usable_increase()
-    via_dispatch = dispatch(CONDITION_PAIRED_T_TEST_TOOL, prepared)
-    direct = condition_paired_t_test(prepared)
-    assert via_dispatch.to_dict() == direct.to_dict()
+# NOTE: dispatch equivalence, determinism, forbidden-language, no-p-value,
+# refused-input-surfaces, refusals-carry-no-estimate, constant-difference
+# refusal, direction-mismatch metadata, caveat-length budget, low-sample &
+# temporal-autocorrelation confound flags, and MCP/trace/network import
+# isolation are all identical across the mirror pair and are asserted once,
+# parametrized over BOTH tools, in ``test_engine_paired_t_test.py`` (the shared
+# cross-tool sweep). This file keeps only condition-input-SPECIFIC coverage.
 
 
 # ===========================================================================
@@ -315,49 +316,6 @@ def test_mean_difference_is_mean_of_per_episode_on_minus_off() -> None:
 
 
 # ===========================================================================
-# Direction agreement metadata
-# ===========================================================================
-
-
-def test_observed_decrease_against_expected_increase_does_not_match() -> None:
-    blocks = [
-        (date(2026, 3, 1), date(2026, 3, 3), 60.0, 50.0),
-        (date(2026, 4, 1), date(2026, 4, 3), 62.0, 49.0),
-        (date(2026, 5, 1), date(2026, 5, 3), 59.0, 51.0),
-    ]
-    points: list[PreparedPoint] = []
-    episodes: list[ConditionEpisode] = []
-    for start, end, off_v, on_v in blocks:
-        _episode_block(points, start, end, off_value=off_v, on_value=on_v)
-        episodes.append(_episode(start, end))
-    series = _series(sorted(points, key=lambda p: p.ts))
-    prepared = prepare_condition_label_paired_input(
-        series, _request(episodes=tuple(episodes), direction=BeforeAfterDirection.INCREASE)
-    )
-    env = condition_paired_t_test(prepared)
-    assert env.estimate["observed_direction"] == "decrease"
-    assert env.estimate["expected_direction"] == "increase"
-    assert env.estimate["direction_matches_hypothesis"] is False
-    _assert_no_forbidden_language(env)
-
-
-# ===========================================================================
-# NFR-1 — determinism
-# ===========================================================================
-
-
-def test_byte_deterministic_across_runs() -> None:
-    a = condition_paired_t_test(_usable_increase())
-    b = condition_paired_t_test(_usable_increase())
-    assert a.to_dict() == b.to_dict()
-
-
-def test_repeated_serialization_is_byte_identical() -> None:
-    env = condition_paired_t_test(_usable_increase())
-    assert env.to_dict() == env.to_dict()
-
-
-# ===========================================================================
 # Refusals (R1-R8): >= 6 distinct reasons, no estimate
 # ===========================================================================
 
@@ -391,30 +349,6 @@ def _refused_input() -> ConditionLabelPairedInput:
     )
     assert prepared.refusal is not None
     return prepared
-
-
-def test_r1_refused_input_surfaces_without_computing() -> None:
-    _assert_refusal(condition_paired_t_test(_refused_input()))
-
-
-def test_r7_constant_differences_refuse_rather_than_fake_band() -> None:
-    # Every episode has exactly the same on-off difference -> zero variance.
-    blocks = [
-        (date(2026, 3, 1), date(2026, 3, 3)),
-        (date(2026, 4, 1), date(2026, 4, 3)),
-        (date(2026, 5, 1), date(2026, 5, 3)),
-    ]
-    points: list[PreparedPoint] = []
-    episodes: list[ConditionEpisode] = []
-    for start, end in blocks:
-        _episode_block(points, start, end, off_value=50.0, on_value=60.0)
-        episodes.append(_episode(start, end))
-    series = _series(sorted(points, key=lambda p: p.ts))
-    prepared = prepare_condition_label_paired_input(series, _request(episodes=tuple(episodes)))
-    assert prepared.refusal is None  # the seam happily builds the pairs
-    env = condition_paired_t_test(prepared)
-    _assert_refusal(env, reason="constant_difference")
-    _assert_no_forbidden_language(env)
 
 
 def test_r8_stale_evidence_propagates_from_seam() -> None:
@@ -523,15 +457,6 @@ def test_at_least_six_distinct_refusal_reasons() -> None:
     assert len(reasons) >= 6, reasons
 
 
-def test_refusals_carry_no_estimate() -> None:
-    for env in (
-        condition_paired_t_test(_refused_input()),
-        condition_paired_t_test(_usable_increase(), scan=True),
-    ):
-        assert env.estimate is None
-        assert env.uncertainty is None or env.uncertainty.available is False
-
-
 # ===========================================================================
 # Spec-named edge cases (E1, E2, E4) — each requires an end-to-end test
 # ===========================================================================
@@ -622,41 +547,12 @@ def test_e4_episode_truncated_by_after_days_uses_only_first_on_days() -> None:
 
 
 # ===========================================================================
-# NFR-3 — forbidden-language sweep
+# Confound metadata (condition-input-specific: episode floor + life-event split)
 # ===========================================================================
 
 
-def test_available_text_avoids_forbidden_language() -> None:
-    _assert_no_forbidden_language(condition_paired_t_test(_usable_increase()))
-
-
-def test_refusal_text_avoids_forbidden_language() -> None:
-    _assert_no_forbidden_language(condition_paired_t_test(_refused_input()))
-
-
-def test_no_p_value_or_significance_anywhere_in_output() -> None:
-    env = condition_paired_t_test(_usable_increase())
-    text = _all_text(env.to_dict())
-    assert "p-value" not in text and "pvalue" not in text
-    assert "significan" not in text
-
-
-def test_caveats_within_length_budget() -> None:
-    env = condition_paired_t_test(_usable_increase())
-    for caveat in env.caveats:
-        assert len(caveat) <= 320, caveat
-    refusal_env = condition_paired_t_test(_refused_input())
-    assert refusal_env.refusal is not None
-    assert len(refusal_env.refusal.message) <= 320
-
-
-# ===========================================================================
-# Confound metadata
-# ===========================================================================
-
-
-def test_flags_low_sample_size_near_floor() -> None:
-    # Exactly 2 usable episodes (the floor) -> low sample size confound.
+def test_flags_low_sample_size_at_episode_floor() -> None:
+    # Exactly 2 usable episodes (the condition floor) -> low sample size confound.
     blocks = [
         (date(2026, 4, 1), date(2026, 4, 3), 50.0, 60.0),
         (date(2026, 5, 1), date(2026, 5, 3), 51.0, 63.0),
@@ -674,12 +570,6 @@ def test_flags_low_sample_size_near_floor() -> None:
     assert ConfoundKey.LOW_SAMPLE_SIZE in keys
 
 
-def test_flags_temporal_autocorrelation() -> None:
-    env = condition_paired_t_test(_usable_increase())
-    keys = {e.key for e in env.confound_checklist}
-    assert ConfoundKey.TEMPORAL_AUTOCORRELATION in keys
-
-
 def test_flags_life_event_sensitive() -> None:
     # A condition-label split is inherently life-event sensitive.
     env = condition_paired_t_test(_usable_increase())
@@ -688,34 +578,8 @@ def test_flags_life_event_sensitive() -> None:
 
 
 # ===========================================================================
-# NFR-2 — engine isolation
+# NFR-2 — engine isolation (condition-specific: consumes the condition seam)
 # ===========================================================================
-
-
-def test_importing_tool_does_not_import_mcp_or_trace() -> None:
-    import subprocess
-    import sys
-
-    probe = (
-        "import sys\n"
-        "import premura.engine.condition_paired_t_test  # noqa: F401\n"
-        "bad = [m for m in ('premura.mcp.server', 'premura.mcp', 'premura.trace') "
-        "if m in sys.modules]\n"
-        "assert not bad, bad\n"
-        "print('clean')\n"
-    )
-    result = subprocess.run([sys.executable, "-c", probe], capture_output=True, text=True)
-    assert result.returncode == 0, result.stderr
-    assert result.stdout.strip() == "clean"
-
-
-def test_tool_module_has_no_network_imports() -> None:
-    import premura.engine.condition_paired_t_test as tool
-
-    with open(tool.__file__, encoding="utf-8") as fh:
-        text = fh.read()
-    for forbidden in ("import requests", "import httpx", "import urllib", "pubmed", "socket"):
-        assert forbidden not in text.lower(), forbidden
 
 
 def test_tool_consumes_the_condition_seam() -> None:

@@ -120,6 +120,7 @@ def test_static_loader_lists_the_tool_modules() -> None:
 
 def test_loader_did_not_grow_a_plugin_or_scan() -> None:
     """No plugin/entry-point/filesystem-scan machinery sneaks in with the new tools."""
+    import ast
     import inspect
 
     import premura.engine.analytical as facade
@@ -127,6 +128,19 @@ def test_loader_did_not_grow_a_plugin_or_scan() -> None:
     source = inspect.getsource(facade)
     for forbidden in ("iter_entry_points", "entry_points(", "importlib.metadata", "glob("):
         assert forbidden not in source, f"loader must not use {forbidden!r} (static list only)"
+
+    # Import roots via AST so a substring like "glob" inside "global" cannot
+    # create a false positive: the facade must not pull in scanning machinery.
+    tree = ast.parse(source)
+    imported_roots: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported_roots.update(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module is not None:
+            imported_roots.add(node.module.split(".")[0])
+    assert {"glob", "os", "pkgutil"}.isdisjoint(imported_roots), (
+        f"facade must not import scanning machinery; imported roots: {sorted(imported_roots)}"
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -45,12 +45,15 @@ _NEW_ANALYTICAL = (QuestionType.MOVING_WINDOW_PATTERN, QuestionType.PAIRED_DIFFE
 # ---------------------------------------------------------------------------
 
 
-def test_new_question_types_are_first_class_closed_vocabulary() -> None:
-    """The two new shapes are real closed `QuestionType` members, not strings."""
+def test_new_question_types_carry_the_committed_wire_values() -> None:
+    """The two new shapes serialize to their committed wire strings.
+
+    Member *existence* is already exercised by every test below that keys
+    ``question_rules`` on these members; what is pinned *only* here is the
+    serialized ``.value`` (the wire format), which nothing else asserts.
+    """
     assert QuestionType.MOVING_WINDOW_PATTERN.value == "moving_window_pattern"
     assert QuestionType.PAIRED_DIFFERENCE.value == "paired_difference"
-    values = {qt.value for qt in QuestionType}
-    assert {"moving_window_pattern", "paired_difference"} <= values
 
 
 def test_recent_run_families_declare_the_new_analytical_rules() -> None:

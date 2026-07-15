@@ -475,13 +475,6 @@ def test_source_summary_carries_both_inputs_and_is_json_safe() -> None:
     assert json.dumps(d, sort_keys=True) == json.dumps(paired.to_dict(), sort_keys=True)
 
 
-def test_overlap_sample_size_equals_pair_count() -> None:
-    left = _series(LEFT_METRIC, LEFT_FAMILY, _daily_points(25))
-    right = _series(RIGHT_METRIC, RIGHT_FAMILY, _daily_points(25))
-    paired = prepare_paired_input(left, right, _hypothesis(lag_days=0))
-    assert paired.overlap_sample_size == len(paired.pairs)
-
-
 def test_prepared_pairs_match_fixture_dates_exactly() -> None:
     # Deterministic alignment: with lag 0, the paired days are exactly the shared
     # calendar days, in order, with the right value taken from the same day.

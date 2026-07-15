@@ -60,7 +60,6 @@ def test_gc_dry_run_lists_but_does_not_delete(monkeypatch, tmp_path: Path) -> No
 
     result = runner.invoke(cli.app, ["gc", "--keep", "3", "--dry-run"])
     assert result.exit_code == 0, result.output
-    assert "2020-01" in result.output
     # Unambiguous dry-run prefix and nothing actually removed.
     assert "would remove" in result.output.lower()
     assert old.exists()

@@ -646,47 +646,47 @@ def test_valid_until_superseded_admits_old_evidence() -> None:
     assert not result.rejected_evidence
 
 
-def test_coverage_below_minimum_is_insufficient() -> None:
-    policy = _coverage_policy()
-    low_coverage = EvidenceCandidate(
-        metric_id="sleep-1",
-        metric_family="sleep_duration",
-        value_kind="series",
-        coverage_pct=40.0,  # below 80
-    )
+@pytest.mark.parametrize(
+    ("policy_factory", "candidate"),
+    [
+        # Coverage below the declared 80% minimum.
+        (
+            _coverage_policy,
+            EvidenceCandidate(
+                metric_id="sleep-1",
+                metric_family="sleep_duration",
+                value_kind="series",
+                coverage_pct=40.0,
+            ),
+        ),
+        # Point count missing while a minimum-observations floor is declared.
+        (
+            _trend_policy,
+            EvidenceCandidate(
+                metric_id="steps-1",
+                metric_family="step_count",
+                value_kind="series",
+                observed_at=REFERENCE_TIME,
+                point_count=None,
+            ),
+        ),
+        # Coverage missing while a coverage floor is declared.
+        (
+            _coverage_policy,
+            EvidenceCandidate(
+                metric_id="sleep-1",
+                metric_family="sleep_duration",
+                value_kind="series",
+                coverage_pct=None,
+            ),
+        ),
+    ],
+)
+def test_below_sufficiency_floor_is_insufficient(policy_factory, candidate) -> None:
+    # A candidate under a declared sufficiency floor (coverage or observation
+    # count, present-but-low or missing-entirely) is TOO_SPARSE, not admitted.
     result = evaluate_evidence(
-        QuestionType.RECENT_TREND, [low_coverage], policy, reference_time=REFERENCE_TIME
-    )
-    assert len(result.insufficient_evidence) == 1
-    assert RejectionReason.TOO_SPARSE in result.insufficient_evidence[0].rejection_reasons
-
-
-def test_missing_point_count_is_insufficient_when_minimum_declared() -> None:
-    policy = _trend_policy()  # min_observations = 5
-    no_count = EvidenceCandidate(
-        metric_id="steps-1",
-        metric_family="step_count",
-        value_kind="series",
-        observed_at=REFERENCE_TIME,
-        point_count=None,  # missing while a minimum is declared
-    )
-    result = evaluate_evidence(
-        QuestionType.RECENT_TREND, [no_count], policy, reference_time=REFERENCE_TIME
-    )
-    assert len(result.insufficient_evidence) == 1
-    assert RejectionReason.TOO_SPARSE in result.insufficient_evidence[0].rejection_reasons
-
-
-def test_missing_coverage_pct_is_insufficient_when_minimum_declared() -> None:
-    policy = _coverage_policy()  # min_coverage_pct = 80
-    no_coverage = EvidenceCandidate(
-        metric_id="sleep-1",
-        metric_family="sleep_duration",
-        value_kind="series",
-        coverage_pct=None,
-    )
-    result = evaluate_evidence(
-        QuestionType.RECENT_TREND, [no_coverage], policy, reference_time=REFERENCE_TIME
+        QuestionType.RECENT_TREND, [candidate], policy_factory(), reference_time=REFERENCE_TIME
     )
     assert len(result.insufficient_evidence) == 1
     assert RejectionReason.TOO_SPARSE in result.insufficient_evidence[0].rejection_reasons

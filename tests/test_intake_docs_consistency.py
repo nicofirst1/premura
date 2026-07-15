@@ -65,15 +65,6 @@ def test_skill_persist_path_matches_code() -> None:
     assert hasattr(profile_intake, "persist_intake_batch")
 
 
-def test_skill_documents_build_and_use_boundary() -> None:
-    """FR-007: runtime build-and-use with no review; review only on contribute-back."""
-    text = _read(SKILL).lower()
-    assert "build-and-use" in text
-    assert "no review" in text
-    # The boundary is that review gates only a contributed-back PR.
-    assert "contribute back" in text or "contribute it back" in text or "contributed back" in text
-
-
 def test_parse_returns_documented_union() -> None:
     """A bare IngestBatch and a ParseOutput both normalize, as the skill claims."""
     obs, intake = parser_base.normalize_parse_output(

@@ -423,25 +423,13 @@ def test_smoothed_average_surfaces_refused_input_without_computing() -> None:
     assert envelope.refusal.reason == "evidence_missing"
 
 
-# ---------------------------------------------------------------------------
-# T015: repeated runs serialize identically (byte-stable)
-# ---------------------------------------------------------------------------
-
-
-def test_repeated_serialization_is_byte_identical() -> None:
-    series = _series_from_values(
-        [60, 61, 60, 80, 81, 80],
-        question_type=AnalyticalQuestionType.LEVEL_SHIFT_DETECTION,
-    )
-    envelope = change_point(series)
-    assert envelope.to_dict() == envelope.to_dict()
-
-    series2 = _series_from_values(
-        [1, 2, 3, 4, 5, 6],
-        question_type=AnalyticalQuestionType.SMOOTHED_PATTERN,
-    )
-    smoothed = smoothed_average(series2, window=2)
-    assert smoothed.to_dict() == smoothed.to_dict()
+# Byte-stable serialization at the tool layer is already proven by the two
+# per-tool determinism tests above (test_change_point_is_deterministic_across_runs
+# and test_smoothed_average_is_deterministic_across_runs, both comparing .to_dict()
+# across separately-constructed runs). The facade-invoke and contract-envelope
+# layers keep their own determinism tests
+# (test_engine_analytical_public_surface.test_repeated_invocation_is_byte_deterministic,
+# test_engine_analytical_contract.test_repeated_serialization_is_byte_identical).
 
 
 # ---------------------------------------------------------------------------

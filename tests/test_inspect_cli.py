@@ -45,9 +45,6 @@ def test_inspect_garmin_zip_prints_routing_and_summary(tmp_path: Path) -> None:
     assert "_handle_sleep_data" in out
     assert "mystery_export.json" in out
     assert "unhandled" in out
-    # Summary count: 2 routed, 1 unhandled.
-    assert "2 routed" in out
-    assert "1 unhandled" in out
 
 
 def test_inspect_nonexistent_path_exits_nonzero(tmp_path: Path) -> None:

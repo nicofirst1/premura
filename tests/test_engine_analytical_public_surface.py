@@ -189,19 +189,10 @@ def test_facade_names_are_listed_in_engine_all() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_builtin_tools_available_after_loading() -> None:
-    """``load_builtin_analytical_tools`` makes both proof tools discoverable."""
-    load_builtin_analytical_tools()
-
-    names = {spec.name for spec in list_analytical_tools()}
-    assert BUILTIN_TOOL_NAMES <= names
-
-    # Each is a real spec with a callable implementation (dispatchable).
-    by_name = {spec.name: spec for spec in list_analytical_tools()}
-    for tool_name in BUILTIN_TOOL_NAMES:
-        spec = by_name[tool_name]
-        assert isinstance(spec, AnalyticalToolSpec)
-        assert spec.fn is not None
+# "built-ins discoverable + dispatchable" is proven canonically over the full
+# six-tool catalog by test_engine_finished_tool_set_public_surface.py
+# (test_default_catalog_is_exactly_six_tools + test_every_catalog_tool_is_dispatchable),
+# which strictly subsumes the two-tool version that used to live here.
 
 
 def test_list_analytical_tools_loads_builtins_implicitly() -> None:
@@ -223,41 +214,11 @@ def test_list_analytical_tools_loads_builtins_implicitly() -> None:
     assert proc.stdout.strip() == "ok"
 
 
-def test_builtin_loading_is_static_import_not_filesystem_scan() -> None:
-    """The built-in module list is an explicit, in-tree tuple — no scanning.
-
-    A reviewer must be able to read every built-in tool module from one tuple.
-    We assert the facade declares such a tuple and that it imports none of the
-    scanning/plugin machinery (``glob``/``os``/``pkgutil``/
-    ``importlib.metadata``) — only ``importlib.import_module`` over a fixed
-    list.
-    """
-    import ast
-
-    import premura.engine.analytical as facade
-
-    assert isinstance(facade._BUILTIN_ANALYTICAL_MODULES, tuple)
-    assert "premura.engine.analytical_tools" in facade._BUILTIN_ANALYTICAL_MODULES
-
-    # Inspect the facade's actual imports via AST so a substring like "glob"
-    # inside "global" cannot create a false positive.
-    tree = ast.parse(inspect.getsource(facade))
-    imported_roots: set[str] = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            imported_roots.update(alias.name.split(".")[0] for alias in node.names)
-        elif isinstance(node, ast.ImportFrom) and node.module is not None:
-            imported_roots.add(node.module.split(".")[0])
-
-    forbidden_modules = {"glob", "os", "pkgutil"}
-    assert forbidden_modules.isdisjoint(imported_roots), (
-        f"facade must not import scanning machinery; imported roots: {sorted(imported_roots)}"
-    )
-
-    # No plugin entry-point discovery, even by name, anywhere in the source.
-    source = inspect.getsource(facade)
-    for forbidden in ("iter_entry_points", "entry_points(", "importlib.metadata"):
-        assert forbidden not in source, f"facade must not use {forbidden!r} (no plugins)"
+# "Loader is a static import, not a filesystem/plugin scan" is proven canonically
+# in test_engine_finished_tool_set_public_surface.py
+# (test_static_loader_lists_the_tool_modules + test_loader_did_not_grow_a_plugin_or_scan),
+# which additionally checks the module-list content and name-set sync. The stronger
+# AST-based import-root check that used to live here was folded into that anti-scan test.
 
 
 # ---------------------------------------------------------------------------

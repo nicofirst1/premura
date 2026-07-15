@@ -46,6 +46,16 @@ from premura.engine.analytical_inputs import (
     PreparedPoint,
     prepare_input_series,
 )
+from premura.engine.condition_inputs import (
+    ConditionEpisode,
+    ConditionLabelPairedInput,
+    ConditionLabelPairedRequest,
+    prepare_condition_label_paired_input,
+)
+from premura.engine.condition_paired_t_test import (
+    CONDITION_PAIRED_T_TEST_TOOL,
+    condition_paired_t_test,
+)
 from premura.engine.paired_inputs import (
     BEFORE_AFTER_MIN_PAIRS,
     MAX_WINDOW_DAYS,
@@ -267,6 +277,335 @@ def _assert_no_forbidden_language(env) -> None:
         assert not re.search(pat, text), f"forbidden pattern {pat!r} present: {text!r}"
 
 
+# ---------------------------------------------------------------------------
+# Condition-tool fixtures (for the shared cross-tool behavioral sweep below)
+# ---------------------------------------------------------------------------
+#
+# ``paired_t_test`` (anchor-date pairs) and ``condition_paired_t_test`` (condition
+# episode pairs) are mirror tools: same envelope shape, direction metadata,
+# determinism, refusal routing, forbidden-language and confound behavior — they
+# differ only in the upstream input fixture. The behavioral assertions that are
+# genuinely identical are parametrized once over both tools via ``TOOL_CASES``;
+# each file additionally keeps its input-type-SPECIFIC tests. The condition
+# builders below mirror ``test_engine_condition_pairs.py`` / the condition seam.
+
+_COND_LABEL = "on_magnesium"
+
+
+def _cond_episode(start: date, end: date) -> ConditionEpisode:
+    return ConditionEpisode(start_day=start, end_day=end)
+
+
+def _cond_series(points: list[PreparedPoint]) -> AnalyticalInputSeries:
+    return prepare_input_series(
+        METRIC,
+        AnalyticalQuestionType.CONDITION_PAIRED_DIFFERENCE,
+        candidate=_candidate(METRIC, point_count=len(points)),
+        policies=MetricFamilyPolicy(
+            policy_id=f"{FAMILY}@1",
+            version=1,
+            metric_family=FAMILY,
+            policy_shape=PolicyShape.ROLLING_RECENT_PATTERN,
+            temporal_meaning=TemporalMeaning.ROLLING_RECENT_PATTERN,
+            question_rules={
+                QuestionType.CONDITION_PAIRED_DIFFERENCE: QuestionRule(
+                    admissibility=Admissibility.ADMISSIBLE,
+                    freshness=FreshnessRule(mode=FreshnessMode.CAVEAT_ONLY),
+                    sufficiency=SufficiencyRule(
+                        min_observations=1,
+                        missing_data_behavior=MissingDataBehavior.REJECT,
+                    ),
+                    required_context=("observed_at",),
+                )
+            },
+            applies_to_metrics=(METRIC,),
+        ),
+        points=points,
+        reference_time=REFERENCE,
+        freshness_status="fresh",
+    )
+
+
+def _cond_request(
+    episodes: tuple[ConditionEpisode, ...],
+    *,
+    before_days: int = 5,
+    after_days: int = 5,
+    direction: BeforeAfterDirection | None = BeforeAfterDirection.INCREASE,
+) -> ConditionLabelPairedRequest:
+    return ConditionLabelPairedRequest(
+        metric_id=METRIC,
+        condition_label=_COND_LABEL,
+        episodes=episodes,
+        before_days=before_days,
+        after_days=after_days,
+        expected_direction=direction,  # type: ignore[arg-type]
+    )
+
+
+def _cond_block(
+    points: list[PreparedPoint], start: date, end: date, *, off_value: float, on_value: float
+) -> None:
+    for i in range(1, 6):
+        points.append(_point(start - timedelta(days=i), off_value))
+    day = start
+    while day <= end:
+        points.append(_point(day, on_value))
+        day += timedelta(days=1)
+
+
+def _cond_usable_increase(
+    blocks: list[tuple[date, date, float, float]] | None = None,
+) -> ConditionLabelPairedInput:
+    if blocks is None:
+        blocks = [
+            (date(2026, 3, 1), date(2026, 3, 3), 50.0, 60.0),
+            (date(2026, 4, 1), date(2026, 4, 3), 51.0, 63.0),
+            (date(2026, 5, 1), date(2026, 5, 3), 49.0, 58.0),
+        ]
+    points: list[PreparedPoint] = []
+    episodes: list[ConditionEpisode] = []
+    for start, end, off_v, on_v in blocks:
+        _cond_block(points, start, end, off_value=off_v, on_value=on_v)
+        episodes.append(_cond_episode(start, end))
+    series = _cond_series(sorted(points, key=lambda p: p.ts))
+    return prepare_condition_label_paired_input(series, _cond_request(tuple(episodes)))
+
+
+def _cond_refused() -> ConditionLabelPairedInput:
+    series = prepare_input_series(
+        METRIC,
+        AnalyticalQuestionType.CONDITION_PAIRED_DIFFERENCE,
+        candidate=_candidate(METRIC, point_count=0),
+        policies=_policy(METRIC),  # PAIRED_DIFFERENCE rule -> no admissible cond rule
+        points=[],
+        reference_time=REFERENCE,
+    )
+    prepared = prepare_condition_label_paired_input(
+        series,
+        _cond_request(
+            (
+                _cond_episode(date(2026, 4, 1), date(2026, 4, 3)),
+                _cond_episode(date(2026, 5, 1), date(2026, 5, 3)),
+            )
+        ),
+    )
+    assert prepared.refusal is not None
+    return prepared
+
+
+def _cond_direction_mismatch() -> ConditionLabelPairedInput:
+    # Observed decrease against an expected increase.
+    return _cond_usable_increase(
+        blocks=[
+            (date(2026, 3, 1), date(2026, 3, 3), 60.0, 50.0),
+            (date(2026, 4, 1), date(2026, 4, 3), 62.0, 49.0),
+            (date(2026, 5, 1), date(2026, 5, 3), 59.0, 51.0),
+        ]
+    )
+
+
+def _cond_constant_difference() -> ConditionLabelPairedInput:
+    # Every episode has the identical on-off difference -> zero variance.
+    return _cond_usable_increase(
+        blocks=[
+            (date(2026, 3, 1), date(2026, 3, 3), 50.0, 60.0),
+            (date(2026, 4, 1), date(2026, 4, 3), 50.0, 60.0),
+            (date(2026, 5, 1), date(2026, 5, 3), 50.0, 60.0),
+        ]
+    )
+
+
+def _cond_near_floor() -> ConditionLabelPairedInput:
+    # Exactly CONDITION floor of 2 usable episodes.
+    return _cond_usable_increase(
+        blocks=[
+            (date(2026, 4, 1), date(2026, 4, 3), 50.0, 60.0),
+            (date(2026, 5, 1), date(2026, 5, 3), 51.0, 63.0),
+        ]
+    )
+
+
+class _ToolCase:
+    """One mirror tool + the fixture builders the shared sweep needs."""
+
+    def __init__(
+        self,
+        name,
+        tool,
+        module_name,
+        usable,
+        refused,
+        direction_mismatch,
+        constant_difference,
+        near_floor,
+        constant_reason,
+    ):
+        self.name = name
+        self.tool = tool
+        self.module_name = module_name
+        self.usable = usable
+        self.refused = refused
+        self.direction_mismatch = direction_mismatch
+        self.constant_difference = constant_difference
+        self.near_floor = near_floor
+        self.constant_reason = constant_reason
+
+
+TOOL_CASES = [
+    _ToolCase(
+        name="paired_t_test",
+        tool=paired_t_test,
+        module_name="premura.engine.paired_t_test",
+        usable=_usable_increase,
+        refused=_refused_paired_input,
+        direction_mismatch=lambda: _prepared(
+            before_values=[60.0, 61.0, 59.0, 60.0, 62.0, 58.0, 60.0, 61.0],
+            after_values=[50.0, 49.0, 51.0, 48.0, 50.0, 49.0, 47.0, 51.0],
+            direction=BeforeAfterDirection.INCREASE,
+        ),
+        constant_difference=lambda: _prepared(before_values=[50.0] * 8, after_values=[60.0] * 8),
+        near_floor=_usable_increase,  # exactly BEFORE_AFTER_MIN_PAIRS pairs
+        constant_reason="constant_difference",
+    ),
+    _ToolCase(
+        name="condition_paired_t_test",
+        tool=condition_paired_t_test,
+        module_name="premura.engine.condition_paired_t_test",
+        usable=_cond_usable_increase,
+        refused=_cond_refused,
+        direction_mismatch=_cond_direction_mismatch,
+        constant_difference=_cond_constant_difference,
+        near_floor=_cond_near_floor,
+        constant_reason="constant_difference",
+    ),
+]
+
+
+@pytest.fixture(params=TOOL_CASES, ids=lambda c: c.name)
+def tool_case(request) -> _ToolCase:
+    return request.param
+
+
+# ===========================================================================
+# Shared cross-tool behavioral sweep (paired_t_test + condition_paired_t_test)
+# ===========================================================================
+# Assertions genuinely identical across the mirror pair, parametrized over both
+# tools so they run once per input type instead of being copy-pasted per file.
+
+
+def test_shared_invokes_through_shared_dispatch(tool_case) -> None:
+    tool_name = {
+        "paired_t_test": PAIRED_T_TEST_TOOL,
+        "condition_paired_t_test": CONDITION_PAIRED_T_TEST_TOOL,
+    }[tool_case.name]
+    prepared = tool_case.usable()
+    assert tool_name in REGISTRY
+    via_dispatch = dispatch(tool_name, prepared)
+    direct = tool_case.tool(prepared)
+    assert via_dispatch.to_dict() == direct.to_dict()
+
+
+def test_shared_byte_deterministic_across_runs(tool_case) -> None:
+    a = tool_case.tool(tool_case.usable())
+    b = tool_case.tool(tool_case.usable())
+    assert a.to_dict() == b.to_dict()
+
+
+def test_shared_available_avoids_forbidden_language(tool_case) -> None:
+    _assert_no_forbidden_language(tool_case.tool(tool_case.usable()))
+
+
+def test_shared_refusal_avoids_forbidden_language(tool_case) -> None:
+    _assert_no_forbidden_language(tool_case.tool(tool_case.refused()))
+
+
+def test_shared_no_p_value_or_significance_anywhere(tool_case) -> None:
+    env = tool_case.tool(tool_case.usable())
+    text = _all_text(env.to_dict())
+    assert "p-value" not in text and "pvalue" not in text
+    assert "significan" not in text
+    payload = env.uncertainty.payload
+    assert all("p_value" != k and "significant" != k for k in payload)
+
+
+def test_shared_refused_input_surfaces_without_computing(tool_case) -> None:
+    _assert_refusal(tool_case.tool(tool_case.refused()))
+
+
+def test_shared_refusals_carry_no_estimate(tool_case) -> None:
+    for env in (
+        tool_case.tool(tool_case.refused()),
+        tool_case.tool(tool_case.usable(), scan=True),
+    ):
+        assert env.estimate is None
+        assert env.uncertainty is None or env.uncertainty.available is False
+
+
+def test_shared_constant_difference_refuses_rather_than_fake_band(tool_case) -> None:
+    prepared = tool_case.constant_difference()
+    assert prepared.refusal is None  # the seam happily builds the pairs
+    env = tool_case.tool(prepared)
+    _assert_refusal(env, reason=tool_case.constant_reason)
+    _assert_no_forbidden_language(env)
+
+
+def test_shared_direction_mismatch_is_metadata_not_verdict(tool_case) -> None:
+    env = tool_case.tool(tool_case.direction_mismatch())
+    assert env.estimate["observed_direction"] == "decrease"
+    assert env.estimate["expected_direction"] == "increase"
+    assert env.estimate["direction_matches_hypothesis"] is False
+    _assert_no_forbidden_language(env)
+
+
+def test_shared_caveats_within_length_budget(tool_case) -> None:
+    env = tool_case.tool(tool_case.usable())
+    for caveat in env.caveats:
+        assert len(caveat) <= 320, caveat
+    refusal_env = tool_case.tool(tool_case.refused())
+    assert refusal_env.refusal is not None
+    assert len(refusal_env.refusal.message) <= 320
+
+
+def test_shared_flags_low_sample_size_near_floor(tool_case) -> None:
+    env = tool_case.tool(tool_case.near_floor())
+    keys = {e.key for e in env.confound_checklist}
+    assert ConfoundKey.LOW_SAMPLE_SIZE in keys
+
+
+def test_shared_flags_temporal_autocorrelation(tool_case) -> None:
+    env = tool_case.tool(tool_case.usable())
+    keys = {e.key for e in env.confound_checklist}
+    assert ConfoundKey.TEMPORAL_AUTOCORRELATION in keys
+
+
+def test_shared_import_does_not_pull_mcp_or_trace(tool_case) -> None:
+    import subprocess
+    import sys
+
+    probe = (
+        "import sys\n"
+        f"import {tool_case.module_name}  # noqa: F401\n"
+        "bad = [m for m in ('premura.mcp.server', 'premura.mcp', 'premura.trace') "
+        "if m in sys.modules]\n"
+        "assert not bad, bad\n"
+        "print('clean')\n"
+    )
+    result = subprocess.run([sys.executable, "-c", probe], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "clean"
+
+
+def test_shared_module_has_no_network_imports(tool_case) -> None:
+    import importlib
+
+    module = importlib.import_module(tool_case.module_name)
+    with open(module.__file__, encoding="utf-8") as fh:
+        text = fh.read()
+    for forbidden in ("import requests", "import httpx", "import urllib", "pubmed", "socket"):
+        assert forbidden not in text.lower(), forbidden
+
+
 # ===========================================================================
 # T016/T018 — registration / contract wiring (integration check)
 # ===========================================================================
@@ -280,13 +619,6 @@ def test_paired_t_test_registers_against_the_contract() -> None:
     assert spec.question_type is AnalyticalQuestionType.PAIRED_DIFFERENCE
     assert spec.result_kind == "paired_difference_estimate"
     assert set(spec.confound_keys) <= CONFOUND_KEYS
-
-
-def test_paired_t_test_invokes_through_shared_dispatch() -> None:
-    prepared = _usable_increase()
-    via_dispatch = dispatch(PAIRED_T_TEST_TOOL, prepared)
-    direct = paired_t_test(prepared)
-    assert via_dispatch.to_dict() == direct.to_dict()
 
 
 # ===========================================================================
@@ -373,20 +705,6 @@ def test_observed_direction_increase_matches_expected_increase() -> None:
     assert env.estimate["direction_matches_hypothesis"] is True
 
 
-def test_observed_direction_decrease_against_expected_increase_does_not_match() -> None:
-    prepared = _prepared(
-        before_values=[60.0, 61.0, 59.0, 60.0, 62.0, 58.0, 60.0, 61.0],
-        after_values=[50.0, 49.0, 51.0, 48.0, 50.0, 49.0, 47.0, 51.0],
-        direction=BeforeAfterDirection.INCREASE,
-    )
-    env = paired_t_test(prepared)
-    assert env.estimate["observed_direction"] == "decrease"
-    assert env.estimate["expected_direction"] == "increase"
-    assert env.estimate["direction_matches_hypothesis"] is False
-    # Disagreement is reported as metadata, never as a causal/significance verdict.
-    _assert_no_forbidden_language(env)
-
-
 def test_observed_direction_matches_declared_decrease() -> None:
     prepared = _prepared(
         before_values=[60.0, 61.0, 59.0, 60.0, 62.0, 58.0, 60.0, 61.0],
@@ -396,22 +714,6 @@ def test_observed_direction_matches_declared_decrease() -> None:
     env = paired_t_test(prepared)
     assert env.estimate["observed_direction"] == "decrease"
     assert env.estimate["direction_matches_hypothesis"] is True
-
-
-# ===========================================================================
-# NFR-001 — determinism
-# ===========================================================================
-
-
-def test_paired_t_test_is_byte_deterministic_across_runs() -> None:
-    a = paired_t_test(_usable_increase())
-    b = paired_t_test(_usable_increase())
-    assert a.to_dict() == b.to_dict()
-
-
-def test_paired_t_test_repeated_serialization_is_byte_identical() -> None:
-    env = paired_t_test(_usable_increase())
-    assert env.to_dict() == env.to_dict()
 
 
 # ===========================================================================
@@ -426,10 +728,6 @@ def _assert_refusal(env, *, reason: str | None = None) -> None:
     assert env.refusal.reason
     if reason is not None:
         assert env.refusal.reason == reason
-
-
-def test_refusal_1_already_refused_paired_input_surfaces_without_computing() -> None:
-    _assert_refusal(paired_t_test(_refused_paired_input()))
 
 
 def test_refusal_2_too_few_pairs_propagates_from_seam() -> None:
@@ -469,19 +767,6 @@ def test_refusal_5_invalid_window_param_propagates_from_seam() -> None:
     bad_request = _request(before_days=MAX_WINDOW_DAYS + 1)
     prepared = prepare_before_after_paired_input(series, bad_request)
     _assert_refusal(paired_t_test(prepared))
-
-
-def test_refusal_6_constant_difference_refuses_rather_than_fake_band() -> None:
-    # Every pair has exactly the same difference -> zero variance -> the mean
-    # paired difference has no honest uncertainty band, so the tool refuses
-    # rather than emit a fabricated zero-width interval.
-    before = [50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0, 50.0]
-    after = [60.0, 60.0, 60.0, 60.0, 60.0, 60.0, 60.0, 60.0]
-    prepared = _prepared(before_values=before, after_values=after)
-    assert prepared.refusal is None  # the seam happily builds the pairs
-    env = paired_t_test(prepared)
-    _assert_refusal(env, reason="constant_difference")
-    _assert_no_forbidden_language(env)
 
 
 def test_refusal_7_stale_evidence_propagates_from_seam() -> None:
@@ -546,36 +831,14 @@ def test_at_least_six_distinct_refusal_reasons() -> None:
     assert len(reasons) >= 6, reasons
 
 
-def test_refusals_carry_no_estimate() -> None:
-    for env in (
-        paired_t_test(_refused_paired_input()),
-        paired_t_test(_prepared(before_values=[50.0] * 8, after_values=[60.0] * 8)),
-        paired_t_test(_usable_increase(), scan=True),
-    ):
-        assert env.estimate is None
-        assert env.uncertainty is None or env.uncertainty.available is False
-
-
 # ===========================================================================
-# T020 — no-causation / no-significance / no-hidden-search assertions
+# T020 — no-hidden-search: the uncertainty payload is dispersion-only
 # ===========================================================================
 
 
-def test_available_text_avoids_forbidden_language() -> None:
-    _assert_no_forbidden_language(paired_t_test(_usable_increase()))
-
-
-def test_refusal_text_avoids_forbidden_language() -> None:
-    _assert_no_forbidden_language(paired_t_test(_refused_paired_input()))
-
-
-def test_no_p_value_or_significance_anywhere_in_output() -> None:
+def test_uncertainty_payload_is_dispersion_only() -> None:
+    # The anchor-date uncertainty payload reports dispersion, never a test verdict.
     env = paired_t_test(_usable_increase())
-    d = env.to_dict()
-    text = _all_text(d)
-    assert "p-value" not in text and "pvalue" not in text
-    assert "significan" not in text
-    # The uncertainty payload reports dispersion only, never a test verdict.
     payload = env.uncertainty.payload
     assert set(payload) >= {
         "std_difference",
@@ -583,17 +846,6 @@ def test_no_p_value_or_significance_anywhere_in_output() -> None:
         "difference_interval_low",
         "difference_interval_high",
     }
-    assert all("p_value" != k and "significant" != k for k in payload)
-
-
-def test_caveats_within_length_budget() -> None:
-    # NFR-005: every built-in caveat / refusal message is <= 320 chars.
-    env = paired_t_test(_usable_increase())
-    for caveat in env.caveats:
-        assert len(caveat) <= 320, caveat
-    refusal_env = paired_t_test(_refused_paired_input())
-    assert refusal_env.refusal is not None
-    assert len(refusal_env.refusal.message) <= 320
 
 
 # ===========================================================================
@@ -601,13 +853,10 @@ def test_caveats_within_length_budget() -> None:
 # ===========================================================================
 
 
-def test_flags_low_sample_size_near_floor() -> None:
-    # Exactly the floor of 8 pairs -> low sample size confound.
+def test_floor_pairs_constant_matches_usable_fixture() -> None:
+    # The anchor-date low-sample floor is exactly BEFORE_AFTER_MIN_PAIRS pairs.
     prepared = _usable_increase()
     assert prepared.raw_pair_count == BEFORE_AFTER_MIN_PAIRS
-    env = paired_t_test(prepared)
-    keys = {e.key for e in env.confound_checklist}
-    assert ConfoundKey.LOW_SAMPLE_SIZE in keys
 
 
 def test_flags_high_imputation() -> None:
@@ -623,45 +872,9 @@ def test_flags_high_imputation() -> None:
     assert env.is_imputed_pct > 0.0
 
 
-def test_flags_temporal_autocorrelation() -> None:
-    # Paired before/after observations on consecutive days are temporally
-    # autocorrelated; the tool flags it as a standing confound for this method.
-    env = paired_t_test(_usable_increase())
-    keys = {e.key for e in env.confound_checklist}
-    assert ConfoundKey.TEMPORAL_AUTOCORRELATION in keys
-
-
 # ===========================================================================
-# T018 / T020 — definition-of-done: consumes WP03 seam, no warehouse/MCP/net
+# T018 / T020 — definition-of-done: consumes WP03 seam
 # ===========================================================================
-
-
-def test_importing_paired_t_test_does_not_import_mcp_or_trace() -> None:
-    import subprocess
-    import sys
-
-    probe = (
-        "import sys\n"
-        "import premura.engine.paired_t_test  # noqa: F401\n"
-        "bad = [m for m in ('premura.mcp.server', 'premura.mcp', 'premura.trace') "
-        "if m in sys.modules]\n"
-        "assert not bad, bad\n"
-        "print('clean')\n"
-    )
-    result = subprocess.run([sys.executable, "-c", probe], capture_output=True, text=True)
-    assert result.returncode == 0, result.stderr
-    assert result.stdout.strip() == "clean"
-
-
-def test_paired_t_test_module_has_no_network_imports() -> None:
-    import premura.engine.paired_t_test as ptt
-
-    source = ptt.__file__
-    assert source is not None
-    with open(source, encoding="utf-8") as fh:
-        text = fh.read()
-    for forbidden in ("import requests", "import httpx", "import urllib", "pubmed", "socket"):
-        assert forbidden not in text.lower(), forbidden
 
 
 def test_paired_t_test_consumes_the_wp03_seam() -> None:

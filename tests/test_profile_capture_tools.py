@@ -248,11 +248,11 @@ def test_record_reachable_through_live_entrypoint(tmp_path: Path) -> None:
 # CLI mirror: thin, derivative, same behavior
 # --------------------------------------------------------------------------- #
 def test_cli_profile_fields_lists_allowlist() -> None:
-    runner = CliRunner(env={"COLUMNS": "200"})
-    result = runner.invoke(app, ["profile-fields"])
-    assert result.exit_code == 0
-    assert "birth_date" in result.stdout
-    assert "standing_height_cm" in result.stdout
+    # Assert on the structured source of truth the command renders from, not the
+    # width-wrapped Rich table text.
+    keys = server.supported_profile_fields()["supported_keys"]
+    assert "birth_date" in keys
+    assert "standing_height_cm" in keys
 
 
 def _point_default_warehouse_at(tmp_path: Path, monkeypatch) -> Path:  # type: ignore[no-untyped-def]

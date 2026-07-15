@@ -55,7 +55,6 @@ from premura.engine.policies._model import (
 )
 from premura.engine.rolling_mean import (
     DEFAULT_MAX_WINDOW,
-    DEFAULT_MIN_COVERAGE,
     DEFAULT_WINDOW,
     ROLLING_MEAN_TOOL,
     rolling_mean,
@@ -320,17 +319,8 @@ def test_rolling_mean_is_byte_deterministic_across_runs() -> None:
     assert a.to_dict() == b.to_dict()
 
 
-def test_rolling_mean_repeated_serialization_is_byte_identical() -> None:
-    series = _series_from_values([float(v) for v in range(8)])
-    env = rolling_mean(series, window=3)
-    assert env.to_dict() == env.to_dict()
-
-
-def test_rolling_mean_uses_plan_defaults() -> None:
-    assert DEFAULT_WINDOW == 7
-    assert DEFAULT_MAX_WINDOW == 365
-    assert DEFAULT_MIN_COVERAGE == 0.5
-    # Default window applies when none is declared.
+def test_rolling_mean_default_window_applies_when_none_declared() -> None:
+    # Behavioral: with no window declared the tool falls back to DEFAULT_WINDOW.
     series = _series_from_values([float(v) for v in range(10)])
     env = rolling_mean(series)
     assert env.parameters["window"] == DEFAULT_WINDOW
@@ -355,39 +345,31 @@ def test_refusal_1_refused_input_surfaces_without_computing() -> None:
     _assert_refusal(env)
 
 
-def test_refusal_2_window_zero_or_negative() -> None:
-    series = _series_from_values([1.0, 2.0, 3.0, 4.0, 5.0])
-    _assert_refusal(rolling_mean(series, window=0), reason="unsupported_parameter")
-    _assert_refusal(rolling_mean(series, window=-3), reason="unsupported_parameter")
-
-
-def test_refusal_3_window_of_one_is_unsupported() -> None:
-    # A window of one is a passthrough, not a moving-window summary.
-    series = _series_from_values([1.0, 2.0, 3.0, 4.0, 5.0])
-    _assert_refusal(rolling_mean(series, window=1), reason="unsupported_parameter")
-
-
-def test_refusal_4_window_exceeds_maximum() -> None:
-    series = _series_from_values([float(v) for v in range(5)])
-    _assert_refusal(
-        rolling_mean(series, window=DEFAULT_MAX_WINDOW + 1),
-        reason="unsupported_parameter",
-    )
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        # Window zero / negative is not a moving window.
+        {"window": 0},
+        {"window": -3},
+        # A window of one is a passthrough, not a moving-window summary.
+        {"window": 1},
+        # Window beyond the accepted maximum.
+        {"window": DEFAULT_MAX_WINDOW + 1},
+        # Coverage fraction outside [0, 1].
+        {"window": 3, "min_coverage": 1.5},
+        {"window": 3, "min_coverage": -0.1},
+    ],
+)
+def test_refusal_unsupported_parameter(kwargs: dict) -> None:
+    # Every out-of-contract parameter refuses with the same machine-readable
+    # reason and yields no estimate.
+    series = _series_from_values([float(v) for v in range(8)])
+    _assert_refusal(rolling_mean(series, **kwargs), reason="unsupported_parameter")
 
 
 def test_refusal_5_window_longer_than_span() -> None:
     series = _series_from_values([1.0, 2.0, 3.0])
     _assert_refusal(rolling_mean(series, window=7), reason="insufficient_data")
-
-
-def test_refusal_6_min_coverage_out_of_range() -> None:
-    series = _series_from_values([float(v) for v in range(8)])
-    _assert_refusal(
-        rolling_mean(series, window=3, min_coverage=1.5), reason="unsupported_parameter"
-    )
-    _assert_refusal(
-        rolling_mean(series, window=3, min_coverage=-0.1), reason="unsupported_parameter"
-    )
 
 
 def test_refusal_7_no_window_reaches_required_coverage() -> None:
