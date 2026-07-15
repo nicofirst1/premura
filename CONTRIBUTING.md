@@ -78,10 +78,9 @@ Coding agents working inside the repo reach this section through [`AGENTS.md`](A
 ## Source of truth
 
 - Product and data-contract intent: `docs/shared/SPEC.md`
-- Architecture and repo shape: `docs/history/architecture/ARCHITECTURE_HISTORY.md`
-- Stage boundaries: `docs/building/architecture/STAGES.md`
+- Stage boundaries and architecture: `docs/building/architecture/STAGES.md`
 - Warehouse update policy: `docs/building/architecture/UPDATE_STRATEGY.md`
 - Parser plugin contract: `src/premura/parsers/CONTRACT.md`
 - Parser-generation skill: `src/premura/skills/parser-generator/SKILL.md`
 
-If a planning artifact in `kitty-specs/` disagrees with a shipped contract or runtime doc, follow the shipped contract or runtime doc.
+If a planning or spec artifact disagrees with a shipped contract or runtime doc, follow the shipped contract or runtime doc.

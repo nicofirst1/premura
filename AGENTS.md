@@ -41,12 +41,12 @@ If no step applies, skip the field at parse time and surface it via `IngestBatch
 
 ### Issue tracker
 
-Issues for this repo are tracked in GitHub Issues for `nicofirst1/premura`. See `docs/building/agents/issue-tracker.md`.
+Issues for this repo are tracked in GitHub Issues for `nicofirst1/premura`.
 
 ### Triage labels
 
-This repo uses the canonical triage labels `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`. See `docs/building/agents/triage-labels.md`.
+This repo uses the canonical triage labels `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`.
 
 ### Domain docs
 
-This repo is configured as single-context: skills should look for a root `CONTEXT.md` and `docs/building/adr/` when present. See `docs/building/agents/domain.md`.
+This repo is configured as single-context: skills should look for a root `CONTEXT.md` and `docs/building/adr/` when present.

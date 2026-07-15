@@ -16,7 +16,7 @@ Adding a usable intake dimension is fill-in-the-blank against the seams that alr
 
 ### Step 1 — the domain already exists in `SEMANTIC_DOMAINS`
 
-The domain string must already be a member of `premura.engine._resolution.SEMANTIC_DOMAINS` (a closed `frozenset`). That set is the registry of valid declaration targets; adding a _brand-new_ domain string is a separate, mission-gated decision (the spec's domain-vs-shape rubric), **not** part of making an already-declared domain usable. If your domain is not in the set, stop — that is a different, larger change.
+The domain string must already be a member of `premura.engine._resolution.SEMANTIC_DOMAINS` (a closed `frozenset`). That set is the registry of valid declaration targets; adding a _brand-new_ domain string is a separate, deliberate decision (the domain-vs-shape rubric), **not** part of making an already-declared domain usable. If your domain is not in the set, stop — that is a different, larger change.
 
 The `@resolver(domain=...)` decorator and `resolve_dependency(...)` both validate membership and raise `ValueError` for an unknown domain, so a typo cannot silently create a phantom domain.
 
@@ -52,7 +52,7 @@ Add a **thin** tool to the default agent (MCP) surface so the signal is genuinel
 
 ## Both shipped domains followed exactly these steps — and the shared seam did not change
 
-This is the SC-005 proof: adding the _next_ intake dimension after this mission requires the four steps above and **no change to the shared resolution seam**, because both shipped domains rode exactly those steps.
+This is the proof: adding the _next_ intake dimension requires the four steps above and **no change to the shared resolution seam**, because both shipped domains rode exactly those steps.
 
 | Step                                         | `nutrition_intake` (worked example)                                                                                                           | `supplement_intake` (worked example)                                                                                                             |
 | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -74,8 +74,8 @@ Step 2 says the resolver interprets a _caller-declared selector_. To keep the ru
   - **multiple tokens combine as AND** — whitespace splits the matcher into tokens and _every_ token must match.
 - **Nutrition quantity key** — the resolver (`resolve_nutrition_intake`) selects on a caller-declared `quantity_key` (e.g. `"energy"`, `"protein"`); quantity keys are intrinsic to the intake seam, not observation `metric_id` values, and are never enumerated in tree form.
 
-> **Contract-reconciliation note (WP03 carry-forward / WP06).** The matcher semantics above are pinned authoritatively in `engine/views/supplement_intake.py` (docstring + the exported `matches_supplement` function) and are captured here in `docs/`. The mission's resolution contract, `kitty-specs/usable-intake-dimensions-01KT950A/contracts/intake-resolution-and-signals-contract.md`, still describes the supplement selector only as a generic "caller-declared supplement matcher" and does **not** spell out these matcher semantics. That spec-side contract prose was intentionally **not** edited by WP06 to avoid a kitty-specs commit from a lane worktree (a known `move-task`-blocking hazard). **Mission-review / human action:** fold the matcher semantics above into `intake-resolution-and-signals-contract.md` on `master` so the spec contract matches the pinned code.
+> **Note.** The supplement matcher semantics are pinned authoritatively in `engine/views/supplement_intake.py` (the docstring + the exported `matches_supplement` function); this doc summarizes them.
 
 ## Why no new abstraction layer (C-003)
 
-This mission deliberately did **not** build a dedicated intake-dimension contract or registry. Two domains rode the existing `@resolver` seam cleanly with no special-casing, which is the evidence that the seam already generalizes. Whether a dedicated intake-dimension contract ever earns its place — and the explicit trigger condition that would justify building it — is the subject of the companion recommendation note: [`docs/building/planning/intake-dimension-contract-recommendation.md`](../planning/intake-dimension-contract-recommendation.md).
+Premura deliberately did **not** build a dedicated intake-dimension contract or registry. Two domains rode the existing `@resolver` seam cleanly with no special-casing, which is the evidence that the seam already generalizes. Whether a dedicated intake-dimension contract ever earns its place is left open until a concrete need arises.

@@ -1,6 +1,6 @@
 # The session log adopts the OpenTelemetry GenAI _shape_ but takes no library and runs no server — plain rows in its own local DuckDB file
 
-Premura needs a general **session log**: the record of every step of one operating session (agent turns, model calls, tool executions, and Premura-internal ingest provenance), so a run can be tested end-to-end in a sandbox, audited for honesty, and mined for improvement candidates. The fuller framing — including the thin first slice (the parser-build loop), the two-layer testing model, and the relationship to the orchestrator and the research trace — is in [`docs/building/planning/agent-interaction-audit-substrate.md`](../planning/agent-interaction-audit-substrate.md). This note records the storage decision so the implementing mission does not re-litigate it.
+Premura needs a general **session log**: the record of every step of one operating session (agent turns, model calls, tool executions, and Premura-internal ingest provenance), so a run can be tested end-to-end in a sandbox, audited for honesty, and mined for improvement candidates. This note records the storage decision so the implementing change does not re-litigate it.
 
 The decisions:
 

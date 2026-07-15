@@ -2,7 +2,7 @@
 
 > Status: authoritative. Source of truth for cross-stage architecture boundaries.
 >
-> Companion to [DOCTRINE.md](../../shared/DOCTRINE.md), [../../history/product/VISION.md](../../history/product/VISION.md), [SPEC.md](../../shared/SPEC.md), [ROADMAP.md](../../shared/ROADMAP.md), [../../history/research/PROPOSAL_LABS.md](../../history/research/PROPOSAL_LABS.md). Captured 2026-05-21. Complements `docs/history/product/VISION.md` — does **not** replace the pillar framing. The pillars are the _trajectory_; the stages below are the _data-flow shape_. A feature is located in pillars by intent and in stages by where it sits in the pipeline.
+> Companion to [DOCTRINE.md](../../shared/DOCTRINE.md), [SPEC.md](../../shared/SPEC.md), and [STATUS.md](../../shared/STATUS.md). Captured 2026-05-21. The stages below are the _data-flow shape_: a feature is located in stages by where it sits in the pipeline.
 
 ## The four stages
 
@@ -32,7 +32,7 @@ Data moves through the system in a strict order. Each stage has a different cont
 
 ### 1. Ingest
 
-Parsers turn a vendor artifact into rows in `hp.fact_measurement` / `hp.fact_interval` per the long-format star schema documented in [../../history/architecture/ARCHITECTURE_HISTORY.md](../../history/architecture/ARCHITECTURE_HISTORY.md).
+Parsers turn a vendor artifact into rows in `hp.fact_measurement` / `hp.fact_interval` per the long-format star schema.
 
 - Today: HC `.db`, Garmin GDPR `.zip`, Sleep as Android CSV, BMT CSV, and lab files through the in-tree lab parser.
 - Coming: continuous glucose and additional wearables.
@@ -95,7 +95,7 @@ Other principles, still the target shape:
 Everything the human encounters: CLI today, MCP-backed chat, eventual UI. This stage is human-critical in purpose even though it is not the main execution surface.
 
 - **Interview** (VISION Pillar 4) — first contact asks the user _what direction_ (sleep, cardio, metabolic, stress, mental, gut, lab/cardiometabolic, overview). Output is a routing decision that calls the signal selector. No "analyse everything at once" by default. The same agent-mediated interview shape is how baseline profile facts are captured: the agent records one allowlisted attribute at a time through the profile-capture tools (mirrored as the expert CLI verbs `premura profile-fields` / `premura profile-record`), never via a human-filled form.
-- **Teaching** (VISION Pillar 5) — a content + interaction _style_ (plain-language metric introductions, progressive disclosure, dual coding of insight + number), not a screen. It lands first in the agent's **text narration** through a coding-agent client (CLI/MCP today — Claude Code, OpenCode), and transfers to a **custom UI when one is built later**. The narration-level half (the caption that names the insight, the plain-English gloss) applies now; _dual-coded charts_ specifically are a later-UI affordance. Applies to every metric surfaced, blood markers especially. See [`teaching-disclosure-research.md`](../planning/teaching-disclosure-research.md) for the parked evidence-base backlog.
+- **Teaching** (VISION Pillar 5) — a content + interaction _style_ (plain-language metric introductions, progressive disclosure, dual coding of insight + number), not a screen. It lands first in the agent's **text narration** through a coding-agent client (CLI/MCP today — Claude Code, OpenCode), and transfers to a **custom UI when one is built later**. The narration-level half (the caption that names the insight, the plain-English gloss) applies now; _dual-coded charts_ specifically are a later-UI affordance. Applies to every metric surfaced, blood markers especially.
 - The UI stage is the only stage that does presentation, unit display preferences, and prose. It is the layer where the human receives help, teaching, and guided interpretation from the agent-mediated workflow — **today that surface is the agent's text through a coding-agent client; a custom UI is a deliberate later destination, not UI-free.**
 
 ## Why this matters

@@ -1,6 +1,6 @@
 # Operating roles and the runtime orchestrator
 
-> Status: **authoritative specification** for Premura's Stage 4 runtime multi-agent surface. Promoted 2026-06-12 from the pre-spec draft ([`docs/building/planning/operating-agent-roles.md`](../planning/operating-agent-roles.md), kept for history) in a maintainer design-interview; the five locked decisions are decision note [0013](../adr/0013-operating-roles-promotion-decisions.md), on the concept locked by [0010](../adr/0010-runtime-orchestrator-and-operating-roles.md).
+> Status: **authoritative specification** for Premura's Stage 4 runtime multi-agent surface. Promoted 2026-06-12 from a pre-spec draft in a maintainer design-interview; the five locked decisions are decision note [0013](../adr/0013-operating-roles-promotion-decisions.md), on the concept locked by [0010](../adr/0010-runtime-orchestrator-and-operating-roles.md).
 >
 > Companion reading: [`DOCTRINE.md`](../../shared/DOCTRINE.md) (the two rules), [`STAGES.md`](STAGES.md) (Stage 4 owns interview/conversation/ presentation and never reads `hp.fact_measurement` or calls the engine directly), [`docs/operating/RUNTIME_AGENT.md`](../../operating/RUNTIME_AGENT.md) (the runtime contract that binds operating agents to this surface).
 

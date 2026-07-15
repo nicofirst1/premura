@@ -2,7 +2,7 @@
 
 > Status: authoritative. Source of truth for the product's operational stance and intended beneficiary.
 >
-> Companion to [SPEC.md](SPEC.md), [../history/product/VISION.md](../history/product/VISION.md), [USERJOURNEY.md](../using/USERJOURNEY.md), [STAGES.md](../building/architecture/STAGES.md), and [STATUS.md](STATUS.md).
+> Companion to [SPEC.md](SPEC.md), [USERJOURNEY.md](../using/USERJOURNEY.md), [STAGES.md](../building/architecture/STAGES.md), and [STATUS.md](STATUS.md).
 
 ## Core statement
 

@@ -1,6 +1,6 @@
 # Disclosure Rubric
 
-> Status: **authoritative specification** for how the `human_facing` role explains a health finding to a non-expert without misleading. Promoted from [`docs/building/planning/teaching-disclosure-research.md`](../planning/teaching-disclosure-research.md) (the parked evidence base, kept for history) in a maintainer design-interview (issue #35); the locked decisions are decision note [0015](../adr/0015-teaching-disclosure-and-human-facing-promotion.md).
+> Status: **authoritative specification** for how the `human_facing` role explains a health finding to a non-expert without misleading. Promoted from a parked evidence base in a maintainer design-interview (issue #35); the locked decisions are decision note [0015](../adr/0015-teaching-disclosure-and-human-facing-promotion.md).
 >
 > Companion reading: [`DOCTRINE.md`](../../shared/DOCTRINE.md) (the two rules), the sibling [`AUDIT_RUBRIC.md`](../../../src/premura/skills/research-trace-audit/AUDIT_RUBRIC.md) (same shape, the honesty question this one builds on), [`AUDIT_CONSUMER_CONTRACT.md`](AUDIT_CONSUMER_CONTRACT.md) (the structured Session Disclosure fields), [`HUMAN_FACING.md`](HUMAN_FACING.md) (the role that consumes this rubric as advisory-to-drafting).
 

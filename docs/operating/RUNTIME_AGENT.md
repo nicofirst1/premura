@@ -92,4 +92,4 @@ Two architecture contracts, both authoritative, bind how a runtime agent operate
 
 ## Forward design
 
-`OPERATING_ROLES.md` above was promoted from pre-spec design to an authoritative specification on 2026-06-12 ([ADR 0013](../building/adr/0013-operating-roles-promotion-decisions.md)). The superseded draft is kept for history at [`docs/building/planning/operating-agent-roles.md`](../building/planning/operating-agent-roles.md); this guide describes how to operate the shipped surface honestly today.
+`OPERATING_ROLES.md` above was promoted from pre-spec design to an authoritative specification on 2026-06-12 ([ADR 0013](../building/adr/0013-operating-roles-promotion-decisions.md)). This guide describes how to operate the shipped surface honestly today.

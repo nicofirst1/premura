@@ -86,7 +86,7 @@ args = ["run", "premura-mcp-operator", "--ack"]
 
 ## Skills story per client
 
-`premura install-skills` (run by `premura bootstrap`) materializes every shipped skill under the single home `.claude/skills/` — that one target is a deliberate decision, not an oversight (see [ROADMAP.md](../shared/ROADMAP.md), 2026-06-12 entry): **Claude Code and OpenCode both read `.claude/skills/` directly**, so one install target already serves both.
+`premura install-skills` (run by `premura bootstrap`) materializes every shipped skill under the single home `.claude/skills/` — that one target is a deliberate decision, not an oversight: **Claude Code and OpenCode both read `.claude/skills/` directly**, so one install target already serves both.
 
 **Codex reads something different.** It does not read `.claude/skills/`; its own skill-directory convention is `.agents/skills`, which Premura does not populate. What Codex _does_ always read is `AGENTS.md` at the repo root — and this repo's `AGENTS.md` is already written as a router that explicitly points to the relevant `SKILL.md` files by path (for example, "If you are using Claude Code to generate a parser, also read `src/premura/skills/parser-generator/SKILL.md`"). That gives Codex the same guidance as a skill, delivered as a doc reference instead of an auto-loaded skill package — no second `install-skills` target needed today.
 
