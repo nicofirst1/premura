@@ -1,6 +1,6 @@
 # Building docs index
 
-Contracts and agent-facing docs are the **single source of truth in `src/`, beside the code they govern** ([ADR 0017](adr/0017-contracts-live-in-src-docs-link.md)). This file is the pointer to every one of them. The cross-stage map is [`architecture/STAGES.md`](architecture/STAGES.md).
+Contracts and agent-facing docs are the **single source of truth in `src/`, beside the code they govern** ([ADR 0017](adr/0017-contracts-live-in-src-docs-link.md)). This file is the pointer to every one of them. The cross-stage map is [`STAGES.md`](STAGES.md).
 
 ## Parsers (Stage 1 — ingest)
 
