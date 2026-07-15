@@ -1,5 +1,7 @@
 # Land concrete profile/intake storage as separate domain tables, with agent-mediated profile capture
 
+> **Status:** Accepted — 2026-06-02
+
 Premura had already fixed the _meaning_ of baseline profile context, nutrition intake, and supplement intake in a strict contract while leaving storage open (see [ADR 0005](0005-profile-and-intake-contract.md) and [`PROFILE_AND_INTAKE_CONTRACT.md`](../architecture/PROFILE_AND_INTAKE_CONTRACT.md)). This mission picks the storage and the first write path. The decision:
 
 - **Separate concrete domain tables, not a generic bucket.** Migration `src/premura/store/migrations/004_profile_intake.sql` adds dedicated `hp.*` tables: `hp.profile_capture_session` and `hp.profile_context_assertion` for profile context; `hp.nutrition_intake_event` → `hp.nutrition_intake_item` → `hp.nutrition_quantity` for nutrition; `hp.supplement_intake_event` → `hp.supplement_item` → `hp.supplement_dose` for supplements. Each domain has its own provenance, supersession, and dedupe columns. The "one-home" rule from the contract is now **structural**: there is deliberately no JSON catch-all column and nothing back-fills these meanings into `hp.fact_measurement`, `hp.fact_interval`, or note storage.

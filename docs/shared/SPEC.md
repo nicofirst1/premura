@@ -6,36 +6,36 @@
 
 ## 1. Purpose
 
-Build a single, locally-owned warehouse and tool substrate for the user's personal health data, with encrypted off-site artifacts, that contains metrics Android **Health Connect** does not bridge: HRV, respiratory rate, stress, Body Battery, SpO2, body composition, training metrics. Per [DOCTRINE.md](DOCTRINE.md), the primary runtime client is an AI agent acting for the human user; Health Connect remains one input among several rather than the destination.
+Build a single, locally-owned warehouse and tool substrate for the user's personal health data, with encrypted off-site artifacts, holding metrics Android **Health Connect** does not bridge: HRV, respiratory rate, stress, Body Battery, SpO2, body composition, training metrics. Per [DOCTRINE.md](DOCTRINE.md), the primary runtime client is an AI agent acting for the human user; Health Connect is one input among several, not the destination.
 
 ## 2. Scope
 
-**In scope (current pre-v1 line):** monthly-cadence ingestion of the supported sources (Garmin Connect GDPR `.zip`, Health Connect `.db`, Sleep as Android CSV, Body Measurement Tracker CSV, and local lab files); parsing each into a unified long-format star schema in **DuckDB**; deterministic cross-source deduplication; `age`-encryption of exported snapshots and staged raws (recipient key held by the user); opt-in Drive backup via `rclone` (the run stops at local encrypted artifacts unless the user runs upload); a macOS **launchd** agent that runs on a calendar trigger, notifies when inputs are needed, and waits for a user sentinel; a `premura` CLI (setup, ingest, status, export, opt-in upload, doctor, monthly run, gc, launchd install, skill install, bounded profile capture); and an agent-facing MCP/tool surface over the warehouse and engine as the default analytical interface, with CLI/SQL as expert fallback.
+**In scope (current pre-v1 line):** monthly-cadence ingestion of the supported sources (Garmin Connect GDPR `.zip`, Health Connect `.db`, Sleep as Android CSV, Body Measurement Tracker CSV, local lab files) into a unified long-format star schema in **DuckDB**; deterministic cross-source deduplication; `age`-encryption of exported snapshots and staged raws (recipient key held by the user); opt-in Drive backup via `rclone`; a macOS **launchd** agent that runs on a calendar trigger, notifies when inputs are needed, and waits for a user sentinel; a `premura` CLI; and an agent-facing MCP/tool surface as the default analytical interface, with CLI/SQL as expert fallback.
 
-**Out of scope (v1):** live API pulls from any vendor; writing data back into Health Connect; mobile/Android components; multi-user or shared-account support; real-time/streaming ingestion; per-activity FIT-stream decoding (only summarized JSON from the GDPR dump); Apple Health / iOS sources; a graphical dashboard (the warehouse is the artifact).
+**Out of scope (v1):** live API pulls from any vendor; writing back into Health Connect; mobile/Android components; multi-user support; real-time/streaming ingestion; per-activity FIT-stream decoding; Apple Health / iOS sources; a graphical dashboard.
 
 ## 3. Functional requirements
 
-| ID    | Requirement                                                                                                                                                                                                                                                              |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| FR-1  | Ingest a Health Connect `.db` (`user_version=20` or compatible) and produce rows in `hp.fact_measurement` / `hp.fact_interval` for every supported metric type.                                                                                                          |
-| FR-2  | Ingest a Garmin GDPR `.zip` and produce rows for HRV (overnight + snapshot), respiratory rate, stress, Body Battery, SpO2, training load, training status, training readiness, daily wellness, and summarized activities, each classified with the correct `value_kind`. |
-| FR-3  | Ingest a Sleep as Android CSV into per-minute actigraphy samples plus session intervals, using the CSV's `Tz` column as the authoritative IANA time zone (sleep crossing a DST boundary stays continuous).                                                               |
-| FR-4  | Ingest a Body Measurement Tracker CSV, converting units per `config.parsers.bmt.weight_unit` / `length_unit` and assigning unknown columns to `metric_id = bmt_custom:<slug>` with `unit='unknown'`.                                                                     |
-| FR-5  | Deduplicate within a source (native UUID / synthesized key UNIQUE) and across sources (priority-ordered match by metric_id + ±2s timestamp + ±0.01 value).                                                                                                               |
-| FR-6  | Produce an encrypted `health.duckdb.age` (and `raw.tar.gz.age` of the month's staged raws) recoverable with the user's `age` private key.                                                                                                                                |
-| FR-7  | Upload encrypted artifacts to `gdrive:/backups/premura/YYYY/MM/` only on explicit opt-in, verified via `rclone lsl`.                                                                                                                                                     |
-| FR-8  | Run unattended-or-notify on macOS via launchd, calendar-triggered monthly, acting on inputs only when the user has touched `data/inbox/.ready`.                                                                                                                          |
-| FR-9  | Be idempotent: re-running any ingest with the same input file (matched by sha256) is a no-op for rows already written.                                                                                                                                                   |
-| FR-10 | Preserve historical rows even when a fresher dump no longer contains them (Garmin's 2-/5-year horizon).                                                                                                                                                                  |
+| ID    | Requirement                                                                                                                                                                                                           |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-1  | Ingest a Health Connect `.db` (`user_version=20` or compatible) into `hp.fact_measurement` / `hp.fact_interval` for every supported metric type.                                                                      |
+| FR-2  | Ingest a Garmin GDPR `.zip`: HRV (overnight + snapshot), respiratory rate, stress, Body Battery, SpO2, training load/status/readiness, daily wellness, and summarized activities, each with the correct `value_kind`. |
+| FR-3  | Ingest a Sleep as Android CSV into per-minute actigraphy plus session intervals, using the `Tz` column as the authoritative IANA time zone (sleep stays continuous across a DST boundary).                            |
+| FR-4  | Ingest a Body Measurement Tracker CSV, converting units per `config.parsers.bmt.*` and assigning unknown columns to `bmt_custom:<slug>` with `unit='unknown'`.                                                        |
+| FR-5  | Deduplicate within a source (UNIQUE native/synthesized key) and across sources (priority-ordered match by metric_id + ±2s + ±0.01 value).                                                                             |
+| FR-6  | Produce encrypted `health.duckdb.age` and `raw.tar.gz.age` recoverable with the user's `age` private key.                                                                                                             |
+| FR-7  | Upload encrypted artifacts to `gdrive:/backups/premura/YYYY/MM/` only on explicit opt-in, verified via `rclone lsl`.                                                                                                  |
+| FR-8  | Run unattended-or-notify on macOS via launchd, calendar-triggered monthly, acting only when the user has touched `data/inbox/.ready`.                                                                                 |
+| FR-9  | Be idempotent: re-running any ingest with the same input (matched by sha256) is a no-op for rows already written.                                                                                                     |
+| FR-10 | Preserve historical rows even when a fresher dump no longer contains them (Garmin's 2-/5-year horizon).                                                                                                               |
 
 ## 4. Non-functional requirements
 
-- **Security.** Health data is **GDPR Article 9** special-category data. All Drive artifacts MUST be encrypted at rest; cleartext MUST never reach Drive. The `age` private key MUST be `0600` and git-excluded. The `rclone` remote MUST use `drive.file` scope, not full `drive`. No third-party analytics/telemetry/crash reporting in the pipeline. An upload `manifest.json` MAY carry only non-PHI metadata (sha256s, batch_id, age recipient fingerprint, file inventory by name + size).
-- **Durability.** The DuckDB warehouse is the system of record post-ingestion; stage/raw files MAY be gc'd via `premura gc --keep N` (default 3 months). Garmin GDPR exports expire 3 days after generation, so the encrypted raw tarball becomes the durable copy. Loss of the `age` private key = total backup loss; the system MUST warn at setup and remind periodically.
-- **Observability.** Every ingest MUST write an `hp.ingest_run` row (`started_at`, `finished_at`, `source_kind`, `source_path`, `source_sha256`, `rows_inserted`, `rows_skipped_dup`). Logs MUST be structured (`structlog` JSON) to `~/Library/Logs/premura/{out,err}.log`. `premura doctor` MUST report status of `age`, `rclone`, `uv`, DuckDB presence, age key fingerprint, rclone reachability, and free disk.
-- **Portability.** The warehouse MUST open on any platform with DuckDB ≥1.1 (no platform-specific extensions stored). Encrypted artifacts MUST decrypt with stock `age`.
-- **Performance (soft targets).** ~200 MB HC ingest under 60 s on an M-series Mac; monthly run under 10 min for a ~500 MB GDPR zip; warehouse under 1 GB after 5 years (before encryption).
+- **Security.** GDPR Article 9 special-category data. Drive artifacts encrypted at rest, cleartext never on Drive. `age` key `0600` + git-excluded. `rclone` remote uses `drive.file` scope. No analytics/telemetry. Upload `manifest.json` carries non-PHI metadata only.
+- **Durability.** The DuckDB warehouse is the system of record post-ingestion; stage/raw files gc'd via `premura gc --keep N` (default 3 months). Garmin GDPR exports expire in 3 days, so the encrypted raw tarball is the durable copy. `age` key loss = total backup loss (warn at setup, remind periodically).
+- **Observability.** Each ingest writes an `hp.ingest_run` row (timestamps, source_kind/path/sha256, rows inserted/skipped). Structured `structlog` JSON logs. `premura doctor` reports `age`, `rclone`, `uv`, DuckDB presence, key fingerprint, rclone reachability, free disk.
+- **Portability.** Warehouse opens on any DuckDB ≥1.1 platform (no platform-specific extensions); artifacts decrypt with stock `age`.
+- **Performance (soft).** ~200 MB HC ingest <60 s (M-series); monthly run <10 min for a ~500 MB GDPR zip; warehouse <1 GB after 5 years.
 
 ## 5. Data contract
 
@@ -84,22 +84,22 @@ Build a single, locally-owned warehouse and tool substrate for the user's person
 
 ### Primary analytical interface — agent-facing tool surface
 
-The system SHALL expose a programmatic analytical surface suitable for an AI agent acting on the human user's behalf. In the current shipped shape this is the MCP surface described in `docs/building/architecture/STAGES.md` and `docs/shared/STATUS.md`.
+The system SHALL expose a programmatic analytical surface for an AI agent acting on the user's behalf. The shipped shape is the MCP surface described in `docs/building/architecture/STAGES.md` and `docs/shared/STATUS.md`.
 
 ### Operator interface — CLI surface (`premura`)
 
 ```
-premura bootstrap                                         # fresh-clone setup readiness; on a fresh clone use `uv run premura bootstrap`
+premura bootstrap                                         # fresh-clone setup readiness
 premura ingest [--source all|hc|garmin|saa|bmt|lab] [PATH] # parse and store
-premura status                                            # summary of ingest_run + row counts per metric
-premura export --month YYYY-MM                            # snapshot + tarball staged raws, age-encrypt
+premura status                                            # ingest_run + per-metric row counts
+premura export --month YYYY-MM                            # snapshot + tarball raws, age-encrypt
 premura upload --month YYYY-MM                            # opt-in rclone copy to Drive
-premura run-monthly                                       # ingest + encrypt pipeline (no upload step)
+premura run-monthly                                       # ingest + encrypt (no upload)
 premura doctor                                            # environment + config preflight
-premura gc --keep N                                       # drop local exports older than N months
+premura gc --keep N                                       # drop exports older than N months
 premura install-launchd / uninstall-launchd               # manage the launchd agent
 premura install-skills                                    # install bundled agent skills
-premura profile-fields / profile-record                   # expert mirror of bounded profile capture
+premura profile-fields / profile-record                   # expert profile-capture mirror
 ```
 
 All commands MUST emit a non-zero exit code on any failure that breaks the contract (failed sha256, failed upload verification, failed encryption round-trip).
@@ -107,5 +107,5 @@ All commands MUST emit a non-zero exit code on any failure that breaks the contr
 ## 7. Acceptance criteria
 
 - A full monthly run from a fresh checkout completes the verification ladder with no manual fix-ups beyond the one-time bootstrap.
-- A random month's encrypted artifact decrypts to a DuckDB file whose row counts match the local warehouse at the same point in time (same check applies to any uploaded copy).
-- `premura doctor` reports green on the operator's Mac and on a second clean Mac (proves no implicit state outside the repo + `~/.config/premura/`).
+- A random month's encrypted artifact decrypts to a DuckDB file whose row counts match the local warehouse at that point in time (same for any uploaded copy).
+- `premura doctor` reports green on the operator's Mac and on a second clean Mac (no implicit state outside the repo + `~/.config/premura/`).

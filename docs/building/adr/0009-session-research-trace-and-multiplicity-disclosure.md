@@ -1,5 +1,7 @@
 # A session-scoped research trace lives at the MCP boundary, in its own non-`hp.*` schema, and reports a _measured_ multiplicity disclosure — never a corrected statistic
 
+> **Status:** Accepted — 2026-06-02
+
 The session-scoped research trace is the stateful counterpart that design decision note [0008](0008-correlate-pre-registered-lagged-association.md) explicitly pushed out of the stateless analytical engine. With three inference tools now shipped (`change_point`, `correlate`, and `paired_t_test` coming), an agent can examine many hypotheses against one person's data and present only the one that fit — a per-session property that per-call honesty cannot see. This note records the shape the trace is taking so the implementing change, and the audit skill after it, extend it consistently instead of re-deciding.
 
 The decisions:

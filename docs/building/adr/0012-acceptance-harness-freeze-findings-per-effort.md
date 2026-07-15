@@ -1,6 +1,8 @@
 # The acceptance harness is frozen at current capability; further harness work must be paid for by findings about Premura
 
-Decided 2026-06-12, the day the harness first ran end-to-end with real local models (audit: [`2026-06-12-v040-first-full-stack-live-trial.md`](../../history/audits/2026-06-12-v040-first-full-stack-live-trial.md)).
+> **Status:** Accepted — 2026-06-12
+
+Decided 2026-06-12, the day the harness first ran end-to-end with real local models.
 
 The acceptance evaluation exists to test the project's central bet — that Premura is operable by agents — and to produce findings about _Premura_. By v0.4.0 the investment ratio had inverted: five of the seven consolidated overnight missions (m2–m6: turn capture, judge, improvement hook, fixture generator, answer grading) built the test rig rather than the app, and the post-release fix day (#25/#26 + two more defects) was spent entirely inside the rig. Total findings about Premura itself so far: one — cheap models learn the parser contract fine; their bottleneck is tool-call transport, not the contract design. The rig had grown its own observability stack (a judge that judges the test, an improvement hook that proposes improvements to the test) — the classic meta-work trap, amplified by the overnight runner's natural preference for synthetic, PHI-free, additive missions.
 

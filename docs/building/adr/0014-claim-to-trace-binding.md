@@ -1,5 +1,7 @@
 # Claim-to-trace binding is an inline-marker extractor plus a call-lookup query beside audit check 5
 
+> **Status:** Accepted — 2026-07-04
+
 The 2026-07-04 maintainer design-interview promoted the claim-to-trace binding named-later-slice work of [`OPERATING_ROLES.md`](../architecture/OPERATING_ROLES.md) (issue #31) by answering its open design question — _what deterministically marks a "claim" in prose?_ — and locking the binding's shape. Today audit check 1 proves only that the named session recorded analytical work; a draft could pass while its claims rest on calls unrelated to that session. Binding closes that gap as a second deterministic extractor-and-query pair **beside** check 5's citation binding, never a fork of the audit flow. This note is the decision note the spec required before implementation (issue #32) may build; the concept lineage is decision notes [0009](0009-session-research-trace-and-multiplicity-disclosure.md) (the trace and its measured disclosure) and [0013](0013-operating-roles-promotion-decisions.md) (the blocking, deterministic audit gate).
 
 The decisions:

@@ -18,6 +18,14 @@ Every MCP-capable agent app needs the same three facts to register Premura as a 
 
 Each client below just spells those three facts in its own config syntax. Run the commands from the repo root (or an installed Premura checkout) so `uv run` resolves the project environment.
 
+For the **default surface**, one command does the config merge for you — no hand-editing:
+
+```bash
+premura install-client claude   # or: opencode | codex
+```
+
+It writes the same entry the manual recipes below spell out, idempotently (re-running is a no-op). By design it only ever registers the default `premura-mcp` surface; the operator surface stays a deliberate manual step (its recipes below). The manual snippets remain here as reference for what gets written and for the operator surface.
+
 ## Claude Code
 
 Project-scoped, shared via version control: add to `.mcp.json` at the repo root —
