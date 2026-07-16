@@ -155,9 +155,7 @@ def signal_route_for(direction: str) -> str:
 
 def _seed_stages8() -> None:
     for direction in _STAGES8:
-        register_track(
-            InterviewTrack(track_id=direction, signal_route=signal_route_for(direction))
-        )
+        register_track(InterviewTrack(track_id=direction, signal_route=signal_route_for(direction)))
 
 
 __all__ = [
