@@ -510,7 +510,7 @@ def install_interview_route_resolver() -> None:
             interview_tracks.register_track(
                 interview_tracks.InterviewTrack(
                     track_id=direction,
-                    signal_route=f"{_SIGNAL_SELECTOR_ROUTE_PREFIX}{direction}",
+                    signal_route=interview_tracks.signal_route_for(direction),
                 )
             )
         except ValueError:

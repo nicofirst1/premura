@@ -141,10 +141,22 @@ _STAGES8 = (
 )
 
 
+# track_id is interview vocabulary (STAGES.md); the route targets engine-domain
+# vocabulary. They diverge only for cardio (signals register "cardiovascular").
+_STAGES8_ROUTE = {"cardio": "cardiovascular"}
+
+
+def signal_route_for(direction: str) -> str:
+    """The ``signal_selector:`` route for a STAGES-8 direction, bridging interview
+    vocabulary to the engine signal domain (they diverge only for ``cardio``).
+    Shared by both seeders so they cannot drift."""
+    return f"signal_selector:{_STAGES8_ROUTE.get(direction, direction)}"
+
+
 def _seed_stages8() -> None:
     for direction in _STAGES8:
         register_track(
-            InterviewTrack(track_id=direction, signal_route=f"signal_selector:{direction}")
+            InterviewTrack(track_id=direction, signal_route=signal_route_for(direction))
         )
 
 
@@ -155,4 +167,5 @@ __all__ = [
     "list_tracks",
     "register_track",
     "set_route_resolver",
+    "signal_route_for",
 ]

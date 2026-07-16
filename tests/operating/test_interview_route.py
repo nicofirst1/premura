@@ -93,6 +93,10 @@ def test_stages8_seed_admits_only_resolvable_directions() -> None:
     server.install_interview_route_resolver()
     admitted = it.known_track_ids()
     assert "sleep" in admitted
+    # cardio is interview vocabulary but its signals register under the engine
+    # "cardiovascular" domain; the route must bridge that gap or the track dies.
+    assert "cardio" in admitted
+    assert it.get_track("cardio").signal_route == "signal_selector:cardiovascular"
     assert admitted <= set(it._STAGES8)  # never invents a direction outside the seeds
 
 
