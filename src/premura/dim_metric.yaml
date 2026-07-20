@@ -901,6 +901,7 @@
   missing_data_policy: none
   aliases:
     en: [RDW, RDW-CV]
+    it: [amp. distr. eritrocitaria, ampiezza distribuzione eritrocitaria]
   loinc: "788-0"
 
 - metric_id: lab:platelets
@@ -934,6 +935,8 @@
   category: blood:cbc
   validity_window: P3M
   missing_data_policy: none
+  aliases:
+    it: [neutrofili %]
   loinc: "770-8"
 
 - metric_id: lab:lymphocytes_pct
@@ -943,6 +946,8 @@
   category: blood:cbc
   validity_window: P3M
   missing_data_policy: none
+  aliases:
+    it: [linfociti %]
   loinc: "736-9"
 
 - metric_id: lab:monocytes_pct
@@ -952,6 +957,8 @@
   category: blood:cbc
   validity_window: P3M
   missing_data_policy: none
+  aliases:
+    it: [monociti %]
   loinc: "5905-5"
 
 - metric_id: lab:eosinophils_pct
@@ -961,6 +968,8 @@
   category: blood:cbc
   validity_window: P3M
   missing_data_policy: none
+  aliases:
+    it: [eosinofili %]
   loinc: "713-8"
 
 - metric_id: lab:basophils_pct
@@ -970,7 +979,93 @@
   category: blood:cbc
   validity_window: P3M
   missing_data_policy: none
+  aliases:
+    it: [basofili %]
   loinc: "706-2"
+
+- metric_id: lab:neutrophils_abs
+  display_name: Neutrophils (absolute count)
+  canonical_unit: 10^9_per_l
+  value_kind: instantaneous
+  description: Absolute neutrophil count from the CBC differential.
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [neutrofili v.a., neutrofili]
+  loinc: "751-8"
+
+- metric_id: lab:lymphocytes_abs
+  display_name: Lymphocytes (absolute count)
+  canonical_unit: 10^9_per_l
+  value_kind: instantaneous
+  description: Absolute lymphocyte count from the CBC differential.
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [linfociti v.a., linfociti]
+  loinc: "731-0"
+
+- metric_id: lab:monocytes_abs
+  display_name: Monocytes (absolute count)
+  canonical_unit: 10^9_per_l
+  value_kind: instantaneous
+  description: Absolute monocyte count from the CBC differential.
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [monociti v.a., monociti]
+  loinc: "742-7"
+
+- metric_id: lab:eosinophils_abs
+  display_name: Eosinophils (absolute count)
+  canonical_unit: 10^9_per_l
+  value_kind: instantaneous
+  description: Absolute eosinophil count from the CBC differential.
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [eosinofili v.a., eosinofili]
+  loinc: "711-2"
+
+- metric_id: lab:basophils_abs
+  display_name: Basophils (absolute count)
+  canonical_unit: 10^9_per_l
+  value_kind: instantaneous
+  description: Absolute basophil count from the CBC differential.
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [basofili v.a., basofili]
+  loinc: "704-7"
+
+- metric_id: lab:pdw
+  display_name: Platelet distribution width
+  canonical_unit: fl
+  value_kind: instantaneous
+  description: Platelet distribution width, distinct from mean platelet volume (lab:mpv).
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [amp. distr. piastrinica]
+  loinc: "32207-3"
+
+- metric_id: lab:immature_granulocytes
+  display_name: Immature granulocytes
+  canonical_unit: 10^9_per_l
+  value_kind: instantaneous
+  description: Immature granulocyte count from a modern automated CBC differential.
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [ig granulociti immaturi]
+  loinc: "[unmapped]"
 
 # === Lab: Lipid panel ===
 - metric_id: lab:total_cholesterol
@@ -1080,7 +1175,7 @@
   missing_data_policy: none
   aliases:
     en: [HbA1c, glycated hemoglobin, A1C]
-    it: [emoglobina glicata]
+    it: [emoglobina glicata, hba1c ifcc]
     de: [HbA1c, glykiertes Hämoglobin]
   loinc: "4548-4"
 
@@ -1187,6 +1282,8 @@
   category: blood:liver
   validity_window: P3M
   missing_data_policy: none
+  aliases:
+    it: [bilirubina diretta]
   loinc: "1968-7"
 
 - metric_id: lab:albumin
@@ -1209,7 +1306,91 @@
   category: blood:liver
   validity_window: P3M
   missing_data_policy: none
+  aliases:
+    it: [proteine totali]
   loinc: "2885-2"
+
+- metric_id: lab:amylase
+  display_name: Amylase
+  canonical_unit: U_per_l
+  value_kind: instantaneous
+  category: blood:liver
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [amilasi]
+  loinc: "1798-8"
+
+- metric_id: lab:lipase
+  display_name: Lipase
+  canonical_unit: U_per_l
+  value_kind: instantaneous
+  category: blood:liver
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [lipasi]
+  loinc: "3040-3"
+
+- metric_id: lab:ldh
+  display_name: Lactate dehydrogenase
+  canonical_unit: U_per_l
+  value_kind: instantaneous
+  category: blood:liver
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [LDH]
+    it: [latticodeidrogenasi, latticodeidrogenasi ldh]
+  loinc: "2532-0"
+
+- metric_id: lab:ck_total
+  display_name: Creatine kinase (total)
+  canonical_unit: U_per_l
+  value_kind: instantaneous
+  category: blood:cardiac
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [CPK, CK]
+    it: [cpk]
+  loinc: "2157-6"
+
+- metric_id: lab:ck_mb
+  display_name: Creatine kinase MB
+  canonical_unit: ng_per_ml
+  value_kind: instantaneous
+  description: MB isoenzyme fraction of creatine kinase, used in cardiac injury workup.
+  category: blood:cardiac
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [CK-MB]
+    it: [ck-mb]
+  loinc: "13969-1"
+
+- metric_id: lab:myoglobin
+  display_name: Myoglobin
+  canonical_unit: ng_per_ml
+  value_kind: instantaneous
+  category: blood:cardiac
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [mioglobina]
+  loinc: "2639-3"
+
+- metric_id: lab:troponin
+  display_name: Troponin
+  canonical_unit: ng_per_ml
+  value_kind: instantaneous
+  description: Cardiac troponin (assay generation/isoform not distinguished by this source).
+  category: blood:cardiac
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [troponina]
+  loinc: "[unmapped]"
 
 # === Lab: Kidney panel ===
 - metric_id: lab:creatinine
@@ -1221,7 +1402,7 @@
   missing_data_policy: none
   aliases:
     en: [creatinine, Cr]
-    it: [creatinina]
+    it: [creatinina, creatininemia]
     de: [Kreatinin]
   loinc: "2160-0"
 
@@ -1276,7 +1457,7 @@
   missing_data_policy: none
   aliases:
     en: [uric acid, urate]
-    it: [acido urico]
+    it: [acido urico, uricemia]
     de: [Harnsäure]
   loinc: "3084-1"
 
@@ -1290,7 +1471,7 @@
   missing_data_policy: none
   aliases:
     en: [Na, sodium]
-    it: [sodio]
+    it: [sodio, sodiemia, sodemia, sodio biovis]
     de: [Natrium]
   loinc: "2951-2"
 
@@ -1303,7 +1484,7 @@
   missing_data_policy: none
   aliases:
     en: [K, potassium]
-    it: [potassio]
+    it: [potassio, potassiemia, potassio biovis]
     de: [Kalium]
   loinc: "2823-3"
 
@@ -1316,7 +1497,7 @@
   missing_data_policy: none
   aliases:
     en: [Cl, chloride]
-    it: [cloro]
+    it: [cloro, cloremia]
     de: [Chlorid]
   loinc: "2075-0"
 
@@ -1329,7 +1510,7 @@
   missing_data_policy: none
   aliases:
     en: [Ca, calcium]
-    it: [calcio]
+    it: [calcio, calcemia, calcio biovis]
     de: [Kalzium]
   loinc: "17861-6"
 
@@ -1342,7 +1523,7 @@
   missing_data_policy: none
   aliases:
     en: [Mg, magnesium]
-    it: [magnesio]
+    it: [magnesio, magnesemia, magnesio biovis]
     de: [Magnesium]
   loinc: "19123-9"
 
@@ -1353,6 +1534,8 @@
   category: blood:electrolytes
   validity_window: P3M
   missing_data_policy: none
+  aliases:
+    it: [fosforo biovis]
   loinc: "2777-1"
 
 - metric_id: lab:bicarbonate
@@ -1389,6 +1572,7 @@
   missing_data_policy: none
   aliases:
     en: [FT4, free T4]
+    de: [Freies T4]
   loinc: "3024-7"
 
 - metric_id: lab:free_t3
@@ -1400,6 +1584,7 @@
   missing_data_policy: none
   aliases:
     en: [FT3, free T3]
+    de: [Freies T3]
   loinc: "3051-0"
 
 - metric_id: lab:anti_tpo
@@ -1411,6 +1596,7 @@
   missing_data_policy: none
   aliases:
     en: [anti-TPO, TPOAb]
+    it: [ab anti-perossidasi]
   loinc: "8099-5"
 
 - metric_id: lab:anti_tg
@@ -1422,7 +1608,20 @@
   missing_data_policy: none
   aliases:
     en: [anti-Tg, TgAb]
+    it: [ab anti-tireoglobulina]
   loinc: "8098-7"
+
+- metric_id: lab:thyroglobulin
+  display_name: Thyroglobulin
+  canonical_unit: ng_per_ml
+  value_kind: instantaneous
+  description: Thyroglobulin protein level, distinct from the anti-thyroglobulin antibody (lab:anti_tg).
+  category: blood:thyroid
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    it: [tireoglobulina]
+  loinc: "3013-0"
 
 # === Lab: Iron / vitamins ===
 - metric_id: lab:iron
@@ -1434,7 +1633,7 @@
   missing_data_policy: none
   aliases:
     en: [Fe, iron]
-    it: [ferro, sideremia]
+    it: [ferro, sideremia, ferro biovis]
     de: [Eisen]
   loinc: "2498-4"
 
@@ -1478,6 +1677,8 @@
   category: blood:iron
   validity_window: P3M
   missing_data_policy: none
+  aliases:
+    de: [Transferrinsättigung]
   loinc: "2502-3"
 
 - metric_id: lab:vitamin_d_25oh
@@ -1587,7 +1788,20 @@
   category: blood:endocrine
   validity_window: P6M
   missing_data_policy: none
+  aliases:
+    it: [testosterone]
   loinc: "2986-8"
+
+- metric_id: lab:prolactin
+  display_name: Prolactin
+  canonical_unit: ng_per_ml
+  value_kind: instantaneous
+  category: blood:endocrine
+  validity_window: P6M
+  missing_data_policy: none
+  aliases:
+    it: [prolattina]
+  loinc: "2842-3"
 
 - metric_id: lab:testosterone_free
   display_name: Free testosterone
@@ -1627,7 +1841,32 @@
   missing_data_policy: none
   aliases:
     en: [PSA]
+    it: [psa totale]
   loinc: "2857-1"
+
+- metric_id: lab:psa_free
+  display_name: Free PSA
+  canonical_unit: ng_per_ml
+  value_kind: instantaneous
+  description: Free-fraction prostate-specific antigen, distinct from total PSA (lab:psa).
+  category: blood:endocrine
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    it: [psa libero]
+  loinc: "10886-0"
+
+- metric_id: lab:psa_free_total_ratio
+  display_name: Free/total PSA ratio
+  canonical_unit: pct
+  value_kind: instantaneous
+  description: Lab-reported ratio of free to total PSA, used to refine prostate cancer risk.
+  category: blood:endocrine
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    it: [rapporto psa]
+  loinc: "[unmapped]"
 
 # === Lab: Coagulation ===
 - metric_id: lab:pt
@@ -1659,6 +1898,8 @@
   category: blood:coagulation
   validity_window: P3M
   missing_data_policy: none
+  aliases:
+    it: [fibrinogeno]
   loinc: "3255-7"
 
 - metric_id: lab:d_dimer
@@ -1668,7 +1909,33 @@
   category: blood:coagulation
   validity_window: P3M
   missing_data_policy: none
+  aliases:
+    it: [d-dimero]
   loinc: "30240-6"
+
+- metric_id: lab:aptt
+  display_name: Activated partial thromboplastin time
+  canonical_unit: s
+  value_kind: instantaneous
+  description: aPTT, commonly abbreviated PTT in German-language lab reports.
+  category: blood:coagulation
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    en: [aPTT, PTT]
+    de: [PTT]
+  loinc: "14979-9"
+
+- metric_id: lab:thrombin_time
+  display_name: Thrombin time
+  canonical_unit: s
+  value_kind: instantaneous
+  category: blood:coagulation
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    de: [Thrombinzeit]
+  loinc: "3243-3"
 
 # === Lab: Urine ===
 - metric_id: lab:urine_ph
@@ -1807,6 +2074,190 @@
   validity_window: P3M
   missing_data_policy: none
   loinc: "2955-3"
+
+# === Lab: Protein fractions ===
+- metric_id: lab:albumin_globulin_ratio
+  display_name: Albumin/globulin ratio
+  canonical_unit: ratio
+  value_kind: instantaneous
+  description: Lab-reported ratio of serum albumin to total globulins from the same protein electrophoresis panel.
+  category: blood:liver
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [rapporto a/g]
+  loinc: "1759-0"
+
+# === Lab: Immunology / serology ===
+- metric_id: lab:iga
+  display_name: Immunoglobulin A
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:immunology
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [IgA, immunoglobulin A]
+    it: [iga]
+    de: [Immunglobulin A]
+  loinc: "2458-8"
+
+- metric_id: lab:igg
+  display_name: Immunoglobulin G
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:immunology
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [IgG, immunoglobulin G]
+    it: [igg]
+    de: [Immunglobulin G]
+  loinc: "2465-3"
+
+- metric_id: lab:igm
+  display_name: Immunoglobulin M
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  category: blood:immunology
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [IgM, immunoglobulin M]
+    it: [igm]
+    de: [Immunglobulin M]
+  loinc: "2472-9"
+
+- metric_id: lab:ige_total
+  display_name: Immunoglobulin E (total)
+  canonical_unit: IU_per_ml
+  value_kind: instantaneous
+  category: blood:immunology
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [IgE, total IgE]
+    de: [Immunglobulin E gesamt]
+  loinc: "[unmapped]"
+
+- metric_id: lab:ebv_vca_igg
+  display_name: EBV viral capsid antigen IgG antibody
+  canonical_unit: enum
+  value_kind: instantaneous
+  description: Epstein-Barr virus (EBV) VCA IgG serology, indicates past/remote infection when positive.
+  category: blood:immunology
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    it: [anti vca igg]
+  loinc: "[unmapped]"
+
+- metric_id: lab:cmv_igg
+  display_name: Cytomegalovirus IgG antibody
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: blood:immunology
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    it: [citomegalovirus igg]
+  loinc: "[unmapped]"
+
+- metric_id: lab:cmv_igm
+  display_name: Cytomegalovirus IgM antibody
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: blood:immunology
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    it: [citomegalovirus igm]
+  loinc: "[unmapped]"
+
+- metric_id: lab:hbsag
+  display_name: Hepatitis B surface antigen
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: blood:immunology
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [HBsAg]
+    it: [hbsag]
+  loinc: "5195-3"
+
+- metric_id: lab:hbsab
+  display_name: Hepatitis B surface antibody
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: blood:immunology
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [HBsAb]
+    it: [hbsab]
+  loinc: "[unmapped]"
+
+- metric_id: lab:hbcab_igg
+  display_name: Hepatitis B core antibody IgG
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: blood:immunology
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [HBcAb IgG]
+    it: [hbcab igg]
+  loinc: "[unmapped]"
+
+- metric_id: lab:hbcab_igm
+  display_name: Hepatitis B core antibody IgM
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: blood:immunology
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [HBcAb IgM]
+    it: [hbcab igm]
+  loinc: "[unmapped]"
+
+- metric_id: lab:hbeag
+  display_name: Hepatitis B e antigen
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: blood:immunology
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [HBeAg]
+    it: [hbeag]
+  loinc: "[unmapped]"
+
+- metric_id: lab:hcvab
+  display_name: Hepatitis C virus antibody
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: blood:immunology
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [HCVAb, Hepatitis C Virus Ak]
+    it: [hcvab]
+    de: [Hepatitis C Virus Ak]
+  loinc: "[unmapped]"
+
+- metric_id: lab:hiv_ab
+  display_name: HIV antibody
+  canonical_unit: enum
+  value_kind: instantaneous
+  category: blood:immunology
+  validity_window: P1Y
+  missing_data_policy: none
+  aliases:
+    en: [HIV]
+    it: [hiv]
+  loinc: "[unmapped]"
 
 # === Lab: Stool ===
 - metric_id: lab:stool_occult_blood
