@@ -24,6 +24,7 @@ from .fitbit_takeout import FitbitTakeoutParser
 from .garmin_gdpr import GarminGDPRParser
 from .health_connect import HealthConnectParser
 from .lab_pdf import LabPdfParser
+from .lab_xlsx import LabXlsxParser
 from .myfitnesspal import MyFitnessPalParser
 from .sleep_as_android import SleepAsAndroidParser
 from .withings import WithingsParser
@@ -41,6 +42,7 @@ PARSER_REGISTRY: dict[str, tuple[PARSER_FACTORY, str]] = {
     "saa": (SleepAsAndroidParser, "sleep_as_android"),
     "bmt": (BMTParser, "bmt"),
     "lab": (LabPdfParser, "lab_pdf"),
+    "labsheet": (LabXlsxParser, "labsheet"),
     "mfp": (MyFitnessPalParser, "myfitnesspal"),
     "aichat": (AiChatRecallParser, "ai_chat_recall"),
     "withings": (WithingsParser, "withings"),

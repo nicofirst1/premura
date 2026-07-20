@@ -199,6 +199,8 @@ def _discover_input(source_key: str) -> Path | None:
         candidates = [p for p in csvs if _csv_kind(p) == source_key]
     elif source_key == "lab":
         candidates = sorted(inbox.glob("*.pdf"), key=lambda p: p.stat().st_mtime, reverse=True)
+    elif source_key == "labsheet":
+        candidates = sorted(inbox.glob("*.xlsx"), key=lambda p: p.stat().st_mtime, reverse=True)
     elif source_key == "mfp":
         zips = sorted(inbox.glob("*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
         csvs = sorted(inbox.glob("*.csv"), key=lambda p: p.stat().st_mtime, reverse=True)
@@ -337,6 +339,8 @@ def _resolve_source_key(path: Path) -> str | None:
         return _csv_kind(path)  # 'saa' | 'mfp' | 'bmt'
     if suffix == ".pdf":
         return "lab"
+    if suffix == ".xlsx":
+        return "labsheet"
     if suffix == ".json" and _json_is_chat_recall(path):
         return "aichat"
     return None
