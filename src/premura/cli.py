@@ -35,10 +35,10 @@ from .config import settings
 from .mcp import server as mcp_server
 from .ops import encrypt, notify, upload
 from .parsers.ai_chat_recall import FORMAT_MARKER as AI_CHAT_RECALL_MARKER
-from .parsers.base import normalize_parse_output
+from .parsers.base import file_sha256, normalize_parse_output
 from .parsers.registry import PARSER_REGISTRY
 from .store import duck
-from .store.loader import already_ingested, load
+from .store.loader import LoadStats, already_ingested, finish_ingest_run, load, start_ingest_run
 from .store.profile_intake import persist_intake_batch
 
 app = typer.Typer(
@@ -134,16 +134,37 @@ def _ingest_one(conn, source_key: str, override_path: Path | None) -> None:
             )
 
     # Intake seam: nutrition/supplement intake never travels the observation
-    # loader; it persists through its own home (FR-007, two-seam rule).
+    # loader; it persists through its own home (FR-007, two-seam rule). It still
+    # writes an hp.ingest_run row through the same loader bookkeeping every
+    # other source uses, so it shows up under "Recent ingest runs" and
+    # participates in the sha256 already-ingested skip (issue #88).
     if intake is not None:
-        intake_stats = persist_intake_batch(conn, intake)
-        intake_dup_skip = (
-            intake_stats.nutrition_events_skipped_dup + intake_stats.supplement_events_skipped_dup
-        )
-        console.print(
-            f"  intake events inserted={intake_stats.events_inserted:,} "
-            f"dup_skip={intake_dup_skip:,}"
-        )
+        source_kind = next(iter(intake.source_descriptors.values())).source_kind
+        sha256 = file_sha256(candidate)
+        if already_ingested(conn, sha256):
+            console.print(f"  [dim]sha256 {sha256[:12]}… already ingested; skipping[/dim]")
+        else:
+            batch_id = start_ingest_run(
+                conn, source_kind=source_kind, source_path=candidate, source_sha256=sha256
+            )
+            intake_stats = persist_intake_batch(conn, intake)
+            intake_dup_skip = (
+                intake_stats.nutrition_events_skipped_dup
+                + intake_stats.supplement_events_skipped_dup
+            )
+            finish_ingest_run(
+                conn,
+                batch_id=batch_id,
+                stats=LoadStats(
+                    batch_id=batch_id,
+                    rows_inserted=intake_stats.events_inserted,
+                    rows_skipped_dup=intake_dup_skip,
+                ),
+            )
+            console.print(
+                f"  intake events inserted={intake_stats.events_inserted:,} "
+                f"dup_skip={intake_dup_skip:,}"
+            )
 
 
 def _discover_input(source_key: str) -> Path | None:
@@ -433,6 +454,13 @@ def status() -> None:
         for r in rows:
             i_tbl.add_row(r[0], f"{r[1]:,}")
         console.print(i_tbl)
+
+        for summary in duck.domain_table_summaries(conn):
+            d_tbl = Table(title=summary.table)
+            for col in ("rows", "earliest", "latest"):
+                d_tbl.add_column(col)
+            d_tbl.add_row(f"{summary.row_count:,}", summary.earliest or "—", summary.latest or "—")
+            console.print(d_tbl)
     finally:
         conn.close()
 

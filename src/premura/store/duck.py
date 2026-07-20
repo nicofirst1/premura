@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.resources as resources
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -15,6 +16,59 @@ if TYPE_CHECKING:
 
 MIGRATIONS_PACKAGE = "premura.store.migrations"
 DIM_METRIC_YAML = "dim_metric.yaml"
+
+# Registry of populated warehouse domain tables: the single source of truth
+# `status` (and anything else that wants "what's in the warehouse") summarizes
+# over. `fact_measurement`/`fact_interval` are reported separately (broken down
+# by metric_id, not just a row count), so they are not repeated here.
+# Adding a new domain table means adding one entry here — never editing a
+# consumer's query list (docs/shared/DOCTRINE.md "guide, don't enumerate").
+DOMAIN_TABLE_REGISTRY: tuple[tuple[str, str | None], ...] = (
+    ("hp.fact_clinical_note", "ts_utc"),
+    ("hp.nutrition_intake_event", "start_utc"),
+    ("hp.nutrition_quantity", None),
+    ("hp.supplement_intake_event", "ts_utc"),
+    ("hp.supplement_dose", None),
+    ("hp.supplement_item", None),
+    ("hp.condition_episode", "start_day"),
+)
+
+
+@dataclass(slots=True)
+class DomainTableSummary:
+    """One row-count (+ optional date range) summary for a registered table."""
+
+    table: str
+    row_count: int
+    earliest: str | None = None
+    latest: str | None = None
+
+
+def domain_table_summaries(
+    conn: duckdb.DuckDBPyConnection,
+) -> list[DomainTableSummary]:
+    """Row counts (+ date range) for every registered domain table.
+
+    Empty tables are skipped. Driven entirely by ``DOMAIN_TABLE_REGISTRY``, so
+    a new domain table becomes visible in `status` by registering it here once.
+    """
+    summaries: list[DomainTableSummary] = []
+    for table, ts_col in DOMAIN_TABLE_REGISTRY:
+        count_row = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()  # noqa: S608
+        count = int(count_row[0]) if count_row else 0
+        if count == 0:
+            continue
+        earliest = latest = None
+        if ts_col is not None:
+            range_row = conn.execute(
+                f"SELECT MIN({ts_col})::VARCHAR, MAX({ts_col})::VARCHAR FROM {table}"  # noqa: S608
+            ).fetchone()
+            if range_row:
+                earliest, latest = range_row
+        summaries.append(
+            DomainTableSummary(table=table, row_count=count, earliest=earliest, latest=latest)
+        )
+    return summaries
 
 
 def connect(db_path: Path, *, read_only: bool = False) -> duckdb.DuckDBPyConnection:
