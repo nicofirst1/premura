@@ -96,6 +96,7 @@ def _coerce_ts(value: Any) -> datetime | None:
 
 # Probe these keys in order; first non-None wins.
 _TS_KEYS_PREFERRED = (
+    "beginTimestamp",
     "startTimeGmt",
     "timestampGmt",
     "sleepStartTimestampGMT",
@@ -191,20 +192,24 @@ class GarminGDPRParser:
 
     def declares_metrics(self) -> list[str]:
         return [
-            "activity_summary",
+            "active_kcal",
             "bp_diastolic",
             "bp_systolic",
             "daily_wellness",
+            "distance",
+            "exercise_session",
             "heart_rate",
             "hrv_rmssd_overnight",
             "hydration",
             "intensity_minutes",
             "resp_rate",
             "resting_hr",
+            "skin_temperature",
             "sleep_deep_pct",
             "sleep_rating",
             "sleep_session",
             "spo2",
+            "steps",
             "stress",
             "training_load",
             "training_readiness",
@@ -284,12 +289,23 @@ class GarminGDPRParser:
         """
         return RoutingPreview(entries=[(name, self._dispatch_name(name)) for name in member_names])
 
-    @staticmethod
-    def _iter_records(docs: Any) -> Iterable[dict[str, Any]]:
+    _DESCENT_KEYS = ("items", "readings", "values", "data", "summarizedActivitiesExport")
+
+    @classmethod
+    def _iter_records(cls, docs: Any) -> Iterable[dict[str, Any]]:
         if isinstance(docs, list):
+            # A list may itself be the top-level shape (plain array of records), or it
+            # may wrap dict(s) carrying a known descent key, e.g.
+            # [ {"summarizedActivitiesExport": [ {...}, {...} ]} ]
+            if docs and all(
+                isinstance(d, dict) and any(k in d for k in cls._DESCENT_KEYS) for d in docs
+            ):
+                for d in docs:
+                    yield from cls._iter_records(d)
+                return
             yield from (d for d in docs if isinstance(d, dict))
         elif isinstance(docs, dict):
-            for key in ("items", "readings", "values", "data", "summarizedActivitiesExport"):
+            for key in cls._DESCENT_KEYS:
                 v = docs.get(key)
                 if isinstance(v, list):
                     yield from (d for d in v if isinstance(d, dict))
@@ -692,11 +708,20 @@ class GarminGDPRParser:
             )
 
     def _handle_activity_summary(self, docs: Any, result: IngestBatch, *, member_name: str) -> None:
+        """Per-activity workout summaries.
+
+        `durationInSeconds` does not exist on this shape — Garmin's only duration
+        field here is `duration`, in MILLISECONDS (e.g. 2827553.95 ms ~= 47 min).
+        """
         for rec in self._iter_records(docs):
             ts = _extract_record_ts(rec)
             if ts is None:
                 continue
-            dur_s = _as_float(rec.get("durationInSeconds")) or _as_float(rec.get("duration")) or 0.0
+            dur_ms = _as_float(rec.get("durationInSeconds"))
+            if dur_ms is not None:
+                dur_s = dur_ms  # legacy shape, already seconds
+            else:
+                dur_s = (_as_float(rec.get("duration")) or 0.0) / 1000.0
             try:
                 end = ts + timedelta(seconds=dur_s)
             except (TypeError, ValueError):
@@ -708,19 +733,85 @@ class GarminGDPRParser:
                 or "activity"
             )
             summary_id = rec.get("summaryId") or rec.get("activityId")
+            uuid = _synthesize_uuid("activity_summary", summary_id)
+            tz = _extract_offset_str(rec)
+
+            # Canonical exercise-session interval — unifies with Health Connect /
+            # Fitbit workouts under one metric_id; Garmin's activity type goes in
+            # value_text same as the other sources' exercise_type label.
             result.intervals.append(
                 Interval(
                     start_utc=ts,
                     end_utc=end,
-                    metric_id="activity_summary",
+                    metric_id="exercise_session",
                     source_id=DEFAULT_SOURCE_ID,
                     source_kind=SOURCE_KIND,
                     value_text=str(label),
-                    local_tz=_extract_offset_str(rec),
-                    source_uuid=_synthesize_uuid("activity_summary", summary_id),
+                    local_tz=tz,
+                    source_uuid=uuid,
                     raw_payload=rec,
                 )
             )
+
+            calories = _as_float(rec.get("calories"))
+            if calories is not None:
+                result.intervals.append(
+                    Interval(
+                        start_utc=ts,
+                        end_utc=end,
+                        metric_id="active_kcal",
+                        source_id=DEFAULT_SOURCE_ID,
+                        source_kind=SOURCE_KIND,
+                        value_num=calories,
+                        local_tz=tz,
+                        source_uuid=f"{uuid}:calories",
+                    )
+                )
+
+            distance = _as_float(rec.get("distance"))
+            if distance is not None:
+                result.intervals.append(
+                    Interval(
+                        start_utc=ts,
+                        end_utc=end,
+                        metric_id="distance",
+                        source_id=DEFAULT_SOURCE_ID,
+                        source_kind=SOURCE_KIND,
+                        value_num=distance,
+                        local_tz=tz,
+                        source_uuid=f"{uuid}:distance",
+                    )
+                )
+
+            steps = _as_float(rec.get("steps"))
+            if steps is not None:
+                result.intervals.append(
+                    Interval(
+                        start_utc=ts,
+                        end_utc=end,
+                        metric_id="steps",
+                        source_id=DEFAULT_SOURCE_ID,
+                        source_kind=SOURCE_KIND,
+                        value_num=steps,
+                        local_tz=tz,
+                        source_uuid=f"{uuid}:steps",
+                    )
+                )
+
+            avg_hr = _as_float(rec.get("avgHr"))
+            if avg_hr is not None:
+                result.measurements.append(
+                    Measurement(
+                        ts_utc=ts,
+                        metric_id="heart_rate",
+                        unit="bpm",
+                        source_id=DEFAULT_SOURCE_ID,
+                        source_kind=SOURCE_KIND,
+                        value_num=avg_hr,
+                        local_tz=tz,
+                        source_uuid=f"{uuid}:avg_hr",
+                    )
+                )
 
 
 __all__ = ["GarminGDPRParser", "SOURCE_KIND"]
