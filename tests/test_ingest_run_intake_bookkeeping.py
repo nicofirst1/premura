@@ -12,6 +12,9 @@ from __future__ import annotations
 import zipfile
 from pathlib import Path
 
+import pytest
+
+from premura import cli
 from premura.cli import _ingest_one
 
 NUTRITION_HEADER = (
@@ -60,3 +63,32 @@ def test_mfp_reingest_is_skipped_via_sha256(empty_warehouse, tmp_path: Path) -> 
     count = empty_warehouse.execute("SELECT COUNT(*) FROM hp.ingest_run").fetchone()
     assert count is not None
     assert count[0] == 1
+
+
+def test_failed_intake_persist_leaves_no_orphan_run_row(
+    empty_warehouse, tmp_path: Path, monkeypatch
+) -> None:
+    """A raise during persist must roll back the started run row (no orphan)."""
+    zip_path = _export_zip(tmp_path)
+
+    def _boom(*_args, **_kwargs):
+        raise RuntimeError("synthetic persist failure")
+
+    monkeypatch.setattr(cli, "persist_intake_batch", _boom)
+    with pytest.raises(RuntimeError, match="synthetic persist failure"):
+        _ingest_one(empty_warehouse, "mfp", zip_path)
+
+    count = empty_warehouse.execute("SELECT COUNT(*) FROM hp.ingest_run").fetchone()
+    assert count is not None
+    assert count[0] == 0, "started run row must be rolled back on persist failure"
+
+    # A later successful ingest of the same file then creates exactly one
+    # finished row (the failed attempt must not have poisoned the sha256 skip).
+    monkeypatch.undo()
+    _ingest_one(empty_warehouse, "mfp", zip_path)
+    rows = empty_warehouse.execute(
+        "SELECT source_kind, rows_inserted, finished_at FROM hp.ingest_run"
+    ).fetchall()
+    assert len(rows) == 1
+    assert rows[0][0] == "myfitnesspal"
+    assert rows[0][2] is not None

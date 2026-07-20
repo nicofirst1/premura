@@ -144,23 +144,33 @@ def _ingest_one(conn, source_key: str, override_path: Path | None) -> None:
         if already_ingested(conn, sha256):
             console.print(f"  [dim]sha256 {sha256[:12]}… already ingested; skipping[/dim]")
         else:
+            # Atomic bookkeeping, mirroring loader.load(): the run row must not
+            # survive a failed persist. persist_intake_batch owns its own
+            # transaction (DuckDB has no nested transactions), so on any failure
+            # after the run row is started we roll it back with a compensating
+            # DELETE — otherwise an orphaned finished_at=NULL row would make a
+            # retry create yet another row instead of skipping (issue #88).
             batch_id = start_ingest_run(
                 conn, source_kind=source_kind, source_path=candidate, source_sha256=sha256
             )
-            intake_stats = persist_intake_batch(conn, intake)
-            intake_dup_skip = (
-                intake_stats.nutrition_events_skipped_dup
-                + intake_stats.supplement_events_skipped_dup
-            )
-            finish_ingest_run(
-                conn,
-                batch_id=batch_id,
-                stats=LoadStats(
+            try:
+                intake_stats = persist_intake_batch(conn, intake)
+                intake_dup_skip = (
+                    intake_stats.nutrition_events_skipped_dup
+                    + intake_stats.supplement_events_skipped_dup
+                )
+                finish_ingest_run(
+                    conn,
                     batch_id=batch_id,
-                    rows_inserted=intake_stats.events_inserted,
-                    rows_skipped_dup=intake_dup_skip,
-                ),
-            )
+                    stats=LoadStats(
+                        batch_id=batch_id,
+                        rows_inserted=intake_stats.events_inserted,
+                        rows_skipped_dup=intake_dup_skip,
+                    ),
+                )
+            except Exception:
+                conn.execute("DELETE FROM hp.ingest_run WHERE batch_id = ?", [batch_id])
+                raise
             console.print(
                 f"  intake events inserted={intake_stats.events_inserted:,} "
                 f"dup_skip={intake_dup_skip:,}"
