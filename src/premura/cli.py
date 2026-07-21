@@ -74,6 +74,10 @@ def ingest(
         Path | None,
         typer.Argument(help="Override file path; defaults to autodiscovery in data/inbox/"),
     ] = None,
+    force: Annotated[
+        bool,
+        typer.Option("--force", help="Bypass the sha256 already-ingested skip and reload"),
+    ] = False,
 ) -> None:
     """Parse one or more sources into the warehouse."""
     settings.ensure_dirs()
@@ -81,16 +85,16 @@ def ingest(
     try:
         if source == "all":
             for key in PARSER_REGISTRY:
-                _ingest_one(conn, key, None)
+                _ingest_one(conn, key, None, force=force)
         elif source in PARSER_REGISTRY:
-            _ingest_one(conn, source, path)
+            _ingest_one(conn, source, path, force=force)
         else:
             raise typer.BadParameter(f"unknown source: {source}")
     finally:
         conn.close()
 
 
-def _ingest_one(conn, source_key: str, override_path: Path | None) -> None:
+def _ingest_one(conn, source_key: str, override_path: Path | None, *, force: bool = False) -> None:
     parser_cls, _source_kind = PARSER_REGISTRY[source_key]
     candidate = override_path if override_path else _discover_input(source_key)
     if candidate is None:
@@ -121,16 +125,17 @@ def _ingest_one(conn, source_key: str, override_path: Path | None) -> None:
             observation.attach_source_artifact(candidate)
         sha256 = observation.source_sha256
         assert sha256 is not None  # set by attach_source_artifact above
-        if already_ingested(conn, sha256):
+        if not force and already_ingested(conn, sha256):
             console.print(f"  [dim]sha256 {sha256[:12]}… already ingested; skipping[/dim]")
         else:
             t1 = time.time()
             stats = load(conn, observation)
             load_dt = time.time() - t1
+            force_note = " • force" if force else ""
             console.print(
                 f"  parse {parse_dt:.1f}s • load {load_dt:.1f}s • "
                 f"inserted={stats.rows_inserted:,} dup_skip={stats.rows_skipped_dup:,} "
-                f"priority_skip={stats.rows_skipped_priority:,}"
+                f"priority_skip={stats.rows_skipped_priority:,}{force_note}"
             )
 
     # Intake seam: nutrition/supplement intake never travels the observation
@@ -141,7 +146,7 @@ def _ingest_one(conn, source_key: str, override_path: Path | None) -> None:
     if intake is not None:
         source_kind = next(iter(intake.source_descriptors.values())).source_kind
         sha256 = file_sha256(candidate)
-        if already_ingested(conn, sha256):
+        if not force and already_ingested(conn, sha256):
             console.print(f"  [dim]sha256 {sha256[:12]}… already ingested; skipping[/dim]")
         else:
             # Atomic bookkeeping, mirroring loader.load(): the run row must not
