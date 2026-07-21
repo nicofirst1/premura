@@ -194,7 +194,7 @@
   validity_window: PT1H
   missing_data_policy: none
   aliases:
-    en: [glucose, blood sugar, BG]
+    en: [glucose, blood sugar, BG, Glucose (glum), Glucose (v)]
     it: [glicemia]
     de: [Blutzucker, Glukose]
 
@@ -843,7 +843,7 @@
   aliases:
     en: [Hb, Hgb, hemoglobin]
     it: [emoglobina, Hb]
-    de: [Hämoglobin, Hb]
+    de: [Hämoglobin, Hb, Hämoglobin (Hb) (eb)]
   loinc: "718-7"
 
 - metric_id: lab:hematocrit
@@ -914,7 +914,7 @@
   aliases:
     en: [PLT, platelets, thrombocytes]
     it: [piastrine]
-    de: [Thrombozyten]
+    de: [Thrombozyten, Thrombozyten (eb)]
   loinc: "777-3"
 
 - metric_id: lab:mpv
@@ -926,6 +926,7 @@
   missing_data_policy: none
   aliases:
     en: [MPV]
+    de: ["MPV (mittleres Thromboz.-Vol.)"]
   loinc: "32623-1"
 
 - metric_id: lab:neutrophils_pct
@@ -1763,7 +1764,7 @@
   missing_data_policy: none
   aliases:
     en: [ESR, sed rate]
-    it: [VES]
+    it: [VES, eritrosedimetria]
     de: [BSG]
   loinc: "4537-7"
 
@@ -1888,7 +1889,8 @@
   validity_window: P3M
   missing_data_policy: none
   aliases:
-    en: [INR]
+    en: [INR, PT-INR]
+    it: [TEMPO DI PROTROMBINA (PT-INR)]
   loinc: "6301-6"
 
 - metric_id: lab:fibrinogen
@@ -1945,6 +1947,8 @@
   category: urine
   validity_window: P3M
   missing_data_policy: none
+  aliases:
+    en: [pH]
   loinc: "5803-2"
 
 - metric_id: lab:urine_specific_gravity
@@ -1954,6 +1958,8 @@
   category: urine
   validity_window: P3M
   missing_data_policy: none
+  aliases:
+    it: [peso specifico]
   loinc: "5811-5"
 
 - metric_id: lab:urine_protein
@@ -2008,6 +2014,8 @@
   category: urine
   validity_window: P3M
   missing_data_policy: none
+  aliases:
+    it: [urobilinogeno]
   loinc: "20405-7"
 
 - metric_id: lab:urine_nitrite
@@ -2530,3 +2538,226 @@
   category: blood:lipids
   validity_window: P6M
   missing_data_policy: none
+
+# --------------------------------------------------------------------------- #
+# Additional lab analytes mapped from Italian/German lab-history sheets:
+# indirect bilirubin, reticulocyte hemoglobin, plateletcrit, serum-protein
+# electrophoresis fractions, and trace elements.
+# --------------------------------------------------------------------------- #
+
+- metric_id: lab:bilirubin_indirect
+  display_name: Indirect bilirubin
+  canonical_unit: mg_per_dl
+  value_kind: instantaneous
+  description: Unconjugated (indirect) bilirubin.
+  category: blood:liver
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [bilirubina indiretta]
+  loinc: "1971-1"
+
+- metric_id: lab:reticulocyte_hemoglobin
+  display_name: Reticulocyte hemoglobin content
+  canonical_unit: pg
+  value_kind: instantaneous
+  description: Hemoglobin content per reticulocyte (RET-He / CHr); early iron-status marker.
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [reticolociti]
+  loinc: "42810-2"
+
+- metric_id: lab:plateletcrit
+  display_name: Plateletcrit
+  canonical_unit: pct
+  value_kind: instantaneous
+  description: Fraction of blood volume occupied by platelets (PCT).
+  category: blood:cbc
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [pct]
+  loinc: "51637-7"
+
+- metric_id: lab:alpha_1_globulin
+  display_name: Alpha-1 globulin fraction
+  canonical_unit: pct
+  value_kind: instantaneous
+  description: Alpha-1 fraction from serum protein electrophoresis.
+  category: blood:proteins
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [globuline alfa 1]
+  loinc: "13978-2"
+
+- metric_id: lab:alpha_2_globulin
+  display_name: Alpha-2 globulin fraction
+  canonical_unit: pct
+  value_kind: instantaneous
+  description: Alpha-2 fraction from serum protein electrophoresis.
+  category: blood:proteins
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [globuline alfa 2]
+  loinc: "13981-6"
+
+- metric_id: lab:beta_globulin
+  display_name: Beta globulin
+  canonical_unit: g_per_l
+  value_kind: instantaneous
+  description: Beta globulin absolute concentration from serum protein electrophoresis.
+  category: blood:proteins
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [globuline beta]
+  loinc: "2871-2"
+
+- metric_id: lab:beta_1_globulin
+  display_name: Beta-1 globulin fraction
+  canonical_unit: pct
+  value_kind: instantaneous
+  description: Beta-1 fraction from serum protein electrophoresis.
+  category: blood:proteins
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [globuline beta 1]
+  loinc: "32732-0"
+
+- metric_id: lab:beta_2_globulin
+  display_name: Beta-2 globulin fraction
+  canonical_unit: pct
+  value_kind: instantaneous
+  description: Beta-2 fraction from serum protein electrophoresis.
+  category: blood:proteins
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [globuline beta 2]
+  loinc: "32733-8"
+
+- metric_id: lab:gamma_globulin
+  display_name: Gamma globulin fraction
+  canonical_unit: pct
+  value_kind: instantaneous
+  description: Gamma fraction from serum protein electrophoresis.
+  category: blood:proteins
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [globuline gamma]
+  loinc: "13983-2"
+
+- metric_id: lab:copper
+  display_name: Copper
+  canonical_unit: mg_per_l
+  value_kind: instantaneous
+  description: Copper concentration in serum/blood.
+  category: blood:trace_elements
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [rame, Rame (Biovis)]
+  loinc: "5631-7"
+
+- metric_id: lab:zinc
+  display_name: Zinc
+  canonical_unit: mg_per_l
+  value_kind: instantaneous
+  description: Zinc concentration in serum/blood.
+  category: blood:trace_elements
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [zinco, Zinco (Biovis)]
+  loinc: "5763-8"
+
+- metric_id: lab:selenium
+  display_name: Selenium
+  canonical_unit: ug_per_l
+  value_kind: instantaneous
+  description: Selenium concentration in serum/blood.
+  category: blood:trace_elements
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [selenio, Selenio (Biovis)]
+  loinc: "5724-0"
+
+- metric_id: lab:cadmium
+  display_name: Cadmium
+  canonical_unit: ug_per_l
+  value_kind: instantaneous
+  description: Cadmium concentration in blood.
+  category: blood:trace_elements
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [cadmio]
+  loinc: "5609-3"
+
+- metric_id: lab:chromium
+  display_name: Chromium
+  canonical_unit: ug_per_l
+  value_kind: instantaneous
+  description: Chromium concentration in serum/blood.
+  category: blood:trace_elements
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [cromo]
+  loinc: "5622-6"
+
+- metric_id: lab:manganese
+  display_name: Manganese
+  canonical_unit: ug_per_l
+  value_kind: instantaneous
+  description: Manganese concentration in blood.
+  category: blood:trace_elements
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [manganese]
+  loinc: "5681-2"
+
+- metric_id: lab:mercury
+  display_name: Mercury
+  canonical_unit: ug_per_l
+  value_kind: instantaneous
+  description: Mercury concentration in blood.
+  category: blood:trace_elements
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [mercurio]
+  loinc: "5685-3"
+
+- metric_id: lab:molybdenum
+  display_name: Molybdenum
+  canonical_unit: ug_per_l
+  value_kind: instantaneous
+  description: Molybdenum concentration in serum/blood.
+  category: blood:trace_elements
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [molibdeno]
+  loinc: "5698-6"
+
+- metric_id: lab:nickel
+  display_name: Nickel
+  canonical_unit: ug_per_l
+  value_kind: instantaneous
+  description: Nickel concentration in serum/blood.
+  category: blood:trace_elements
+  validity_window: P3M
+  missing_data_policy: none
+  aliases:
+    it: [nichel]
+    de: [nickel]
+  loinc: "5702-6"
