@@ -503,8 +503,8 @@ def test_list_metrics_fresh_catalog_entry(tmp_path: Path) -> None:
     finally:
         conn.close()
 
-    # weight is at the end of the catalog (index ~190), so use a large limit.
-    rows = server.list_metrics(warehouse_path=db_path, limit=200)
+    # Fetch weight directly; catalog size is not a test invariant.
+    rows = server.list_metrics(warehouse_path=db_path, metric_ids=["weight"])
     weight_entries = [r for r in rows if r["metric_id"] == "weight"]
     assert len(weight_entries) == 1
     entry = weight_entries[0]
@@ -526,8 +526,8 @@ def test_list_metrics_stale_catalog_entry(tmp_path: Path) -> None:
     finally:
         conn.close()
 
-    # weight is at the end of the catalog (index ~190), so use a large limit.
-    rows = server.list_metrics(warehouse_path=db_path, limit=200)
+    # Fetch weight directly; catalog size is not a test invariant.
+    rows = server.list_metrics(warehouse_path=db_path, metric_ids=["weight"])
     weight_entries = [r for r in rows if r["metric_id"] == "weight"]
     assert len(weight_entries) == 1
     entry = weight_entries[0]
