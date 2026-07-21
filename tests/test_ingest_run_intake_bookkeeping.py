@@ -92,3 +92,29 @@ def test_failed_intake_persist_leaves_no_orphan_run_row(
     assert len(rows) == 1
     assert rows[0][0] == "myfitnesspal"
     assert rows[0][2] is not None
+
+
+def test_force_reingest_bypasses_skip_without_duplicating_rows(
+    empty_warehouse, tmp_path: Path
+) -> None:
+    """--force (issue #93) bypasses the sha256 skip but the dedupe layer still
+    catches the re-inserted rows, so fact-table row counts don't change."""
+    zip_path = _export_zip(tmp_path)
+
+    _ingest_one(empty_warehouse, "mfp", zip_path)
+    row_count_before = empty_warehouse.execute(
+        "SELECT COUNT(*) FROM hp.nutrition_intake_event"
+    ).fetchone()[0]
+
+    _ingest_one(empty_warehouse, "mfp", zip_path, force=True)
+    row_count_after = empty_warehouse.execute(
+        "SELECT COUNT(*) FROM hp.nutrition_intake_event"
+    ).fetchone()[0]
+
+    assert row_count_after == row_count_before, "force must not duplicate previously loaded rows"
+
+    runs = empty_warehouse.execute(
+        "SELECT finished_at FROM hp.ingest_run ORDER BY started_at"
+    ).fetchall()
+    assert len(runs) == 2, "force must write a fresh ingest_run row instead of skipping"
+    assert all(r[0] is not None for r in runs)
