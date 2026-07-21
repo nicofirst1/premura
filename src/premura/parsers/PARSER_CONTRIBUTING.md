@@ -4,6 +4,10 @@
 
 This guide is for contributors extending Premura through its federated parser surface. If you are making general code changes across the repo, start with `CONTRIBUTING.md` instead.
 
+## Before building a new parser, check the seam does not already exist
+
+An empty `hp.*` table means no data has flowed yet, not that support is missing. Before proposing a new parser or subsystem, grep the type, loader, and store - not just `registry.py`. Observations (`Measurement`, `Interval`, `ClinicalNote`) are defined in `base.py` and persisted by `store/loader.py`; nutrition and supplement intake persist via `store/profile_intake.py`; diagnoses are captured through the MCP `record_condition_episode` tool rather than a parser.
+
 ## Standards-first rule (project-level)
 
 When mapping a vendor field to a canonical `metric_id` (in any parser, any ontology row, any review comment), you MUST resolve in this order and stop at the first match:
