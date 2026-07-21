@@ -1,7 +1,13 @@
 """Settings: paths, encryption recipient, rclone remote, per-parser overrides.
 
+Precedence (high to low): env var > XDG config file > field default.
 Override any field via env var: PREMURA_DATA_DIR=/tmp/x, PREMURA_RCLONE_REMOTE=mygdrive, …
 Nested fields use a double underscore: PREMURA_PARSERS__BMT__WEIGHT_UNIT=lb.
+Personal, machine-local config (e.g. the backup folder id) belongs in the XDG
+config file ~/.config/premura/config.toml, not in this checked-in file — same
+convention as data under ~/.local/share/premura. Example config.toml:
+    rclone_remote = "gdrive,root_folder_id=<drive-folder-id>"
+    rclone_backup_prefix = ""
 """
 
 from __future__ import annotations
@@ -11,7 +17,12 @@ from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel, Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+    TomlConfigSettingsSource,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent  # …/premura
 
@@ -43,7 +54,25 @@ class Settings(BaseSettings):
         env_prefix="PREMURA_",
         env_nested_delimiter="__",
         extra="ignore",
+        toml_file=_CONFIG_HOME / "config.toml",
     )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        # High to low: explicit init args > env vars > XDG config.toml > defaults.
+        return (
+            init_settings,
+            env_settings,
+            TomlConfigSettingsSource(settings_cls),
+            file_secret_settings,
+        )
 
     # --- paths ---
     data_dir: Path = Field(default=_DATA_HOME)
@@ -56,6 +85,9 @@ class Settings(BaseSettings):
     age_key_file: Path = Field(default=_CONFIG_HOME / "age.key")
 
     # --- upload ---
+    # Generic fallbacks. The real destination is set per-machine in
+    # config.toml — pin it by Drive folder ID (rclone connection string) so a
+    # rename/move can't silently reroute backups; see module docstring.
     rclone_remote: str = Field(default="gdrive")
     rclone_backup_prefix: str = Field(default="Projects/Data/Health Data")
 
