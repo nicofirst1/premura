@@ -430,6 +430,118 @@ def test_requested_window_adds_transparent_caveat(tmp_path: Path) -> None:
 
 
 # --------------------------------------------------------------------------- #
+# Issue #98 — lookback_days actually reaches engine.compute(..., params=...)
+# for weight_trend and steps_trend (and resting_hr_trend, the shared path).
+# --------------------------------------------------------------------------- #
+def test_weight_trend_lookback_days_changes_result(tmp_path: Path) -> None:
+    db_path, conn = _warehouse_with(tmp_path, "weight_lookback")
+    try:
+        now = _now()
+        # Recent short run, roughly flat.
+        _seed(
+            conn,
+            [
+                ((now - timedelta(days=9)).isoformat(sep=" "), "weight", 80.0, "wr-a"),
+                ((now - timedelta(days=1)).isoformat(sep=" "), "weight", 79.8, "wr-b"),
+            ],
+        )
+        # Much heavier point outside the default 28-day window but inside a
+        # requested 90-day lookback.
+        _seed(conn, [((now - timedelta(days=80)).isoformat(sep=" "), "weight", 60.0, "wr-old")])
+    finally:
+        conn.close()
+
+    default_payload = server.weight_trend(warehouse_path=db_path)
+    wide_payload = server.weight_trend(lookback_days=90, warehouse_path=db_path)
+
+    default_points = default_payload["result"]["points"]
+    wide_points = wide_payload["result"]["points"]
+    assert len(wide_points) > len(default_points)
+    # Including the much lower 80-day-old point flips the direction to up.
+    assert wide_payload["result"]["trend_direction"] == "up"
+
+
+def test_steps_trend_lookback_days_changes_result(tmp_path: Path) -> None:
+    db_path, conn = _warehouse_with(tmp_path, "steps_lookback")
+    try:
+        now = _now()
+        _seed_intervals(
+            conn,
+            [
+                (
+                    (now - timedelta(days=9, hours=1)).isoformat(sep=" "),
+                    (now - timedelta(days=9)).isoformat(sep=" "),
+                    "steps",
+                    3000.0,
+                    "sr-a",
+                ),
+                (
+                    (now - timedelta(days=1, hours=1)).isoformat(sep=" "),
+                    (now - timedelta(days=1)).isoformat(sep=" "),
+                    "steps",
+                    3100.0,
+                    "sr-b",
+                ),
+                (
+                    (now - timedelta(days=80, hours=1)).isoformat(sep=" "),
+                    (now - timedelta(days=80)).isoformat(sep=" "),
+                    "steps",
+                    9000.0,
+                    "sr-old",
+                ),
+            ],
+        )
+    finally:
+        conn.close()
+
+    default_payload = server.steps_trend(warehouse_path=db_path)
+    wide_payload = server.steps_trend(lookback_days=90, warehouse_path=db_path)
+
+    assert len(wide_payload["result"]["points"]) > len(default_payload["result"]["points"])
+    assert wide_payload["result"]["trend_direction"] == "down"
+
+
+def test_weight_trend_stale_months_long_series_via_mcp(tmp_path: Path) -> None:
+    """Headline acceptance case at the MCP seam: a months-long series whose
+    last point is >28 days old must report a real direction, not UNKNOWN."""
+    db_path, conn = _warehouse_with(tmp_path, "weight_stale_mcp")
+    try:
+        now = _now()
+        anchor = now - timedelta(days=60)
+        rows = [
+            ((anchor - timedelta(days=7 * (9 - i))).isoformat(sep=" "), "weight", 70.0 + i, f"m{i}")
+            for i in range(10)
+        ]
+        _seed(conn, rows)
+    finally:
+        conn.close()
+
+    payload = server.weight_trend(warehouse_path=db_path)
+
+    assert payload["result"]["current_freshness_state"] == "stale"
+    assert payload["result"]["trend_direction"] == "up"
+
+
+def test_requested_window_caveat_reflects_real_effect(tmp_path: Path) -> None:
+    """Issue #98: the caveat text must not claim the window was ignored once it
+    genuinely drives computation."""
+    db_path, conn = _warehouse_with(tmp_path, "weight_caveat_effect")
+    try:
+        fresh = (_now() - timedelta(days=1)).isoformat(sep=" ")
+        _seed(conn, [(fresh, "weight", 78.0, "wc1")])
+    finally:
+        conn.close()
+
+    payload = server.weight_trend(lookback_days=45, warehouse_path=db_path)
+
+    caveats = payload["result"]["caveats"]
+    assert any("45 day" in c for c in caveats)
+    # The old wording claimed the requested value "was not applied" — that is
+    # now false for weight_trend/steps_trend, so it must not appear.
+    assert not any("was not applied" in c for c in caveats)
+
+
+# --------------------------------------------------------------------------- #
 # T018 — preserved behavior of the three raw tools
 # --------------------------------------------------------------------------- #
 def test_raw_query_warehouse_still_returns_rows(tmp_path: Path) -> None:

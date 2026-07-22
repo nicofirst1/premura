@@ -1367,14 +1367,31 @@ def metric_summary(metric_id: str, *, warehouse_path: Path | None = None) -> dic
 # the freshness/sufficiency verdicts; the wrapper only serializes the result.
 # --------------------------------------------------------------------------- #
 
-# The five spans below are advisory: the Stage 2 signals compute over their own
-# fixed windows. We accept these arguments for a stable, self-describing tool
-# surface and add a transparent caveat when a caller asks for a window the
-# engine does not currently honor, rather than silently pretend it was applied.
-_REQUESTED_WINDOW_CAVEAT = (
+# A requested window is always echoed back as a transparent caveat so a caller
+# can see exactly what was asked for. Two distinct wordings (issue #98):
+#
+# * ``_REQUESTED_WINDOW_HONORED_CAVEAT`` — the trend signals that share the
+#   ``_trend`` implementation (resting_hr_trend / steps_trend / weight_trend)
+#   thread ``lookback_days`` through ``engine.compute(..., params=...)`` and it
+#   genuinely changes the computed window/result.
+# * ``_REQUESTED_WINDOW_IGNORED_CAVEAT`` — the remaining signals
+#   (sleep_deep_pct_baseline / hrv_change_around_date) still compute over their
+#   own fixed window; the requested value is not applied, and the caveat says
+#   so honestly rather than silently pretending otherwise.
+_REQUESTED_WINDOW_HONORED_CAVEAT = (
+    "A custom window of {requested} day(s) was requested and used for this "
+    "signal's computed window."
+)
+_REQUESTED_WINDOW_IGNORED_CAVEAT = (
     "A custom window of {requested} day(s) was requested, but this signal "
     "computes over its own fixed window; the requested value was not applied."
 )
+
+#: Signal names whose ``lookback_days`` genuinely reaches computation (they all
+#: share the engine's ``_trend`` implementation and thread the caller's window
+#: through ``compute(..., params={"window_days": ...})``). See
+#: :func:`_run_trend_signal`.
+_WINDOW_HONORING_SIGNALS = frozenset({"resting_hr_trend", "steps_trend", "weight_trend"})
 
 
 def resting_hr_status(*, warehouse_path: Path | None = None) -> dict[str, Any]:
@@ -1387,9 +1404,7 @@ def resting_hr_trend(
 ) -> dict[str, Any]:
     """Recent resting-heart-rate trend with gap and imputation visibility (trend family)."""
     _ensure_optional_window("lookback_days", lookback_days, minimum=7, maximum=90)
-    return _run_signal(
-        "resting_hr_trend", warehouse_path=warehouse_path, requested_window=lookback_days
-    )
+    return _run_trend_signal("resting_hr_trend", lookback_days, warehouse_path=warehouse_path)
 
 
 def steps_trend(
@@ -1397,7 +1412,7 @@ def steps_trend(
 ) -> dict[str, Any]:
     """Recent daily-steps trend without imputing missing days (trend family)."""
     _ensure_optional_window("lookback_days", lookback_days, minimum=7, maximum=90)
-    return _run_signal("steps_trend", warehouse_path=warehouse_path, requested_window=lookback_days)
+    return _run_trend_signal("steps_trend", lookback_days, warehouse_path=warehouse_path)
 
 
 def weight_trend(
@@ -1405,8 +1420,29 @@ def weight_trend(
 ) -> dict[str, Any]:
     """Recent body-weight trend with freshness and carried-forward caveats (trend family)."""
     _ensure_optional_window("lookback_days", lookback_days, minimum=7, maximum=120)
+    return _run_trend_signal("weight_trend", lookback_days, warehouse_path=warehouse_path)
+
+
+def _run_trend_signal(
+    spec_name: str,
+    lookback_days: int | None,
+    *,
+    warehouse_path: Path | None,
+) -> dict[str, Any]:
+    """Run one of the three shared-``_trend`` signals, threading the caller's
+    ``lookback_days`` through ``engine.compute(..., params={"window_days": ...})``
+    (issue #98) so it genuinely overrides the trend span, rather than only
+    appearing as a display caveat. ``requested_window`` is still passed to
+    :func:`_serialize_signal_result` so the caveat continues to name the value
+    the caller asked for — but its wording no longer claims the value "was not
+    applied", since it now demonstrably is.
+    """
+    params = {"window_days": lookback_days} if lookback_days is not None else None
     return _run_signal(
-        "weight_trend", warehouse_path=warehouse_path, requested_window=lookback_days
+        spec_name,
+        warehouse_path=warehouse_path,
+        requested_window=lookback_days,
+        params=params,
     )
 
 
@@ -2018,8 +2054,11 @@ def _prepare_analytical_series(
             reference_time=reference_time,
         )
 
+    # Analytical-tool input series (change/baseline questions with an explicit
+    # reference_time) — out of scope for issue #98's trend anchor-to-latest fix;
+    # keep anchored to "now" exactly as before.
     window = engine_query.ordered_window(
-        conn, policy, span=_ANALYTICAL_WINDOW_SPAN, now=reference_time
+        conn, policy, span=_ANALYTICAL_WINDOW_SPAN, now=reference_time, anchor_to_latest=False
     )
     points = [
         PreparedPoint(ts=p.ts, value=p.value, is_imputed=p.is_imputed, local_tz=p.local_tz)
@@ -2101,13 +2140,24 @@ def _serialize_signal_result(
       message) so the caller always has something to show.
     * ``result`` — the full structured envelope via the engine's ``to_dict()``.
 
-    A requested-but-unhonored window is appended as a transparent caveat.
+    A requested window is always appended as a transparent caveat naming the
+    value the caller asked for. Its wording depends on whether ``tool_name``
+    actually honors the window (issue #98): the shared-``_trend`` signals
+    (:data:`_WINDOW_HONORING_SIGNALS`) genuinely thread it into computation via
+    ``engine.compute(..., params=...)``, so their caveat says so; every other
+    signal still computes over its own fixed window, so its caveat says the
+    requested value was not applied — never claim more than what happened.
     """
     payload = result.to_dict()  # type: ignore[attr-defined]
     if requested_window is not None:
+        caveat_template = (
+            _REQUESTED_WINDOW_HONORED_CAVEAT
+            if tool_name in _WINDOW_HONORING_SIGNALS
+            else _REQUESTED_WINDOW_IGNORED_CAVEAT
+        )
         payload["caveats"] = [
             *payload.get("caveats", []),
-            _REQUESTED_WINDOW_CAVEAT.format(requested=requested_window),
+            caveat_template.format(requested=requested_window),
         ]
     status = _classify_result_status(payload)
     hint = _signal_missing_input_hint(tool_name)

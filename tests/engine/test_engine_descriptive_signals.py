@@ -335,3 +335,163 @@ def test_weight_trend_stale_not_misreported_as_current(registered) -> None:
     assert out["caveats"]
     # Direction can't be claimed from a single stale point.
     assert out["trend_direction"] == TrendDirection.UNKNOWN.value
+
+
+# --------------------------------------------------------------------------- #
+# Issue #98 — trend window anchors to the latest observation, not "now", and
+# is caller-overridable through the params seam.
+# --------------------------------------------------------------------------- #
+def test_weight_trend_stale_months_long_series_reports_real_direction(registered) -> None:
+    """A months-long series whose last point predates the 28-day window must
+    still report a real direction, anchored to the latest observation instead
+    of "now" — not UNKNOWN, which is indistinguishable from having no data.
+    """
+    conn = registered
+    src = _ensure_source(conn)
+    now = _now_naive()
+    anchor = now - timedelta(days=60)  # last reading is 60 days old -> stale
+    # Weekly weigh-ins for ~10 weeks up to the (stale) anchor, clearly rising.
+    for i in range(10):
+        ts = anchor - timedelta(days=7 * (9 - i))
+        _add_measurement(
+            conn,
+            metric_id="weight",
+            ts=ts,
+            value=70.0 + i,
+            unit="kg",
+            source_id=src,
+            key=f"wt-hist-{i}",
+        )
+    out = engine.compute("weight_trend", conn).to_dict()
+    assert out["current_freshness_state"] == FreshnessState.STALE.value
+    assert out["trend_direction"] == TrendDirection.UP.value
+
+
+def test_steps_trend_stale_months_long_series_reports_real_direction(registered) -> None:
+    conn = registered
+    src = _ensure_source(conn)
+    now = _now_naive()
+    anchor = now - timedelta(days=60)
+    for i in range(10):
+        end = anchor - timedelta(days=(9 - i))
+        start = end - timedelta(hours=23)
+        _add_interval(
+            conn,
+            metric_id="steps",
+            start=start,
+            end=end,
+            value=4000.0 + i * 200,  # clearly rising
+            source_id=src,
+            key=f"steps-hist-{i}",
+        )
+    out = engine.compute("steps_trend", conn).to_dict()
+    assert out["current_freshness_state"] == FreshnessState.STALE.value
+    assert out["trend_direction"] == TrendDirection.UP.value
+
+
+def test_weight_trend_window_override_changes_result(registered) -> None:
+    """A larger requested window (via params) changes the point set/direction."""
+    conn = registered
+    src = _ensure_source(conn)
+    now = _now_naive()
+    # Recent short run: last 10 days flat-ish/slightly down.
+    _add_measurement(
+        conn,
+        metric_id="weight",
+        ts=now - timedelta(days=9),
+        value=80.0,
+        unit="kg",
+        source_id=src,
+        key="wt-recent-a",
+    )
+    _add_measurement(
+        conn,
+        metric_id="weight",
+        ts=now - timedelta(days=1),
+        value=79.5,
+        unit="kg",
+        source_id=src,
+        key="wt-recent-b",
+    )
+    # An older, much heavier reading outside the default 28-day span but inside
+    # a 180-day requested span.
+    _add_measurement(
+        conn,
+        metric_id="weight",
+        ts=now - timedelta(days=150),
+        value=60.0,
+        unit="kg",
+        source_id=src,
+        key="wt-old",
+    )
+
+    default_out = engine.compute("weight_trend", conn).to_dict()
+    wide_out = engine.compute("weight_trend", conn, params={"window_days": 180}).to_dict()
+
+    default_points = {p["ts"] for p in default_out["points"]}
+    wide_points = {p["ts"] for p in wide_out["points"]}
+    assert wide_points != default_points
+    assert len(wide_points) > len(default_points)
+    # With the 150-day-old low point included, direction reads UP overall.
+    assert wide_out["trend_direction"] == TrendDirection.UP.value
+
+
+def test_steps_trend_window_override_honored(registered) -> None:
+    conn = registered
+    src = _ensure_source(conn)
+    now = _now_naive()
+    _add_interval(
+        conn,
+        metric_id="steps",
+        start=now - timedelta(days=9, hours=1),
+        end=now - timedelta(days=9),
+        value=3000.0,
+        source_id=src,
+        key="steps-recent-a",
+    )
+    _add_interval(
+        conn,
+        metric_id="steps",
+        start=now - timedelta(days=1, hours=1),
+        end=now - timedelta(days=1),
+        value=3100.0,
+        source_id=src,
+        key="steps-recent-b",
+    )
+    _add_interval(
+        conn,
+        metric_id="steps",
+        start=now - timedelta(days=150, hours=1),
+        end=now - timedelta(days=150),
+        value=9000.0,
+        source_id=src,
+        key="steps-old",
+    )
+
+    default_out = engine.compute("steps_trend", conn).to_dict()
+    wide_out = engine.compute("steps_trend", conn, params={"window_days": 180}).to_dict()
+
+    assert len(wide_out["points"]) > len(default_out["points"])
+    assert wide_out["trend_direction"] == TrendDirection.DOWN.value
+
+
+def test_resting_hr_trend_zero_arg_call_unchanged(registered) -> None:
+    """Regression: calling the zero-arg signal via compute() with no params still
+    works exactly as before (backward compatibility of the params seam)."""
+    conn = registered
+    src = _ensure_source(conn)
+    now = _now_naive()
+    for i in range(14):
+        ts = now - timedelta(days=13 - i)
+        _add_measurement(
+            conn,
+            metric_id="resting_hr",
+            ts=ts,
+            value=50.0 + i,
+            unit="bpm",
+            source_id=src,
+            key=f"rhr-zero-{i}",
+        )
+    out = engine.compute("resting_hr_trend", conn).to_dict()
+    assert out["trend_direction"] == TrendDirection.UP.value
+    assert out["current_freshness_state"] == FreshnessState.CURRENT.value
