@@ -636,10 +636,14 @@ def metric_summary(
         ).validate()
 
     lv = latest_usable_value(conn, policy)
+    # This is a fixed "last N calendar days as of now" catalog window (not a
+    # trend signal) — keep it anchored to now, out of scope for issue #98's
+    # anchor-to-latest trend fix.
     window = ordered_window(
         conn,
         policy,
         span=timedelta(days=_CATALOG_WINDOW_DAYS),
+        anchor_to_latest=False,
     )
 
     if lv.freshness_state is FreshnessState.UNAVAILABLE:

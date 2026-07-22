@@ -252,12 +252,13 @@ def ordered_window(
     span: timedelta,
     now: datetime | None = None,
     bucket: timedelta = timedelta(days=1),
+    anchor_to_latest: bool = True,
 ) -> TrendWindow:
     """Extract an ordered window of points for a trend.
 
-    The window is ``[now - span, now]``, bucketed by ``bucket`` (daily by
-    default). Within each bucket the latest observation wins. Buckets with no
-    observation become:
+    The window is ``[window_end - span, window_end]``, bucketed by ``bucket``
+    (daily by default). Within each bucket the latest observation wins. Buckets
+    with no observation become:
 
     * a **carried-forward** point (``is_imputed=True``) *only* when the metric's
       policy is LOCF **and** a prior observed value is still within the metric's
@@ -267,14 +268,30 @@ def ordered_window(
 
     A ``none``-policy metric (e.g. steps) therefore yields zero imputed points:
     every missing bucket is a gap.
+
+    ``window_end`` anchoring (issue #98): when ``anchor_to_latest`` is True (the
+    default) and the metric has at least one observation, ``window_end`` is the
+    timestamp of the metric's own latest observation rather than "now". Trend
+    is a separate question from staleness — a months-long series whose last
+    reading predates ``span`` must still describe a real direction over the
+    data that actually exists, not report UNKNOWN merely because "now" has
+    moved on. Staleness itself is still judged against "now" via
+    ``latest_freshness`` below, so a caller can tell "old but real direction"
+    apart from "current". When there are no observations at all, or when
+    ``anchor_to_latest`` is False, the window anchors to ``now`` exactly as
+    before.
     """
     reference = _naive_utc_now() if now is None else now
-    window_end = reference
-    window_start = reference - span
+    all_observations = fetch_observations(conn, policy)
 
-    observations = [
-        obs for obs in fetch_observations(conn, policy) if window_start <= obs.ts <= window_end
-    ]
+    window_end = reference
+    if anchor_to_latest and all_observations:
+        latest_ts = all_observations[-1].ts
+        if latest_ts < window_end:
+            window_end = latest_ts
+    window_start = window_end - span
+
+    observations = [obs for obs in all_observations if window_start <= obs.ts <= window_end]
     # Latest observation per bucket (bucket keyed by integer index from start).
     by_bucket: dict[int, Observation] = {}
     for obs in observations:
@@ -326,7 +343,14 @@ def ordered_window(
         else:
             gap_count += 1
 
-    latest_freshness = _window_latest_freshness(observations, window=window, window_end=window_end)
+    # Freshness is judged against "now" (reference), never the anchored
+    # window_end — staleness is a separate question from trend direction (#98).
+    # Use ALL observations (not just those inside the window) so a metric whose
+    # true latest reading is older than `span` is still correctly judged stale
+    # rather than "unavailable".
+    latest_freshness = _window_latest_freshness(
+        all_observations, window=window, window_end=reference
+    )
 
     return TrendWindow(
         window_start=window_start,

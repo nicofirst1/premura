@@ -110,41 +110,57 @@ def resting_hr_status(conn: duckdb.DuckDBPyConnection) -> StatusResult:
 # --------------------------------------------------------------------------- #
 # T008 — resting_hr_trend
 # --------------------------------------------------------------------------- #
-def resting_hr_trend(conn: duckdb.DuckDBPyConnection) -> TrendResult:
+def resting_hr_trend(
+    conn: duckdb.DuckDBPyConnection, *, params: Mapping[str, Any] | None = None
+) -> TrendResult:
     """Direction of resting HR over recent weeks, with carried-forward visible.
 
     resting_hr is a LOCF metric, so within-window missing days appear as
     carried-forward (imputed) points and are counted/caveated; days beyond the
     freshness window stay gaps. Sparse series report ``UNKNOWN`` direction.
+
+    Accepts an optional ``window_days`` param (threaded through
+    ``engine.compute(..., params=...)``, issue #98) to override the default
+    trend span; omitted or invalid values fall back to :data:`_TREND_SPAN`.
     """
-    return _trend("resting_hr_trend", "resting_hr", conn)
+    return _trend("resting_hr_trend", "resting_hr", conn, params=params)
 
 
 # --------------------------------------------------------------------------- #
 # T009 — steps_trend
 # --------------------------------------------------------------------------- #
-def steps_trend(conn: duckdb.DuckDBPyConnection) -> TrendResult:
+def steps_trend(
+    conn: duckdb.DuckDBPyConnection, *, params: Mapping[str, Any] | None = None
+) -> TrendResult:
     """Direction of daily steps, with ZERO imputed points.
 
     steps has ``missing_data_policy: none`` — the shared helper therefore never
     carries a value forward. Missing days are visible as gaps, never invented
     continuity. (steps is an interval metric, read from hp.fact_interval.)
+
+    Accepts an optional ``window_days`` param (issue #98); see
+    :func:`resting_hr_trend`.
     """
-    return _trend("steps_trend", "steps", conn)
+    return _trend("steps_trend", "steps", conn, params=params)
 
 
 # --------------------------------------------------------------------------- #
 # T010 — weight_trend
 # --------------------------------------------------------------------------- #
-def weight_trend(conn: duckdb.DuckDBPyConnection) -> TrendResult:
+def weight_trend(
+    conn: duckdb.DuckDBPyConnection, *, params: Mapping[str, Any] | None = None
+) -> TrendResult:
     """Direction of body weight over the last month, carry-forward made visible.
 
     weight is a LOCF metric with a P1W validity window: a recent reading may be
     carried forward across in-between days (flagged as imputed + caveated), but
     a reading older than the window is NOT presented as current — those days
     become gaps. No BMI / body-composition / profile-dependent behavior.
+
+    Accepts an optional ``window_days`` param (issue #98); see
+    :func:`resting_hr_trend`.
     """
-    return _trend("weight_trend", "weight", conn)
+    return _trend("weight_trend", "weight", conn, params=params)
 
 
 # --------------------------------------------------------------------------- #
@@ -330,14 +346,19 @@ def _trend(
     signal_name: str,
     metric_id: str,
     conn: duckdb.DuckDBPyConnection,
+    *,
+    params: Mapping[str, Any] | None = None,
 ) -> TrendResult:
+    span_days = _param_int(params or {}, "window_days", _TREND_SPAN.days)
+    span = timedelta(days=span_days)
+
     policy = _query.load_metric_policy(conn, metric_id)
     if policy is None:
         now = _query._naive_utc_now()
         return TrendResult(
             signal_name=signal_name,
             metric_id=metric_id,
-            window_start=now - _TREND_SPAN,
+            window_start=now - span,
             window_end=now,
             trend_direction=TrendDirection.UNKNOWN,
             current_freshness_state=FreshnessState.UNAVAILABLE,
@@ -347,7 +368,7 @@ def _trend(
             caveats=[f"No metric definition found for {metric_id!r}."],
         ).validate()
 
-    window = _query.ordered_window(conn, policy, span=_TREND_SPAN)
+    window = _query.ordered_window(conn, policy, span=span)
     points = [TrendPoint(ts=p.ts, value=p.value, is_imputed=p.is_imputed) for p in window.points]
 
     direction = _direction(window.observed_count, window.points)
