@@ -51,6 +51,10 @@ LONG_METRIC_MAP: dict[str, tuple[str, str]] = {
     "bonemass": ("bone_mass", "kg"),
     "bmi": ("bmi", "kg_per_m2"),
     "visceralfat": ("visceral_fat", "index"),
+    "waist": ("waist_circumference", "cm"),
+    "neck": ("neck_circumference", "cm"),
+    "hip": ("hip_circumference", "cm"),
+    "hips": ("hip_circumference", "cm"),
 }
 
 
@@ -92,6 +96,15 @@ def _convert_to_canonical(
     elif target_unit == "pct":
         if u in ("%", "pct"):
             return value, "pct"
+    elif target_unit == "cm":
+        if u in ("cm",):
+            return value, "cm"
+        if u in ("in", "inch", "inches"):
+            return value * 2.54, "cm"
+        if u in ("m",):
+            return value * 100, "cm"
+        if u in ("mm",):
+            return value / 10, "cm"
     # Unknown: keep as-is and use the source unit so downstream code can see it.
     return value, src_unit
 
@@ -212,6 +225,9 @@ class BMTParser:
             "Visceral": ("visceral_fat", "index", lambda v: v),
             "BoneMass": ("bone_mass", "kg", w_xform),
             "Height": ("height", "m", h_xform),
+            "Waist": ("waist_circumference", "cm", lambda v: v),
+            "Neck": ("neck_circumference", "cm", lambda v: v),
+            "Hip": ("hip_circumference", "cm", lambda v: v),
         }
         date_cands = ("Date", "date", "DATE")
         time_cands = ("Time", "time", "TIME")

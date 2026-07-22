@@ -319,6 +319,45 @@
     it: [altezza, statura]
     de: [Körpergröße]
 
+- metric_id: waist_circumference
+  display_name: Waist circumference
+  canonical_unit: cm
+  value_kind: instantaneous
+  category: body_composition
+  validity_window: P1W
+  missing_data_policy: last_observation_carried_forward
+  loinc: "56086-2"
+  aliases:
+    en: [waist, waist circumference]
+    it: [circonferenza vita, girovita]
+    de: [Taillenumfang]
+
+- metric_id: neck_circumference
+  display_name: Neck circumference
+  canonical_unit: cm
+  value_kind: instantaneous
+  category: body_composition
+  validity_window: P1W
+  missing_data_policy: last_observation_carried_forward
+  loinc: "[unmapped]"
+  aliases:
+    en: [neck, neck circumference]
+    it: [circonferenza collo]
+    de: [Halsumfang]
+
+- metric_id: hip_circumference
+  display_name: Hip circumference
+  canonical_unit: cm
+  value_kind: instantaneous
+  category: body_composition
+  validity_window: P1W
+  missing_data_policy: last_observation_carried_forward
+  loinc: "62409-8"
+  aliases:
+    en: [hip, hips, hip circumference]
+    it: [circonferenza fianchi]
+    de: [Hüftumfang]
+
 # === Energy / activity ===
 - metric_id: steps
   display_name: Steps
