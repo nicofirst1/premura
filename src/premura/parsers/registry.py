@@ -20,6 +20,7 @@ from typing import Protocol
 
 from .ai_chat_recall import AiChatRecallParser
 from .bmt import BMTParser
+from .daylio import DaylioParser
 from .fitbit_takeout import FitbitTakeoutParser
 from .garmin_gdpr import GarminGDPRParser
 from .health_connect import HealthConnectParser
@@ -40,6 +41,7 @@ PARSER_REGISTRY: dict[str, tuple[PARSER_FACTORY, str]] = {
     "garmin": (GarminGDPRParser, "garmin_gdpr"),
     "saa": (SleepAsAndroidParser, "sleep_as_android"),
     "bmt": (BMTParser, "bmt"),
+    "daylio": (DaylioParser, "daylio"),
     "lab": (LabPdfParser, "lab_pdf"),
     "mfp": (MyFitnessPalParser, "myfitnesspal"),
     "aichat": (AiChatRecallParser, "ai_chat_recall"),

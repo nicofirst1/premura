@@ -34,8 +34,9 @@ If `src/premura/parsers/CONTRACT.md` ever disagrees with this skill, `src/premur
 1. Read `src/premura/parsers/CONTRACT.md` end-to-end.
 2. Inspect the user's sample file (header sniff, JSON schema, SQLite schema).
 3. Walk the contract's decision tree against the field names you see; record anything that does not produce a canonical `metric_id` so it can become an `unmapped_metrics` entry.
-4. Draft the parser module, the `dim_metric.yaml` additions, and the test fixture. Done when the parser passes every item in CONTRACT.md's "Reviewer checklist".
-5. Run `uv run pytest -q tests/test_parsers/` and `uv run ruff check src/premura/parsers/` before handing off.
+4. Draft the parser module, the `dim_metric.yaml` additions, and the test fixture. Register the parser in `src/premura/parsers/registry.py`; if it should be reachable from `premura ingest --source <key>` or autodiscovery, update the CLI source help and the relevant discovery sniffer in `src/premura/cli.py`.
+5. Done when the parser passes every item in CONTRACT.md's "Reviewer checklist".
+6. Run `uv run pytest -q tests/test_parsers/` and `uv run ruff check src/premura/parsers/` before handing off.
 
 If you are blocked because the contract is ambiguous for a specific field, say so explicitly and surface the ambiguity to the user rather than guessing — the contract is intentionally allowed to evolve when reviewers agree.
 

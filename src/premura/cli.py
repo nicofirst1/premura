@@ -68,7 +68,9 @@ _DIRECTORY_SOURCES = {"fitbit"}
 def ingest(
     source: Annotated[
         str,
-        typer.Option(help="hc | garmin | saa | bmt | lab | mfp | aichat | withings | fitbit | all"),
+        typer.Option(
+            help="hc | garmin | saa | bmt | daylio | lab | mfp | aichat | withings | fitbit | all"
+        ),
     ] = "all",
     path: Annotated[
         Path | None,
@@ -199,7 +201,7 @@ def _discover_input(source_key: str) -> Path | None:
     elif source_key == "withings":
         zips = sorted(inbox.glob("*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
         candidates = [p for p in zips if _zip_is_withings(p)]
-    elif source_key in ("saa", "bmt"):
+    elif source_key in ("saa", "bmt", "daylio"):
         csvs = sorted(inbox.glob("*.csv"), key=lambda p: p.stat().st_mtime, reverse=True)
         candidates = [p for p in csvs if _csv_kind(p) == source_key]
     elif source_key == "lab":
@@ -228,10 +230,11 @@ def _discover_input(source_key: str) -> Path | None:
 
 
 def _csv_kind(path: Path) -> str:
-    """Return 'saa', 'mfp', or 'bmt' by sniffing the first line of a CSV.
+    """Return a known CSV source key by sniffing the first line of a CSV.
 
     SAA headers always contain the literal tokens 'Id', 'Tz', 'From', 'To' on row one.
     A MyFitnessPal nutrition summary always carries 'Date', 'Meal', 'Calories'.
+    Daylio exports carry 'full_date', 'time', 'mood'.
     Everything else is treated as BMT.
     """
     try:
@@ -244,6 +247,8 @@ def _csv_kind(path: Path) -> str:
         return "saa"
     if {"Date", "Meal", "Calories"}.issubset(cols):
         return "mfp"
+    if {"full_date", "time", "mood"}.issubset(cols):
+        return "daylio"
     return "bmt"
 
 

@@ -103,6 +103,7 @@ def test_named_research_family_groups_are_covered() -> None:
         "activity",
         "sleep",
         "hrv_resting_recovery",
+        "self_reported_mood",
     }
     missing = expected - families
     assert not missing, f"missing named family groups: {sorted(missing)}"
@@ -230,6 +231,7 @@ def _candidate(metric_family: str, **kwargs):  # type: ignore[no-untyped-def]
         "activity": "steps",
         "sleep": "sleep_duration",
         "hrv_resting_recovery": "resting_hr",
+        "self_reported_mood": "mood_score",
     }
     defaults = {
         "metric_id": kwargs.pop(
@@ -263,6 +265,24 @@ def test_long_term_marker_admitted_for_long_term_control() -> None:
     result = evaluate_evidence(
         QuestionType.LONG_TERM_CONTROL,
         [a1c],
+        registry.policies(),
+        reference_time=NOW,
+    )
+    assert result.admissible_evidence
+    assert result.admissible_evidence[0].status is EvidenceStatus.ADMISSIBLE
+
+
+def test_self_reported_mood_admitted_for_lagged_association() -> None:
+    registry = build_builtin_registry()
+    mood = _candidate(
+        "self_reported_mood",
+        metric_id="mood_score",
+        observed_at=NOW - timedelta(days=1),
+        point_count=30,
+    )
+    result = evaluate_evidence(
+        QuestionType.LAGGED_ASSOCIATION,
+        [mood],
         registry.policies(),
         reference_time=NOW,
     )
