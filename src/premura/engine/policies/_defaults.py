@@ -890,7 +890,28 @@ BUILTIN_POLICIES: tuple[MetricFamilyPolicy, ...] = (
         source_notes=(f"{_RESEARCH} (metric-family table: 'Sleep metrics').",),
         extra_caveats=("Wearable sleep staging is an estimate, not a clinical sleep study.",),
     ),
-    # 12. HRV / resting HR / recovery -> baseline_relative
+    # 12. Self-reported mood -> rolling_recent_pattern (SAME shape as sleep/activity)
+    _rolling_recent_pattern(
+        policy_id="builtin.self_reported_mood.v1",
+        metric_family="self_reported_mood",
+        applies_to_metrics=("mood_score",),
+        current_max_age=timedelta(days=7),
+        min_coverage_pct=30.0,
+        rationale=(
+            "Self-reported mood is a diary series: individual entries are useful, "
+            "but associations and trends are only honest over repeated logged days."
+        ),
+        source_notes=(
+            f"{_RESEARCH} (metric-family table: 'Self-reported mood'; "
+            "operator-entered journal data, used as a Premura admissibility "
+            "default only).",
+        ),
+        extra_caveats=(
+            "Mood journal entries are self-reports and can be affected by logging "
+            "habits, recall, and context; associations are descriptive only.",
+        ),
+    ),
+    # 13. HRV / resting HR / recovery -> baseline_relative
     _baseline_relative(
         policy_id="builtin.hrv_resting_recovery.v1",
         metric_family="hrv_resting_recovery",

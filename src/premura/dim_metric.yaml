@@ -113,6 +113,17 @@
   validity_window: PT1H
   missing_data_policy: none
 
+- metric_id: mood_score
+  display_name: Mood score
+  canonical_unit: score_1_5
+  value_kind: instantaneous
+  description: Self-reported mood valence score from a journal entry; Daylio labels map awful=1, bad=2, meh=3, good=4, rad=5.
+  category: mental_health
+  validity_window: P1D
+  missing_data_policy: none
+  aliases:
+    en: [mood, mood score, self-reported mood]
+
 - metric_id: training_load
   display_name: Training load
   canonical_unit: score

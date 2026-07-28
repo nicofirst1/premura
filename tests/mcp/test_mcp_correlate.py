@@ -219,6 +219,32 @@ def test_correlate_available_payload_shape(tmp_path: Path) -> None:
     assert isinstance(result["confound_checklist"], list)
 
 
+def test_correlate_accepts_daylio_mood_score(tmp_path: Path) -> None:
+    """Daylio mood_score is an admitted analytical series for correlation."""
+    left_values = _low_autocorr(40)
+    right_values = _low_autocorr(40)
+    db_path = tmp_path / "mood_correlate.duckdb"
+    conn = duck.initialize(db_path)
+    duck.upsert_dim_source(conn, source_id="test:source", source_kind="test")
+    conn.execute("BEGIN")
+    _seed_metric(conn, _LEFT_METRIC, left_values, unit="bpm", key_prefix="rhr")
+    _seed_metric(conn, "mood_score", right_values, unit="score_1_5", key_prefix="mood")
+    conn.execute("COMMIT")
+    conn.close()
+
+    payload = server.correlate(
+        _LEFT_METRIC,
+        "mood_score",
+        lag_days=0,
+        expected_direction="positive",
+        warehouse_path=db_path,
+    )
+
+    assert payload["status"] == "available"
+    assert payload["result"]["inputs"] == [_LEFT_METRIC, "mood_score"]
+    assert payload["result"]["estimate"]["coefficient"] == pytest.approx(1.0)
+
+
 def test_correlate_available_payload_is_json_safe_and_byte_stable(tmp_path: Path) -> None:
     base = _low_autocorr(40)
     db_path = _warehouse_with_pair(tmp_path, base, base)
