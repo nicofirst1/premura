@@ -380,8 +380,8 @@ class IngestBatch:
     def validate(self) -> None:
         if not self.source_kind:
             raise ValueError("IngestBatch requires source_kind")
-        if not self.declared_metrics:
-            raise ValueError("IngestBatch requires declared_metrics")
+        if not self.declared_metrics and (self.measurements or self.intervals):
+            raise ValueError("IngestBatch with measurements or intervals requires declared_metrics")
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError("IngestBatch confidence must be within [0.0, 1.0]")
 

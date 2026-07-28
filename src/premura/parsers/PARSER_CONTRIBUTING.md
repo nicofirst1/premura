@@ -40,6 +40,43 @@ The four stages are `parsers`, `engine`, `mcp`, `ui`. Stage 4 is `ui/`, not `lea
 
 The policy above is defined now. **Renaming the legacy v1 `metric_id`s to the final canonical vocabulary is deferred** to a later mission and will happen via a **full rebuild from raw inputs**, not an in-place metric-id rewrite migration. New parsers and ontology rows added today follow the policy; existing rows are left in place.
 
+## Stool ecology and microbiome-style reports
+
+Stool reports often mix standard clinical chemistry, pathogen microbiology, and
+commercial ecology/taxonomic profiling in one table. Apply the standards-first
+rule per field, not per report:
+
+1. **Standard stool chemistry stays `lab:stool_*`.** If LOINC has a stool analyte
+   with the same property/system/scale, use or add the corresponding
+   `lab:stool_*` row. Examples from LOINC include calprotectin `[Mass/mass] in
+   Stool` (`38445-3`), pancreatic elastase `[Mass/mass] in Stool` (`25907-7`),
+   alpha-1-antitrypsin `[Mass/volume] in Stool` (`9407-8`), fecal fat
+   mass-content/mass-concentration terms, and reducing substances in stool.
+2. **Pathogen presence/culture findings are clinical microbiology.** A named
+   organism may get a canonical lab row only when the source result is a
+   presence/threshold/culture/antigen/PCR-style clinical finding and a matching
+   LOINC-style organism/test exists. Preserve the organism, method, and scale;
+   do not collapse pathogen-specific findings into a generic stool culture row
+   unless the source itself reports only a generic culture outcome.
+3. **Commercial ecology abundance is not automatically `lab:stool_*`.** Genus or
+   species abundance rows such as commensal bacteria/fungi, flora balance,
+   “good/bad” organism groups, alpha/beta diversity, and taxonomic profiling
+   scores are microbiome/taxonomic-profile observations. If Premura has no
+   microbiome domain yet, leave them in `unmapped_metrics` or propose a
+   `vendor:<source>:<field>` metric with a PR note. Do not create dozens of
+   `lab:stool_<organism>` metrics from one vendor's ecology scale.
+4. **Reported ratios are observations only if the lab reported them.** A ratio
+   printed in the source can be stored as an observed lab/vendor result with
+   provenance. A ratio computed by Premura belongs to `derived:*`, which parsers
+   must not emit.
+5. **Qualitative stool descriptors need an explicit home.** Color, consistency,
+   Bristol type, and similar descriptors are useful only when their scale is
+   clear. Prefer an existing standard row; otherwise surface them as unmapped or
+   a vendor metric rather than encoding free-text report categories as aliases.
+
+This keeps established stool lab markers ingestible while preventing a single
+commercial stool-ecology export from polluting the global lab ontology.
+
 ## Federated vs. core
 
 - **Federated (PRs welcome):** new parsers under `src/premura/parsers/` plus the matching `dim_metric.yaml` rows, governed by this file and `src/premura/parsers/CONTRACT.md`.

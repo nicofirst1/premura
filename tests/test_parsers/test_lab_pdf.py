@@ -21,6 +21,12 @@ def test_suggest_metric_matches_aliases_and_display_names() -> None:
     assert suggest_metric("Leukozyten") == "lab:wbc"
     assert suggest_metric("Hb") == "lab:hemoglobin"
     assert suggest_metric("Transaminasi GOT") == "lab:ast"
+    assert suggest_metric("Pancreatic elastase 1") == "lab:stool_elastase"
+    assert suggest_metric("Alpha1-Antitrypsin") == "lab:stool_alpha_1_antitrypsin"
+    assert (
+        suggest_metric("Haemoglobin in stool immunological") == "lab:stool_hemoglobin_immunologic"
+    )
+    assert suggest_metric("Quantitative determination of fat") == "lab:stool_fat"
 
 
 def test_lab_pdf_parser_emits_multilingual_rows(tmp_path: Path) -> None:
@@ -115,7 +121,7 @@ Laboratory:
 Centro Analisi Alfa
 Accettazione del: 2026-04-12
 Test | Value | Unit | Range
-Hb | 14.1 | g/L | 13.0-17.0
+Hb | 14.1 | mmol/l | 13.0-17.0
 """,
     )
 
@@ -126,6 +132,42 @@ Hb | 14.1 | g/L | 13.0-17.0
     assert [(row.raw_field, row.reason) for row in result.skipped_rows] == [("Hb", "unit_mismatch")]
     assert result.notes is not None
     assert "does not match 'g_per_dl'" in result.notes
+
+
+def test_lab_pdf_parser_normalizes_common_lab_units_and_converts_when_safe(
+    tmp_path: Path,
+) -> None:
+    report = _write_report(
+        tmp_path,
+        "2026-04-12-unit-normalization.pdf",
+        """
+Laboratory: Centro Analisi Alfa
+Accettazione del: 2026-04-12
+Test | Value | Unit | Range
+MCH | 30,1 | pg/eritr. | 26,0 - 32,0
+Sideremia | 1.02 | mg/l | 0.6 - 1.7
+Calcium | 2.50 | mmol/l | 2.15 - 2.55
+TSH | 2.4 | microU/ml | 0.4 - 4.0
+Leukozyten | 6.2 | G/l | 4.0 - 10.0
+Albumin | 44 | g/l | 35 - 52
+""",
+    )
+
+    result = LabPdfParser().parse(report)
+
+    by_metric = {measurement.metric_id: measurement for measurement in result.measurements}
+    assert by_metric["lab:mch"].value_num == pytest.approx(30.1)
+    assert by_metric["lab:mch"].unit == "pg"
+    assert by_metric["lab:iron"].value_num == pytest.approx(102.0)
+    assert by_metric["lab:iron"].unit == "ug_per_dl"
+    assert by_metric["lab:calcium"].value_num == pytest.approx(10.02)
+    assert by_metric["lab:calcium"].unit == "mg_per_dl"
+    assert by_metric["lab:tsh"].value_num == pytest.approx(2.4)
+    assert by_metric["lab:tsh"].unit == "mIU_per_l"
+    assert by_metric["lab:wbc"].value_num == pytest.approx(6.2)
+    assert by_metric["lab:wbc"].unit == "10^9_per_l"
+    assert by_metric["lab:albumin"].value_num == pytest.approx(4.4)
+    assert by_metric["lab:albumin"].unit == "g_per_dl"
 
 
 def test_lab_pdf_parser_rejects_unrecognized_text_values(tmp_path: Path) -> None:
@@ -323,6 +365,39 @@ def test_loader_persists_clinical_notes(empty_warehouse, tmp_path: Path) -> None
     ).fetchone()
     assert row is not None
     assert "Diagnostic impression" in row[0]
+
+
+def test_loader_accepts_note_only_batches_without_fake_declared_metrics(
+    empty_warehouse, tmp_path: Path
+) -> None:
+    from premura.parsers.base import ClinicalNote, IngestBatch, SourceDescriptor
+    from premura.store.loader import load
+
+    path = tmp_path / "note-only.txt"
+    path.write_text("placeholder", encoding="utf-8")
+    batch = IngestBatch(
+        source_kind="lab_pdf",
+        declared_metrics=[],
+        source_descriptors={
+            "lab:note-only": SourceDescriptor(source_id="lab:note-only", source_kind="lab_pdf")
+        },
+        clinical_notes=[
+            ClinicalNote(
+                ts_utc=datetime(2026, 5, 10),
+                source_id="lab:note-only",
+                source_kind="lab_pdf",
+                text="Narrative report text.",
+            )
+        ],
+    ).attach_source_artifact(path)
+
+    stats = load(empty_warehouse, batch)
+
+    assert stats.rows_inserted == 1
+    row = empty_warehouse.execute(
+        "SELECT text FROM hp.fact_clinical_note WHERE source_id = 'lab:note-only'"
+    ).fetchone()
+    assert row == ("Narrative report text.",)
 
 
 def test_real_pdf_requires_docling_when_not_installed(
