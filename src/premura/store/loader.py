@@ -116,7 +116,9 @@ def validate_batch_against_warehouse(
     batch.validate()
     metric_ids = batch.declared_metrics
     if not metric_ids:
-        raise ValueError("IngestBatch requires declared_metrics")
+        if batch.measurements or batch.intervals:
+            raise ValueError("IngestBatch with measurements or intervals requires declared_metrics")
+        return
 
     placeholders = ", ".join(["?"] * len(metric_ids))
     rows = conn.execute(

@@ -40,6 +40,21 @@ The four stages are `parsers`, `engine`, `mcp`, `ui`. Stage 4 is `ui/`, not `lea
 
 The policy above is defined now. **Renaming the legacy v1 `metric_id`s to the final canonical vocabulary is deferred** to a later mission and will happen via a **full rebuild from raw inputs**, not an in-place metric-id rewrite migration. New parsers and ontology rows added today follow the policy; existing rows are left in place.
 
+## Mixed-domain reports
+
+Some source artifacts mix several domains in one table, for example standard
+clinical chemistry, pathogen microbiology, commercial ecology scores, and
+qualitative descriptors. Apply the standards-first rule per field, not per
+report, and keep each field in the narrowest reusable home that matches its
+meaning, method, and scale.
+
+Do not promote a whole vendor domain into the global ontology because one report
+contains it. If a field is reusable and standards-backed, add the canonical row
+in the same PR as the parser change. If it is source-specific, ambiguous, or
+lacks an admitted Premura domain, leave it in `unmapped_metrics` or propose a
+`vendor:<source>:<field>` metric with a PR note. Parsers still must not emit
+computed `derived:*` rows.
+
 ## Federated vs. core
 
 - **Federated (PRs welcome):** new parsers under `src/premura/parsers/` plus the matching `dim_metric.yaml` rows, governed by this file and `src/premura/parsers/CONTRACT.md`.

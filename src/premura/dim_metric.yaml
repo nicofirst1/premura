@@ -2337,7 +2337,12 @@
   validity_window: P1Y
   missing_data_policy: none
   aliases:
-    en: [hemoglobin in stool immunologic, stool hemoglobin immunologic]
+    en:
+      [
+        hemoglobin in stool immunologic,
+        stool hemoglobin immunologic,
+        haemoglobin in stool immunological,
+      ]
     de: [hamoglobin im stuhl immunologisch, haemoglobin im stuhl immunologisch]
   loinc: "14563-1"
 
@@ -2369,9 +2374,9 @@
   validity_window: P1Y
   missing_data_policy: none
   aliases:
-    en: [pancreatic elastase, stool elastase]
+    en: [pancreatic elastase, pancreatic elastase 1, stool elastase]
     de: [pankreaselastase im stuhl]
-  loinc: "26910-0"
+  loinc: "25907-7"
 
 - metric_id: lab:stool_ph
   display_name: Stool pH
@@ -2390,7 +2395,7 @@
   validity_window: P6M
   missing_data_policy: none
   aliases:
-    en: [quantitative fat, fat quantitative]
+    en: [quantitative fat, fat quantitative, quantitative determination of fat]
     de: [quant. nachweis von fett]
   loinc: "[unmapped]"
 
@@ -2497,9 +2502,9 @@
   validity_window: P6M
   missing_data_policy: none
   aliases:
-    en: [alpha 1-antitrypsin]
+    en: [alpha 1-antitrypsin, alpha1-antitrypsin, A1AT]
     de: [alpha 1-antitrypsin]
-  loinc: "[unmapped]"
+  loinc: "9407-8"
 
 - metric_id: lab:stool_secretory_iga
   display_name: Stool secretory IgA
@@ -2521,7 +2526,7 @@
   validity_window: P6M
   missing_data_policy: none
   aliases:
-    en: [anti-transglutaminase antibodies stool]
+    en: [anti-transglutaminase antibodies stool, anti-transglutaminase antibodies in stool]
     de: [anti-transglutaminase ak i. stuhl, anti-transglutaminase ak i stuhl]
   loinc: "[unmapped]"
 

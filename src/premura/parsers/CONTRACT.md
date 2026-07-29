@@ -53,7 +53,7 @@ The parser-to-loader seam for one source artifact. `IngestBatch` contains only l
 
 - `measurements` / `intervals` — loadable rows only.
 - `clinical_notes` — optional narrative commentary / diagnosis text that belongs in the report but not in the numeric fact tables.
-- `declared_metrics` — the canonical `metric_id` values this parser is allowed to emit.
+- `declared_metrics` — the canonical `metric_id` values this parser is allowed to emit. Required for batches with `measurements` or `intervals`; may be empty for a note-only batch.
 - `source_descriptors` — provenance used to upsert `hp.dim_source` without out-of-band parser state.
 - `unmapped_metrics` — raw vendor fields deliberately skipped because the decision tree produced no canonical `metric_id`.
 - `skipped_rows` — source rows that resolved to a canonical metric but still produced no loadable row (for example unit mismatch, unsupported qualitative value, or a deferred follow-up marker).
