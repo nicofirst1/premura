@@ -14,6 +14,7 @@ Run `premura --help` for the full list of commands and what each one does. On a 
 2. Run `premura ingest`. It finds and loads every supported file automatically.
 3. Run `premura status` to confirm the new rows arrived.
 4. When you want a backup, run `premura export --month YYYY-MM`, then `premura upload --month YYYY-MM` if you want it on Drive.
+5. On a second machine or a fresh clone, run `premura download` to pull the latest encrypted warehouse back from Drive, decrypt it, and restore it locally. Any existing warehouse is backed up to a timestamped copy first, never overwritten. Pass `--month YYYY-MM` to restore a specific month.
 
 ### Lab files (PDFs)
 

@@ -41,6 +41,24 @@ def upload_directory(
     return dst
 
 
+def download_directory(
+    remote_path: str,
+    local_dir: Path,
+    *,
+    extra_flags: tuple[str, ...] = ("--transfers", "2", "--checksum"),
+) -> Path:
+    """`rclone copy remote:prefix/YYYY/MM/ local_dir`. Returns ``local_dir``.
+
+    Inverse of :func:`upload_directory`; read-only on the remote.
+    """
+    local_dir.mkdir(parents=True, exist_ok=True)
+    cmd = ["rclone", "copy", remote_path, str(local_dir), *extra_flags]
+    res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    if res.returncode != 0:
+        raise RcloneError(f"rclone copy failed (rc={res.returncode}): {res.stderr.strip()}")
+    return local_dir
+
+
 def list_remote(remote_path: str) -> list[tuple[int, str]]:
     """`rclone lsl remote:path/` → [(size_bytes, filename), ...]."""
     cmd = ["rclone", "lsl", remote_path]
@@ -59,4 +77,11 @@ def list_remote(remote_path: str) -> list[tuple[int, str]]:
     return out
 
 
-__all__ = ["RcloneError", "is_available", "list_remote", "remote_reachable", "upload_directory"]
+__all__ = [
+    "RcloneError",
+    "download_directory",
+    "is_available",
+    "list_remote",
+    "remote_reachable",
+    "upload_directory",
+]

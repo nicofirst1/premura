@@ -1,7 +1,7 @@
 """`premura` CLI — entry point for the premura pipeline.
 
-Verbs: bootstrap, ingest, inspect, status, export, upload, run-monthly, doctor,
-gc, install-launchd, uninstall-launchd, install-skills.
+Verbs: bootstrap, ingest, inspect, status, export, upload, download, run-monthly,
+doctor, gc, install-launchd, uninstall-launchd, install-skills.
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ from .bootstrap import (
 )
 from .config import settings
 from .mcp import server as mcp_server
-from .ops import encrypt, notify, upload
+from .ops import encrypt, notify, restore, upload
 from .parsers.ai_chat_recall import FORMAT_MARKER as AI_CHAT_RECALL_MARKER
 from .parsers.base import file_sha256, normalize_parse_output
 from .parsers.registry import PARSER_REGISTRY
@@ -597,6 +597,64 @@ def upload_cmd(
 ) -> None:
     """rclone copy the month's encrypted artifacts to the configured remote."""
     _do_upload(month)
+
+
+# ============================================================================
+# download
+# ============================================================================
+
+
+def _do_download(month: str) -> None:
+    if not upload.is_available():
+        console.print("[red]rclone not installed[/red]")
+        raise typer.Exit(code=1)
+    if not encrypt.is_available():
+        console.print(
+            "[red]age CLI not installed. Install `age` (macOS: `brew install age`; "
+            "Debian/Ubuntu: `apt install age`), then run `premura bootstrap`.[/red]"
+        )
+        raise typer.Exit(code=1)
+    if not settings.age_key_file.is_file():
+        console.print(f"[red]age key missing: {settings.age_key_file} — run `premura doctor`[/red]")
+        raise typer.Exit(code=1)
+
+    prefix = settings.rclone_backup_prefix.rstrip("/")
+    if not month:
+        listing = upload.list_remote(f"{settings.rclone_remote}:{prefix}/")
+        month = restore.parse_latest_month([name for _size, name in listing]) or ""
+        if not month:
+            console.print(
+                f"[red]no month partitions found on {settings.rclone_remote}:{prefix}/[/red]"
+            )
+            raise typer.Exit(code=1)
+        console.print(f"latest remote month: [cyan]{month}[/cyan]")
+    year, mo = month.split("-")
+
+    local_dir = settings.exports_dir / month
+    src = f"{settings.rclone_remote}:{prefix}/{year}/{mo}/"
+    upload.download_directory(src, local_dir)
+    console.print(f"[green]downloaded[/green] {src} → {local_dir}")
+
+    db_enc = local_dir / "health.duckdb.age"
+    if not db_enc.is_file():
+        console.print(f"[red]no health.duckdb.age in {local_dir}[/red]")
+        raise typer.Exit(code=1)
+    restored = local_dir / "health.duckdb.restored"
+    encrypt.decrypt_file(db_enc, restored, identity_file=settings.age_key_file)
+    restore.verify_warehouse_opens(restored)
+
+    backup = restore.install_warehouse(restored, settings.warehouse_path)
+    if backup is not None:
+        console.print(f"[yellow]previous warehouse backed up[/yellow] → {backup}")
+    console.print(f"[green]restored[/green] → {settings.warehouse_path}")
+
+
+@app.command(name="download")
+def download_cmd(
+    month: Annotated[str, typer.Option("--month", help="YYYY-MM (default: latest on remote)")] = "",
+) -> None:
+    """Pull the latest encrypted warehouse from the remote and restore it locally."""
+    _do_download(month)
 
 
 # ============================================================================
