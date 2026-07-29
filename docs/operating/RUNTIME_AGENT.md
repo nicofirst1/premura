@@ -28,7 +28,7 @@ Signal-backed tools return structured verdicts rather than free-form claims. Car
 
 - `available` — the result is backed by data; present it with its caveats.
 - `missing_input` — the metric or input is not in the warehouse. Say so and say what artifact would supply it; do not fabricate a value.
-- `stale_input` — the data exists but is old. Disclose the freshness gap rather than presenting a stale number as current.
+- `stale_input` — the data exists but is old. Disclose the freshness gap rather than presenting a stale number as current. If the human has a newer export and wants the source current, refresh it by re-ingesting; see [Refreshing a source](../using/OPERATIONS.md#refreshing-a-source).
 - `insufficient_data` — there is not enough to compute a trustworthy result.
 
 When a tool **refuses** (for example, a profile write outside the allowlist, or a request to impute missing days), the refusal is often correct behavior, not a bug. Relay the refusal and its reason; do not route around it with the operator surface to force an answer the gated surface declined to give.
@@ -89,4 +89,3 @@ Two architecture contracts, both authoritative, bind how a runtime agent operate
 
 - [`src/premura/ui/OPERATING_ROLES.md`](../../src/premura/ui/OPERATING_ROLES.md) — the runtime multi-agent shape (orchestrator, bounded operating roles, the blocking answer-audit gate, the improvement queue, share packets).
 - [`src/premura/AUDIT_CONSUMER_CONTRACT.md`](../../src/premura/AUDIT_CONSUMER_CONTRACT.md) — the structured Session Disclosure object your research-trace disclosure must satisfy.
-
