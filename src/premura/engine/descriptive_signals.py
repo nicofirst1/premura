@@ -26,6 +26,7 @@ loader calls. See the WP02 report note about ``_BUILTIN_SIGNAL_MODULES``.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
@@ -686,6 +687,254 @@ def _build_missing_input_report(
 
 
 # --------------------------------------------------------------------------- #
+# Navy body-fat % (issue #100) — second cross-domain proof consumer
+# --------------------------------------------------------------------------- #
+#
+# Built on the same input-resolution seam BMI proved. It resolves declared
+# ``sex`` and ``standing_height_cm`` from profile context and circumference
+# observations from observation history, then applies the standard U.S. Navy
+# circumference-method equations (measurements in cm). The method has only male
+# and female variants, so a declared sex outside that pair (e.g. ``intersex``)
+# or an unset sex is an honest refusal, never a guessed formula.
+
+_NAVY_BODY_FAT_CAVEAT: str = (
+    "Navy circumference-method body fat is an estimate from body measurements, "
+    "not a clinical or diagnostic body-composition measurement such as DXA."
+)
+
+# Base prerequisites shared by both sex variants. Hip is appended for female
+# only, once the variant is known.
+_NAVY_BASE_REQUIRED_INPUTS: list[str] = [
+    "profile:sex",
+    "profile:standing_height_cm",
+    "observation:waist_circumference",
+    "observation:neck_circumference",
+]
+_NAVY_SUPPORTED_SEXES: frozenset[str] = frozenset({"male", "female"})
+
+
+def _navy_profile_request(anchor_ts: datetime, key: str) -> ResolutionRequest:
+    return ResolutionRequest(
+        anchor_ts=anchor_ts,
+        dependency=DependencyDeclaration(
+            consumer_name="navy_body_fat",
+            depends_on_domain="profile_context",
+            required_key=key,
+            failure_mode="explicit_missing_input",
+        ),
+    )
+
+
+def _navy_observation_request(anchor_ts: datetime, metric_id: str) -> ResolutionRequest:
+    return ResolutionRequest(
+        anchor_ts=anchor_ts,
+        dependency=DependencyDeclaration(
+            consumer_name="navy_body_fat",
+            depends_on_domain="observation_history",
+            required_key=metric_id,
+            failure_mode="explicit_missing_or_stale_input",
+        ),
+    )
+
+
+def navy_body_fat(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    anchor_ts: datetime | None = None,
+) -> StatusResult | MissingInputReport:
+    """Estimate body-fat % via the U.S. Navy circumference method.
+
+    Resolves declared ``sex`` + ``standing_height_cm`` (profile context) and
+    ``waist``/``neck`` (plus ``hip`` for female) circumference observations
+    through :func:`premura.engine.resolve_dependency`, then applies the standard
+    Navy metric equations. Returns a :class:`StatusResult` only when every
+    required prerequisite for the resolved sex variant is usable; otherwise a
+    :class:`MissingInputReport` naming the unmet prerequisite(s). A declared sex
+    with no Navy variant (e.g. ``intersex``) or an unset sex is refused, never
+    guessed.
+    """
+    if anchor_ts is None:
+        anchor_ts = datetime.now(tz=UTC)
+
+    # 1. Sex selects the formula variant, so resolve it first and refuse before
+    #    any measurement math.
+    sex_result = resolve_dependency(conn=conn, request=_navy_profile_request(anchor_ts, "sex"))
+    if not sex_result.usable:
+        return MissingInputReport(
+            tool_name="navy_body_fat",
+            required_inputs=list(_NAVY_BASE_REQUIRED_INPUTS),
+            missing_inputs=["profile:sex"],
+            message=(
+                "Navy body fat needs a declared biological sex in profile "
+                "context to choose the measurement formula; no assertion is on "
+                "file as of the anchor time."
+            ),
+        )
+    assert sex_result.payload is not None  # narrow for type-checkers
+    sex_value = sex_result.payload["resolved_value"]
+    sex = sex_value.lower() if isinstance(sex_value, str) else None
+    if sex not in _NAVY_SUPPORTED_SEXES:
+        # A declared but unsupported sex (e.g. intersex) is present-but-unusable:
+        # the Navy method defines only male and female variants, so refuse
+        # honestly rather than guess a formula.
+        return MissingInputReport(
+            tool_name="navy_body_fat",
+            required_inputs=list(_NAVY_BASE_REQUIRED_INPUTS),
+            stale_inputs=["profile:sex"],
+            message=(
+                f"Navy body fat has no formula variant for the declared sex "
+                f"{sex_value!r}; it is defined only for male and female "
+                "measurements, so no estimate is produced."
+            ),
+        )
+
+    is_female = sex == "female"
+    required_inputs = list(_NAVY_BASE_REQUIRED_INPUTS)
+    if is_female:
+        required_inputs.append("observation:hip_circumference")
+
+    # 2. Resolve the remaining declared prerequisites through the seam.
+    height_result = resolve_dependency(
+        conn=conn, request=_navy_profile_request(anchor_ts, "standing_height_cm")
+    )
+    waist_result = resolve_dependency(
+        conn=conn, request=_navy_observation_request(anchor_ts, "waist_circumference")
+    )
+    neck_result = resolve_dependency(
+        conn=conn, request=_navy_observation_request(anchor_ts, "neck_circumference")
+    )
+    hip_result = (
+        resolve_dependency(
+            conn=conn, request=_navy_observation_request(anchor_ts, "hip_circumference")
+        )
+        if is_female
+        else None
+    )
+
+    # 3. Combined refusal for any unusable measurement prerequisite, so the
+    #    caller sees the full picture in one message.
+    checks = [
+        ("profile:standing_height_cm", height_result),
+        ("observation:waist_circumference", waist_result),
+        ("observation:neck_circumference", neck_result),
+    ]
+    if hip_result is not None:
+        checks.append(("observation:hip_circumference", hip_result))
+
+    missing_inputs: list[str] = []
+    stale_inputs: list[str] = []
+    message_parts: list[str] = []
+    for label, res in checks:
+        if res.usable:
+            continue
+        if res.absence_reason == "missing":
+            missing_inputs.append(label)
+            message_parts.append(f"{label} is not available as of the anchor time.")
+        elif res.absence_reason == "stale":
+            stale_inputs.append(label)
+            message_parts.append(f"{label} is older than its freshness window.")
+        else:
+            stale_inputs.append(label)
+            message_parts.append(
+                f"{label} resolved as {res.absence_reason!r} rather than a usable value."
+            )
+
+    if missing_inputs or stale_inputs:
+        return MissingInputReport(
+            tool_name="navy_body_fat",
+            required_inputs=required_inputs,
+            missing_inputs=missing_inputs,
+            stale_inputs=stale_inputs,
+            message="Navy body fat needs usable measurements: " + " ".join(message_parts),
+        )
+
+    # 4. Success path — pull numeric values and guard non-physical geometry.
+    assert height_result.payload is not None
+    assert waist_result.payload is not None
+    assert neck_result.payload is not None
+    height_raw = height_result.payload["resolved_value"]
+    waist_raw = waist_result.payload["resolved_value"]
+    neck_raw = neck_result.payload["resolved_value"]
+    hip_raw: Any = None
+    if hip_result is not None:
+        assert hip_result.payload is not None
+        hip_raw = hip_result.payload["resolved_value"]
+
+    numeric = [height_raw, waist_raw, neck_raw] + ([hip_raw] if is_female else [])
+    if not all(isinstance(v, (int, float)) for v in numeric):
+        return MissingInputReport(
+            tool_name="navy_body_fat",
+            required_inputs=required_inputs,
+            missing_inputs=list(required_inputs),
+            message=(
+                "Navy body fat requires numeric height and circumference "
+                "values; a resolver returned a non-numeric payload, which is "
+                "treated as missing rather than guessed."
+            ),
+        )
+
+    height_cm = float(height_raw)
+    waist_cm = float(waist_raw)
+    neck_cm = float(neck_raw)
+    # The log arguments must be positive: waist must exceed neck (male), and
+    # waist + hip must exceed neck (female). Non-physical geometry is treated as
+    # missing rather than crashing on a math-domain error.
+    girth = (waist_cm + float(hip_raw) - neck_cm) if is_female else (waist_cm - neck_cm)
+    if girth <= 0 or height_cm <= 0:
+        return MissingInputReport(
+            tool_name="navy_body_fat",
+            required_inputs=required_inputs,
+            stale_inputs=["observation:waist_circumference", "observation:neck_circumference"],
+            message=(
+                "Navy body fat needs a positive circumference girth and height; "
+                "the measurements do not form a valid geometry, so no estimate "
+                "is produced."
+            ),
+        )
+
+    if is_female:
+        raw = (
+            495.0 / (1.29579 - 0.35004 * math.log10(girth) + 0.22100 * math.log10(height_cm))
+            - 450.0
+        )
+    else:
+        raw = (
+            495.0 / (1.0324 - 0.19077 * math.log10(girth) + 0.15456 * math.log10(height_cm)) - 450.0
+        )
+
+    # Freshness / observed_at come from the circumference observations (the
+    # binding constraint); profile context is slowly changing and uses as-of
+    # semantics, not a freshness window. The estimate is only as fresh as its
+    # oldest measured input.
+    waist_policy = _query.load_metric_policy(conn, "waist_circumference")
+    validity_window = (
+        waist_policy.validity_window_text
+        if waist_policy is not None and waist_policy.validity_window_text is not None
+        else "P1W"
+    )
+    observed_times = [
+        waist_result.payload["observed_at"],
+        neck_result.payload["observed_at"],
+    ]
+    if hip_result is not None:
+        assert hip_result.payload is not None
+        observed_times.append(hip_result.payload["observed_at"])
+    observed_at = min(observed_times)
+
+    return StatusResult(
+        signal_name="navy_body_fat",
+        metric_id="body_fat_pct",
+        display_name="Body fat (Navy method)",
+        unit="pct",
+        freshness_state=FreshnessState.CURRENT,
+        validity_window=validity_window,
+        value=round(raw, 2),
+        observed_at=observed_at,
+        caveats=[_NAVY_BODY_FAT_CAVEAT],
+    ).validate()
+
+
+# --------------------------------------------------------------------------- #
 # WP04 — Intake descriptive signals (one per intake domain)
 # --------------------------------------------------------------------------- #
 #
@@ -1250,6 +1499,42 @@ def register_builtin_signals() -> None:
             ),
         )
     )
+    # Navy body-fat % (issue #100). Second cross-domain consumer, registered
+    # under the existing "status" family. Like BMI its ``inputs`` mix a profile
+    # attribute key and observation metric_ids, so they are free-form
+    # domain-prefixed strings, not strict ``dim_metric.metric_id`` values; the
+    # honest refusal path is the :class:`MissingInputReport` returned by
+    # :func:`navy_body_fat`.
+    _register(
+        SignalSpec(
+            name="navy_body_fat",
+            domain=["body_composition", "cross_domain_proof"],
+            inputs=[
+                "profile:sex",
+                "profile:standing_height_cm",
+                "observation:waist_circumference",
+                "observation:neck_circumference",
+                "observation:hip_circumference",
+            ],
+            output=None,
+            priority="normal",
+            auto_safe=False,
+            revision="1",
+            fn=navy_body_fat,
+            question="What is my estimated body-fat % from the Navy circumference method?",
+            family="status",
+            missing_input_hint=(
+                "Navy body fat needs a declared biological sex and standing "
+                "height (via profile capture) plus recent waist and neck "
+                "circumference measurements (and hip for female)."
+            ),
+            caveat_summary=(
+                "Navy circumference-method body fat is an estimate from body "
+                "measurements, not a clinical or diagnostic measurement such as "
+                "DXA; it carries no reference-range claim.",
+            ),
+        )
+    )
     # WP04 — parameterized intake descriptive signals. They are registered here
     # (no ``engine/__init__.py`` edit — this module is already in
     # ``_BUILTIN_SIGNAL_MODULES``) and are intentionally left out of the
@@ -1314,6 +1599,7 @@ __all__ = [
     "steps_trend",
     "weight_trend",
     "bmi",
+    "navy_body_fat",
     "supplement_intake_adherence",
     "nutrition_intake_trend",
     "SupplementAdherenceResult",
