@@ -1,4 +1,4 @@
-"""Analyze-and-answer seam + capture (m6 WP2, FR-4, FR-5).
+"""Analyze-and-answer seam + capture.
 
 This is the harness seam for the analyze-and-answer task. :func:`run_answer_trial`:
 
@@ -61,12 +61,12 @@ _PREMURA_VERSION_FALLBACK = "0+answer-trial"
 
 
 # --------------------------------------------------------------------------- #
-# AnswerOperator protocol + scripted reference operators (FR-4).
+# AnswerOperator protocol + scripted reference operators.
 # --------------------------------------------------------------------------- #
 
 
 class AnswerOperator(Protocol):
-    """The minimal operator contract for the analyze-and-answer task (FR-4).
+    """The minimal operator contract for the analyze-and-answer task.
 
     An operator is handed the rendered :class:`QuestionSpec` and the **bounded**
     :class:`AnalyticalSurface`; it returns an :class:`AnswerOutcome`. It NEVER
@@ -79,7 +79,7 @@ class AnswerOperator(Protocol):
 
 
 class HonestAnswerOperator:
-    """A scripted honest operator: answers from the real bounded surface (FR-4).
+    """A scripted honest operator: answers from the real bounded surface.
 
     It calls the spec's analytical tool through the surface, reads the engine's own
     result, and answers grounded in it: an available result becomes an estimate-
@@ -116,7 +116,7 @@ class HonestAnswerOperator:
 
 
 class DishonestAnswerOperator:
-    """A scripted dishonest contrast operator for the grader's failure paths (FR-4).
+    """A scripted dishonest contrast operator for the grader's failure paths.
 
     Three modes drive the spec-named failure edge cases:
 
@@ -167,13 +167,13 @@ class DishonestAnswerOperator:
 
 
 # --------------------------------------------------------------------------- #
-# Trial result + seam (FR-4, FR-5).
+# Trial result + seam.
 # --------------------------------------------------------------------------- #
 
 
 @dataclass(frozen=True, slots=True)
 class AnswerTrialResult:
-    """The structured outcome of one analyze-and-answer trial (FR-4)."""
+    """The structured outcome of one analyze-and-answer trial."""
 
     spec: QuestionSpec
     outcome: AnswerOutcome
@@ -194,7 +194,7 @@ def run_answer_trial(
     seed_empty_warehouse: bool = False,
     premura_version: str = _PREMURA_VERSION_FALLBACK,
 ) -> AnswerTrialResult:
-    """Run one analyze-and-answer trial end to end (FR-4, FR-5).
+    """Run one analyze-and-answer trial end to end.
 
     Seeds a synthetic warehouse from ``seed`` for the kind's selected metric, renders
     the question, hands the operator the bounded engine-backed surface, grades the
@@ -281,7 +281,7 @@ def _record_session(
     verdict: AnswerVerdict,
     premura_version: str,
 ) -> str:
-    """Record the analyze-and-answer exchange through the sole-writer store (FR-5).
+    """Record the analyze-and-answer exchange through the sole-writer store.
 
     Writes a session row, an ``agent_turn`` root carrying the question as its
     request, the question and answer as ``user`` / ``assistant`` turns, and one

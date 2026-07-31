@@ -1,9 +1,9 @@
-"""WP02 T005 — renamed-field absorption fails the self-reconcile gate (FR-009).
+"""Renamed-field absorption fails the self-reconcile gate.
 
-The spec-named edge case (SC-007, acceptance scenario 5): in the 2026-06-04
+The spec-named edge case (acceptance scenario 5): in the 2026-06-04
 clean re-test, a local 14B's only near-miss was consuming the ``timestamp``
 column into ``ts_utc`` without listing it — the column was *used* but invisible
-to the honesty account. FR-009 sharpens the declared-gap rule: a column
+to the honesty account. This sharpens the declared-gap rule: a column
 consumed under **any** output name is still a consumed column and must be
 declared accounted (in ``mapped_columns``) or be an explicit gap. Renaming is
 not declaring.
@@ -87,7 +87,7 @@ def test_fixture_header_carries_the_audit_columns() -> None:
 
 
 def test_renamed_field_absorption_fails_the_gate() -> None:
-    """Consumed-into-``ts_utc`` but undeclared timestamp column → FAIL (FR-009)."""
+    """Consumed-into-``ts_utc`` but undeclared timestamp column → FAIL."""
     batch = _absorbing_batch()
     assert batch.measurements, "batch must genuinely consume the fixture rows"
 

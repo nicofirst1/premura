@@ -1,4 +1,4 @@
-"""WP06 — Stage 3 analytical-tool MCP exposure tests.
+"""Stage 3 analytical-tool MCP exposure tests.
 
 These lock the contract from ``contracts/mcp-analytical-tools.md``:
 
@@ -27,10 +27,9 @@ from premura.mcp import server
 from premura.mcp.entrypoint import build_operator_server, build_server
 from premura.store import duck
 
-# WP06 adds the two analytical tools to the prior ten default tools.
-# The correlate mission's WP04 then adds ``correlate`` (twelve -> thirteen).
-# session-research-trace WP03 adds the three trace tools to the same surface.
-# WP05 (finish-analytical-tool-set) adds rolling_mean + paired_t_test (-> 18).
+# The default surface adds the two analytical tools to the prior ten default
+# tools, then ``correlate``, the three trace tools, and rolling_mean +
+# paired_t_test (-> 18).
 _DEFAULT_TOOLS_WITH_ANALYTICAL = sorted(
     [
         "list_metrics",
@@ -110,7 +109,7 @@ def _warehouse_with_series(tmp_path: Path, values: list[float]) -> Path:
 
 
 # --------------------------------------------------------------------------- #
-# T022 — default surface exposes both analytical tools; query_warehouse stays
+# Default surface exposes both analytical tools; query_warehouse stays
 # operator-only.
 # --------------------------------------------------------------------------- #
 def test_default_surface_includes_change_point() -> None:

@@ -1,10 +1,10 @@
-"""WP05 — deterministic three-rule grader (FR-060..065).
+"""Deterministic three-rule grader.
 
 Black-box tests over the verdict ``grade()`` returns and the DB rows the caller
-persists. The evidence is built by **actually** running the WP04 reference parsers
-into a real WP03 sandbox warehouse — the graded facts come from the warehouse
+persists. The evidence is built by **actually** running the reference parsers
+into a real sandbox warehouse — the graded facts come from the warehouse
 (boundary truth) + the committed manifest (ground truth) + the captured provenance
-sets, **never** from a parser self-report (FR-061 / NFR-006).
+sets, **never** from a parser self-report.
 
 Decisive test: ``test_dishonest_parser_fails_honesty`` — the dishonest parser's own
 ``unmapped_metrics`` claim looks clean, yet the verdict FAILs honesty on
@@ -37,7 +37,7 @@ SYNTHETIC_CSV = FIXTURE_DIR / "fitbit_heart_rate_synthetic.csv"
 MANIFEST_PATH = FIXTURE_DIR / "fixture_fields.yaml"
 VERDICT_SCHEMA = CONTRACTS_DIR / "grader-verdict.schema.json"
 
-# These reference fixtures are committed with the mission (WP04); their absence is
+# These reference fixtures are committed with the mission; their absence is
 # a HARD failure, never a skip — a vanished committed fixture must block the gate,
 # not pass green.
 _missing = [p.name for p in (GOOD_PARSER, DISHONEST_PARSER, SYNTHETIC_CSV) if not p.exists()]
@@ -49,7 +49,7 @@ if _missing:
 
 
 # --------------------------------------------------------------------------- #
-# Test harness: assemble captured provenance from the real WP03 runner envelope.
+# Test harness: assemble captured provenance from the real runner envelope.
 # This is a thin transport helper only — the GRADED facts still come from the
 # warehouse + manifest + captured sets, never from a parser-computed verdict.
 # --------------------------------------------------------------------------- #
@@ -81,7 +81,7 @@ def _manifest() -> dict[str, Any]:
 
 
 def _run_runner_envelope(sandbox: Any, *, parser: str) -> dict[str, Any]:
-    """Run one parser through the real WP03 subprocess runner; return its envelope."""
+    """Run one parser through the real subprocess runner; return its envelope."""
     import os
 
     env = {
@@ -180,7 +180,7 @@ def test_good_parser_passes() -> None:
 
 def test_dishonest_parser_fails_honesty() -> None:
     """Dishonest parser → honest_about_gaps fails on altitude_m even though its
-    own unmapped_metrics claim is clean (NFR-006/007/SC-002)."""
+    own unmapped_metrics claim is clean."""
     evidence = _ingest_reference_parser(DISHONEST_PARSER, "DishonestFitbitHrParser")
     try:
         # The parser's SELF-REPORT looks clean: it loads, is runtime-valid, and
@@ -242,7 +242,7 @@ def test_skipped_rows_raw_field_credits_declared_gap() -> None:
 
 
 def test_loaded_rule_consistency() -> None:
-    """Tampered logged rows_inserted ≠ warehouse rows → loaded fails (FR-062)."""
+    """Tampered logged rows_inserted ≠ warehouse rows → loaded fails."""
     evidence = _ingest_reference_parser(GOOD_PARSER, "GoodFitbitHrParser")
     try:
         # Tamper the captured count; the warehouse (boundary truth) still has 5.
@@ -266,7 +266,7 @@ def test_loaded_rule_consistency() -> None:
 
 
 def test_not_loaded_when_zero_warehouse_rows() -> None:
-    """Empty warehouse (parser emitted nothing / raised) → loaded fails (FR-062)."""
+    """Empty warehouse (parser emitted nothing / raised) → loaded fails."""
     sandbox = build_sandbox(REPO_ROOT)
     try:
         # Initialize an empty warehouse: schema present, zero fact rows.
@@ -299,7 +299,7 @@ def test_not_loaded_when_zero_warehouse_rows() -> None:
 
 def test_runtime_valid_uses_recompute() -> None:
     """Crafted declared≠emitted captured sets → runtime_valid fails regardless of
-    any stored flag (FR-063), with the recomputed violation string."""
+    any stored flag, with the recomputed violation string."""
     evidence = _ingest_reference_parser(GOOD_PARSER, "GoodFitbitHrParser")
     try:
         # Tamper the captured emitted set so declared != emitted. The grader

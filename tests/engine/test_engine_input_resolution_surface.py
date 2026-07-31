@@ -36,7 +36,7 @@ def clean_resolvers() -> Iterator[None]:
     The resolver registry is process-global by design (it mirrors the signal
     registry). Tests that mutate it must clean up so they do not leak state
     into sibling tests. Snapshotting the dict contents preserves any
-    legitimately-loaded built-in resolvers (currently none in WP01, but
+    legitimately-loaded built-in resolvers (currently none, but
     forward-compatible).
     """
     from premura.engine import RESOLVERS
@@ -106,7 +106,7 @@ def test_resolved_input_carries_optional_payload(anchor_ts: datetime) -> None:
     The contract promises one declaration surface and one resolution protocol,
     not one universal payload shape. Locking ``payload`` as ``None`` by
     default keeps the unsupported-domain outcome small while leaving room for
-    observation- or profile-specific fields when WP02 lands.
+    observation- or profile-specific fields when a future resolver lands.
     """
     from premura.engine import ResolvedInput
 
@@ -138,10 +138,10 @@ def test_intake_domains_resolve_honestly_through_registered_resolvers(
     anchor_ts: datetime,
     empty_warehouse: Any,
 ) -> None:
-    """Both intake domains now resolve through registered resolvers (FR-001).
+    """Both intake domains now resolve through registered resolvers.
 
     Before the usable-intake-dimensions mission these domains fell through to
-    ``unsupported_domain``; FR-001 ships real resolvers, so against an empty
+    ``unsupported_domain``; a real resolver ships, so against an empty
     warehouse they return the honest ``missing`` outcome instead — never a
     silently-coerced value from another domain. This still locks the
     no-silent-coercion guarantee, just at the new (resolvable) contract.
@@ -384,9 +384,9 @@ def test_repeated_resolution_yields_equal_results(
 ) -> None:
     """Two identical requests produce equal :class:`ResolvedInput` instances.
 
-    Locks the deterministic-public-surface promise (NFR-002 in the spec):
+    Locks the deterministic-public-surface promise (in the spec):
     repeated runs with unchanged inputs produce the same outcome. The
-    nutrition_intake resolver (FR-001) requires a connection, so this runs
+    nutrition_intake resolver requires a connection, so this runs
     against an empty warehouse where both calls deterministically refuse.
     """
     from premura.engine import (

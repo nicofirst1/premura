@@ -1,18 +1,17 @@
-"""WP03 — analytical-call recording + engine-purity regression (through the MCP surface).
+"""Analytical-call recording + engine-purity regression (through the MCP surface).
 
 These exercise the opt-in trace recording on the three analytical wrappers
 (``change_point`` / ``smoothed_average`` / ``correlate``) THROUGH the MCP boundary
-(``FastMCP.call_tool``), and the engine-purity regression that enforces NFR-001:
+(``FastMCP.call_tool``), and the engine-purity regression:
 
 * a successful analytical call in an open session is recorded (raw + N);
 * a refused analytical call is recorded and counts toward raw and N;
 * an exact retry increases raw calls but NOT the unique-hypothesis count;
 * ``list_metrics`` / ``metric_summary`` are NOT analytical calls — no trace row;
 * a call with NO ``session_id`` writes no trace row and the response shape is
-  unchanged (opt-in by explicit session association, T015);
+  unchanged (opt-in by explicit session association);
 * the engine result envelope is BYTE-IDENTICAL with tracing on vs off — trace
-  metadata lives only under a top-level ``trace`` key at the wrapper layer (T016 /
-  T018 / NFR-001).
+  metadata lives only under a top-level ``trace`` key at the wrapper layer.
 
 Synthetic warehouses only.
 """
@@ -180,7 +179,7 @@ def test_list_metrics_and_metric_summary_are_not_recorded(tmp_path: Path) -> Non
 
 
 # --------------------------------------------------------------------------- #
-# T015 — opt-in only: no session_id => no trace row, unchanged response shape.
+# Opt-in only: no session_id => no trace row, unchanged response shape.
 # --------------------------------------------------------------------------- #
 def test_analytical_call_without_session_writes_no_trace_row(tmp_path: Path) -> None:
     server = build_server(
@@ -202,7 +201,7 @@ def test_analytical_call_without_session_writes_no_trace_row(tmp_path: Path) -> 
 
 # --------------------------------------------------------------------------- #
 # DRIFT-1 regression — a pre-question parameter validation failure (empty
-# metric_id) in a traced call MUST NOT create a counted trace row (FR-008 / AS-3).
+# metric_id) in a traced call MUST NOT create a counted trace row.
 # --------------------------------------------------------------------------- #
 def test_pre_question_validation_failure_is_not_recorded(tmp_path: Path) -> None:
     server = build_server(
@@ -247,8 +246,8 @@ def test_unknown_session_refuses_without_dispatch(tmp_path: Path) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T018 — engine-purity regression: traced and untraced engine envelopes are
-# byte-identical (enforces NFR-001). Trace metadata stays at the wrapper layer.
+# Engine-purity regression: traced and untraced engine envelopes are
+# byte-identical. Trace metadata stays at the wrapper layer.
 # --------------------------------------------------------------------------- #
 def _engine_envelope(payload: dict[str, Any]) -> dict[str, Any]:
     """The engine-envelope portion of a wrapper payload: everything but the

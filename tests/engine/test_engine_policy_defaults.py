@@ -1,4 +1,4 @@
-"""WP03 tests: built-in family defaults + the lightweight policy registry.
+"""Tests: built-in family defaults + the lightweight policy registry.
 
 Two things are under test:
 
@@ -8,7 +8,7 @@ Two things are under test:
 2. The registry is deterministic and fails loudly on duplicate identity or
    duplicate family ownership, never silently overwriting.
 
-Smoke tests drive the WP02 evaluator against the built-ins to prove the
+Smoke tests drive the evaluator against the built-ins to prove the
 end-to-end admissibility behavior the research note calls for.
 """
 
@@ -41,7 +41,7 @@ NOW = datetime(2026, 5, 29, 12, 0, 0)
 
 
 # ---------------------------------------------------------------------------
-# T014: registry coverage / doctrine tests
+# registry coverage / doctrine tests
 # ---------------------------------------------------------------------------
 
 
@@ -136,7 +136,7 @@ def test_no_per_question_duplicate_family_block() -> None:
 
 
 def test_builtins_carry_rationale_and_source_notes() -> None:
-    """T013: every built-in is explained (rationale + source notes)."""
+    """Every built-in is explained (rationale + source notes)."""
     for policy in builtin_policies():
         assert policy.rationale.strip(), f"{policy.policy_id} missing rationale"
         assert policy.source_notes, f"{policy.policy_id} missing source notes"
@@ -157,7 +157,7 @@ def test_caveat_required_shapes_carry_standing_caveats() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T011: registry behavior tests
+# registry behavior tests
 # ---------------------------------------------------------------------------
 
 
@@ -211,7 +211,7 @@ def test_builtins_register_without_collision() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T015: evaluator smoke tests using the WP02 evaluator
+# evaluator smoke tests using the evaluator
 # ---------------------------------------------------------------------------
 
 

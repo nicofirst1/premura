@@ -1,13 +1,13 @@
-"""Read-only session dossier — the judge's single read surface (judge-ai m3 FR-2).
+"""Read-only session dossier — the judge's single read surface.
 
 The judge AI (and the future improvement hook) must read a recorded session to
 assess it, but they must NEVER reach into the session-log tables ad hoc and must
-NEVER write the log — the harness is the sole writer (FR-021 / NFR-1). This
+NEVER write the log — the harness is the sole writer. This
 module is the one read surface that satisfies both: it opens the log STRICTLY
 READ-ONLY (:func:`store.connect(..., read_only=True)`) and assembles one session
 into a judge-readable :class:`SessionDossier`.
 
-What a dossier carries (FR-2):
+What a dossier carries:
 
 * **session metadata** — the models (operator / driver) and the run kind;
 * **the grader's recomputed facts** — ``contract_pass`` and the loader-measured
@@ -22,8 +22,8 @@ False, ``transcript`` is empty) rather than failing — some tiers record no
 conversation. An unknown session id raises :class:`KeyError` so the judge never
 silently assesses an empty dossier as if it were a real run.
 
-No code path here syncs or exports the dossier, the transcript, or any PHI
-(NFR-002): it is a local, in-process read of the local session-log file.
+No code path here syncs or exports the dossier, the transcript, or any PHI:
+it is a local, in-process read of the local session-log file.
 """
 
 from __future__ import annotations
@@ -66,7 +66,7 @@ class DossierAttempt:
 
 @dataclass(frozen=True, slots=True)
 class SessionDossier:
-    """One recorded session assembled for the judge (FR-2).
+    """One recorded session assembled for the judge.
 
     Carries the four parts the rubric judges against: session metadata, the
     grader's recomputed facts (``contract_pass`` + row counts), per-attempt
@@ -177,13 +177,13 @@ def _read_transcript(conn: duckdb.DuckDBPyConnection, session_id: str) -> list[D
 
 
 def build_dossier(log_path: Path, *, session_id: str) -> SessionDossier:
-    """Assemble one recorded session into a judge-readable dossier (FR-2).
+    """Assemble one recorded session into a judge-readable dossier.
 
     Opens ``log_path`` STRICTLY READ-ONLY, reads the four parts, and returns a
     :class:`SessionDossier`. The read surface never writes the log — the harness
-    stays the sole writer (NFR-1). An unknown ``session_id`` raises
+    stays the sole writer. An unknown ``session_id`` raises
     :class:`KeyError`; a session with no recorded turns yields an empty
-    transcript with ``has_transcript`` False (FR-2 no-turns case).
+    transcript with ``has_transcript`` False (the no-turns case).
     """
     conn = store.connect(log_path, read_only=True)
     try:

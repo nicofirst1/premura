@@ -1,4 +1,4 @@
-"""Deterministic Stage 2 evidence evaluator (WP02).
+"""Deterministic Stage 2 evidence evaluator.
 
 This module owns *all* branching for evidence admissibility. The policy
 declarations from :mod:`premura.engine.policies._model` are **parameters

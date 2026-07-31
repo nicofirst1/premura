@@ -1,9 +1,9 @@
-"""WP03 — sandbox + in-sandbox ingest runner (FR-020, FR-021).
+"""Sandbox + in-sandbox ingest runner.
 
 Black-box tests over the throwaway sandbox and the subprocess ingest runner. The
 runner emits a JSON outcome envelope on stdout that MUST validate against
 ``contracts/ingest-outcome-envelope.schema.json`` (R4); the runner must NEVER
-write the session log (single-writer rule, FR-021).
+write the session log (single-writer rule).
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ GOOD_PARSER = FIXTURE_DIR / "parsers" / "good_fitbit_hr.py"
 SYNTHETIC_CSV = FIXTURE_DIR / "fitbit_heart_rate_synthetic.csv"
 ENVELOPE_SCHEMA = CONTRACTS_DIR / "ingest-outcome-envelope.schema.json"
 
-# These reference fixtures are committed with the mission (WP04); their absence is
+# These reference fixtures are committed with the repo; their absence is
 # a HARD failure, never a skip — a vanished committed fixture must block the gate,
 # not pass green.
 _missing = [p.name for p in (GOOD_PARSER, SYNTHETIC_CSV) if not p.exists()]
@@ -72,7 +72,7 @@ def _run_runner(sandbox, *, source: Path, parser: str) -> subprocess.CompletedPr
 
 
 # --------------------------------------------------------------------------- #
-# Sandbox build / teardown (T010, T011)
+# Sandbox build / teardown
 # --------------------------------------------------------------------------- #
 
 
@@ -88,12 +88,12 @@ def test_sandbox_contains_only_tracked_tree() -> None:
         assert not (sandbox.root / "kitty-specs").exists()
         assert not (sandbox.root / ".worktrees").exists()
         # the redirect target dir exists but holds NO copied real data — the real
-        # data/ tree (PHI, huge warehouse) was never copied (R2 / NFR-004).
+        # data/ tree (PHI, huge warehouse) was never copied (R2).
         assert list((sandbox.root / "data").iterdir()) == []
 
 
 def test_sandbox_excludes_untracked_not_ignored_files() -> None:
-    """An untracked-not-ignored file at the repo root is NOT copied (R2 / NFR-002).
+    """An untracked-not-ignored file at the repo root is NOT copied (R2).
 
     The build is ``git ls-files``-only. A freshly-created untracked sentinel at
     the repo root (matching no ``.gitignore`` rule, so ``git ls-files --others
@@ -148,7 +148,7 @@ def test_sandbox_redirects_warehouse_and_session_log_paths() -> None:
 
 
 def test_teardown_removes_everything() -> None:
-    """After teardown nothing under the sandbox root persists (NFR-004)."""
+    """After teardown nothing under the sandbox root persists."""
     sandbox = build_sandbox(REPO_ROOT)
     root = sandbox.root
     assert root.exists()
@@ -202,7 +202,7 @@ def test_install_parser_puts_module_in_sandbox_tree() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Ingest runner → envelope (T012, T013)
+# Ingest runner → envelope
 # --------------------------------------------------------------------------- #
 
 
@@ -318,7 +318,7 @@ class RaisingParser:
 
 
 def test_runner_does_not_write_session_log() -> None:
-    """The runner never creates a session-log file (FR-021 single-writer)."""
+    """The runner never creates a session-log file (single-writer rule)."""
     with build_sandbox(REPO_ROOT) as sandbox:
         from premura.harness import install_parser
 

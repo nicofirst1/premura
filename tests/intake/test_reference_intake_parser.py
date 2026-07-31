@@ -1,7 +1,7 @@
-"""End-to-end test for the WP02 reference intake parser (FR-008).
+"""End-to-end test for the reference intake parser.
 
 Stance: black-box, warehouse-asserting. We drive the reference parser through
-the *real* WP01 protocol — ``parse() -> normalize_parse_output ->
+the *real* intake protocol — ``parse() -> normalize_parse_output ->
 persist_intake_batch`` — and assert on persisted rows, never on parser
 internals. The fixtures bundled under ``tests/fixtures/intake/`` carry the
 parser-side edge cases the DoD enumerates:
@@ -25,7 +25,7 @@ from premura.parsers.base import IntakeBatch, normalize_parse_output
 from premura.store.profile_intake import persist_intake_batch
 from tests import FIXTURES_DIR
 
-# The reference parser lives under tests/fixtures/intake/ (C-005: proof anchor,
+# The reference parser lives under tests/fixtures/intake/ (proof anchor,
 # not a shipped parser). Import it via the fixtures package.
 sys.path.insert(0, str(FIXTURES_DIR))
 from intake.reference_parser import (  # type: ignore[import-not-found]  # noqa: E402, I001
@@ -46,7 +46,7 @@ def _parse_intake() -> IntakeBatch:
 # --------------------------------------------------------------------------- #
 def test_reference_parser_emits_valid_intake_batch() -> None:
     batch = _parse_intake()
-    batch.validate()  # raises if the WP01 contract is violated
+    batch.validate()  # raises if the intake batch contract is violated
     assert len(batch.nutrition_events) == 2
     assert len(batch.supplement_events) == 2
 
@@ -139,7 +139,7 @@ def test_text_only_and_numeric_supplement_doses_persist(empty_warehouse) -> None
 
 def test_local_tz_event_diverges_from_utc_day(empty_warehouse) -> None:
     """The late-night Auckland snack lands on a different LOCAL calendar day than
-    its UTC date — the divergence WP03/WP04 depend on (D7)."""
+    its UTC date — a divergence downstream resolvers depend on."""
     persist_intake_batch(empty_warehouse, _parse_intake())
 
     row = empty_warehouse.execute(

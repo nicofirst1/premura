@@ -60,7 +60,7 @@ from ._results import (
     TrendResult,
 )
 
-# Stage 3 public analytical surface (WP05). This is the stable, MCP-facing
+# Stage 3 public analytical surface. This is the stable, MCP-facing
 # facade onto the analytical contract + proof tools. Only the three facade
 # functions and the result/refusal/input types MCP must construct or read are
 # re-exported here — the contract's internal helpers (the ``analytical_tool``
@@ -121,8 +121,8 @@ from .condition_inputs import (
     prepare_condition_label_paired_input,
 )
 
-# Stage 3 simple anchor-date before/after paired-input seam (WP03). These are the
-# stable names the ``paired_t_test`` MCP wrapper (WP05) constructs to declare a
+# Stage 3 simple anchor-date before/after paired-input seam. These are the
+# stable names the ``paired_t_test`` MCP wrapper constructs to declare a
 # before/after split before dispatch. Like the single-series and lagged-pair
 # preparers above, they live behind the public engine surface so the wrapper never
 # imports ``premura.engine.paired_inputs`` directly. Importing them here is
@@ -138,7 +138,7 @@ from .paired_inputs import (
     prepare_before_after_paired_input,
 )
 
-# Stage 2 evidence-admissibility policy surface (WP01-WP03). These are the
+# Stage 2 evidence-admissibility policy surface. These are the
 # *stable* contributor names a future policy author imports; the private
 # ``premura.engine.policies._model`` / ``._evaluator`` / ``._registry`` modules
 # stay internal. Importing them here is cheap and side-effect-free: the policy
@@ -220,10 +220,10 @@ _BUILTINS_LOADED: bool = False
 # :func:`_ensure_builtin_resolvers_loaded` the first time a caller resolves a
 # dependency.
 #
-# WP02 populates this with the two concrete in-tree resolver modules. Each
+# This is populated with the two concrete in-tree resolver modules. Each
 # module registers its resolver as a side effect of import via the
-# ``@resolver(domain=...)`` decorator. Adding a new supported domain in a
-# future mission means landing one new module under ``views/`` and appending
+# ``@resolver(domain=...)`` decorator. Adding a new supported domain
+# means landing one new module under ``views/`` and appending
 # its dotted name here — no filesystem scanning, no entry points.
 _BUILTIN_RESOLVER_MODULES: tuple[str, ...] = (
     "premura.engine.views.observation",
@@ -249,11 +249,11 @@ __all__ = [
     "list_auto_safe",
     "check_inputs_available",
     "list_unavailable",
-    # Stage 2 catalog and summary helpers (WP01)
+    # Stage 2 catalog and summary helpers
     "list_metric_ids",
     "list_metric_catalog",
     "metric_summary",
-    # Stage 2 input-resolution seam (WP01)
+    # Stage 2 input-resolution seam
     "SEMANTIC_DOMAINS",
     "DependencyDeclaration",
     "ResolutionRequest",
@@ -274,8 +274,8 @@ __all__ = [
     "MissingInputReport",
     "MetricCatalogEntry",
     "MetricSummaryEntry",
-    # Stage 2 evidence-admissibility policy surface (WP01-WP03).
-    # Closed vocabularies + frozen declaration/result dataclasses (WP01):
+    # Stage 2 evidence-admissibility policy surface.
+    # Closed vocabularies + frozen declaration/result dataclasses:
     "QuestionType",
     "EvidenceStatus",
     "RejectionReason",
@@ -294,16 +294,16 @@ __all__ = [
     "EvidenceCandidate",
     "EvidenceOutcome",
     "EvaluationResult",
-    # Deterministic evaluator (WP02):
+    # Deterministic evaluator:
     "evaluate_evidence",
-    # Built-in family defaults + registry (WP03):
+    # Built-in family defaults + registry:
     "BUILTIN_POLICIES",
     "builtin_policies",
     "PolicyRegistry",
     "DuplicatePolicyError",
     "build_builtin_registry",
-    # Stage 3 public analytical surface (WP05).
-    # Facade functions — the single entry points MCP/WP06 calls:
+    # Stage 3 public analytical surface.
+    # Facade functions — the single entry points MCP calls:
     "load_builtin_analytical_tools",
     "list_analytical_tools",
     "invoke_analytical_tool",
@@ -330,7 +330,7 @@ __all__ = [
     "prepare_paired_input",
     "paired_points_for_computation",
     # Simple anchor-date before/after paired-input seam the paired_t_test tool
-    # (and its MCP wrapper) consume (WP03/WP05):
+    # (and its MCP wrapper) consume:
     "BeforeAfterDirection",
     "BeforeAfterPair",
     "BeforeAfterPairedInput",
@@ -396,11 +396,11 @@ def compute(
     ``conn``, and may persist a ``derived:*`` row to ``hp.fact_measurement`` when
     ``spec.output is not None``.
 
-    Parameterized-signal invocation seam (WP03 / T031). ``params`` lets a caller
+    Parameterized-signal invocation seam. ``params`` lets a caller
     thread per-invocation arguments (e.g. an intake matcher / quantity key /
     window) to a signal whose ``fn`` opts in by declaring a ``params`` keyword
-    parameter. This is the seam WP04's parameterized intake signals register
-    against and WP05's tool wrappers pass through; there is deliberately no
+    parameter. This is the seam parameterized intake signals register
+    against and downstream tool wrappers pass through; there is deliberately no
     second compute path and no routing through the analytical-tool door.
 
     Backward compatibility is strict:
@@ -702,7 +702,7 @@ def _ensure_builtin_resolvers_loaded() -> None:
     The flag is only flipped to ``True`` after every module imports without
     error, so a failed import does not leave it wrongly set.
 
-    WP02 fills ``_BUILTIN_RESOLVER_MODULES`` with the concrete observation and
+    ``_BUILTIN_RESOLVER_MODULES`` lists the concrete observation and
     profile resolver modules; each registers a resolver as a side effect of
     being imported here.
     """

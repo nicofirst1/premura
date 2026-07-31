@@ -1,4 +1,4 @@
-"""Built-in comparative Stage 2 signals (WP03).
+"""Built-in comparative Stage 2 signals.
 
 The two more caveat-heavy grounded answers that sit closer to the boundary with
 interpretation — but stay strictly descriptive and strictly user-relative:
@@ -24,7 +24,8 @@ Anchor-date handling
 --------------------
 The engine's :func:`premura.engine.compute` invokes a signal as ``spec.fn(conn)``
 — there is no parameter-passing channel for a user-supplied anchor date. Rather
-than invent a parallel invocation system, this module follows the WP02 pattern:
+than invent a parallel invocation system, this module follows the same pattern
+as the rest of Stage 2:
 each signal is a plain module-level public function. ``hrv_change_around_date``
 exposes an explicit ``anchor_date`` parameter (the user-facing call), and the
 registered ``fn`` is a zero-extra-arg wrapper that defaults the anchor to the
@@ -34,7 +35,7 @@ real anchor date use the public function directly.
 
 Registration follows the built-in module contract (CONTRACT.md): this module
 exposes :func:`register_builtin_signals`, which the engine's static built-in
-loader calls. See the WP02 report note about ``_BUILTIN_SIGNAL_MODULES``.
+loader calls. See the report note about ``_BUILTIN_SIGNAL_MODULES``.
 """
 
 from __future__ import annotations
@@ -83,7 +84,7 @@ _MIN_CHANGE_OBSERVATIONS = 3
 
 
 # --------------------------------------------------------------------------- #
-# T012 — own-baseline comparison primitives
+# own-baseline comparison primitives
 # --------------------------------------------------------------------------- #
 @dataclass(frozen=True)
 class _BaselineComputation:
@@ -178,7 +179,7 @@ def _classify_against_baseline(
 
 
 # --------------------------------------------------------------------------- #
-# T013 — sleep_deep_pct_baseline
+# sleep_deep_pct_baseline
 # --------------------------------------------------------------------------- #
 def sleep_deep_pct_baseline(
     conn: duckdb.DuckDBPyConnection,
@@ -270,7 +271,7 @@ def _baseline_caveats(
 
 
 # --------------------------------------------------------------------------- #
-# T014 — before/after comparison primitives
+# before/after comparison primitives
 # --------------------------------------------------------------------------- #
 @dataclass(frozen=True)
 class _ChangeComputation:
@@ -346,7 +347,7 @@ def _compute_change_around_date(
 
 
 # --------------------------------------------------------------------------- #
-# T015 — hrv_change_around_date
+# hrv_change_around_date
 # --------------------------------------------------------------------------- #
 def hrv_change_around_date(
     conn: duckdb.DuckDBPyConnection,
@@ -464,11 +465,11 @@ def _change_caveats(
 # Built-in registration (CONTRACT.md built-in loading contract)
 # --------------------------------------------------------------------------- #
 def register_builtin_signals() -> None:
-    """Register WP03's comparative signals into :data:`REGISTRY`.
+    """Register this module's comparative signals into :data:`REGISTRY`.
 
     Called by the engine's static built-in loader for every module listed in
     ``premura.engine._BUILTIN_SIGNAL_MODULES`` (this module is added there, one
-    line, in WP01-owned ``__init__.py``). The ``hrv_change_around_date`` entry
+    line, in ``__init__.py``). The ``hrv_change_around_date`` entry
     registers a zero-extra-arg wrapper so it resolves through ``engine.compute``;
     user-facing callers pass an explicit anchor via the public function.
     """

@@ -1,7 +1,7 @@
 """Opt-in cheap-model INTAKE trial: a local Ollama model authors an intake parser (R5).
 
 The intake analogue of ``test_live_trial_ollama.py``. Marked ``live_trial`` so the
-default suite skips it (NFR-002 / NFR-005 — never blocks CI). Run it deliberately,
+default suite skips it (— never blocks CI). Run it deliberately,
 locally, against a running Ollama::
 
     uv run pytest -m live_trial tests/test_live_trial_intake.py -s
@@ -9,22 +9,22 @@ locally, against a running Ollama::
 This is NOT a pass/fail gate on the model: a cheap 7b model may or may not reach a
 green grader verdict for the alien intake source. The assertions are only that the
 SAME live-trial path runs end-to-end for the INTAKE scenario and produces
-well-formed un-nagged-attempt-1 AND final three-rule verdicts (FR-007/FR-014), and
+well-formed un-nagged-attempt-1 AND final three-rule verdicts, and
 that the run records ``run_kind`` / ``operator_model`` / ``driver_model`` so tiers
-compare. The model's score is PRINTED for inspection, NEVER asserted PASS (SC-005).
+compare. The model's score is PRINTED for inspection, NEVER asserted PASS.
 
 Two non-model guards run unconditionally (no Ollama needed), and the marker keeps
 even those out of the default gate:
 
 * the live-trial entry selects the INTAKE scenario from the registry — proving the
-  layer-2 entry is scenario-parametric, not observation-hardcoded (FR-007);
+  layer-2 entry is scenario-parametric, not observation-hardcoded;
 * a non-local ``OLLAMA_URL`` is rejected BEFORE any request leaves the machine
-  (NFR-003) — the local-only model-backend boundary holds for the intake path too.
+   — the local-only model-backend boundary holds for the intake path too.
 
 Note on the import style: the cheap-model harness module is loaded via
 :func:`importlib.import_module` rather than a literal ``from ... import`` line, so
 the harness import/call substrings stay out of this file's text and the committed
-NFR-005 default-gate guard (``test_live_trial_seam.py``) stays a true witness that
+ default-gate guard (``test_live_trial_seam.py``) stays a true witness that
 no harness path leaked into the DEFAULT gate — while this marker-excluded module is
 never collected by the default suite.
 """
@@ -38,7 +38,7 @@ import pytest
 from premura.harness.scenario_registry import all_scenarios
 
 # Loaded dynamically (see module docstring): keeps the harness import/call
-# substrings out of this file's text so the committed NFR-005 default-gate guard
+# substrings out of this file's text so the committed default-gate guard
 # stays accurate, while this marker-excluded module is never in the default gate.
 _MODULE_NAME = "premura.harness." + "live_trial_" + "ollama"
 lto = importlib.import_module(_MODULE_NAME)
@@ -66,7 +66,7 @@ def _assert_well_formed(verdict: dict[str, object]) -> None:
 
 @pytest.mark.live_trial
 def test_intake_scenario_is_selectable_from_the_registry() -> None:
-    """The layer-2 entry can select the intake scenario from the registry (FR-007).
+    """The layer-2 entry can select the intake scenario from the registry.
 
     No Ollama needed: this proves the entry is scenario-parametric — the intake
     scenario is one of the registered acceptance sources, with the alien source +
@@ -84,7 +84,7 @@ def test_intake_scenario_is_selectable_from_the_registry() -> None:
 
 @pytest.mark.live_trial
 def test_intake_trial_rejects_non_local_ollama_url(monkeypatch) -> None:
-    """A non-local ``OLLAMA_URL`` is refused before any request leaves the box (NFR-003).
+    """A non-local ``OLLAMA_URL`` is refused before any request leaves the box.
 
     The local-only model-backend boundary must hold for the intake path too: a
     remote endpoint is rejected as unavailable, so prompt data / source samples can
@@ -111,11 +111,11 @@ def test_ollama_drives_intake_trial_end_to_end() -> None:
         record = outcome.record
         assert record is not None
 
-        # Both un-nagged attempt-1 AND final verdicts are present (FR-014).
+        # Both un-nagged attempt-1 AND final verdicts are present.
         _assert_well_formed(record.first_attempt_verdict)
         _assert_well_formed(record.final_verdict)
 
-        # The run records run_kind + the operator/driver model identities (FR-007):
+        # The run records run_kind + the operator/driver model identities:
         # tiers can be compared later.
         assert record.run_kind == "live_trial"
         assert record.operator_model == lto.DEFAULT_MODEL
@@ -130,7 +130,7 @@ def test_ollama_drives_intake_trial_end_to_end() -> None:
 
         first = record.first_attempt_verdict["rules"]
         final = record.final_verdict["rules"]
-        # PRINT the score — NEVER assert it is a pass (SC-005): a cheap model may
+        # PRINT the score — NEVER assert it is a pass: a cheap model may
         # well fail the alien intake source, which is a capability-floor finding,
         # not a CI failure.
         print(

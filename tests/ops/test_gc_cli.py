@@ -1,4 +1,4 @@
-"""`premura gc` — prune data/raw/ + --dry-run (m7 WP2).
+"""`premura gc` — prune data/raw/ + --dry-run.
 
 gc applies one cutoff rule (mtime older than --keep months) to N roots: the
 exports dir always, and settings.raw_dir only when the opt-in --raw flag is
@@ -8,7 +8,7 @@ be removed and removes nothing, from either root.
 
 These tests drive the command through Typer's CliRunner over synthetic temp
 dirs (no PHI) and cover the spec-named edge cases E2.1-E2.3 plus the
-unchanged-programmatic-call invariant (FR-2.4).
+unchanged-programmatic-call invariant.
 """
 
 from __future__ import annotations
@@ -94,7 +94,7 @@ def test_gc_raw_prunes_old_raw_keeps_fresh(monkeypatch, tmp_path: Path) -> None:
 
 
 def test_gc_raw_dry_run_previews_raw_without_deleting(monkeypatch, tmp_path: Path) -> None:
-    """E2.2 + FR-2.5 — --raw with --dry-run previews raw pruning but removes
+    """E2.2 — --raw with --dry-run previews raw pruning but removes
     nothing from either root."""
     _exports, raw = _point_data_dir(monkeypatch, tmp_path)
     old_file = _aged_file(raw, "old_source.csv", _OLD)
@@ -116,7 +116,7 @@ def test_gc_missing_dirs_are_graceful(monkeypatch, tmp_path: Path) -> None:
 
 
 def test_gc_programmatic_call_unchanged(monkeypatch, tmp_path: Path) -> None:
-    """FR-2.4 — run_monthly's gc(keep=3) call keeps working unchanged: raw is
+    """run_monthly's gc(keep=3) call keeps working unchanged: raw is
     NOT pruned (default OFF), old exports are removed exactly as before."""
     exports, raw = _point_data_dir(monkeypatch, tmp_path)
     old_export = _aged_dir(exports, "2020-01", _OLD)

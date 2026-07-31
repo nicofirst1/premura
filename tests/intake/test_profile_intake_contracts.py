@@ -1,4 +1,4 @@
-"""Machine-applicable validation harness for the profile/intake contract (WP02).
+"""Machine-applicable validation harness for the profile/intake contract.
 
 These tests read the *shipped* contract artifacts under
 ``src/premura/store/profile_intake_contracts/`` as an external consumer would, and turn the
@@ -101,7 +101,7 @@ def _flatten_strings(obj) -> list[str]:
 
 
 # =========================================================================== #
-# T006 — black-box loading and cross-artifact vocabulary consistency.
+# Black-box loading and cross-artifact vocabulary consistency.
 # =========================================================================== #
 def test_all_four_contract_files_exist_on_disk() -> None:
     """Treat the contract as an external artifact: the real files must ship."""
@@ -231,7 +231,7 @@ def test_artifacts_share_one_vocabulary_for_homes_entities_and_keys(
 
 
 # =========================================================================== #
-# T007 — invariant-oriented semantic gates.
+# Invariant-oriented semantic gates.
 # =========================================================================== #
 def test_every_example_maps_to_exactly_one_canonical_home(examples) -> None:
     """INV-001: one-home classification, enforced structurally.
@@ -410,7 +410,7 @@ def test_partial_knowledge_allowed_without_inventing_values(entities, invariants
 
 
 # =========================================================================== #
-# T008 — dependency-contract regression: hidden prerequisites & fake APIs.
+# Dependency-contract regression: hidden prerequisites & fake APIs.
 # =========================================================================== #
 REQUIRED_DECLARATION_FIELDS = frozenset(
     {"consumer_name", "depends_on_domain", "required_keys", "failure_mode"}

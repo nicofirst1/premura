@@ -1,9 +1,9 @@
-"""The deterministic improvement scan (improvement-hook m4 WP2, FR-3/FR-4/FR-5).
+"""The deterministic improvement scan.
 
-The judge (m3) writes a structured verdict into ``log_judgment``; nothing consumes
+The judge writes a structured verdict into ``log_judgment``; nothing consumes
 it. This module closes that loop one step: a PURE, rule-based scan that reads a
-session's judgments (through the read-only FR-2 surface), looks up each judged
-criterion's category in the judge rubric (reusing the m3 rubric parser — NOT a
+session's judgments (through the read-only judge surface), looks up each judged
+criterion's category in the judge rubric (reusing the judge's rubric parser — NOT a
 second one), maps weak/failed evidence to an improvement **area** via a versioned
 playbook (``IMPROVEMENT_PLAYBOOK.md``), and persists one durable, agent-readable
 proposal per piece of evidence through the harness's sole-writer
@@ -12,14 +12,14 @@ proposal per piece of evidence through the harness's sole-writer
 It **proposes; it never acts**: no issue/PR creation, no prompt/harness/rubric/skill
 edit, and it never changes ``contract_pass``, the judgment, the scoreboard, or the
 trial verdict. It is fully deterministic — no model calls, no network, no randomness,
-and no clock reads beyond the row timestamps the store already wrote (NFR-4/NFR-5).
+and no clock reads beyond the row timestamps the store already wrote.
 
-Altitude (NFR-4): area semantics live in the playbook doc and criterion→category in
+Altitude: area semantics live in the playbook doc and criterion→category in
 the rubric doc; this code keys only on the closed store vocabularies
 (``CRITERION_BANDS``, ``JUDGMENT_STATUSES``) and the parsed doc structure. There is
 no ``if criterion_id == ...`` ladder and no hardcoded area meaning here.
 
-No code path here syncs or exports any row or PHI (NFR-002): it is a local,
+No code path here syncs or exports any row or PHI: it is a local,
 in-process read + sole-writer write of the local session-log file.
 """
 
@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 _PACKAGE = "premura.harness"
 _PLAYBOOK_FILE = "IMPROVEMENT_PLAYBOOK.md"
 
-# The two HOOK-OWNED area ids (FR-3): conditions the rubric categories cannot
+# The two HOOK-OWNED area ids: conditions the rubric categories cannot
 # express — a judgment that did not complete, and a criterion the current rubric
 # no longer defines. They are required-present in the playbook (loud failure if
 # absent) but, being hook-owned conditions rather than rubric categories, their
@@ -54,7 +54,7 @@ _RUBRIC_DRIFT_AREA = "rubric_drift"
 
 @dataclass(frozen=True, slots=True)
 class Playbook:
-    """The loaded improvement playbook (FR-3): its version + its area ids.
+    """The loaded improvement playbook: its version + its area ids.
 
     ``areas`` is the full set of area ids parsed from the playbook headings.
     ``category_areas`` maps a rubric category to the area that maps from it (parsed
@@ -87,7 +87,7 @@ class ProposalResult:
     ``improvement_id`` is the id of the ``log_improvement`` row (the existing row's
     id when ``pre_existing`` is True). ``pre_existing`` is True when the
     (judgment_id, criterion_id, area) combination already had a row, so a re-scan
-    reports it as already present and writes nothing new (FR-5).
+    reports it as already present and writes nothing new.
     """
 
     improvement_id: str
@@ -105,7 +105,7 @@ def _read_playbook_text() -> str:
 
 
 def load_playbook() -> Playbook:
-    """Load the packaged improvement playbook, failing loudly if malformed (FR-3).
+    """Load the packaged improvement playbook, failing loudly if malformed.
 
     Parses ``playbook_version`` and the ``### `<area>``` area headings + their
     ``maps from category:`` lines out of ``IMPROVEMENT_PLAYBOOK.md``. A missing
@@ -164,7 +164,7 @@ class _DerivedProposal:
 def _derive_for_judgment(
     judgment: JudgmentRow, rubric: Rubric, playbook: Playbook
 ) -> list[_DerivedProposal]:
-    """Apply the FR-4 derivation rules to one judgment (pure; no I/O)."""
+    """Apply the derivation rules to one judgment (pure; no I/O)."""
     derived: list[_DerivedProposal] = []
 
     # Rule 1: a non-complete judgment status → one harness_reliability proposal.
@@ -219,15 +219,15 @@ def _derive_for_judgment(
 
 
 def scan_session(log_path: Path, *, session_id: str) -> list[ProposalResult]:
-    """Scan one session's judgments and persist improvement proposals (FR-4/FR-5).
+    """Scan one session's judgments and persist improvement proposals.
 
-    Reads the session's judgments through the read-only FR-2 surface, derives
-    proposals by the FR-4 rules (weak criterion → its category's area; non-complete
+    Reads the session's judgments through the read-only judge surface, derives
+    proposals by the derivation rules (weak criterion → its category's area; non-complete
     status → ``harness_reliability``; off-rubric criterion → ``rubric_drift``), and
     persists each through ``store.record_improvement`` with status ``"open"``,
     skipping any (judgment_id, criterion_id, area) combination that already has a
     row. Re-running over the same judgments writes nothing new and returns the same
-    proposals marked ``pre_existing`` (FR-5).
+    proposals marked ``pre_existing``.
 
     The scan is PURE and deterministic: no model calls, no network, no randomness,
     no clock reads beyond the row timestamps the store already wrote. The harness

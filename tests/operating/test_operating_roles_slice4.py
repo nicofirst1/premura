@@ -13,7 +13,7 @@ below is a made-up marker string, never real health data. Locks:
 * an unknown ``level`` is a structured rejection, never an exception, at both
   the pure-render and MCP layers;
 * producing a packet writes nothing to GitHub or off this machine (the
-  ``notice`` seam / FR-4 two-acts split);
+  ``notice`` seam two-acts split);
 * share-packet code touches no ``hp.*`` warehouse table.
 """
 

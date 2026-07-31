@@ -1,9 +1,9 @@
-"""WP04 — Stage 3 signal-backed MCP tool tests.
+"""Stage 3 signal-backed MCP tool tests.
 
 These lock the new MCP surface that exposes the six grounded Stage 2 answers:
 
 * registration publishes all eight default tools (2 catalog + 6 signal-backed;
-  query_warehouse is operator-only per WP03);
+  query_warehouse is operator-only);
 * one successful call per result family (status / trend / baseline / change);
 * a missing-or-stale-input path and an insufficient-data path are
   structurally distinguishable (not a generic error);
@@ -25,13 +25,10 @@ from premura.mcp import server
 from premura.mcp.entrypoint import build_server
 from premura.store import duck
 
-# WP03: query_warehouse moved to operator surface; the default surface carries
-# the catalog + six signal tools and the two bounded profile-capture tools.
-# WP06 adds the two Stage 3 analytical tools (change_point / smoothed_average) to
-# the same default surface.
-# The correlate mission's WP04 adds ``correlate`` (now thirteen default tools;
-# the ``_EIGHT_`` name predates the later additions and is kept stable).
-# session-research-trace WP03 adds the three trace tools to the same surface
+# query_warehouse moved to operator surface; the default surface carries
+# the catalog + six signal tools and the two bounded profile-capture tools,
+# the two Stage 3 analytical tools (change_point / smoothed_average), then
+# ``correlate`` (now thirteen default tools), then the three trace tools
 # (the ``_EIGHT_`` name predates every later addition and is kept stable).
 _EIGHT_DEFAULT_TOOLS = sorted(
     [
@@ -124,7 +121,7 @@ def _warehouse_with(tmp_path: Path, name: str) -> tuple[Path, object]:
 
 
 # --------------------------------------------------------------------------- #
-# T021 — registration includes all eight default tools (WP03: query_warehouse
+# Registration includes all eight default tools (query_warehouse
 # moved to operator surface only)
 # --------------------------------------------------------------------------- #
 def test_build_server_publishes_all_eight_default_tools() -> None:
@@ -167,7 +164,7 @@ def test_resting_hr_status_missing_input(tmp_path: Path) -> None:
     assert payload["result"]["freshness_state"] == "unavailable"
     assert payload["result"]["value"] is None
 
-    # FR-008: the user-facing message is the signal's actionable hint, not a
+    # The user-facing message is the signal's actionable hint, not a
     # generic "no value" string. Assert the specific authored substring.
     assert "resting heart rate" in payload["message"]
     assert "Connect a wearable" in payload["message"]
@@ -199,7 +196,7 @@ def test_resting_hr_status_stale_input(tmp_path: Path) -> None:
     # Stale keeps the value (distinct from missing_input which drops it).
     assert payload["result"]["value"] == 61.0
 
-    # FR-008: a present-but-stale input still surfaces the actionable hint and a
+    # A present-but-stale input still surfaces the actionable hint and a
     # structured report, but the input lands in stale_inputs (not missing_inputs).
     assert "resting heart rate" in payload["message"]
     report = payload["missing_input"]
@@ -277,7 +274,7 @@ def test_steps_trend_insufficient_data(tmp_path: Path) -> None:
 
 
 def test_weight_trend_available(tmp_path: Path) -> None:
-    # FR-006 / NFR-002: weight_trend is exercised end-to-end through the Stage 3
+    # weight_trend is exercised end-to-end through the Stage 3
     # surface, completing the "all six approved questions covered" promise.
     db_path, conn = _warehouse_with(tmp_path, "weight_trend_ok")
     try:
@@ -340,7 +337,7 @@ def test_sleep_deep_pct_baseline_available(tmp_path: Path) -> None:
 
 
 def test_sleep_deep_pct_baseline_unavailable_has_null_numerics(tmp_path: Path) -> None:
-    # Consumes WP02: an unavailable baseline must report null numerics, not a
+    # An unavailable baseline must report null numerics, not a
     # fabricated 0.0. With no recorded sleep-stage data the answer is unavailable.
     payload = server.sleep_deep_pct_baseline(warehouse_path=_empty_warehouse(tmp_path))
 
@@ -542,7 +539,7 @@ def test_requested_window_caveat_reflects_real_effect(tmp_path: Path) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T018 — preserved behavior of the three raw tools
+# Preserved behavior of the three raw tools
 # --------------------------------------------------------------------------- #
 def test_raw_query_warehouse_still_returns_rows(tmp_path: Path) -> None:
     result = server.query_warehouse(
@@ -555,10 +552,10 @@ def test_raw_query_warehouse_still_returns_rows(tmp_path: Path) -> None:
 
 
 def test_list_metrics_returns_validity_catalog_entries(tmp_path: Path) -> None:
-    """T010 regression: list_metrics returns Stage 2 catalog entries (not raw counts)."""
+    """Regression: list_metrics returns Stage 2 catalog entries (not raw counts)."""
     rows = server.list_metrics(warehouse_path=_empty_warehouse(tmp_path), limit=5)
     assert len(rows) == 5
-    # WP02: catalog entries carry validity fields.
+    # Catalog entries carry validity fields.
     expected_fields = {
         "metric_id",
         "validity_status",
@@ -575,7 +572,7 @@ def test_list_metrics_returns_validity_catalog_entries(tmp_path: Path) -> None:
 
 
 def test_metric_summary_returns_validity_summary_entry(tmp_path: Path) -> None:
-    """T010 regression: metric_summary returns Stage 2 summary entry (not all-time extrema)."""
+    """Regression: metric_summary returns Stage 2 summary entry (not all-time extrema)."""
     db_path, conn = _warehouse_with(tmp_path, "raw_summary")
     try:
         _seed(
@@ -590,7 +587,7 @@ def test_metric_summary_returns_validity_summary_entry(tmp_path: Path) -> None:
 
     summary = server.metric_summary("weight", warehouse_path=db_path)
     assert summary["metric_id"] == "weight"
-    # WP02: explicit validity/imputation fields.
+    # Explicit validity/imputation fields.
     assert "validity_status" in summary
     assert "sample_size" in summary
     assert "imputed_proportion" in summary
@@ -602,12 +599,12 @@ def test_metric_summary_returns_validity_summary_entry(tmp_path: Path) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T009 — MCP payload tests: fresh/stale/empty/unknown for catalog and summary
+# MCP payload tests: fresh/stale/empty/unknown for catalog and summary
 # --------------------------------------------------------------------------- #
 
 
 def test_list_metrics_fresh_catalog_entry(tmp_path: Path) -> None:
-    """T009: a recently-observed metric returns a current catalog entry."""
+    """A recently-observed metric returns a current catalog entry."""
     db_path, conn = _warehouse_with(tmp_path, "catalog_fresh")
     try:
         fresh_ts = (_now() - timedelta(hours=2)).isoformat(sep=" ")
@@ -629,7 +626,7 @@ def test_list_metrics_fresh_catalog_entry(tmp_path: Path) -> None:
 
 
 def test_list_metrics_stale_catalog_entry(tmp_path: Path) -> None:
-    """T009: an old-but-present metric observation returns a stale catalog entry."""
+    """An old-but-present metric observation returns a stale catalog entry."""
     db_path, conn = _warehouse_with(tmp_path, "catalog_stale")
     try:
         # weight validity_window is P7D; a reading 30 days old is stale.
@@ -649,7 +646,7 @@ def test_list_metrics_stale_catalog_entry(tmp_path: Path) -> None:
 
 
 def test_list_metrics_empty_catalog_entry(tmp_path: Path) -> None:
-    """T009: a registered metric with no data returns an unavailable catalog entry."""
+    """A registered metric with no data returns an unavailable catalog entry."""
     rows = server.list_metrics(warehouse_path=_empty_warehouse(tmp_path), limit=50)
     # Every known metric has no data in an empty warehouse.
     for entry in rows:
@@ -659,7 +656,7 @@ def test_list_metrics_empty_catalog_entry(tmp_path: Path) -> None:
 
 
 def test_list_metrics_unknown_metric_id_returns_unavailable_entry(tmp_path: Path) -> None:
-    """FR-004 (acceptance scenario 4): when the catalog tool is asked about an
+    """When the catalog tool is asked about an
     unknown metric id, it must return an explicit ``unavailable`` entry with no
     fabricated numeric values — not silently omit it.
     """
@@ -679,7 +676,7 @@ def test_list_metrics_unknown_metric_id_returns_unavailable_entry(tmp_path: Path
 
 
 def test_list_metrics_mixes_known_and_unknown_ids(tmp_path: Path) -> None:
-    """FR-004: a mixed request returns one entry per requested id, in order, with
+    """A mixed request returns one entry per requested id, in order, with
     the unknown id surfaced as an explicit unavailable entry (never dropped)."""
     db_path = _empty_warehouse(tmp_path)
     rows = server.list_metrics(
@@ -703,7 +700,7 @@ def test_list_metrics_enumeration_returns_only_known_states(tmp_path: Path) -> N
 
 
 def test_catalog_and_summary_tools_route_through_engine(tmp_path: Path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
-    """FR-001 guard: the catalog/summary tools must delegate to the validity-gated
+    """Guard: the catalog/summary tools must delegate to the validity-gated
     Stage 2 engine rather than reading the fact tables directly. Spy on the engine
     helpers and assert the tools call them. A future refactor that reintroduced
     direct fact-table SQL while keeping the same payload shape would trip this.
@@ -741,7 +738,7 @@ def test_catalog_and_summary_tools_route_through_engine(tmp_path: Path, monkeypa
 
 
 def test_metric_summary_unknown_metric(tmp_path: Path) -> None:
-    """T009: requesting summary for an unknown metric_id returns unavailable, not None."""
+    """Requesting summary for an unknown metric_id returns unavailable, not None."""
     summary = server.metric_summary(
         "nonexistent_metric_xyz", warehouse_path=_empty_warehouse(tmp_path)
     )
@@ -757,7 +754,7 @@ def test_metric_summary_unknown_metric(tmp_path: Path) -> None:
 
 
 def test_metric_summary_explicit_coverage_fields(tmp_path: Path) -> None:
-    """T009: summary carries explicit sample_size, imputed_proportion, gap_count."""
+    """Summary carries explicit sample_size, imputed_proportion, gap_count."""
     db_path, conn = _warehouse_with(tmp_path, "summary_coverage")
     try:
         now = _now()
@@ -785,7 +782,7 @@ def test_metric_summary_explicit_coverage_fields(tmp_path: Path) -> None:
 
 
 def test_metric_summary_no_all_time_extrema(tmp_path: Path) -> None:
-    """T009: metric_summary must never expose all-time min/max/avg fields."""
+    """Metric_summary must never expose all-time min/max/avg fields."""
     db_path, conn = _warehouse_with(tmp_path, "no_extrema")
     try:
         _seed(conn, [("2026-01-01 10:00:00", "weight", 70.0, "ne1")])

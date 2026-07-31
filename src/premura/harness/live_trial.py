@@ -1,10 +1,10 @@
-"""Live-trial seam — scaffold; real-model wiring deferred (FR-030 / FR-031).
+"""Live-trial seam — scaffold; real-model wiring deferred.
 
 This module lays the **live-trial seam** so a real, deliberately-cheap operator
 model can be wired in later WITHOUT reshaping any of the machinery the repeatable
 check already proves. The live trial reuses the EXACT same lower layers as the
-repeatable check — the WP03 sandbox + ingest runner, the WP01 session-log store
-(the harness is still the sole log writer), and the WP05 grader — and differs in
+repeatable check — the sandbox + ingest runner, the session-log store
+(the harness is still the sole log writer), and the grader — and differs in
 exactly one place: an :class:`Operator` *edits the already-built sandbox tree* to
 make the dropped data ingestable (it writes a parser), instead of a scripted
 install of a committed reference parser.
@@ -17,35 +17,37 @@ Driver AI):
 * :class:`Driver` — the AI that plays the human: supplies the goal and answers
   the operator's questions.
 
-Design boundaries (mirrors WP06 :mod:`premura.harness.repeatable_check`):
+Design boundaries (mirrors the repeatable check's orchestrator,
+:mod:`premura.harness.repeatable_check`):
 
-* **The harness is the SOLE log writer (FR-021 / NFR-008).** Only this module
+* **The harness is the SOLE log writer.** Only this module
   opens the sandbox session-log file and writes ``open_session`` / ``record_step``
   / ``record_ingest_provenance``. The :class:`Operator` edits the sandbox *tree*;
-  it never touches the log. The WP03 subprocess runner writes the warehouse and
+  it never touches the log. The subprocess ingest runner writes the warehouse and
   returns its outcome on stdout, never the log.
-* **Grader-only ``contract_pass`` (FR-065).** The persisted ``contract_pass`` is
+* **Grader-only ``contract_pass``.** The persisted ``contract_pass`` is
   the GRADER's recomputed ``runtime_valid``, never an operator/runner self-report.
-* **Distinct ``run_kind`` (FR-031/FR-032).** The session records
+* **Distinct ``run_kind``.** The session records
   ``run_kind="live_trial"`` (distinct from ``"repeatable_check"``) plus
   ``operator_model`` / ``driver_model`` so capability tiers can be compared later.
-* **Lower layers, not WP06's orchestrator.** To respect file ownership this module
+* **Lower layers, not the repeatable check's orchestrator.** To respect file ownership this module
   calls the sandbox / runner / store / grader layers directly; it does NOT import
   :mod:`premura.harness.repeatable_check`. The seam is the shared lower machinery,
   not a shared orchestrator file.
 
-== Named follow-up CLOSED: real-model wiring is available (D4 / R5 / SC-005) ======
+== Named follow-up CLOSED: real-model wiring is available ======
 
 The concrete cheap-model :class:`Operator` and :class:`Driver` were a **named
-follow-up**, NOT a silent waiver (DIRECTIVE_010). WP04 closes that follow-up
-(FR-013): the two explicitly-named factories below —
+follow-up**, NOT a silent waiver. That follow-up is now closed: the two
+explicitly-named factories below —
 :func:`real_model_operator` and :func:`real_model_driver` — now DELEGATE to the
-WP03 cheap-model operator/driver. The default-constructed operator points at the
+cheap-model operator/driver in :mod:`premura.harness.live_trial_ollama`. The
+default-constructed operator points at the
 committed SYNTHETIC fixture so construction stays network-free and deterministic;
 no committed default-suite test invokes a real model, while the gated tests prove
 the delegated path works when Ollama is available.
 
-== NFR-005: the live trial is wired into NO CI gate and can NEVER block ===========
+== The live trial is wired into NO CI gate and can NEVER block ===========
 
 :func:`run_live_trial` is invoked by NO default-collected test against the real
 ``source_dir`` and is referenced by NO CI / pytest default marker. The committed
@@ -53,11 +55,11 @@ seam test exercises it only against the SYNTHETIC fixture via the fake operator;
 any real-dump exercise is the local follow-up and is never part of the default
 suite. A failing or absent live trial therefore cannot block a code change.
 
-== C-003 / NFR-004: PHI containment ==============================================
+== PHI containment ==============================================
 
 ``LiveTrialConfig.source_dir`` (default ``~/Downloads/MyFitbitData``) is a
 LOCAL-only, never-committed target. Nothing under it is ever copied into the repo
-or a commit. The sandbox is torn down after every run (NFR-004). No committed test
+or a commit. The sandbox is torn down after every run. No committed test
 reads the real dump.
 """
 
@@ -80,9 +82,9 @@ if TYPE_CHECKING:
 
     import duckdb
 
-# Same committed slice-one fixture inputs the repeatable check reads (NFR-002): the
+# Same committed slice-one fixture inputs the repeatable check reads: the
 # seam test drives the live trial over the SYNTHETIC csv + manifest, never the real
-# dump (C-003). These resolve under the sandboxed repo copy at grade time.
+# dump. These resolve under the sandboxed repo copy at grade time.
 _FIXTURE_DIR = Path("tests") / "fixtures" / "session_log"
 _SYNTHETIC_CSV = _FIXTURE_DIR / "fitbit_heart_rate_synthetic.csv"
 _MANIFEST = _FIXTURE_DIR / "fixture_fields.yaml"
@@ -99,7 +101,7 @@ Verdict = dict[str, Any]
 
 @runtime_checkable
 class TurnLike(Protocol):
-    """One conversation turn an operator may expose for capture (m2 FR-2).
+    """One conversation turn an operator may expose for capture.
 
     A bounded structural abstraction (guide-don't-enumerate): any object with a
     ``role`` and ``content`` string is a turn, with the per-turn telemetry
@@ -117,7 +119,7 @@ class TurnLike(Protocol):
 
 @runtime_checkable
 class HasTranscript(Protocol):
-    """The optional transcript-capture capability an operator may expose (m2 FR-2).
+    """The optional transcript-capture capability an operator may expose.
 
     An operator that implements ``transcript()`` after ``operate()`` gets its
     conversation persisted by the harness (the sole log writer). The harness
@@ -171,12 +173,12 @@ class Driver(Protocol):
 
 @dataclass(slots=True)
 class LiveTrialConfig:
-    """Points the live trial at the LOCAL Fitbit dump (live-trial only, C-003).
+    """Points the live trial at the LOCAL Fitbit dump (live-trial only).
 
     ``source_dir`` defaults to ``~/Downloads/MyFitbitData`` — a local-only,
     never-committed target. ``category`` scopes the trial to one data category
     (slice-one: ``heart_rate``). ``run_kind`` is the distinct ``"live_trial"``
-    session kind (FR-031/FR-032). For the committed seam test the source is
+    session kind. For the committed seam test the source is
     overridden to the synthetic fixture; nothing under the real ``source_dir`` is
     ever read by a committed test.
     """
@@ -188,7 +190,8 @@ class LiveTrialConfig:
 
 # --------------------------------------------------------------------------- #
 # Captured-evidence shims (structural matches for the grader / store; identical
-# in shape to WP06's, kept local so this module does not import that orchestrator).
+# in shape to the repeatable check's orchestrator, kept local so this module
+# does not import that orchestrator).
 # --------------------------------------------------------------------------- #
 
 
@@ -197,21 +200,21 @@ class _CapturedProvenance:
     """Captured ingest evidence assembled from the runner envelope (transport only).
 
     Every field is *captured measured evidence* or a *parser claim* the strategy
-    reconciles — never a precomputed rule verdict (FR-005). The observation fields
+    reconciles — never a precomputed rule verdict. The observation fields
     are unchanged; ``produced`` and ``error`` are the **intake runtime-evidence
     seam** the harness carries so the injected
     :class:`~premura.harness.intake_strategy.IntakeStrategy` reads real captured
     values (not ``getattr`` fallbacks) when an intake scenario is driven:
 
     * ``error`` — the runner envelope's **stage-tagged** failure detail
-      (``parse:`` / ``validate:`` / ``persist:``), surfaced by the WP02 runner
+      (``parse:`` / ``validate:`` / ``persist:``), surfaced by the ingest runner
       change; ``None`` on success. The intake checker reads it as the
       ``persisted_without_raising`` violation message.
     * ``produced`` — the produced :class:`~premura.parsers.base.IntakeBatch` when
       the run path holds it in-process; ``None`` across the subprocess boundary and
       for the observation drawer (whose strategy never reads it). Transport only:
       the grader recomputes ``loaded`` from the warehouse and ``honest_about_gaps``
-      from the manifest regardless (FR-005).
+      from the manifest regardless.
     """
 
     declared_metrics: Sequence[str]
@@ -250,7 +253,7 @@ class ReferenceParserOperator:
     the synthetic fixture (never the real dump).
 
     ``model_id`` is a sentinel (e.g. ``"fake-operator:reference-parser"``) recorded
-    as the session ``operator_model`` (FR-031).
+    as the session ``operator_model``.
     """
 
     parser_src: Path
@@ -266,7 +269,7 @@ class ScriptedDriver:
     """A FAKE driver that returns a fixed goal and canned answers (test double).
 
     Outside-boundary substitute for the deferred real cheap-model driver; records a
-    sentinel ``model_id`` as the session ``driver_model`` (FR-031).
+    sentinel ``model_id`` as the session ``driver_model``.
     """
 
     trial_goal: str = "ingest the heart-rate category from the dropped dump"
@@ -280,25 +283,25 @@ class ScriptedDriver:
 
 
 # --------------------------------------------------------------------------- #
-# Closed follow-up (D4 / R5 / SC-005): the REAL cheap-model operator/driver are now
-# WIRED (FR-013) — these factories delegate to the WP03 Ollama operator/driver.
+# Closed follow-up: the REAL cheap-model operator/driver are now
+# WIRED — these factories delegate to the Ollama operator/driver.
 # The operator defaults to the committed synthetic fixture so the seam can be
 # constructed without bespoke caller plumbing and without reopening stub behavior.
-# The import is lazy so this slice-one seam has no import cycle with the WP03 module.
+# The import is lazy so this slice-one seam has no import cycle with the Ollama module.
 # --------------------------------------------------------------------------- #
 
 
 def real_model_operator(source: Path | None = None, **kwargs: Any) -> Operator:
-    """Resolve the D4/R5 follow-up: delegate to the WP03 cheap-model operator.
+    """Resolve the deferred follow-up: delegate to the cheap-model operator.
 
     The slice-one substrate shipped this as a ``NotImplementedError`` placeholder;
-    that follow-up is now CLOSED (FR-013). This builds and returns the real
+    that follow-up is now CLOSED. This builds and returns the real
     cheap-model :class:`Operator` —
     :class:`premura.harness.live_trial_ollama.OllamaOperator` — forwarding
     ``model`` / ``max_tries`` kwargs. A bare call defaults to the committed
     synthetic fixture, which keeps construction deterministic and removes the last
     placeholder-style stub behavior. The import is LAZY so the slice-one seam has
-    no import cycle with the WP03 module (which imports this one).
+    no import cycle with the Ollama module (which imports this one).
     """
     from premura.harness.live_trial_ollama import OllamaOperator
 
@@ -308,10 +311,10 @@ def real_model_operator(source: Path | None = None, **kwargs: Any) -> Operator:
 
 
 def real_model_driver(**kwargs: Any) -> Driver:
-    """Resolve the D4/R5 follow-up: delegate to the WP03 cheap-model driver.
+    """Resolve the deferred follow-up: delegate to the cheap-model driver.
 
     The slice-one substrate shipped this as a ``NotImplementedError`` placeholder;
-    that follow-up is now CLOSED (FR-013). It builds and returns the real
+    that follow-up is now CLOSED. It builds and returns the real
     cheap-model :class:`Driver` —
     :class:`premura.harness.live_trial_ollama.OllamaDriver` — forwarding the
     ``model`` kwarg. The import is LAZY to avoid an import cycle.
@@ -336,13 +339,13 @@ def _run_ingest_subprocess(
     source: Path,
     parser_spec: str,
 ) -> dict[str, Any]:
-    """Invoke the WP03 ingest runner as a subprocess; return its JSON envelope.
+    """Invoke the ingest runner as a subprocess; return its JSON envelope.
 
     Identical transport to the repeatable check: the runner is rooted in the
     sandbox with the sandbox ``src`` on ``PYTHONPATH`` so it imports the sandbox
     copy of ``premura`` and the operator's installed parser, gets its OWN DuckDB
-    handles, writes the warehouse, and never touches the session log (FR-021). The
-    minimal env configures no network client (NFR-002).
+    handles, writes the warehouse, and never touches the session log. The
+    minimal env configures no network client.
     """
     import json
     import os
@@ -376,27 +379,27 @@ def _run_ingest_subprocess(
         # The runner crashed before emitting its envelope (e.g. an unimportable
         # parser module the subprocess could not even start, or an interpreter-level
         # abort). The harness MUST still reach a completed, persisted, gradeable
-        # FAIL — never raise before a record exists (FR-009; the session-log-substrate
-        # RCA). Synthesize a stage-tagged ``parse:`` error envelope so the failure
+        # FAIL — never raise before a record exists (the session-log-substrate
+        # root cause analysis). Synthesize a stage-tagged ``parse:`` error envelope so the failure
         # path persists a record exactly like a caught parser raise.
         return _synthetic_error_envelope(parser_spec, proc.stderr)
     try:
         envelope: dict[str, Any] = json.loads(proc.stdout)
     except json.JSONDecodeError:
         # Garbled stdout is likewise a runner failure, not a reason to abort before
-        # a record exists; synthesize the same gradeable FAIL envelope (FR-009).
+        # a record exists; synthesize the same gradeable FAIL envelope.
         return _synthetic_error_envelope(parser_spec, proc.stderr or proc.stdout)
     return envelope
 
 
 def _synthetic_error_envelope(parser_spec: str, detail: str) -> dict[str, Any]:
-    """Build an error envelope for a runner that produced no usable stdout (FR-009).
+    """Build an error envelope for a runner that produced no usable stdout.
 
     Shape-identical to the runner's own error envelope (the same keys the happy
     path emits, all arrays present-and-empty) so the downstream provenance write +
     grading proceed unchanged. The ``error.message`` is stage-tagged ``parse:`` so
     the intake checker witnesses the broken stage; the harness never trusts it as a
-    verdict (FR-005). The detail is truncated to stay PHI-safe and bounded.
+    verdict. The detail is truncated to stay PHI-safe and bounded.
     """
     parser_kind = parser_spec.split(":", 1)[1] if ":" in parser_spec else parser_spec
     message = (detail or "ingest runner produced no envelope").strip()
@@ -498,17 +501,17 @@ def _persist_transcript(
     session_id: str,
     step_id: str,
 ) -> None:
-    """Persist a capable operator's conversation as ordered ``log_turn`` rows (FR-5).
+    """Persist a capable operator's conversation as ordered ``log_turn`` rows.
 
-    The harness is the SOLE log writer (FR-021 / NFR-1): the operator only
+    The harness is the SOLE log writer: the operator only
     EXPOSES its turns; this writes them. The capability is detected STRUCTURALLY
-    (``hasattr``) — no registry of tiers, no per-tier branch (FR-2). An operator
+    (``hasattr``) — no registry of tiers, no per-tier branch. An operator
     without ``transcript()`` is a no-op here.
 
-    Capture must never change an otherwise-successful run's verdict (FR-5): any
+    Capture must never change an otherwise-successful run's verdict: any
     failure assembling or writing turns is swallowed and surfaced as a recorded
     ``error``-status step under the run's root ``agent_turn``, not re-raised. The
-    turns link to that root step (FR-1 step_id link) and are written in the order
+    turns link to that root step (via ``step_id``) and are written in the order
     the operator returns them (``turn_index`` is the 0-based position).
     """
     if not hasattr(operator, "transcript"):
@@ -559,30 +562,30 @@ def _drive_live_trial(
     The flow, in order — the ONLY difference from the repeatable check is the
     :class:`Operator` editing the sandbox in place of a scripted install:
 
-    1. :func:`build_sandbox` (WP03); open the sandbox session-log file (WP01). The
-       parent holds the SOLE writable log handle (FR-021).
+    1. :func:`build_sandbox`; open the sandbox session-log file. The
+       parent holds the SOLE writable log handle.
     2. :func:`store.open_session` with ``operator_model=operator.model_id``,
        ``driver_model=driver.model_id``, and ``run_kind=config.run_kind``
        (``"live_trial"`` — distinct from the repeatable check) so capability tiers
-       compare later (FR-031/FR-032).
+       compare later.
     3. Record an ``agent_turn`` parent (carrying the driver's goal as a PHI-safe
        summary), then ``operator.operate(sandbox, goal)`` recorded as the
        ``edit_file`` ``tool_call`` step — the operator EDITS the sandbox; the
        harness writes the log.
-    4. Run the WP03 subprocess runner over ``source`` (the synthetic fixture for the
+    4. Run the subprocess ingest runner over ``source`` (the synthetic fixture for the
        committed seam test; the real dump only in the local follow-up), recorded as
        the verdict-bearing ``ingest_run`` step.
     5. Grade against the sandbox warehouse (opened read-only AFTER the runner closed
-       its writable handle) + the scenario's committed manifest (WP05), driven through
+       its writable handle) + the scenario's committed manifest, driven through
        the GENERIC :func:`grade` with the **scenario's injected strategy** — no
-       per-source branch (NFR-005). Persist provenance with ``contract_pass`` = the
-       GRADER's recomputed ``runtime_valid`` (FR-065).
-    6. :func:`store.finish_session`; tear the sandbox down unless ``keep_sandbox``
-       (NFR-004); return the result.
+       per-source branch. Persist provenance with ``contract_pass`` = the
+       GRADER's recomputed ``runtime_valid``.
+    6. :func:`store.finish_session`; tear the sandbox down unless ``keep_sandbox``;
+       return the result.
 
     ``scenario`` selects which acceptance source the run is graded against. It
-    defaults to the observation scenario so existing callers/tests are unchanged
-    (C-004); passing the intake scenario makes the SAME path grade an intake run via
+    defaults to the observation scenario so existing callers/tests are unchanged;
+    passing the intake scenario makes the SAME path grade an intake run via
     the injected :class:`~premura.harness.intake_strategy.IntakeStrategy`.
     """
     repo_root = repo_root.resolve()
@@ -599,7 +602,7 @@ def _drive_live_trial(
         log_conn = store.connect(sandbox.session_log_path)
         store.init_schema(log_conn)
 
-        # (2) Open the session — distinct run_kind + the two model identities (FR-031).
+        # (2) Open the session — distinct run_kind + the two model identities.
         session_id = store.open_session(
             log_conn,
             operator_model=operator.model_id,
@@ -675,12 +678,12 @@ def _drive_live_trial(
         # (5) Grade against the sandbox warehouse (read-only, AFTER the runner closed).
         #     On the failure path the operator's parser raised before any warehouse
         #     file was created; the helper materializes an EMPTY (0-fact-row)
-        #     warehouse so grading still yields a deterministic FAIL (FR-080).
+        #     warehouse so grading still yields a deterministic FAIL.
         warehouse_conn = open_sandbox_warehouse_for_grading(sandbox.warehouse_path)
         try:
             # Scenario-owned grading dispatch (#68): each scenario declares its own
             # grading entry point via `grade_fn` (None means "use the shared
-            # `grade()`"). No name matching on scenario.name here (NFR-005).
+            # `grade()`"). No name matching on scenario.name here.
             grader_fn = scenario.grade_fn or grade
             verdict = cast(
                 "dict[str, Any]",
@@ -694,7 +697,7 @@ def _drive_live_trial(
         finally:
             warehouse_conn.close()
 
-        # Persist provenance — contract_pass is the GRADER's runtime_valid (FR-065).
+        # Persist provenance — contract_pass is the GRADER's runtime_valid.
         store.record_ingest_provenance(
             log_conn,
             step_id=ingest_step_id,
@@ -714,8 +717,8 @@ def _drive_live_trial(
             contract_pass=bool(verdict["rules"]["runtime_valid"]["passed"]),
         )
 
-        # (5b) Persist the operator's conversation transcript, if it exposes one
-        #      (FR-2/FR-5). Detected structurally; the harness is the sole writer.
+        # (5b) Persist the operator's conversation transcript, if it exposes one.
+        #      Detected structurally; the harness is the sole writer.
         #      Capture failure surfaces as an error-status step, never an exception
         #      that flips the run's verdict.
         _persist_transcript(
@@ -750,13 +753,13 @@ def run_live_trial(
     source: Path | None = None,
     scenario: Scenario | None = None,
 ) -> Verdict:
-    """Drive one live trial end-to-end and return the grader verdict (FR-030/FR-031).
+    """Drive one live trial end-to-end and return the grader verdict.
 
     Reuses the SAME lower machinery as the repeatable check; the ONLY difference is
     the :class:`Operator` editing the sandbox in place of a scripted install (see
-    :func:`_drive_live_trial`). The sandbox is torn down afterward (NFR-004).
+    :func:`_drive_live_trial`). The sandbox is torn down afterward.
 
-    NFR-005: this function is wired into NO default CI gate; only the committed seam
+    This function is wired into NO default CI gate; only the committed seam
     test calls it, and only over the synthetic fixture.
 
     Args:
@@ -769,12 +772,11 @@ def run_live_trial(
             module exposes (the runner resolves ``<module>:<attr>``).
         source: the dropped data to ingest; defaults to the scenario's committed
             SYNTHETIC source (never the real dump). The real-dump follow-up passes a
-            path under ``config.source_dir`` locally — never in a committed test
-            (C-003).
+            path under ``config.source_dir`` locally — never in a committed test.
         scenario: the acceptance :class:`~premura.harness.scenario.Scenario` the run
             is graded against; dispatched via ``scenario.grade_fn or grade`` (no
-            per-source branch, NFR-005). Defaults to the observation scenario so
-            existing callers are unchanged (C-004).
+            per-source branch). Defaults to the observation scenario so
+            existing callers are unchanged.
 
     Returns:
         The grader :data:`Verdict` (no ids/timestamps).
@@ -805,11 +807,11 @@ def run_live_trial_with_log(
 
     Used by the seam test to assert on the harness-written session/provenance rows
     (run_kind, operator_model/driver_model). Production never keeps the sandbox.
-    The caller is responsible for tearing the kept sandbox down (NFR-004).
+    The caller is responsible for tearing the kept sandbox down.
 
     ``scenario`` is threaded through to :func:`_drive_live_trial` so the kept-log
     path can be graded against any registered acceptance source (defaults to
-    observation; C-004).
+    observation).
     """
     return _drive_live_trial(
         config,

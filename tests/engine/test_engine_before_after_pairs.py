@@ -1,13 +1,13 @@
-"""Tests for the simple anchor-date before/after paired-input layer (WP03).
+"""Tests for the simple anchor-date before/after paired-input layer.
 
-These exercise the narrow preparation seam ``paired_t_test`` (WP04) needs before
+These exercise the narrow preparation seam ``paired_t_test`` needs before
 any paired estimate can run: one already-admitted single-series
 :class:`AnalyticalInputSeries` plus a caller-declared
 :class:`BeforeAfterPairedRequest` (metric, anchor date, before/after windows, and
 expected direction) becomes an ordered, span-narrowed
 :class:`BeforeAfterPairedInput` — or a first-class :class:`RefusalOutcome` with
 **no** pairs. This layer produces a *prepared pair set or a refusal*, never an
-estimate; the mean paired difference, uncertainty, and envelope are WP04's job.
+estimate; the mean paired difference, uncertainty, and envelope are the paired t-test's job.
 
 The fixed deterministic pairing rule under test (also stated in the module
 docstring/data-model):
@@ -26,10 +26,10 @@ docstring/data-model):
   minimum of the usable before-day count and the usable after-day count; surplus
   observations on the longer side are unused (never invented to fill a pair).
 
-Everything is fixture-backed (hand-built ``PreparedPoint`` series via the WP02
+Everything is fixture-backed (hand-built ``PreparedPoint`` series via the
 single-series preparer); the layer reads no warehouse, so nothing here touches
 SQL, DuckDB, MCP, the network, or a clock. The tests deliberately do **not**
-depend on the eventual paired t-test — WP03 stops at a validated paired bundle.
+depend on the eventual paired t-test — this layer stops at a validated paired bundle.
 """
 
 from __future__ import annotations
@@ -169,8 +169,8 @@ def _symmetric_series(
 ) -> AnalyticalInputSeries:
     """A series with ``before_count`` days before the anchor and ``after_count`` after.
 
-    Before days run …, D-2, D-1 (closest to anchor last); after days run D+1,
-    D+2, … (closest to anchor first). The anchor day itself is skipped.
+    Before days run …, two days before, one day before (closest to anchor last);
+    after days run D+1, D+2, … (closest to anchor first). The anchor day itself is skipped.
     """
     points: list[PreparedPoint] = []
     for i in range(before_count, 0, -1):
@@ -183,7 +183,7 @@ def _symmetric_series(
 
 
 # ===========================================================================
-# T011 — happy-path: deterministic anchor-date pairing
+# happy-path: deterministic anchor-date pairing
 # ===========================================================================
 
 
@@ -197,7 +197,7 @@ def test_balanced_windows_build_nearest_to_anchor_pairs() -> None:
     assert prepared.is_usable
     assert prepared.raw_pair_count == 8
     assert len(prepared.pairs) == 8
-    # Pair 0 is the nearest-to-anchor pair: before day D-1, after day D+1.
+    # Pair 0 is the nearest-to-anchor pair: before day one-day-before, after day D+1.
     first = prepared.pairs[0]
     assert first.pair_index == 0
     assert first.before_day == ANCHOR - timedelta(days=1)
@@ -254,7 +254,7 @@ def test_pairs_carry_imputation_flags_and_pct() -> None:
     prepared = prepare_before_after_paired_input(series, request)
 
     assert prepared.refusal is None
-    # Pair 0 (before D-1) has its before side imputed.
+    # Pair 0 (before the one-day-before point) has its before side imputed.
     assert prepared.pairs[0].before_is_imputed is True
     assert prepared.pairs[0].after_is_imputed is False
     # Exactly two of eight pairs touch an imputed side -> 25%.
@@ -327,7 +327,7 @@ def test_preparation_is_deterministic() -> None:
 
 
 # ===========================================================================
-# T012 — refusals: malformed requests and weak pairs (no estimate)
+# refusals: malformed requests and weak pairs (no estimate)
 # ===========================================================================
 
 
@@ -413,7 +413,7 @@ def test_refuses_no_values_after_the_anchor() -> None:
 
 
 def test_refuses_too_few_valid_pairs() -> None:
-    # Below the WP01 raw-pair floor (BEFORE_AFTER_MIN_PAIRS == 8).
+    # Below the raw-pair floor (BEFORE_AFTER_MIN_PAIRS == 8).
     series = _symmetric_series(before_count=4, after_count=4)
     prepared = prepare_before_after_paired_input(series, _request(before_days=8, after_days=8))
     assert prepared.refusal is not None
@@ -465,7 +465,7 @@ def test_points_for_computation_returns_pairs_when_usable() -> None:
 
 
 # ===========================================================================
-# T015 — out-of-scope guardrails: no condition pairing / scanning
+# out-of-scope guardrails: no condition pairing / scanning
 # ===========================================================================
 
 
@@ -564,7 +564,7 @@ def test_direct_refused_input_rejects_carrying_pairs() -> None:
 
 
 # A small sanity check that the prepared input never carries an estimate-shaped
-# field — this layer prepares pairs, the paired t-test (WP04) computes the mean.
+# field — this layer prepares pairs, the paired t-test computes the mean.
 def test_prepared_input_has_no_estimate_field() -> None:
     series = _symmetric_series(before_count=8, after_count=8)
     prepared = prepare_before_after_paired_input(series, _request(before_days=8, after_days=8))

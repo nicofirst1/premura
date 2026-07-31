@@ -1,10 +1,10 @@
-"""Tests for the bounded intake ``runtime_valid`` checker (WP02 / FR-010 / SC-008).
+"""Tests for the bounded intake ``runtime_valid`` checker.
 
 Stance: black-box over the public checker plus the contract doc. We assert the
 three intake clauses fire on the right evidence, the result is a
-``ContractCheckResult`` with sorted violations, and — the FR-010 invariant — the
-clause set is exactly the three intake clauses with NO observation/full-review
-clause, and matches the contract markdown so the spec cannot drift from code.
+``ContractCheckResult`` with sorted violations, and the clause set is exactly
+the three intake clauses with NO observation/full-review clause, and matches
+the contract markdown so the spec cannot drift from code.
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from tests import CONTRACTS_DIR
 
 TS = datetime(2026, 1, 1, 8, 0, 0)
 
-# The contract doc the checker must stay pinned to (FR-010 invariant).
+# The contract doc the checker must stay pinned to.
 _CONTRACT_DOC = CONTRACTS_DIR / "intake-runtime-contract.md"
 
 
@@ -58,7 +58,7 @@ def _violating_clauses(result: ContractCheckResult) -> set[str]:
 
 
 # --------------------------------------------------------------------------- #
-# T008.1 — clean batch
+# Clean batch
 # --------------------------------------------------------------------------- #
 def test_clean_intake_batch_is_runtime_valid() -> None:
     result = check_intake_runtime_contract(produced=_clean_batch(), persisted_ok=True)
@@ -68,7 +68,7 @@ def test_clean_intake_batch_is_runtime_valid() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T008.2 — missing source descriptor → batch_validates
+# Missing source descriptor → batch_validates
 # --------------------------------------------------------------------------- #
 def test_missing_source_descriptor_fails_batch_validates() -> None:
     batch = IntakeBatch(
@@ -82,7 +82,7 @@ def test_missing_source_descriptor_fails_batch_validates() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T008.3 — duplicate dedupe_key → batch_validates
+# Duplicate dedupe_key → batch_validates
 # --------------------------------------------------------------------------- #
 def test_duplicate_dedupe_key_fails_batch_validates() -> None:
     batch = IntakeBatch(
@@ -99,7 +99,7 @@ def test_duplicate_dedupe_key_fails_batch_validates() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T008.4 — simulated persist failure → persisted_without_raising
+# Simulated persist failure → persisted_without_raising
 # --------------------------------------------------------------------------- #
 def test_persist_failure_fails_persisted_without_raising() -> None:
     result = check_intake_runtime_contract(
@@ -131,8 +131,8 @@ def test_violations_are_sorted() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T008.5 — clause-set assertion (FR-010 / SC-008): exactly the three intake
-# clauses, NO observation / full-review clause; pinned to the contract doc.
+# Clause-set assertion: exactly the three intake clauses, NO observation /
+# full-review clause; pinned to the contract doc.
 # --------------------------------------------------------------------------- #
 def test_clause_set_is_exactly_the_three_intake_clauses() -> None:
     assert INTAKE_RUNTIME_CLAUSES == (
@@ -156,7 +156,7 @@ def test_clause_set_is_exactly_the_three_intake_clauses() -> None:
 def test_clause_names_match_contract_doc() -> None:
     """The contract markdown's intake clause names equal the implementation's.
 
-    Guards FR-010: the spec cannot drift from the checker. We extract the three
+    Guards against the spec drifting from the checker. We extract the three
     numbered backticked clause names from the "Intake form" section.
     """
     text = _CONTRACT_DOC.read_text(encoding="utf-8")
@@ -179,8 +179,8 @@ def test_every_emitted_violation_clause_is_a_known_clause() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T030 — the runner WITNESSES intake parse/validate/persist with a stage-tagged
-# error. This is the producer half of the WP02 seam: a failure tells the grader
+# The runner WITNESSES intake parse/validate/persist with a stage-tagged
+# error. This is the producer half of the seam: a failure tells the grader
 # WHICH stage broke, and that tag is exactly what the checker reads as evidence.
 # We drive the runner in-process so a stage failure is deterministic.
 # --------------------------------------------------------------------------- #

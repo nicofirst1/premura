@@ -1,4 +1,4 @@
-"""Built-in descriptive Stage 2 signals (WP02).
+"""Built-in descriptive Stage 2 signals.
 
 The first wave of grounded, freshness-aware answers that replace raw-table
 direct reads:
@@ -21,7 +21,7 @@ carried-forward points are made explicit so Stage 3 never overstates trust.
 
 Registration follows the built-in module contract (CONTRACT.md): this module
 exposes :func:`register_builtin_signals`, which the engine's static built-in
-loader calls. See the WP02 report note about ``_BUILTIN_SIGNAL_MODULES``.
+loader calls. See the report note about ``_BUILTIN_SIGNAL_MODULES``.
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
-# WP03: import ``resolve_dependency`` and the declaration/request dataclasses at
+# Import ``resolve_dependency`` and the declaration/request dataclasses at
 # module load time, not inside :func:`bmi`. Two reasons:
 #
 # 1. BMI is the first cross-domain proof consumer; the seam is the contract, so
@@ -57,9 +57,9 @@ from ._results import (
     TrendResult,
 )
 
-# WP05 — resting-HR proof integration. The status path for resting HR is the
-# first existing Stage 2 signal to hand its latest evidence to the new
-# evidence-admissibility evaluator (WP01–WP04). It is imported at module load
+# Resting-HR proof integration. The status path for resting HR is the
+# first existing Stage 2 signal to hand its latest evidence to the
+# evidence-admissibility evaluator. It is imported at module load
 # time, like ``resolve_dependency`` above, because the policy seam is part of
 # this consumer's contract and must be visible at the top of the module rather
 # than buried in a function body. This import is cheap and side-effect-free:
@@ -86,7 +86,7 @@ _FLAT_REL_TOLERANCE = 0.02
 
 
 # --------------------------------------------------------------------------- #
-# T007 — resting_hr_status
+# resting_hr_status
 # --------------------------------------------------------------------------- #
 def resting_hr_status(conn: duckdb.DuckDBPyConnection) -> StatusResult:
     """Latest usable resting HR with an honest freshness verdict.
@@ -96,7 +96,7 @@ def resting_hr_status(conn: duckdb.DuckDBPyConnection) -> StatusResult:
     ``UNAVAILABLE`` (value omitted). No trend, reference-range, or training
     interpretation.
 
-    WP05 proof integration: once the existing freshness verdict is computed, the
+    Proof integration: once the existing freshness verdict is computed, the
     latest reading is handed to the Stage 2 evidence-admissibility evaluator as
     a ``CURRENT_STATUS`` candidate (see :func:`_resting_hr_policy_caveat`). The
     evaluator's verdict is mapped back into *additional caveat context only* —
@@ -109,7 +109,7 @@ def resting_hr_status(conn: duckdb.DuckDBPyConnection) -> StatusResult:
 
 
 # --------------------------------------------------------------------------- #
-# T008 — resting_hr_trend
+# resting_hr_trend
 # --------------------------------------------------------------------------- #
 def resting_hr_trend(
     conn: duckdb.DuckDBPyConnection, *, params: Mapping[str, Any] | None = None
@@ -128,7 +128,7 @@ def resting_hr_trend(
 
 
 # --------------------------------------------------------------------------- #
-# T009 — steps_trend
+# steps_trend
 # --------------------------------------------------------------------------- #
 def steps_trend(
     conn: duckdb.DuckDBPyConnection, *, params: Mapping[str, Any] | None = None
@@ -146,7 +146,7 @@ def steps_trend(
 
 
 # --------------------------------------------------------------------------- #
-# T010 — weight_trend
+# weight_trend
 # --------------------------------------------------------------------------- #
 def weight_trend(
     conn: duckdb.DuckDBPyConnection, *, params: Mapping[str, Any] | None = None
@@ -225,11 +225,11 @@ def _status(
 
 
 # --------------------------------------------------------------------------- #
-# WP05 — resting_hr_status policy-evaluator proof integration
+# resting_hr_status policy-evaluator proof integration
 # --------------------------------------------------------------------------- #
 #
 # This is the FIRST behavior-touching slice of the evidence-admissibility
-# mission, and it is intentionally narrow: ONLY ``resting_hr_status`` consults
+# work, and it is intentionally narrow: ONLY ``resting_hr_status`` consults
 # the policy evaluator, and it does so purely to *add caveat context*. The
 # freshness verdict and retained value computed by :func:`_status` stay
 # authoritative; the policy layer never relabels CURRENT/STALE/UNAVAILABLE and
@@ -441,7 +441,7 @@ def _trend_caveats(
 
 
 # --------------------------------------------------------------------------- #
-# WP03 — BMI (first cross-domain proof consumer)
+# BMI (first cross-domain proof consumer)
 # --------------------------------------------------------------------------- #
 #
 # BMI is intentionally narrow: it proves the Stage 2 input-resolution seam can
@@ -450,8 +450,7 @@ def _trend_caveats(
 # family — it returns the existing ``StatusResult`` envelope so the four-family
 # Stage 2 contract stays closed for this mission.
 #
-# Key design rules (see contracts/bmi-proof-consumer.yaml and the spec's FR-004
-# / FR-005):
+# Key design rules (see contracts/bmi-proof-consumer.yaml):
 #
 # * BMI declares its prerequisites through ``DependencyDeclaration`` and
 #   resolves them through :func:`premura.engine.resolve_dependency`. It does
@@ -935,29 +934,29 @@ def navy_body_fat(
 
 
 # --------------------------------------------------------------------------- #
-# WP04 — Intake descriptive signals (one per intake domain)
+# Intake descriptive signals (one per intake domain)
 # --------------------------------------------------------------------------- #
 #
-# Two descriptive, NON-DIAGNOSTIC signals that consume the WP03 intake resolvers
+# Two descriptive, NON-DIAGNOSTIC signals that consume the intake resolvers
 # through the *same* public seam BMI uses (``resolve_dependency``). They are
 # parameterized: a caller threads a matcher/quantity-key + a bounded window (and
-# optional freshness / sufficiency knobs) through the WP03-extended ``compute()``
-# seam (T031), and each signal's ``fn`` declares a ``params`` keyword.
+# optional freshness / sufficiency knobs) through the ``compute()``
+# seam, and each signal's ``fn`` declares a ``params`` keyword.
 #
-# Doctrine (NFR-001 / contract §5): these signals report ONLY what the data
+# Doctrine (contract §5): these signals report ONLY what the data
 # shows — coverage counts and a plain trend direction — and refuse honestly when
 # the declared domain is empty, stale, or too thin. They never compute a
 # reference range, never say "should", never report a p-value or "significance",
 # and never make a causal/diagnostic claim. The nutrition trend NEVER imputes a
 # missing day; gaps stay visible (the no-fallback / gap-visibility invariant
-# WP03 establishes in the resolver payload).
+# the resolver payload establishes).
 #
-# Day basis (NFR-006 / D4): both signals report the SAME ``day_basis`` the
+# Day basis: both signals report the SAME ``day_basis`` the
 # resolver computed on, and read coverage off the resolver's already-bucketed
 # local-calendar-day points/days. There is no second path that recomputes
 # day/window metadata from raw UTC.
 #
-# Refusal states are STRUCTURALLY DISTINCT (FR-005 / D5):
+# Refusal states are STRUCTURALLY DISTINCT:
 #
 # * ``missing_input``    — the declared domain has no matching rows in the
 #                          window (the resolver returned ``usable=False``).
@@ -1100,7 +1099,7 @@ def _intake_request(
 ) -> ResolutionRequest:
     """Build a ResolutionRequest threading the window through ``failure_mode``.
 
-    The resolver protocol is fixed at ``(conn, request)``; WP03 pins the
+    The resolver protocol is fixed at ``(conn, request)``; this pins the
     convention that callers thread an optional window through the declaration's
     ``failure_mode`` slot as ``window_days=<int>``. We reuse that exact rule
     rather than inventing a second channel."""
@@ -1118,7 +1117,7 @@ def _intake_request(
 
 
 # --------------------------------------------------------------------------- #
-# T017 — supplement_intake_adherence (status/coverage family)
+# supplement_intake_adherence (status/coverage family)
 # --------------------------------------------------------------------------- #
 def supplement_intake_adherence(
     conn: duckdb.DuckDBPyConnection,
@@ -1127,9 +1126,9 @@ def supplement_intake_adherence(
 ) -> SupplementAdherenceResult:
     """Coverage "K of N days" for a caller-declared supplement matcher.
 
-    Parameters threaded through ``compute(..., params=...)`` (T031):
+    Parameters threaded through ``compute(..., params=...)``:
 
-    * ``matcher`` (required) — the supplement matcher, interpreted by the WP03
+    * ``matcher`` (required) — the supplement matcher, interpreted by the
       resolver using the matcher semantics pinned in
       ``views/supplement_intake.py`` (case-insensitive substring,
       product-then-ingredient, AND across tokens). This signal never re-derives
@@ -1245,7 +1244,7 @@ def supplement_intake_adherence(
 
 
 # --------------------------------------------------------------------------- #
-# T018 — nutrition_intake_trend (trend family)
+# nutrition_intake_trend (trend family)
 # --------------------------------------------------------------------------- #
 def nutrition_intake_trend(
     conn: duckdb.DuckDBPyConnection,
@@ -1254,9 +1253,9 @@ def nutrition_intake_trend(
 ) -> NutritionTrendResult:
     """Plain up/down/flat direction of a caller-declared nutrient/energy key.
 
-    Parameters threaded through ``compute(..., params=...)`` (T031):
+    Parameters threaded through ``compute(..., params=...)``:
 
-    * ``quantity_key`` (required) — the nutrition quantity key the WP03 resolver
+    * ``quantity_key`` (required) — the nutrition quantity key the resolver
       interprets (e.g. ``"energy"``, ``"protein"``).
     * ``window_days`` — bounded look-back window (repo default).
     * ``anchor_ts`` — time reference (defaults to now, UTC).
@@ -1393,11 +1392,11 @@ def _intake_trend_direction(points: list[dict[str, Any]]) -> TrendDirection:
 # Built-in registration (CONTRACT.md built-in loading contract)
 # --------------------------------------------------------------------------- #
 def register_builtin_signals() -> None:
-    """Register WP02's descriptive signals into :data:`REGISTRY`.
+    """Register the built-in descriptive signals into :data:`REGISTRY`.
 
     Called by the engine's static built-in loader for every module listed in
-    ``premura.engine._BUILTIN_SIGNAL_MODULES``. See the WP02 report: this module
-    must be added to that list (one line, in WP01-owned ``__init__.py``) for
+    ``premura.engine._BUILTIN_SIGNAL_MODULES``. This module
+    must be added to that list (one line, in ``__init__.py``) for
     production auto-discovery; until then tests invoke this function directly.
     """
     _register(
@@ -1469,7 +1468,7 @@ def register_builtin_signals() -> None:
             ),
         )
     )
-    # WP03 — BMI proof consumer. Registered under the existing "status" family
+    # BMI proof consumer. Registered under the existing "status" family
     # so the four-family Stage 2 contract stays closed. The ``inputs`` list
     # uses the engine's free-form metric-id-like strings; these are NOT strict
     # ``dim_metric.metric_id`` values because BMI mixes two semantic domains
@@ -1535,13 +1534,13 @@ def register_builtin_signals() -> None:
             ),
         )
     )
-    # WP04 — parameterized intake descriptive signals. They are registered here
+    # Parameterized intake descriptive signals. They are registered here
     # (no ``engine/__init__.py`` edit — this module is already in
     # ``_BUILTIN_SIGNAL_MODULES``) and are intentionally left out of the
     # ``_BUILTIN_SIGNAL_NAMES`` load-guard frozenset, which is a SUBSET check, not
     # the authoritative registry; ``REGISTRY`` is authoritative. Their ``fn``
     # declares a ``params`` keyword so ``compute(name, conn, params=...)`` threads
-    # the caller's matcher/quantity-key + window through the T031 seam.
+    # the caller's matcher/quantity-key + window through the seam.
     _register(
         SignalSpec(
             name="supplement_intake_adherence",

@@ -1,14 +1,14 @@
-"""Deterministic contract surface of the tool-loop live-trial tier (WP03).
+"""Deterministic contract surface of the tool-loop live-trial tier.
 
 This module is the model-server-free half of the tool-loop tier: a chat client,
 a bounded tool registry, and a single-source brief assembler. It is fully
 testable without an Ollama process (the chat client takes an injectable
-transport seam, DIRECTIVE_036); WP04's loop and WP05's end-to-end path build on
+transport seam); the loop and the end-to-end path build on
 top of it. The binding behavior is ``contracts/tool-loop-tier.md`` §§1–2 and §6.
 
 Boundaries this module establishes (and why):
 
-* **What a tool is (the rule, not a list — FR-003/FR-004, NFR-005).** A tool is
+* **What a tool is (the rule, not a list).** A tool is
   a :class:`ToolRegistration` ``{name, description, parameters-schema, handler}``
   whose handler's reach is *physically bounded* to the capability its
   registration states, resolved inside the trial's :class:`TrialContext`.
@@ -18,8 +18,8 @@ Boundaries this module establishes (and why):
   (``read_context``, ``write_parser``, ``run_ingest``) are *instances* of that
   rule, not its bounds.
 
-* **Why the fixture manifest is physically unreachable (C-005 by
-  construction).** ``read_context`` resolves a requested path against an
+* **Why the fixture manifest is physically unreachable by
+  construction.** ``read_context`` resolves a requested path against an
   explicit allowlist (the scenario source + ``CONTRACT.md`` + ``base.py``,
   resolved INSIDE the sandbox tree) and refuses anything else — including
   ``../`` traversals and absolute escapes — by comparing *resolved real paths*.
@@ -29,7 +29,7 @@ Boundaries this module establishes (and why):
   the tool result so the model can self-correct), never file content and never
   an exception.
 
-* **One canonical source per brief part (FR-001).** :func:`assemble_brief`
+* **One canonical source per brief part.** :func:`assemble_brief`
   builds the brief from exactly one source per part: the loop preamble (here),
   the drawer probe's contract surface (imported from ``live_trial_ollama``, with
   its one-shot-only output directive stripped *structurally* so the brief cannot
@@ -45,7 +45,7 @@ Boundaries this module establishes (and why):
   2026-06-04 tool-loop follow-up audit identified, and the thing this tier
   exists to prevent.
 
-Reuse, not fork (NFR-004): the chat client mirrors the ``urllib`` discipline of
+Reuse, not fork: the chat client mirrors the ``urllib`` discipline of
 ``live_trial_ollama._ollama`` and imports — never copies — the URL guard,
 exception, drawer probes, parser destination, and ingest runner from the sibling
 harness modules.
@@ -73,9 +73,9 @@ from premura.harness.live_trial_ollama import (
 )
 from premura.harness.sandbox import Sandbox
 
-# Re-exported so callers (WP04's loop, the WP03 brief tests) resolve a scenario to
+# Re-exported so callers (the loop, the brief tests) resolve a scenario to
 # its drawer probe through this contract module without re-spelling the sibling
-# harness path. The probe rubric stays owned by ``live_trial_ollama`` (NFR-004).
+# harness path. The probe rubric stays owned by ``live_trial_ollama``.
 resolve_drawer_probe = _resolve_drawer_probe
 
 # The runner resolves the operator-authored parser by this module:attr spec; it
@@ -84,12 +84,12 @@ _PARSER_MODULE = "premura.parsers._live_trial_parser"
 _PARSER_ATTR = "LiveTrialParser"
 _PARSER_SPEC = f"{_PARSER_MODULE}:{_PARSER_ATTR}"
 
-#: Pinned model context window (contract §6). Single home; WP04 imports it.
+#: Pinned model context window (contract §6). Single home; the loop imports it.
 _NUM_CTX_DEFAULT = 16384
 
 #: The one-shot-only output directive both contract prompts END with. The brief
 #: strips it STRUCTURALLY (partition on this sentence) so the loop brief cannot
-#: contradict the tool protocol (FR-001 crux).
+#: contradict the tool protocol.
 _ONE_SHOT_DIRECTIVE = "Output ONLY the python module"
 
 # The two allowlisted contract files, relative to the sandbox tree. The scenario
@@ -103,7 +103,7 @@ _ALLOWLIST_CONTRACT_RELPATHS = (
 def resolve_num_ctx() -> int:
     """Resolve the pinned context window from ``LIVE_TRIAL_NUM_CTX`` (default 16384).
 
-    Single home for the env knob (contract §6); WP04's loop imports this rather
+    Single home for the env knob (contract §6); the loop imports this rather
     than re-reading the environment, so the pinned size is set in exactly one
     place.
     """
@@ -118,7 +118,7 @@ def resolve_num_ctx() -> int:
 
 
 # --------------------------------------------------------------------------- #
-# 1. Chat client (stdlib urllib only; injectable transport seam). [T009]
+# 1. Chat client (stdlib urllib only; injectable transport seam).
 # --------------------------------------------------------------------------- #
 
 
@@ -128,20 +128,20 @@ class ToolCallsUnsupportedError(RuntimeError):
     An explicit, returnable failure mode distinct from
     :class:`OllamaUnavailableError`: the endpoint is reachable but the loaded
     model cannot accept the ``tools`` parameter (Ollama answers with an HTTP
-    error whose body mentions tool support). WP04 turns this into the
-    ``tool_calls_unsupported`` outcome rather than a crash (NFR-006).
+    error whose body mentions tool support). The loop turns this into the
+    ``tool_calls_unsupported`` outcome rather than a crash.
     """
 
 
-#: A transport is the OUTSIDE boundary (DIRECTIVE_036): it takes the derived chat
+#: A transport is the OUTSIDE boundary: it takes the derived chat
 #: URL + the encoded body and returns the raw response bytes (or raises a urllib
-#: error). The default goes through the real localhost urlopen; tests and WP04's
-#: fake backend substitute their own.
+#: error). The default goes through the real localhost urlopen; tests and the
+#: loop's fake backend substitute their own.
 Transport = Callable[..., bytes]
 
 
 def _chat_url() -> str:
-    """Derive the ``/api/chat`` URL from the validated ``OLLAMA_URL`` host (NFR-001).
+    """Derive the ``/api/chat`` URL from the validated ``OLLAMA_URL`` host.
 
     The existing env knob keeps working (host/port honored) and the same
     local-only guard applies to the derived URL — prompt data cannot be sent
@@ -236,7 +236,7 @@ def _http_error_body(exc: urllib.error.HTTPError) -> str:
 
 
 # --------------------------------------------------------------------------- #
-# 2. Bounded tool registry + the three first handlers. [T010]
+# 2. Bounded tool registry + the three first handlers.
 # --------------------------------------------------------------------------- #
 
 
@@ -246,7 +246,8 @@ class TrialContext:
 
     ``read_allowlist`` is the *only* read surface: the scenario source plus the
     contract files, all resolved INSIDE the sandbox tree. The fixture manifest is
-    deliberately absent, so C-005 holds by construction. ``parser_spec`` is the
+    deliberately absent, so the fixture manifest stays unreachable by construction.
+    ``parser_spec`` is the
     ``module:attr`` the ingest runner resolves the operator-authored parser by.
     """
 
@@ -278,7 +279,7 @@ def build_trial_context(sandbox: Sandbox, *, source: Path) -> TrialContext:
 
 @dataclass(frozen=True, slots=True)
 class ToolRegistration:
-    """One bounded tool: ``{name, description, parameters-schema, handler}`` (FR-003).
+    """One bounded tool: ``{name, description, parameters-schema, handler}``.
 
     ``handler`` takes the validated args dict + the :class:`TrialContext` and
     returns a STRING (the tool-result message). The handler's reach is whatever
@@ -309,8 +310,7 @@ def _handle_read_context(args: dict, ctx: TrialContext) -> str:
     Anything else — the manifest, an absolute escape, a traversal, any other
     repo file, a directory-qualified relative path — returns a refusal STRING
     naming the allowlist so the model can self-correct. Never the content,
-    never an exception. Allowlisted files are served whole (no truncation,
-    FR-002).
+    never an exception. Allowlisted files are served whole (no truncation).
     """
     requested = str(args.get("path", ""))
     target: Path | None = None
@@ -338,7 +338,7 @@ def _handle_read_context(args: dict, ctx: TrialContext) -> str:
 def _handle_write_parser(args: dict, ctx: TrialContext) -> str:
     """Write ``code`` to the sandbox parser destination; return a confirmation.
 
-    Stateless: a second call overwrites. (The first-call snapshot is WP04's loop
+    Stateless: a second call overwrites. (The first-call snapshot is the loop's
     concern, not this handler's.) The destination is exactly
     ``<sandbox>/src/premura/parsers/_live_trial_parser.py``.
     """
@@ -350,10 +350,10 @@ def _handle_write_parser(args: dict, ctx: TrialContext) -> str:
 
 
 def _handle_run_ingest(args: dict, ctx: TrialContext) -> str:  # noqa: ARG001 - no args
-    """Run the real WP03 ingest subprocess; return the JSON envelope verbatim.
+    """Run the real ingest subprocess; return the JSON envelope verbatim.
 
-    Delegates to ``live_trial._run_ingest_subprocess`` (reuse, never fork —
-    NFR-004) over the context's sandbox/source/parser-spec and returns the
+    Delegates to ``live_trial._run_ingest_subprocess`` (reuse, never fork)
+    over the context's sandbox/source/parser-spec and returns the
     runner's JSON envelope as a compact string, exactly as the runner emitted it
     (stage-tagged errors included). It NEVER returns grader output (contract §1).
     """
@@ -364,12 +364,12 @@ def _handle_run_ingest(args: dict, ctx: TrialContext) -> str:  # noqa: ARG001 - 
 
 
 def default_tool_registry() -> dict[str, ToolRegistration]:
-    """The three first registered tools (FR-003/FR-004).
+    """The three first registered tools.
 
     Registering a NEW tool is adding one entry to this dict — never editing a
-    handler dispatcher or adding an ``if name == ...`` branch (NFR-005). Each
+    handler dispatcher or adding an ``if name == ...`` branch. Each
     handler's reach is bounded by :class:`TrialContext`; none can reach the
-    fixture manifest, so C-005 holds at every turn by construction.
+    fixture manifest, so that boundary holds at every turn by construction.
     """
     return {
         "read_context": ToolRegistration(
@@ -426,7 +426,7 @@ def registry_as_chat_tools(registry: dict[str, ToolRegistration]) -> list[dict]:
     """Project a registry into the ``tools`` list for the chat ``/api/chat`` call.
 
     Pure transformation over the registry: a tool added to the registry appears
-    here automatically (no enumeration here either, NFR-005).
+    here automatically (no enumeration here either).
     """
     return [
         {
@@ -442,7 +442,7 @@ def registry_as_chat_tools(registry: dict[str, ToolRegistration]) -> list[dict]:
 
 
 # --------------------------------------------------------------------------- #
-# 3. Single-source brief assembler with loud budget check. [T011]
+# 3. Single-source brief assembler with loud budget check.
 # --------------------------------------------------------------------------- #
 
 
@@ -456,7 +456,7 @@ class BriefBudgetError(RuntimeError):
     """
 
 
-# The loop protocol preamble REPLACES the one-shot output directive (FR-001): it
+# The loop protocol preamble REPLACES the one-shot output directive: it
 # tells the operator it has tools and one response per turn, instead of demanding
 # a bare module. It is the single canonical source for this brief part.
 _LOOP_PREAMBLE = (
@@ -486,7 +486,7 @@ def _strip_one_shot_directive(contract_prompt: str) -> str:
 
     Structural strip (partition on the known sentence), so if the upstream prompt
     wording drifts the brief test catches the contradiction rather than shipping
-    it (FR-001). Everything before the directive is kept verbatim; the directive
+    it. Everything before the directive is kept verbatim; the directive
     and anything after it is dropped (it is the final line of both prompts).
     """
     head, sep, _tail = contract_prompt.partition(_ONE_SHOT_DIRECTIVE)
@@ -502,7 +502,7 @@ def assemble_brief(
     *,
     num_ctx: int | None = None,
 ) -> str:
-    """Assemble the one coherent brief from one canonical source per part (FR-001).
+    """Assemble the one coherent brief from one canonical source per part.
 
     Parts, in contract §2 order:
 

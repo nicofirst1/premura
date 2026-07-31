@@ -139,7 +139,7 @@ def _dispatch_analytical_with_trace(
 ) -> dict[str, Any]:
     """Dispatch an analytical wrapper, mechanically recording it iff a session is given.
 
-    Opt-in by explicit session association (FR-002, FR-015 / NFR-001):
+    Opt-in by explicit session association:
 
     * **No ``session_id``** — behavior is exactly as today: call ``dispatch()`` and
       return the engine envelope verbatim. No trace row is written and the response
@@ -150,7 +150,7 @@ def _dispatch_analytical_with_trace(
       uncaught dispatch error finalizes as ``error`` and re-raises). The engine
       envelope is returned untouched; the recorded-call references are attached only
       at the WRAPPER layer under a top-level ``trace`` key, so the envelope stays
-      byte-identical with tracing on vs off (T016 / NFR-001).
+      byte-identical with tracing on vs off.
 
     ``request`` is the analytical request kwargs as the wrapper received them; the
     per-tool identity registry in ``premura.trace`` normalizes them, so the wrapper
@@ -162,7 +162,7 @@ def _dispatch_analytical_with_trace(
     binding instead.
     """
     if not session_id:
-        # Untraced fast path — identical to pre-WP03 behavior, no trace key added.
+        # Untraced fast path — no trace key added.
         return dispatch()
 
     # Record BEFORE dispatch, but do NOT hold the trace's writable connection open
@@ -189,7 +189,7 @@ def _dispatch_analytical_with_trace(
     except ValueError:
         # Pre-question parameter validation failure (empty metric id, invalid
         # enum, unsupported lag — the warehouse server raises ValueError BEFORE
-        # the request becomes an analytical question). FR-008 / AS-3: such calls
+        # the request becomes an analytical question). Such calls
         # MUST NOT be recorded or counted, so discard the eagerly-started row.
         with warehouse_server._open_warehouse_writable(warehouse_path) as conn:
             trace.discard_recorded_call(conn, pending)
@@ -321,7 +321,7 @@ def _register_default_tools(
             )
         }
 
-    # --- Signal-backed tools (WP04) -------------------------------------- #
+    # --- Signal-backed tools ------------------------------------------- #
     # These are the supported path for the six approved Stage 2 answers. Each
     # delegates to the grounded signal engine and returns a structured payload
     # whose ``status`` field distinguishes available / missing_input /
@@ -373,9 +373,9 @@ def _register_default_tools(
             warehouse_path=warehouse_path,
         )
 
-    # --- Intake signal-backed tools (WP05) ------------------------------- #
+    # --- Intake signal-backed tools --------------------------------------- #
     # The two parameterized intake signals on the DEFAULT agent-safe surface.
-    # Each is a thin wrapper that delegates to the WP04 signal through the
+    # Each is a thin wrapper that delegates to the signal through the
     # warehouse server's ``_run_signal`` -> ``compute(..., params=...)`` seam: it
     # computes no coverage/trend, re-reads no intake tables, and issues no raw
     # SQL. The caller threads a matcher/quantity-key + optional window; the
@@ -426,7 +426,7 @@ def _register_default_tools(
             quantity_key, window_days=window_days, warehouse_path=warehouse_path
         )
 
-    # --- Stage 3 analytical tools (WP06) --------------------------------- #
+    # --- Stage 3 analytical tools ------------------------------------------ #
     # change_point and smoothed_average live on the DEFAULT agent-safe surface.
     # Each is a thin wrapper that delegates to the engine analytical path
     # (premura.engine.invoke_analytical_tool) — it computes no statistics and
@@ -533,7 +533,7 @@ def _register_default_tools(
             ),
         )
 
-    # --- Stage 3 pre-registered lagged association (WP04) ---------------- #
+    # --- Stage 3 pre-registered lagged association ------------------------ #
     # correlate reports a pre-registered association between two metrics at a
     # caller-declared integer-day lag. It is a thin wrapper that delegates to the
     # engine analytical path (prepare_paired_input -> invoke_analytical_tool):
@@ -599,7 +599,7 @@ def _register_default_tools(
             ),
         )
 
-    # --- Stage 3 simple anchor-date before/after difference (WP04) ------- #
+    # --- Stage 3 simple anchor-date before/after difference --------------- #
     # paired_t_test reports a simple before/after paired difference for one metric
     # split by a caller-declared anchor date. It is a thin wrapper that delegates
     # to the engine analytical path (prepare_before_after_paired_input ->
@@ -764,7 +764,7 @@ def _register_default_tools(
             payload["episodes_source"] = episodes_source
         return payload
 
-    # --- Agent-mediated profile capture (WP03) --------------------------- #
+    # --- Agent-mediated profile capture ------------------------------------ #
     # The bounded write path for stable baseline profile facts. These live on
     # the DEFAULT agent-safe surface (not the operator-only surface) because
     # bounded capture is the supported agent workflow. Both delegate straight to
@@ -1111,7 +1111,7 @@ def _register_default_tools(
             session_log_path=session_log_path,
         )
 
-    # --- Session research trace (WP03, mission session-research-trace) --------- #
+    # --- Session research trace --------------------------------------------- #
     # These three tools expose the multiplicity-disclosure trace as the SUPPORTED
     # agent workflow, so they live on the DEFAULT agent-safe surface (the operator
     # surface inherits them by registering this same default set). They orchestrate
@@ -1184,10 +1184,10 @@ def _register_default_tools(
                 payload["disclosure_markdown"] = trace.disclosure_to_markdown(disclosure)
             return payload
 
-    # --- PubMed grounding (WP03, pubmed-grounding-tools mission) -------------- #
+    # --- PubMed grounding ---------------------------------------------------- #
     # Exactly two tools expose Premura's own PubMed grounding behavior on the
     # default agent-safe surface: search finds candidates, fetch-by-PMID creates
-    # citeable records. They delegate to the WP02 provider wrappers in
+    # citeable records. They delegate to the PubMed provider wrappers in
     # ``premura.mcp.server`` and add NO broad third-party PubMed surface (no
     # full-text, deep analysis, MeSH, Europe PMC, Unpaywall, or related-article
     # tools). PubMed context is literature only: it reads no ``hp.*`` rows, runs

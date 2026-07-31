@@ -153,7 +153,7 @@ def test_public_surface_supports_author_and_evaluate_round_trip() -> None:
 def test_builtin_policy_lookup_available_from_public_surface() -> None:
     """The shipped family defaults and registry are publicly reachable.
 
-    WP03 exposes the built-in list and a registry/lookup; a policy author reuses
+    The policy layer exposes the built-in list and a registry/lookup; a policy author reuses
     an existing family rather than reinventing one, so these must be public.
     """
     from premura.engine import (

@@ -1,6 +1,6 @@
-"""Tests for the deterministic ``correlate`` lagged-association engine tool (WP03).
+"""Tests for the deterministic ``correlate`` lagged-association engine tool.
 
-The tool consumes a WP02 :class:`PairedAnalyticalInput` (two already-admitted
+The tool consumes a:class:`PairedAnalyticalInput` (two already-admitted
 single series aligned by same local calendar day after one declared integer-day
 lag) plus the pre-registered hypothesis, and returns an
 :class:`AnalyticalResultEnvelope`: an available association estimate (Spearman's
@@ -10,7 +10,7 @@ first-class refusal carrying **no** estimate.
 
 Everything is fixture-backed; the tool reads no warehouse and touches no clock,
 no network, no DuckDB, no MCP. These tests are the observable behavior contract
-(T011) and the honesty boundary (T016): the tool must NEVER compute or return a
+ and the honesty boundary: the tool must NEVER compute or return a
 p-value, the word "significant", causal language, a diagnosis, or perform a lag
 scan (ADR-0008).
 """
@@ -62,7 +62,7 @@ RIGHT_FAMILY = "right_family"
 
 
 # ---------------------------------------------------------------------------
-# Fixture helpers (mirror the WP02 paired-input test style)
+# Fixture helpers (mirror the paired-input test style)
 # ---------------------------------------------------------------------------
 
 
@@ -143,7 +143,7 @@ def _paired_from_values(
     lag_justification: str | None = None,
     start: datetime | None = None,
 ) -> PairedAnalyticalInput:
-    """Prepare a paired input from two raw value lists through the WP02 preparer.
+    """Prepare a paired input from two raw value lists through the preparer.
 
     ``left`` and ``right`` share the same start day so a lag-0 hypothesis pairs
     every index. For a positive ``lag_days`` the right series is constructed one
@@ -192,7 +192,7 @@ def _negative_monotone(n: int) -> tuple[list[float], list[float]]:
 
 
 # ===========================================================================
-# T011 — available correlate output (lag 1, expected negative direction)
+# available correlate output (lag 1, expected negative direction)
 # ===========================================================================
 
 
@@ -356,7 +356,7 @@ def test_no_utc_fallback_caveat_when_local_tz_present() -> None:
 
 
 # ===========================================================================
-# T011 — core refusal classes (refusals carry no estimate)
+# core refusal classes (refusals carry no estimate)
 # ===========================================================================
 
 
@@ -370,12 +370,12 @@ def _assert_refusal(env: AnalyticalResultEnvelope, *, reason: str | None = None)
 
 
 def test_refuses_below_twenty_raw_pairs() -> None:
-    # 15 raw pairs is below the floor of 20: WP02 already refuses, and correlate
+    # 15 raw pairs is below the floor of 20: the input preparer already refuses, and correlate
     # must surface that refusal with no estimate.
     left = [float(i) for i in range(15)]
     right = [float(i) for i in range(15)]
     paired = _paired_from_values(left, right)
-    assert not paired.is_usable  # WP02 floor
+    assert not paired.is_usable  # floor
     env = correlate(paired, _hypothesis())
     _assert_refusal(env)
 
@@ -405,11 +405,12 @@ def _near_random_walk_pair(n: int, *, seed: int = 42) -> tuple[list[float], list
 
 
 def test_refuses_below_effective_sample_floor() -> None:
-    # RISK-1: lock FR-010. A strongly autocorrelated near-random-walk pair has
-    # raw N = 30 (>= 20, clearing the raw floor and reaching the tool) but drives
-    # the effective sample size below 12. The tool MUST refuse with the
-    # effective-sample-floor reason and carry no estimate. This test fails if the
-    # refusal is removed (it does not accept an available-with-confound fallback).
+    # RISK-1: lock the association-band behavior. A strongly autocorrelated
+    # near-random-walk pair has raw N = 30 (>= 20, clearing the raw floor and
+    # reaching the tool) but drives the effective sample size below 12. The
+    # tool MUST refuse with the effective-sample-floor reason and carry no
+    # estimate. This test fails if the refusal is removed (it does not accept
+    # an available-with-confound fallback).
     n = 30
     left, right = _near_random_walk_pair(n)
     paired = _paired_from_values(left, right)
@@ -447,7 +448,7 @@ def test_refuses_malformed_hypothesis_metric_mismatch() -> None:
 
 
 def test_refuses_refused_paired_input() -> None:
-    # A paired input that WP02 already refused must short-circuit to a refusal.
+    # A paired input that the input preparer already refused must short-circuit to a refusal.
     refused = PairedAnalyticalInput(
         left_metric_id=LEFT_METRIC,
         right_metric_id=RIGHT_METRIC,
@@ -463,7 +464,7 @@ def test_refuses_refused_paired_input() -> None:
 
 
 # ===========================================================================
-# T013 — N_eff + association band behavior
+# N_eff + association band behavior
 # ===========================================================================
 
 
@@ -543,7 +544,7 @@ def test_imputed_pairs_downweight_effective_support() -> None:
 
 
 # ===========================================================================
-# T014 — confound checklist trigger policy
+# confound checklist trigger policy
 # ===========================================================================
 
 
@@ -594,7 +595,7 @@ def test_caveats_are_short_and_present() -> None:
 
 
 # ===========================================================================
-# T015 — registration + reachability through the shared dispatch path
+# registration + reachability through the shared dispatch path
 # ===========================================================================
 
 
@@ -625,14 +626,14 @@ def test_correlate_exported_from_engine_package() -> None:
     engine.load_builtin_analytical_tools()
     names = {spec.name for spec in engine.list_analytical_tools()}
     assert "correlate" in names
-    # Public input types a WP04 caller needs are exported from the package.
+    # Public input types a caller needs are exported from the package.
     assert hasattr(engine, "PreRegisteredAssociationHypothesis")
     assert hasattr(engine, "PairedAnalyticalInput")
     assert hasattr(engine, "prepare_paired_input")
 
 
 # ===========================================================================
-# T016 — forbidden-output guards (the health-honesty boundary)
+# forbidden-output guards (the health-honesty boundary)
 # ===========================================================================
 
 # Causal / clinical vocabulary that must NEVER appear in correlate output. Note

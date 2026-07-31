@@ -217,7 +217,7 @@ class AnalyticalStatus(StrEnum):
 
 
 # ---------------------------------------------------------------------------
-# Tool descriptor + registry (T005) — the bounded extension point
+# Tool descriptor + registry — the bounded extension point
 # ---------------------------------------------------------------------------
 
 
@@ -273,7 +273,7 @@ class AnalyticalToolSpec:
     body (test-only). A tool with no ``fn`` cannot be dispatched."""
 
     def validate(self) -> AnalyticalToolSpec:
-        """Reject a malformed descriptor (T007).
+        """Reject a malformed descriptor.
 
         Raises :class:`ValueError` on: empty name, non-snake_case-ish name,
         confound keys outside the committed vocabulary, or duplicate confound
@@ -381,7 +381,7 @@ def dispatch(tool_name: str, *args: Any, **kwargs: Any) -> AnalyticalOutcome:
 
 
 # ---------------------------------------------------------------------------
-# Result / refusal / confound model types (T006)
+# Result / refusal / confound model types
 # ---------------------------------------------------------------------------
 
 
@@ -470,7 +470,7 @@ class RefusalOutcome:
 
 @dataclass(frozen=True)
 class AnalyticalResultEnvelope:
-    """The mandatory result envelope every analytical tool returns (T006).
+    """The mandatory result envelope every analytical tool returns.
 
     Exactly one of two shapes, distinguished by ``status``:
 
@@ -499,7 +499,7 @@ class AnalyticalResultEnvelope:
     refusal: RefusalOutcome | None = None
 
     def validate(self) -> AnalyticalResultEnvelope:
-        """Enforce the contract invariants (T007). Returns ``self``.
+        """Enforce the contract invariants. Returns ``self``.
 
         Rejects:
 
@@ -577,7 +577,7 @@ AnalyticalOutcome = AnalyticalResultEnvelope
 
 
 # ---------------------------------------------------------------------------
-# Validation helpers (T007)
+# Validation helpers
 # ---------------------------------------------------------------------------
 
 
@@ -586,7 +586,7 @@ def validate_confound_keys(
     *,
     context: str = "result",
 ) -> None:
-    """Reject any confound key outside the committed vocabulary (T007).
+    """Reject any confound key outside the committed vocabulary.
 
     Raises :class:`ValueError` naming the unknown key(s) and ``context`` so the
     agent and reviewer can locate the offending tool or result. An empty

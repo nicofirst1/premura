@@ -1,11 +1,11 @@
-"""Minimal reference intake parser (WP02 / FR-008).
+"""Minimal reference intake parser.
 
 Proof that the build path holds end-to-end: ``parse -> IntakeBatch ->
 persist_intake_batch``. It reads the two synthetic fixtures in this package and
-emits a single :class:`~premura.parsers.base.IntakeBatch` via the WP01 protocol
-(observation-free intake output). It is **not** a production vendor parser
-(C-005): it lives under ``tests/fixtures/`` precisely so it cannot be mistaken
-for one, and it parses only the made-up shapes bundled here (C-001).
+emits a single :class:`~premura.parsers.base.IntakeBatch` via the intake protocol
+(observation-free intake output). It is **not** a production vendor parser:
+it lives under ``tests/fixtures/`` precisely so it cannot be mistaken
+for one, and it parses only the made-up shapes bundled here.
 
 Gap posture (CONTRACT.md decision tree): every source column that has no home
 in the normalized intake seam is declared on ``IntakeBatch.unmapped_metrics``,

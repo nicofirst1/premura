@@ -1,11 +1,11 @@
-"""WP05 T020 — intake-only vs both drawer targets flow through grading.
+"""Intake-only vs both drawer targets flow through grading.
 
 The drawer-target scoping edge case: a scenario's *target set* — which drawers a
 run is graded on — must be honored by the grader, and ``normalize_parse_output``'s
 ``(observation, intake)`` separation must flow correctly into the right strategy.
 
 Two cases, each end-to-end (real parser → real loader(s) → generic ``grade()`` with
-the per-target strategy injected, no mocked verdict, D7):
+the per-target strategy injected, no mocked verdict):
 
 * **Intake-only target.** The reference intake parser returns intake-only
   (``observation is None``). Graded on the **intake** drawer, the empty observation
@@ -16,7 +16,7 @@ the per-target strategy injected, no mocked verdict, D7):
   observation — intake is graded on intake truth, observation on observation truth.
 
 ``normalize_parse_output`` is exercised directly so the separation it produces is
-the thing that flows into grading. Offline / deterministic (NFR-001).
+the thing that flows into grading. Offline / deterministic.
 """
 
 from __future__ import annotations

@@ -5,7 +5,7 @@ the human language of a vendor's field labels or free-text fields before
 mapping them to canonical metric IDs. All work here is "local-only": no
 external API calls of any kind are permitted, neither for detection nor for
 translation. This boundary exists to enforce Premura's offline-first privacy
-constraint (constitution rule C-001) at the parser layer.
+constraint at the parser layer.
 
 Translation is explicitly a TODO. Phase 1 ships the detection stub only; the
 eventual implementation may add a local translation layer (for example via a

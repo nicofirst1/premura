@@ -85,8 +85,8 @@ class DependencyDeclaration:
       (e.g. ``"vital:body_weight"`` or ``"profile:standing_height_cm"``).
     * ``failure_mode`` — how the consumer behaves when the dependency is
       missing, stale, partial, or unsupported. Kept as a free-form string so
-      the consumer side (WP03 BMI) can define its own honest-refusal vocabulary
-      without churning this contract.
+      the consumer side (the BMI signal) can define its own honest-refusal
+      vocabulary without churning this contract.
     """
 
     consumer_name: str
@@ -169,8 +169,8 @@ def resolve_dependency(
        missing-data condition.
     2. Look up the resolver in :data:`premura.engine._registry.RESOLVERS`.
        Absence here is the **expected** state for valid-but-not-yet-supported
-       domains (``nutrition_intake``, ``supplement_intake`` in this mission,
-       and ``observation_history`` / ``profile_context`` until WP02 lands):
+       domains (``nutrition_intake``, ``supplement_intake``,
+       ``observation_history``, ``profile_context`` before their resolvers land):
        return a ``usable=False`` :class:`ResolvedInput` with
        ``absence_reason="unsupported_domain"``.
     3. Otherwise delegate to the registered resolver and return its result.

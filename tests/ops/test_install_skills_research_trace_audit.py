@@ -1,12 +1,12 @@
-"""WP04 (FR-003, FR-004): the ``research-trace-audit`` skill installs via the
+"""The ``research-trace-audit`` skill installs via the
 existing single-home installer, bundled resources and all.
 
-This is a *verify-only* regression test. WP01's research (Packaging
+This is a *verify-only* regression test. Prior research (Packaging
 Recommendation, ``research/wp0-skill-research.md``) ADOPTED write-once-by-
 conformance content but **rejected** a separate OpenCode / multi-home installer
 target: OpenCode scans the same ``.claude/skills/`` path Premura already writes
 to, so a second writer would only create dead, redundant files. Therefore this
-WP adds *no* installer code and *no* multi-home test — it proves that the
+adds *no* installer code and *no* multi-home test — it proves that the
 existing public :func:`premura.skills.install_skills` already discovers the new
 skill directory (by its ``SKILL.md``) and copies every sibling resource
 (``AUDIT_RUBRIC.md`` and ``fixtures/*.json``) recursively, idempotently.
@@ -25,9 +25,9 @@ SKILL_NAME = "research-trace-audit"
 
 
 def test_research_trace_audit_skill_and_resources_install(tmp_path: Path) -> None:
-    """FR-003: the new skill + its bundled resources materialize under
+    """The new skill + its bundled resources materialize under
     ``<target>/.claude/skills/research-trace-audit/`` via the existing
-    single-home installer (no OpenCode/multi-home target — WP01 rejected it)."""
+    single-home installer (no OpenCode/multi-home target — rejected in research)."""
     from premura.skills import install_skills
 
     written = install_skills(tmp_path)
@@ -39,7 +39,7 @@ def test_research_trace_audit_skill_and_resources_install(tmp_path: Path) -> Non
     assert manifest.is_file(), "SKILL.md not materialised for research-trace-audit"
     assert manifest in written, "SKILL.md should be reported as written on first install"
 
-    # Sibling resource (non-SKILL.md) must be copied — the WP04 packaging risk.
+    # Sibling resource (non-SKILL.md) must be copied — a packaging risk.
     assert rubric.is_file(), "AUDIT_RUBRIC.md sibling resource was not bundled"
     assert rubric in written, "AUDIT_RUBRIC.md should be reported as written on first install"
 
@@ -56,7 +56,7 @@ def test_research_trace_audit_skill_and_resources_install(tmp_path: Path) -> Non
 
 
 def test_research_trace_audit_install_is_idempotent(tmp_path: Path) -> None:
-    """FR-004: a second ``install_skills`` run rewrites nothing for the new
+    """A second ``install_skills`` run rewrites nothing for the new
     skill (sha256 skip) and leaves the on-disk bytes untouched."""
     from premura.skills import install_skills
 

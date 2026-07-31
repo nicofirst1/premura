@@ -1,10 +1,11 @@
-"""Tests for the pure trace service (``premura.trace``, WP02).
+"""Tests for the pure trace service (``premura.trace``).
 
 These drive the service *directly* on an initialized warehouse connection (the
-``empty_warehouse`` fixture), never through MCP — the point of WP02 is that the
-trace is independently testable. They prove the disclosure is *measured* from
-recorded rows (deterministic hashing, normalized hypothesis identity, the
-conservative surfaced fallback, the consistency invariant), not self-reported.
+``empty_warehouse`` fixture), never through MCP — the point of this module is
+that the trace is independently testable. They prove the disclosure is
+*measured* from recorded rows (deterministic hashing, normalized hypothesis
+identity, the conservative surfaced fallback, the consistency invariant), not
+self-reported.
 """
 
 from __future__ import annotations
@@ -44,7 +45,7 @@ def _record(
 
 
 # --------------------------------------------------------------------------- #
-# T012 — open session returns stable required fields.
+# open session returns stable required fields.
 # --------------------------------------------------------------------------- #
 def test_open_session_returns_required_fields(empty_warehouse) -> None:
     conn = empty_warehouse
@@ -161,7 +162,7 @@ def test_register_hypothesis_identity_adds_a_tool_without_editing_a_switch() -> 
 
 
 # --------------------------------------------------------------------------- #
-# T012 — exact retry: raw count increases, N does not.
+# exact retry: raw count increases, N does not.
 # --------------------------------------------------------------------------- #
 def test_exact_retry_increases_raw_not_n(empty_warehouse) -> None:
     conn = empty_warehouse
@@ -177,7 +178,7 @@ def test_exact_retry_increases_raw_not_n(empty_warehouse) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T012 — distinct identities: N increases.
+# distinct identities: N increases.
 # --------------------------------------------------------------------------- #
 def test_distinct_identities_increase_n(empty_warehouse) -> None:
     conn = empty_warehouse
@@ -209,7 +210,7 @@ def test_distinct_identities_increase_n(empty_warehouse) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T012 — refused call counts toward raw AND N, appears in refusal breakdown.
+# refused call counts toward raw AND N, appears in refusal breakdown.
 # --------------------------------------------------------------------------- #
 def test_refused_call_counts_and_breaks_down(empty_warehouse) -> None:
     conn = empty_warehouse
@@ -280,7 +281,7 @@ def test_error_terminal_status_is_recorded_consistently(empty_warehouse) -> None
 
 
 # --------------------------------------------------------------------------- #
-# T012 — no surfaced marks: surfaced status unavailable with message.
+# no surfaced marks: surfaced status unavailable with message.
 # --------------------------------------------------------------------------- #
 def test_no_marks_surfaced_unavailable(empty_warehouse) -> None:
     conn = empty_warehouse
@@ -303,7 +304,7 @@ def test_no_marks_surfaced_unavailable(empty_warehouse) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T012 — surfaced marks: K == mark count, includes roles/rationales.
+# surfaced marks: K == mark count, includes roles/rationales.
 # --------------------------------------------------------------------------- #
 def test_surfaced_marks_set_k_and_carry_roles(empty_warehouse) -> None:
     conn = empty_warehouse
@@ -374,7 +375,7 @@ def test_mark_validation_paths(empty_warehouse) -> None:
 
 # --------------------------------------------------------------------------- #
 # DRIFT-2 regression — duplicate surfaced marks cannot make K exceed N.
-# A call marked surfaced twice must not inflate K (NFR-006: raw >= N >= K).
+# A call marked surfaced twice must not inflate K (raw >= N >= K).
 # --------------------------------------------------------------------------- #
 def test_duplicate_surfaced_mark_rejected_and_k_counts_distinct_calls(empty_warehouse) -> None:
     conn = empty_warehouse
@@ -407,7 +408,7 @@ def test_duplicate_surfaced_mark_rejected_and_k_counts_distinct_calls(empty_ware
 # --------------------------------------------------------------------------- #
 # DRIFT-3 regression — a finalized call is immutable through the public surface.
 # A second finish_recorded_call must be rejected, not silently overwrite the row
-# (NFR-003 append-only).
+# (append-only).
 # --------------------------------------------------------------------------- #
 def test_double_finalize_is_rejected_and_row_is_immutable(empty_warehouse) -> None:
     conn = empty_warehouse
@@ -444,7 +445,7 @@ def test_double_finalize_is_rejected_and_row_is_immutable(empty_warehouse) -> No
 
 
 # --------------------------------------------------------------------------- #
-# T012 — unknown session disclosure returns not_found (FR-015).
+# unknown session disclosure returns not_found.
 # --------------------------------------------------------------------------- #
 def test_unknown_session_disclosure_not_found(empty_warehouse) -> None:
     conn = empty_warehouse
@@ -471,7 +472,7 @@ def test_start_recorded_call_unknown_session(empty_warehouse) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T012 — consistency invariant: raw >= N >= K when K available (NFR-006).
+# consistency invariant: raw >= N >= K when K available.
 # --------------------------------------------------------------------------- #
 def test_consistency_invariant(empty_warehouse) -> None:
     conn = empty_warehouse
@@ -575,7 +576,7 @@ def test_result_summary_never_stores_raw_health_series(empty_warehouse) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Exports are generated from the structured trace, not canonical (FR-014).
+# Exports are generated from the structured trace, not canonical.
 # --------------------------------------------------------------------------- #
 def test_json_and_markdown_exports(empty_warehouse) -> None:
     conn = empty_warehouse
@@ -598,7 +599,7 @@ def test_json_and_markdown_exports(empty_warehouse) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T012 — a 500-call session disclosure returns under the spec bound (NFR-005).
+# a 500-call session disclosure returns under the spec bound.
 # Sanity bound, not a brittle benchmark.
 # --------------------------------------------------------------------------- #
 def test_500_call_session_disclosure_is_bounded_and_fast(empty_warehouse) -> None:
@@ -660,7 +661,7 @@ def test_include_calls_false_omits_call_list(empty_warehouse) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# NFR-004 — counts measured at the boundary, not self-reported. There is no API
+# counts measured at the boundary, not self-reported. There is no API
 # to set a count, so a "false claim" simply cannot reach the disclosure.
 # --------------------------------------------------------------------------- #
 def test_no_self_reported_count_surface_exists() -> None:

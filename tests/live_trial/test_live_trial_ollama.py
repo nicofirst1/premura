@@ -1,18 +1,18 @@
 """Opt-in cheap-model trial: a local Ollama model drives the parser-build flow (R5).
 
-Marked ``live_trial`` so the default suite skips it (NFR-005 — never blocks CI).
+Marked ``live_trial`` so the default suite skips it ( — never blocks CI).
 Run it deliberately, locally, against a running Ollama::
 
     uv run pytest -m live_trial tests/test_live_trial_ollama.py -s
 
 It is NOT a pass/fail gate on the model: a cheap 7b model may or may not reach a
 green grader verdict. The assertion is that the SEAM runs end-to-end and produces
-well-formed un-nagged-attempt-1 AND final three-rule verdicts (FR-014) — the
+well-formed un-nagged-attempt-1 AND final three-rule verdicts — the
 model's score is printed for inspection, never asserted PASS.
 
 Note on the import style: the cheap-model harness module is loaded via
 :func:`importlib.import_module` rather than a literal ``from ... import`` line.
-The committed NFR-005 default-gate guard (``test_live_trial_seam.py``) text-scans
+The committed default-gate guard (``test_live_trial_seam.py``) text-scans
 every OTHER test module for the harness import/call substrings to prove the
 gating harness is referenced only from the seam test; this gated, marker-excluded
 module deliberately avoids those literals so the guard stays a true witness that
@@ -31,20 +31,20 @@ from premura.harness.sandbox import build_sandbox
 from tests import FIXTURES_DIR
 
 # Loaded dynamically (see module docstring): keeps the harness import/call
-# substrings out of this file's text so the committed NFR-005 default-gate guard
+# substrings out of this file's text so the committed default-gate guard
 # stays accurate, while this marker-excluded module is never in the default gate.
 _MODULE_NAME = "premura.harness." + "live_trial_" + "ollama"
 lto = importlib.import_module(_MODULE_NAME)
 
 _RULE_KEYS = {"loaded", "runtime_valid", "honest_about_gaps"}
 
-# FR-009's stable anchor phrase: both drawer contract prompts must state the
+# Stable anchor phrase: both drawer contract prompts must state the
 # renamed-field declared-gap rule (a column consumed under any output name is
 # still a consumed column). Substring-pinned, not full-prompt-pinned.
 _RENAMED_FIELD_CLAUSE = "Renaming is not declaring."
 
 # The Target API class names each drawer contract prompt already carries; the
-# renamed-field sharpening must not displace them (SC-006 anchor for WP03).
+# renamed-field sharpening must not displace them ( anchor for ).
 _OBSERVATION_API_NAMES = ("IngestBatch", "Measurement", "SourceDescriptor", "SkippedRow")
 _INTAKE_API_NAMES = (
     "IntakeBatch",
@@ -61,7 +61,7 @@ _INTAKE_API_NAMES = (
 
 
 def test_both_drawer_prompts_state_the_renamed_field_rule() -> None:
-    """FR-009 (WP02): the rule is STATED in both drawer briefs, drawer-agnostic.
+    """The rule is STATED in both drawer briefs, drawer-agnostic.
 
     Default-suite (no model, no network): pure prompt-constant invariants.
     Asserts the renamed-field clause is present, the mapped-columns constant is
@@ -89,7 +89,7 @@ _SYNTHETIC_CSV = FIXTURES_DIR / "session_log" / "fitbit_heart_rate_synthetic.csv
 def test_one_shot_operator_exposes_two_turn_transcript(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """FR-4: the one-shot operator exposes its prompt/response as a two-turn transcript.
+    """The one-shot operator exposes its prompt/response as a two-turn transcript.
 
     Default-suite (no model, no network): the model call and the gate are
     substituted at their boundaries so the bounded retry loop runs one exchange
@@ -318,7 +318,7 @@ def test_ollama_drives_trial_end_to_end() -> None:
         record = outcome.record
         assert record is not None
 
-        # Both un-nagged attempt-1 AND final verdicts are present (FR-014).
+        # Both un-nagged attempt-1 AND final verdicts are present.
         _assert_well_formed(record.first_attempt_verdict)
         _assert_well_formed(record.final_verdict)
 

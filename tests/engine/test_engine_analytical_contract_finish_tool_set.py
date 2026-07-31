@@ -1,4 +1,4 @@
-"""Contract-vocabulary tests for the finished analytical tool set (WP01).
+"""Contract-vocabulary tests for the finished analytical tool set.
 
 These lock the *foundation* the two remaining roadmap tools (`rolling_mean` and
 `paired_t_test`) register against: the reviewed closed analytical question
@@ -45,7 +45,7 @@ def _clean_registry():
 
 
 # ---------------------------------------------------------------------------
-# T001: reviewed question vocabulary for the moving-window and paired shapes
+# reviewed question vocabulary for the moving-window and paired shapes
 # ---------------------------------------------------------------------------
 
 
@@ -98,7 +98,7 @@ def test_new_question_types_extend_not_replace_the_closed_vocabulary() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T003: vocabulary closure stays enforced for the new tools
+# vocabulary closure stays enforced for the new tools
 # ---------------------------------------------------------------------------
 
 

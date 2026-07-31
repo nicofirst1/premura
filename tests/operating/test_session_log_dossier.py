@@ -1,4 +1,4 @@
-"""Black-box tests for the read-only session dossier (judge-ai m3 FR-2).
+"""Black-box tests for the read-only session dossier.
 
 The dossier is the judge's (and the future improvement hook's) single read
 surface over one recorded session: it assembles session metadata, the grader's
@@ -114,7 +114,7 @@ def _seed_full_session(conn: duckdb.DuckDBPyConnection) -> str:
 
 
 def test_dossier_assembles_metadata_facts_attempts_transcript(tmp_path: Path) -> None:
-    """FR-2: the dossier carries session metadata, grader facts, per-attempt
+    """The dossier carries session metadata, grader facts, per-attempt
     telemetry, and the transcript for one recorded session."""
     log_path = tmp_path / "session_log.duckdb"
     conn = _open_initialized(log_path)
@@ -142,7 +142,7 @@ def test_dossier_assembles_metadata_facts_attempts_transcript(tmp_path: Path) ->
 
 
 def test_dossier_transcript_in_turn_index_order(tmp_path: Path) -> None:
-    """FR-2: the transcript is returned in turn_index order regardless of insert
+    """The transcript is returned in turn_index order regardless of insert
     order."""
     log_path = tmp_path / "session_log.duckdb"
     conn = _open_initialized(log_path)
@@ -156,7 +156,7 @@ def test_dossier_transcript_in_turn_index_order(tmp_path: Path) -> None:
 
 
 def test_dossier_no_turns_says_so_explicitly(tmp_path: Path) -> None:
-    """FR-2: a dossier for a session with no recorded turns says so explicitly
+    """A dossier for a session with no recorded turns says so explicitly
     rather than failing."""
     log_path = tmp_path / "session_log.duckdb"
     conn = _open_initialized(log_path)
@@ -177,7 +177,7 @@ def test_dossier_no_turns_says_so_explicitly(tmp_path: Path) -> None:
 
 
 def test_dossier_opens_log_read_only(tmp_path: Path) -> None:
-    """FR-2 / sole-writer: building a dossier opens the log strictly read-only.
+    """Sole-writer: building a dossier opens the log strictly read-only.
 
     A read-only connection cannot write; if the dossier tried to write it would
     raise. We prove the read surface never mutates the log by confirming the

@@ -1,12 +1,12 @@
-"""Gated proof the D4/R5 placeholders are CLOSED: real factories delegate (FR-013).
+"""Gated proof the D4/R5 placeholders are CLOSED: real factories delegate.
 
-Marked ``live_trial`` so the default suite skips it (NFR-005 — never blocks CI).
+Marked ``live_trial`` so the default suite skips it ( — never blocks CI).
 Run it deliberately, locally, against a running Ollama::
 
     uv run pytest -m live_trial tests/test_real_model_seam.py -s
 
-WP04 resolved the slice-one substrate's named follow-up: the previously-deferred
-``real_model_operator`` / ``real_model_driver`` factories now DELEGATE to the WP03
+ resolved the slice-one substrate's named follow-up: the previously-deferred
+``real_model_operator`` / ``real_model_driver`` factories now DELEGATE to the
 cheap-model operator/driver instead of raising ``NotImplementedError``. This file
 proves two things:
 
@@ -21,7 +21,7 @@ proves two things:
 
 Note on the import style: the harness modules are loaded via
 :func:`importlib.import_module` rather than literal ``from ... import`` lines. The
-committed NFR-005 default-gate guard (``test_live_trial_seam.py``) text-scans every
+committed default-gate guard (``test_live_trial_seam.py``) text-scans every
 OTHER test module for the harness import/call substrings to prove the gating
 harness is referenced only from the seam test; this gated, marker-excluded module
 deliberately avoids those literals so the guard stays a true witness, while this
@@ -40,7 +40,7 @@ from tests import FIXTURES_DIR
 pytestmark = pytest.mark.live_trial
 
 # Loaded dynamically (see module docstring): keeps the harness import/call
-# substrings out of this file's text so the committed NFR-005 default-gate guard
+# substrings out of this file's text so the committed default-gate guard
 # stays accurate, while this marker-excluded module is never in the default gate.
 _SEAM_MODULE_NAME = "premura.harness." + "live_trial"
 _OLLAMA_MODULE_NAME = "premura.harness." + "live_trial_" + "ollama"
@@ -60,12 +60,12 @@ def _assert_well_formed(verdict: dict[str, object]) -> None:
 
 
 def test_real_model_operator_delegates_without_raising() -> None:
-    """FR-013: ``real_model_operator(source=...)`` returns a real Operator, no raise."""
+    """``real_model_operator(source=...)`` returns a real Operator, no raise."""
     operator_factory = getattr(seam, "real_model_" + "operator")
     operator = operator_factory(source=_SYNTHETIC_CSV)
 
     # Satisfies the slice-one Operator protocol (model_id + operate), and is the
-    # delegated WP03 cheap-model operator — NOT a NotImplementedError stub.
+    # delegated cheap-model operator — NOT a NotImplementedError stub.
     assert isinstance(operator, seam.Operator)
     assert isinstance(operator.model_id, str) and operator.model_id
     assert callable(operator.operate)
@@ -73,7 +73,7 @@ def test_real_model_operator_delegates_without_raising() -> None:
 
 
 def test_real_model_driver_delegates_without_raising() -> None:
-    """FR-013: ``real_model_driver(model=...)`` returns a real Driver, no raise."""
+    """``real_model_driver(model=...)`` returns a real Driver, no raise."""
     driver_factory = getattr(seam, "real_model_" + "driver")
     driver = driver_factory(model=lto.DEFAULT_MODEL)
 
@@ -85,7 +85,7 @@ def test_real_model_driver_delegates_without_raising() -> None:
 
 
 def test_delegated_operator_drives_trial_end_to_end() -> None:
-    """FR-013: the delegated real operator drives one trial end-to-end (gated).
+    """The delegated real operator drives one trial end-to-end (gated).
 
     Builds BOTH factories' real instances, then drives the unchanged slice-one
     machinery over the synthetic fixture and asserts a well-formed three-rule

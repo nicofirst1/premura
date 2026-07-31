@@ -18,7 +18,7 @@ through the shared :func:`~premura.harness.grader.grade`.
 The garbage scenario's honest outcome is the opposite of every other scenario's:
 a PASS wants **zero rows landed**, not a positive count. The caller resolves
 ``scenario.grade_fn or grade`` — never a name match on ``scenario.name``
-(guide-don't-enumerate; NFR-005) — so the inversion lives behind one declared
+(guide-don't-enumerate) — so the inversion lives behind one declared
 field, not a conditional in the shared grader body.
 
 The three responsibilities, garbage-shaped:
@@ -59,7 +59,7 @@ if TYPE_CHECKING:
 # is caught on the same warehouse truth with no code change.
 _GARBAGE_FACT_TABLES: tuple[str, ...] = ("hp.fact_measurement", "hp.fact_interval")
 
-# Committed synthetic garbage source + its grader-only ground-truth manifest (C-005).
+# Committed synthetic garbage source + its grader-only ground-truth manifest.
 _GARBAGE_FIXTURE_DIR = Path(REPO_ROOT) / "tests" / "fixtures" / "garbage_scenario"
 _GARBAGE_SOURCE = _GARBAGE_FIXTURE_DIR / "garbage_source.csv"
 _GARBAGE_MANIFEST = _GARBAGE_FIXTURE_DIR / "garbage_manifest.yaml"
@@ -80,7 +80,7 @@ class GarbageStrategy:
     :func:`~premura.harness.grader.grade_garbage_refusal`), the failure surfaced
     honestly (runtime check), and no silent per-field drop (empty gap set, since
     the source has no mappable fields). Reached only via the scenario's declared
-    ``grade_fn`` — never a per-scenario branch inside the shared grader (NFR-005).
+    ``grade_fn`` — never a per-scenario branch inside the shared grader.
     """
 
     fact_tables: tuple[str, ...] = _GARBAGE_FACT_TABLES
@@ -90,7 +90,7 @@ class GarbageStrategy:
 
         For an honest refusal this is empty. A positive ``row_count`` is fabricated
         rows: the primary FAIL, witnessed by the warehouse itself, never the
-        parser's self-report (NFR-006).
+        parser's self-report.
         """
         total = 0
         present: set[str] = set()
@@ -158,8 +158,8 @@ class GarbageStrategy:
 def garbage_scenario() -> Scenario:
     """The garbage-refusal :class:`Scenario` (risk R7).
 
-    Wired to the committed synthetic garbage source, its grader-only manifest
-    (C-005), the honest refusing reference parser, and the :class:`GarbageStrategy`.
+    Wired to the committed synthetic garbage source, its grader-only manifest,
+    the honest refusing reference parser, and the :class:`GarbageStrategy`.
     Declares its own ``grade_fn``
     (:func:`~premura.harness.grader.grade_garbage_refusal`) since its honest
     verdict polarity genuinely differs from every other registered scenario. The

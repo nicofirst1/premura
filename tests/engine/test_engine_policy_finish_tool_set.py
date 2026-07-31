@@ -1,4 +1,4 @@
-"""Policy-vocabulary tests for the finished analytical tool set (WP01).
+"""Policy-vocabulary tests for the finished analytical tool set.
 
 These prove the admissibility *foundation* the two remaining roadmap tools
 (`rolling_mean` and `paired_t_test`) gate on:
@@ -12,7 +12,7 @@ These prove the admissibility *foundation* the two remaining roadmap tools
 * a family that declares no rule for a new question type still produces the
   established `UNSUPPORTED_POLICY` refusal, not a Python exception.
 
-No analytical-method math is decided here (that is WP02/WP04). Tests drive the
+No analytical-method math is decided here (that is). Tests drive the
 shipped evaluator/registry public surface, not private collaborators.
 """
 
@@ -41,7 +41,7 @@ _NEW_ANALYTICAL = (QuestionType.MOVING_WINDOW_PATTERN, QuestionType.PAIRED_DIFFE
 
 
 # ---------------------------------------------------------------------------
-# T002: closed vocabulary + measurable default gates
+# closed vocabulary + measurable default gates
 # ---------------------------------------------------------------------------
 
 
@@ -116,7 +116,7 @@ def test_paired_difference_rule_is_family_based_not_metric_specific() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T004: the new shapes are gated independently of existing shapes
+# the new shapes are gated independently of existing shapes
 # ---------------------------------------------------------------------------
 
 
@@ -143,7 +143,7 @@ def test_moving_window_pattern_reuses_the_recent_run_admissible_substrate() -> N
     Like the other single-series analytical questions (level-shift, smoothed
     pattern), the moving-window question reuses the family's recent-run rule as
     its *admissibility* substrate — that is the documented convention, and the
-    rolling-mean tool (WP02) adds its own per-point coverage sufficiency on top.
+    rolling-mean tool adds its own per-point coverage sufficiency on top.
     So on a recent-run family moving-window shares that substrate rule object
     rather than getting a bespoke per-metric rule (the guide-don't-enumerate
     guardrail). Its independence from the smoothed shape lives at the contract

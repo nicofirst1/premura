@@ -254,7 +254,7 @@ def test_parse_iso8601_duration_rejects_fractional_formats() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T004 — Stage 2 catalog and summary helper semantics
+# Stage 2 catalog and summary helper semantics
 # ---------------------------------------------------------------------------
 
 

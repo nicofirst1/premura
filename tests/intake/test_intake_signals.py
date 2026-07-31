@@ -1,7 +1,7 @@
-"""Behavioral tests for the WP04 intake descriptive signals.
+"""Behavioral tests for the intake descriptive signals.
 
-Two parameterized, non-diagnostic signals consume the WP03 intake resolvers
-through the public ``compute(name, conn, params=...)`` seam (T031):
+Two parameterized, non-diagnostic signals consume the intake resolvers
+through the public ``compute(name, conn, params=...)`` seam:
 
 * ``supplement_intake_adherence`` — coverage "K of N days" for a caller-declared
   matcher + bounded window (status/coverage family).
@@ -18,22 +18,22 @@ these tests prove the wiring end-to-end (registration-as-discovery, not dead
 code).
 
 Intake rows are seeded directly via ``persist_intake_batch`` (the already-shipped
-store path); this WP does not depend on WP01/WP02. Tests assert on the signal
-envelopes (black-box), never on signal internals.
+store path). Tests assert on the signal envelopes (black-box), never on signal
+internals.
 
 What is locked here:
 
-* FR-003/FR-004 (T019): positive-path — data present surfaces a real answer, a
-  fixture STRUCTURALLY DISTINCT from the refusal suite (D5: a missingness-only
-  suite would let an always-empty path masquerade as compliant).
-* FR-005 (T020): the three refusal states (missing / stale / insufficient) are
-  STRUCTURALLY DISTINCT envelope states, not one catch-all.
-* FR-004 (T018): the nutrition trend NEVER imputes missing days — gaps stay
-  visible (no carry-forward).
-* NFR-006 / D4 (T021): a local-midnight-crossing event reports day/window
-  metadata on the SAME local-day basis the resolver computed on.
-* NFR-001 (T022): no envelope/caveat carries a reference range, "should", a
-  p-value, "significant", or causal language.
+* Positive-path — data present surfaces a real answer, a fixture STRUCTURALLY
+  DISTINCT from the refusal suite (a missingness-only suite would let an
+  always-empty path masquerade as compliant).
+* The three refusal states (missing / stale / insufficient) are STRUCTURALLY
+  DISTINCT envelope states, not one catch-all.
+* The nutrition trend NEVER imputes missing days — gaps stay visible (no
+  carry-forward).
+* A local-midnight-crossing event reports day/window metadata on the SAME
+  local-day basis the resolver computed on.
+* No envelope/caveat carries a reference range, "should", a p-value,
+  "significant", or causal language.
 """
 
 from __future__ import annotations
@@ -197,12 +197,12 @@ def _all_text(result: Any) -> str:
 
 
 # ---------------------------------------------------------------------------
-# T019 — Positive path (data present -> real answer surfaced) — BOTH signals
+# Positive path (data present -> real answer surfaced) — BOTH signals
 # ---------------------------------------------------------------------------
 
 
 def test_supplement_adherence_positive_path(empty_warehouse: Any, anchor_ts: datetime) -> None:
-    """Coverage answer is surfaced: K logged days of an N-day window (FR-003)."""
+    """Coverage answer is surfaced: K logged days of an N-day window."""
     _seed_supplement(
         empty_warehouse,
         events=[
@@ -227,7 +227,7 @@ def test_supplement_adherence_positive_path(empty_warehouse: Any, anchor_ts: dat
 
 
 def test_nutrition_trend_positive_path(empty_warehouse: Any, anchor_ts: datetime) -> None:
-    """A rising series surfaces an ``up`` direction with visible points (FR-004)."""
+    """A rising series surfaces an ``up`` direction with visible points."""
     _seed_nutrition(
         empty_warehouse,
         events=[
@@ -260,7 +260,7 @@ def test_nutrition_trend_positive_path(empty_warehouse: Any, anchor_ts: datetime
 
 
 # ---------------------------------------------------------------------------
-# T020 — Refusal path: three STRUCTURALLY DISTINCT states — BOTH signals
+# Refusal path: three STRUCTURALLY DISTINCT states — BOTH signals
 # ---------------------------------------------------------------------------
 
 
@@ -463,7 +463,7 @@ def test_refusal_states_are_structurally_distinct(
 
 
 # ---------------------------------------------------------------------------
-# T018 — No imputation: missing days stay VISIBLE GAPS
+# No imputation: missing days stay VISIBLE GAPS
 # ---------------------------------------------------------------------------
 
 
@@ -497,12 +497,12 @@ def test_nutrition_trend_never_imputes_missing_days(
 
 
 # ---------------------------------------------------------------------------
-# T021 — Local-midnight divergence: reported basis == computed basis (NFR-006/D4)
+# Local-midnight divergence: reported basis == computed basis
 # ---------------------------------------------------------------------------
 
 
 def test_supplement_adherence_reports_local_day_basis(empty_warehouse: Any) -> None:
-    """A local-midnight-crossing event is reported on the LOCAL day basis (NFR-006).
+    """A local-midnight-crossing event is reported on the LOCAL day basis.
 
     ``2026-05-20T13:00:00`` UTC in ``Pacific/Auckland`` (+12) is local
     ``2026-05-21 01:00`` — a different calendar day than its UTC date. The signal
@@ -573,7 +573,7 @@ def test_nutrition_trend_reports_local_day_basis(empty_warehouse: Any) -> None:
 
 
 # ---------------------------------------------------------------------------
-# T022 — Non-diagnostic assertion (NFR-001), across BOTH signals + all states
+# Non-diagnostic assertion, across BOTH signals + all states
 # ---------------------------------------------------------------------------
 
 # Banned language: reference ranges, normative "should", p-values, "significant",

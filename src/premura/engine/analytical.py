@@ -1,7 +1,7 @@
-"""Stage 3 — the public analytical *facade* (WP05).
+"""Stage 3 — the public analytical *facade*.
 
 This module is the stable, MCP-facing entry point onto the Stage 3 analytical
-layer. It exposes exactly three narrow capabilities over the WP02 contract:
+layer. It exposes exactly three narrow capabilities over the analytical contract:
 
 * :func:`load_builtin_analytical_tools` — statically import the in-tree
   built-in analytical tool module(s) so their
@@ -131,7 +131,8 @@ def list_analytical_tools() -> list[AnalyticalToolSpec]:
 def invoke_analytical_tool(tool_name: str, *args: object, **kwargs: object) -> AnalyticalOutcome:
     """Invoke a registered analytical tool by name through shared dispatch.
 
-    This is the single public invocation entry point MCP/WP06 depends on. It
+    This is the single public invocation entry point MCP and other callers depend
+    on. It
     loads the built-in tools, then defers to
     :func:`premura.engine.analytical_contract.dispatch` — the one shared
     dispatch path, which has **no per-tool branch**. This facade adds none

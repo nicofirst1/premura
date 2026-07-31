@@ -372,7 +372,7 @@ def test_core_service_does_not_touch_health_data_operations(
 
 
 def test_core_surfaces_are_verified_when_dependencies_ready(tmp_path: Path) -> None:
-    """FR-003: a ready checkout reports each declared core surface as startable.
+    """A ready checkout reports each declared core surface as startable.
 
     Verification is import-only (no surface is run), and every surface in the
     registry produces a passing command-availability check.

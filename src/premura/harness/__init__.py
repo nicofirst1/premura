@@ -2,10 +2,10 @@
 
 The sandbox (:mod:`premura.harness.sandbox`) is the isolation mechanism that lets
 an agent edit parser files and run a real ingest without touching the real repo
-or warehouse (FR-020). The ingest runner
+or warehouse. The ingest runner
 (:mod:`premura.harness.ingest_runner`) executes one parser-build ingest as a
 subprocess inside a sandbox and emits a JSON outcome envelope on stdout; the
-parent harness — never the runner — is the sole session-log writer (FR-021).
+parent harness — never the runner — is the sole session-log writer.
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ def open_sandbox_warehouse_for_grading(warehouse_path: Path) -> duckdb.DuckDBPyC
     :func:`premura.store.duck.initialize`, so NO warehouse file exists), opening a
     missing DuckDB file read-only would itself raise and abort the run BEFORE the
     harness records provenance and finishes the session — violating the spec edge
-    case ("parser raises -> graded fail, no partial credit", FR-080). To keep the
+    case ("parser raises -> graded fail, no partial credit"). To keep the
     run gradeable and auditable, this helper first materializes an EMPTY warehouse
     (schema seeded, ZERO fact rows) via ``duck.initialize(...).close()`` and then
     opens it read-only. The grader then sees ground truth = 0 rows, so ``loaded``

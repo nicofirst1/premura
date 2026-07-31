@@ -1,8 +1,8 @@
-"""Unit tests for the kept run record + capability-floor scoreboard (WP02).
+"""Unit tests for the kept run record + capability-floor scoreboard.
 
 Default-collected: no model server, no warehouse — pure storage behavior. Covers
 append/read/order integrity, malformed-line tolerance, the real-data no-persist
-PHI guard (FR-012/NFR-002), synthetic persistence, and the floor query (FR-011).
+PHI guard, synthetic persistence, and the floor query.
 """
 
 from __future__ import annotations
@@ -93,7 +93,7 @@ def test_read_missing_file_returns_empty(tmp_path: Path) -> None:
 
 
 def test_persist_run_real_data_writes_nothing(tmp_path: Path) -> None:
-    """Hard PHI boundary: a real-data run persists zero files (FR-012/NFR-002)."""
+    """Hard PHI boundary: a real-data run persists zero files."""
     runs_dir = tmp_path / "live_trials"
     kept_log = tmp_path / "session_log.duckdb"
     kept_log.write_bytes(b"DUCKDB-FAKE")  # outside runs_dir; must not be copied
@@ -195,7 +195,7 @@ def test_scoreboard_entry_json_roundtrip() -> None:
     assert ScoreboardEntry.from_json(obj) == entry
 
 
-# --- WP01: tier axis (FR-007, SC-002, C-002, contract §5) ---------------------
+# ---: tier axis (contract §5) ---------------------
 
 
 def test_entry_default_tier_is_one_shot() -> None:
@@ -290,7 +290,7 @@ def test_read_scoreboard_mixes_legacy_and_tool_loop_lines(tmp_path: Path) -> Non
 
 def test_current_floor_groups_by_model_and_tier(tmp_path: Path) -> None:
     """The same model under both tiers yields two distinct floor rows; a legacy
-    (tier-less) entry lands under (model, "one_shot") (SC-002)."""
+    (tier-less) entry lands under (model, "one_shot")."""
     board = tmp_path / "scoreboard.jsonl"
     legacy_line = (
         '{"attempts_used": 1, "driver_model": "driver:1", "final_pass": true, '
@@ -320,7 +320,7 @@ def test_current_floor_groups_by_model_and_tier(tmp_path: Path) -> None:
 
 
 def test_format_floor_renders_both_tier_labels() -> None:
-    """The rendered table contains both tier labels on separate lines (SC-002)."""
+    """The rendered table contains both tier labels on separate lines."""
     from premura.harness.scoreboard import _format_floor
 
     floor = current_floor(
@@ -355,7 +355,7 @@ def test_format_floor_renders_both_tier_labels() -> None:
 def test_one_shot_writer_call_shape_serializes_one_shot() -> None:
     """Mirror how the untouched one-shot writer builds the record/entry today
     (no `tier` argument) and assert the serialized line carries
-    "tier": "one_shot" (C-002, NFR-004)."""
+    "tier": "one_shot"."""
     import json
 
     # Call shape: keyword construction with no tier argument, as the one-shot

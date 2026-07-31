@@ -1,4 +1,4 @@
-"""Behavioral tests for the WP02 concrete resolvers.
+"""Behavioral tests for the concrete resolvers.
 
 Every test drives behavior through the public engine seam
 (``from premura.engine import resolve_dependency``) — there are *no* imports of
@@ -382,7 +382,7 @@ def test_profile_missing_attribute_resolves_missing(
 
 
 # ---------------------------------------------------------------------------
-# 8. NO HIDDEN FALLBACK (T009) — the central no-substitution guarantee
+# 8. NO HIDDEN FALLBACK — the central no-substitution guarantee
 # ---------------------------------------------------------------------------
 
 

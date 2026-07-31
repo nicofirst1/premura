@@ -1,4 +1,4 @@
-"""Stage 3 — the two proof analytical tools (WP04), behind the WP02 contract.
+"""Stage 3 — the two proof analytical tools, behind the analytical contract.
 
 This module ships the *only* two tools the Stage 3 analytical mission needs to
 prove the contract seam:
@@ -8,13 +8,13 @@ prove the contract seam:
 * :func:`smoothed_average` — a trailing rolling mean over one ordered series
   (research note D3 / the ``smoothed_pattern`` question).
 
-Both are *registrations against the WP02 contract*, not new dispatcher
+Both are *registrations against the analytical contract*, not new dispatcher
 branches: importing this module runs the :func:`~premura.engine.analytical_contract.analytical_tool`
-decorators, which add the tools to the shared ``REGISTRY``. WP05's public
+decorators, which add the tools to the shared ``REGISTRY``. The public analytical
 surface can then discover and dispatch them through
 :func:`~premura.engine.analytical_contract.dispatch` with no per-tool code.
 
-Both tools consume the WP03 admissible-input layer rather than raw points: each
+Both tools consume the admissible-input layer rather than raw points: each
 takes a prepared :class:`~premura.engine.analytical_inputs.AnalyticalInputSeries`
 and obtains its computation points *only* through
 :func:`~premura.engine.analytical_inputs.points_for_computation`. That helper
@@ -152,7 +152,7 @@ def _round(value: float, places: int = 6) -> float:
 
 
 # ---------------------------------------------------------------------------
-# T013 — change_point (single-level-shift detector)
+# change_point (single-level-shift detector)
 # ---------------------------------------------------------------------------
 
 
@@ -369,7 +369,7 @@ def change_point(
 
 
 # ---------------------------------------------------------------------------
-# T014 — smoothed_average (trailing rolling mean)
+# smoothed_average (trailing rolling mean)
 # ---------------------------------------------------------------------------
 
 
@@ -561,7 +561,7 @@ def smoothed_average(
 
 
 # ---------------------------------------------------------------------------
-# WP03 — correlate (pre-registered, deterministic lagged ASSOCIATION)
+# correlate (pre-registered, deterministic lagged ASSOCIATION)
 # ---------------------------------------------------------------------------
 #
 # The third built-in analytical tool, and the first over a *paired* input. It
@@ -572,11 +572,12 @@ def smoothed_average(
 # computed at all. The method is deterministic, stateless, and offline (no clock,
 # no network, pure stdlib `math`; scipy/numpy are deliberately not used).
 
-# --- Hard floors (research note + data-model; locked by WP01/WP02/WP03) ---
+# --- Hard floors (research note + data-model) ---
 MIN_RAW_PAIRED_SAMPLE = 20
 """Raw paired sample floor. Below 20 paired days the estimate is too unstable to
-show a non-expert. WP02 already enforces this when preparing the paired input;
-the duplicated constant here lets a directly-built paired input be re-checked."""
+show a non-expert. The paired-input layer already enforces this when preparing
+the input; the duplicated constant here lets a directly-built paired input be
+re-checked."""
 
 MIN_EFFECTIVE_SAMPLE = 12
 """Effective-sample floor. Even with >= 20 raw pairs, heavily autocorrelated
@@ -796,7 +797,7 @@ def correlate(
 ) -> AnalyticalResultEnvelope:
     """Report a pre-registered lagged ASSOCIATION over a prepared paired input.
 
-    Consumes a WP02 :class:`PairedAnalyticalInput` (two already-admitted series
+    Consumes a :class:`PairedAnalyticalInput` (two already-admitted series
     aligned by same local calendar day after one declared integer-day lag) plus
     the pre-registered :class:`PreRegisteredAssociationHypothesis`, and returns an
     available association estimate or a first-class refusal carrying NO estimate.
@@ -890,7 +891,7 @@ def correlate(
     pairs: tuple[PairedObservation, ...] = paired_points_for_computation(paired)
     raw_n = len(pairs)
 
-    # --- Raw paired floor (WP02 enforces it; re-check a directly-built input). -
+    # --- Raw paired floor (the paired-input layer enforces it; re-check a directly-built input). -
     if raw_n < MIN_RAW_PAIRED_SAMPLE:
         return _refusal_envelope_paired(
             RefusalOutcome(
@@ -1112,7 +1113,7 @@ def correlate(
 def _paired_life_event_sensitive(paired: PairedAnalyticalInput) -> bool:
     """True when either side's provenance flags life-event sensitivity.
 
-    Reads the WP02 paired ``source_summary`` provenance blocks rather than
+    Reads the paired ``source_summary`` provenance blocks rather than
     enumerating metric families here (guide, don't enumerate): a per-series
     summary may carry a ``life_event_sensitive`` flag set by the metric-family
     policy upstream. Absent the flag, the confound is not emitted.

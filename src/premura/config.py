@@ -119,7 +119,7 @@ class Settings(BaseSettings):
         """The session log's own DuckDB file (sibling of warehouse_path).
 
         A separate file from the health warehouse so the operating-session log
-        and the health facts never share a writer (FR-070). Real runs default
+        and the health facts never share a writer. Real runs default
         here; sandboxes override the path per isolation tag.
         """
         return self.duck_dir / "session_log.duckdb"

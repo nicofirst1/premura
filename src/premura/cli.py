@@ -141,7 +141,7 @@ def _ingest_one(conn, source_key: str, override_path: Path | None, *, force: boo
             )
 
     # Intake seam: nutrition/supplement intake never travels the observation
-    # loader; it persists through its own home (FR-007, two-seam rule). It still
+    # loader; it persists through its own home (the two-seam rule). It still
     # writes an hp.ingest_run row through the same loader bookkeeping every
     # other source uses, so it shows up under "Recent ingest runs" and
     # participates in the sha256 already-ingested skip (issue #88).
@@ -332,7 +332,7 @@ def _resolve_source_key(path: Path) -> str | None:
     This is the inverse of ``_discover_input``: it reuses the very same routing
     primitives (`_csv_kind`, `_zip_is_mfp`, extension checks) so inspect and
     ingest can never disagree about which parser claims a file. Returns ``None``
-    when no parser would claim the path (FR-1.2 / E1.2).
+    when no parser would claim the path.
     """
     suffix = path.suffix.lower()
     if suffix == ".db":
@@ -936,8 +936,8 @@ def install_client(
 # bootstrap (fresh-clone setup readiness — thin presenter over the service)
 # ============================================================================
 #
-# This command is a *presentation layer* over ``premura.bootstrap.run_bootstrap``
-# (WP01). It performs no setup orchestration of its own: it calls the service,
+# This command is a *presentation layer* over ``premura.bootstrap.run_bootstrap``.
+# It performs no setup orchestration of its own: it calls the service,
 # renders the data-shaped report for a terminal handoff, and maps the summary
 # status to an exit code so an agent can branch reliably. It is setup-only — it
 # never ingests, queries the warehouse, uploads, or runs the monthly pipeline.

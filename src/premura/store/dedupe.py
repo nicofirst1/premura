@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 # Highest = wins. docs/SPEC.md §5 cross-source priority.
 #
-# withings sits between garmin_gdpr and health_connect (#33 FR-6): Withings'
+# withings sits between garmin_gdpr and health_connect (#33): Withings'
 # scale and BPM Core cuff are purpose-built, calibrated instruments that
 # generally beat wrist-wearable estimates for weight/body-composition/BP, and
 # match a dedicated tracking device for steps/HR/sleep -- ranking it just

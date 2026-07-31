@@ -1,4 +1,4 @@
-"""Stage 3 — the engine-owned analytical *input preparation* layer (WP03).
+"""Stage 3 — the engine-owned analytical *input preparation* layer.
 
 This module sits between the Stage 2 admissibility evaluator
 (:mod:`premura.engine.policies._evaluator`) and the future Stage 3 proof tools
@@ -12,12 +12,12 @@ statistical method is never handed a series it should not compute over.
 Why this layer is deliberately small (the "guide, don't enumerate" rule):
 
 * It is **not** a generic query planner. It does not read DuckDB, does not pick
-  metrics, does not invent windows. Callers (WP04 proof tools and their
+  metrics, does not invent windows. Callers (the analytical proof tools and their
   warehouse glue) pass explicit evidence — ordered points plus an
   :class:`EvidenceCandidate` and the family policy — exactly as the descriptive
   signals already do. This module owns one thing: the rule for *admitting* that
   evidence into the analytical input contract.
-* It reuses the WP02 contract types rather than minting parallel ones. The
+* It reuses the existing contract types rather than minting parallel ones. The
   refusal shape is :class:`RefusalOutcome` from
   :mod:`premura.engine.analytical_contract`; the closed analytical question
   vocabulary is :class:`AnalyticalQuestionType` from the same module. The
@@ -65,7 +65,7 @@ __all__ = [
     "ANALYTICAL_TO_POLICY_QUESTION",
     "prepare_input_series",
     "points_for_computation",
-    # Paired preparation (WP02 — correlate lagged association)
+    # Paired preparation (correlate lagged association)
     "ExpectedDirection",
     "PairedInputRefusalReason",
     "PreRegisteredAssociationHypothesis",
@@ -116,7 +116,7 @@ class InputRefusalReason(StrEnum):
 
 # The closed mapping from the contract-facing :class:`AnalyticalQuestionType`
 # to the first-class policy :class:`QuestionType` of the same name. This is the
-# wiring required by T011: the analytical enum is the public input, and the
+# wiring that keeps the analytical enum the public input, while the
 # evaluator only ever sees a closed ``QuestionType`` — never an ad-hoc string.
 # Per research note D4 each analytical question gates on its OWN question type
 # (with its own freshness/sufficiency declared in the metric-family policy), not
@@ -387,7 +387,7 @@ def prepare_input_series(
 ) -> AnalyticalInputSeries:
     """Prepare one analytical input series, refusing before any computation.
 
-    This is the single entry point WP04 proof tools call to obtain a usable
+    This is the single entry point analytical proof tools call to obtain a usable
     series. It:
 
     1. Maps the reviewed :class:`AnalyticalQuestionType` onto the first-class
@@ -568,22 +568,23 @@ def points_for_computation(series: AnalyticalInputSeries) -> tuple[PreparedPoint
 
 
 # ===========================================================================
-# Paired input preparation (WP02 — correlate lagged association, ADR-0008)
+# Paired input preparation (correlate lagged association, ADR-0008)
 # ===========================================================================
 #
 # This is the *two-series* preparation seam. It deliberately reuses the
 # single-series contract above rather than forking it: both inputs are ordinary
 # :class:`AnalyticalInputSeries` values produced by :func:`prepare_input_series`,
-# so per-series admissibility/freshness/sufficiency is already gated by the WP01
-# evidence policy (``evaluate_evidence``). This module does **not** re-run the
-# evaluator — it delegates by inspecting each series' ``refusal`` and propagating
-# it. The only new gates here are the ones that exist solely because there are
-# two series and a pre-registered hypothesis: lag validity, same-day pairing,
-# overlap existence, and the raw paired-sample floor.
+# so per-series admissibility/freshness/sufficiency is already gated by the
+# evidence-admissibility policy (``evaluate_evidence``). This module does **not**
+# re-run the evaluator — it delegates by inspecting each series' ``refusal`` and
+# propagating it. The only new gates here are the ones that exist solely because
+# there are two series and a pre-registered hypothesis: lag validity, same-day
+# pairing, overlap existence, and the raw paired-sample floor.
 #
-# No coefficient is computed here (that is WP03). The effective-sample-size floor
-# (N_eff >= 12) is likewise a compute-time check WP03 owns; WP02 stops at a
-# validated, refusal-aware, imputation-annotated paired bundle.
+# No coefficient is computed here (that is the caller's job). The
+# effective-sample-size floor (N_eff >= 12) is likewise a compute-time check the
+# caller owns; this module stops at a validated, refusal-aware,
+# imputation-annotated paired bundle.
 
 
 # Lag bands (see ADR-0008): |lag| <= 3 is free;
@@ -605,7 +606,8 @@ class ExpectedDirection(StrEnum):
     The caller must declare this *before* the result exists — declaring the
     expected direction up front is the anti-p-hacking discipline the ADR calls
     out. It is a closed vocabulary so an agent cannot smuggle a free-form
-    ``"up a bit"``; WP03 compares the observed sign against this declared value.
+    ``"up a bit"``; the caller compares the observed sign against this declared
+    value.
     """
 
     POSITIVE = "positive"
@@ -619,7 +621,7 @@ class PairedInputRefusalReason(StrEnum):
     :class:`InputRefusalReason` so an agent can branch on exactly what failed in
     the two-series alignment. When a *constituent* series is itself refused, the
     paired refusal propagates that series' :class:`InputRefusalReason` verbatim
-    (admissibility is the WP01 policy's job, never reimplemented here); these
+    (admissibility is the evidence-admissibility policy's job, never reimplemented here); these
     paired reasons cover only the gates that exist because there are two series
     and a pre-registered hypothesis.
     """
@@ -722,7 +724,7 @@ class PairedObservation:
     series day after lag alignment). ``left_ts`` / ``right_ts`` keep the source
     timestamps for traceability. A pair counts as imputed when *either* side is
     imputed — that drives both the imputation percentage and the later
-    half-weighted effective support WP03 computes.
+    half-weighted effective support the caller computes.
     """
 
     paired_day: date
@@ -758,7 +760,7 @@ class PairedObservation:
 
 @dataclass(frozen=True)
 class PairedAnalyticalInput:
-    """The two-series post-admissibility input consumed by ``correlate`` (WP03).
+    """The two-series post-admissibility input consumed by ``correlate``.
 
     Exactly one of two states, distinguished by ``refusal``:
 
@@ -892,13 +894,13 @@ def prepare_paired_input(
 ) -> PairedAnalyticalInput:
     """Prepare a paired analytical input from two usable series + a hypothesis.
 
-    The single seam ``correlate`` (WP03) and its MCP wrapper (WP04) call. It:
+    The single seam ``correlate`` and its MCP wrapper call. It:
 
     1. Refuses if the pre-registered hypothesis is missing or malformed (invalid
        lag / missing required justification) — returned as a structured
        :class:`RefusalOutcome` envelope, never a raised exception.
     2. Refuses if *either* constituent series is itself refused, **propagating
-       that series' admissibility reason verbatim** — the WP01 evidence policy
+       that series' admissibility reason verbatim** — the evidence-admissibility policy
        already decided admissibility/freshness/sufficiency when the series was
        prepared, so this never re-runs or reimplements the evaluator.
     3. Applies the caller-declared integer-day lag to the **right** (responding)
@@ -959,7 +961,7 @@ def prepare_paired_input(
             right_metric_id=right_metric,
         )
 
-    # 2. Delegate per-series admissibility to the WP01 evidence policy: a series
+    # 2. Delegate per-series admissibility to the evidence-admissibility policy: a series
     #    is already refused if the policy found it inadmissible/stale/sparse. We
     #    propagate that verdict rather than re-deciding it here.
     for series in (left_series, right_series):
@@ -1072,7 +1074,7 @@ def prepare_paired_input(
         "lag_justification": hypothesis.lag_justification,
         "common_cause_candidates": list(hypothesis.common_cause_candidates),
         # Paired days that fell back to the UTC calendar day because at least one
-        # contributing observation lacked a parseable local_tz. The WP03 correlate
+        # contributing observation lacked a parseable local_tz. The correlate
         # tool reads this to emit an honest caveat (those days may be off by one
         # calendar day); 0 means every paired day resolved a real local day.
         "utc_fallback_paired_days": utc_fallback_paired_days,
@@ -1102,7 +1104,7 @@ def paired_points_for_computation(
     """Return the computation-ready pairs, or refuse to.
 
     The paired twin of :func:`points_for_computation`: a refused paired input
-    raises rather than hand back pairs, so the WP03 coefficient step cannot
+    raises rather than hand back pairs, so the coefficient step cannot
     accidentally compute over an input that did not pass the paired gates even if
     it forgets to branch on ``paired.refusal``.
     """

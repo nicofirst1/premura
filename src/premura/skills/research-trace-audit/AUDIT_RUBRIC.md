@@ -6,7 +6,7 @@ It is a **registry of criteria organized under four closed categories, plus the 
 
 ## What grounds every judgment
 
-The audit reads the structured **Session Disclosure** object (`src/premura/AUDIT_CONSUMER_CONTRACT.md`) and the **final answer text**. Counts come from the structured fields only: `raw_analytical_call_count`, `unique_hypothesis_count` (`N`), `surfaced`, `refusal_breakdown`, and the per-call `terminal_status`. The `disclosure_text` field is a convenience rendering and is **never** the source of a count, and a surfaced count is **never** inferred when `surfaced.status = unavailable` (C-002). The output shape is defined by `SKILL.md` §"Audit result shape" — the single authoritative home for it.
+The audit reads the structured **Session Disclosure** object (`src/premura/AUDIT_CONSUMER_CONTRACT.md`) and the **final answer text**. Counts come from the structured fields only: `raw_analytical_call_count`, `unique_hypothesis_count` (`N`), `surfaced`, `refusal_breakdown`, and the per-call `terminal_status`. The `disclosure_text` field is a convenience rendering and is **never** the source of a count, and a surfaced count is **never** inferred when `surfaced.status = unavailable`. The output shape is defined by `SKILL.md` §"Audit result shape" — the single authoritative home for it.
 
 ## The four closed categories
 
@@ -75,7 +75,7 @@ Each criterion has a stable `id`, its `category`, a yes/no `question`, the `evid
 - **evidence_source:** quoted answer spans only. The Session Disclosure's `calls` list carries `analytical` records exclusively — `AUDIT_CONSUMER_CONTRACT.md` (Call Record rules) excludes `evidence_source` rows (literature lookups such as `pubmed_fetch`) from this contract, so this criterion has no structured field to read for citation binding and must not invent one (would touch trace schema, out of this criterion's scope) or re-derive the fetched-PMID set itself (would restate the deterministic gate). It judges the answer's own honesty about a citation's verification status, not the citation's underlying truth.
 - **failure_modes (illustrative):** stating "a 2023 study found X" or quoting a DOI/journal-style reference as settled, gate-checked fact with no acknowledgment that it sits outside the recognized PMID forms; blending an out-of-form citation into the same sentence as a fetched, in-form one so the reader cannot tell which was verified this session.
 - **suggested_revision_hint:** cite in a recognized form (a `PMID`/`PubMed ID` marker or PubMed URL — the provider's own `pubmed_url` output is one) so the deterministic gate can bind it, or explicitly flag the out-of-form citation as not verified via an in-session fetch rather than presenting it as established.
-- **relationship to the deterministic gate (FR-3):** check 5 is a mechanical check that only fails a recognized-form PMID never fetched this session; this criterion only fires on out-of-form citations check 5 cannot see, and its finding is always advisory — it can never flip a passing gate verdict.
+- **relationship to the deterministic gate:** check 5 is a mechanical check that only fails a recognized-form PMID never fetched this session; this criterion only fires on out-of-form citations check 5 cannot see, and its finding is always advisory — it can never flip a passing gate verdict.
 - **fires on fixture:** `out-of-form-citation.json` — the answer states "A 2023 study confirms evening walking improves sleep quality, backing up this session's finding" with no PMID/recognized form anywhere and no disclosure that it wasn't gate-verified; flips `pass` to `needs_revision`.
 - **does not fire on fixture:** `clean-citation.json` — the only citation is a recognized-form `PMID 30123456`, and the answer's own wording ("fetched and checked this session") matches the gate's scoped disclosure rather than overclaiming a stronger status; verdict stays `pass`.
 
@@ -91,8 +91,8 @@ Each criterion has a stable `id`, its `category`, a yes/no `question`, the `evid
 A new criterion is admissible **iff** it:
 
 1. names exactly one of the four closed categories above (a genuinely new category requires a spec amendment, not a rubric edit);
-2. grounds its `evidence_source` in a **structured** audit-consumer field or a **quoted answer span** — never in `disclosure_text` prose, effect size, or an inferred surfaced count (C-002);
-3. introduces **no** forbidden semantic of its own — it may _flag_ a p-value, significance label, multiplicity correction, or causal/diagnostic/treatment/prediction claim in the answer, but must not itself assert one (C-003, C-004);
+2. grounds its `evidence_source` in a **structured** audit-consumer field or a **quoted answer span** — never in `disclosure_text` prose, effect size, or an inferred surfaced count;
+3. introduces **no** forbidden semantic of its own — it may _flag_ a p-value, significance label, multiplicity correction, or causal/diagnostic/treatment/prediction claim in the answer, but must not itself assert one;
 4. ships with at least one fixture (existing or new) whose verdict the criterion changes, so the criterion is exercised, not aspirational.
 
 ## Anti-pattern (rejected at review)

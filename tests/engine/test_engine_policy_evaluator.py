@@ -1,4 +1,4 @@
-"""Tests for the deterministic Stage 2 evidence evaluator (WP02).
+"""Tests for the deterministic Stage 2 evidence evaluator.
 
 These tests treat the policy declarations as parameters and assert that the
 evaluator (and only the evaluator) decides admissibility, freshness,

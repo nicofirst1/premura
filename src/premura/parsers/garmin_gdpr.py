@@ -281,7 +281,7 @@ class GarminGDPRParser:
         return None
 
     def preview_routing(self, member_names: Sequence[str]) -> RoutingPreview:
-        """Name-based dry-run routing preview (m7 WP1 / FR-1.4).
+        """Name-based dry-run routing preview.
 
         Delegates to the same _HANDLERS dispatch the ingest path uses, so an
         unhandled member appears here exactly as ingest would log it. Reads no

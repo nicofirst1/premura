@@ -1,4 +1,4 @@
-"""WP03 — BMI proof consumer tests.
+"""BMI proof consumer tests.
 
 BMI is the first Stage 2 answer that crosses two semantic domains: declared
 standing height from ``profile_context`` and body weight from
@@ -17,7 +17,7 @@ standing height from ``profile_context`` and body weight from
 
 Patterns mirrored from ``tests/test_engine_resolvers.py`` and
 ``tests/test_engine_descriptive_signals.py``: each test re-registers the
-WP03 signal into ``REGISTRY`` via the fixture below and inserts rows directly
+the BMI signal into ``REGISTRY`` via the fixture below and inserts rows directly
 into the warehouse through the same small helpers those siblings use.
 """
 
@@ -56,7 +56,7 @@ def anchor_ts() -> datetime:
 
 @pytest.fixture()
 def registered(empty_warehouse: Any) -> Any:
-    """Warehouse with the WP02 + WP03 descriptive signals registered in REGISTRY.
+    """Warehouse with the descriptive signals registered in REGISTRY.
 
     Snapshots and restores REGISTRY so registration does not leak across tests.
     Mirrors the pattern in ``tests/test_engine_descriptive_signals.py``.
@@ -193,7 +193,7 @@ def test_bmi_success_with_declared_height_and_usable_weight(
 
 
 # ---------------------------------------------------------------------------
-# 2. Refusal — declared height missing (FR-005 scenario 2)
+# 2. Refusal — declared height missing (scenario 2)
 # ---------------------------------------------------------------------------
 
 
@@ -219,7 +219,7 @@ def test_bmi_refuses_when_declared_height_missing(registered: Any, anchor_ts: da
 
 
 # ---------------------------------------------------------------------------
-# 3. Refusal — weight missing (FR-005 scenario 3, missing variant)
+# 3. Refusal — weight missing (scenario 3, missing variant)
 # ---------------------------------------------------------------------------
 
 
@@ -242,7 +242,7 @@ def test_bmi_refuses_when_weight_missing(registered: Any, anchor_ts: datetime) -
 
 
 # ---------------------------------------------------------------------------
-# 4. Refusal — weight stale (FR-005 scenario 3, stale variant)
+# 4. Refusal — weight stale (scenario 3, stale variant)
 # ---------------------------------------------------------------------------
 
 
@@ -278,7 +278,7 @@ def test_bmi_no_hidden_fallback_from_measured_height(registered: Any, anchor_ts:
     A ``height`` observation row exists in the warehouse, and a fresh weight
     exists too. There is NO profile assertion for ``standing_height_cm``. BMI
     must still refuse with ``profile:standing_height_cm`` in
-    ``missing_inputs`` — the no-hidden-fallback guarantee from FR-005.
+    ``missing_inputs`` — the no-hidden-fallback guarantee.
 
     The message must not advertise an observation-shaped fallback path; the
     only honest fix is to set a declared profile height.
@@ -334,7 +334,7 @@ def test_bmi_is_registered_in_engine_registry(registered: Any) -> None:
     """BMI lands in ``REGISTRY`` via the built-in registration entrypoint.
 
     A signal that is never registered is dead code — the live ``compute()``
-    path can never reach it. This test proves the WP03 registration actually
+    path can never reach it. This test proves the registration actually
     happened.
     """
     assert "bmi" in REGISTRY
@@ -425,7 +425,7 @@ def test_bmi_uses_resolver_seam_not_direct_warehouse_reads(
 
 
 # ---------------------------------------------------------------------------
-# 10. BMI is unaffected by unresolved intake-domain declarations (T013)
+# 10. BMI is unaffected by unresolved intake-domain declarations
 # ---------------------------------------------------------------------------
 
 
@@ -442,7 +442,7 @@ def test_bmi_unaffected_by_unresolved_intake_domains(registered: Any, anchor_ts:
     2. A direct ``resolve_dependency`` call against ``nutrition_intake``
        refuses honestly without coercing into another domain. (Before the
        usable-intake-dimensions mission this asserted ``unsupported_domain``;
-       FR-001 of that mission ships a real ``nutrition_intake`` resolver, so an
+        That mission ships a real ``nutrition_intake`` resolver, so an
        empty warehouse now resolves to the honest ``missing`` outcome instead.
        Either way the seam never silently substitutes another domain's value —
        which is the invariant this point protects: declaring an intake

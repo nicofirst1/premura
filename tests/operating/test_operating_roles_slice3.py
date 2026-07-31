@@ -10,7 +10,7 @@ Synthetic session logs only. Locks:
   unknown value;
 * the queue is PRIVATE and LOCAL — nothing here ever reaches GitHub;
 * the runtime queue (``log_improvement_item``) is a genuinely separate table
-  from the harness-only ``log_improvement`` proposals table (FR-5).
+  from the harness-only ``log_improvement`` proposals table.
 """
 
 from __future__ import annotations
@@ -132,7 +132,7 @@ def test_get_missing_item_returns_none(tmp_path: Path) -> None:
 
 
 def test_runtime_queue_needs_no_harness_session_or_judgment(tmp_path: Path) -> None:
-    """FR-5: log_improvement_item is genuinely decoupled from log_improvement.
+    """log_improvement_item is genuinely decoupled from log_improvement.
 
     The harness-only ``record_improvement`` (log_improvement) requires an
     existing ``log_session`` + ``log_judgment`` row (FK-checked). The runtime

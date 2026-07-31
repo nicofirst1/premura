@@ -19,7 +19,7 @@ Every assessment is a **band**, never a number. The bands are the store's `CRITE
 | `weak`           | a real process failure under this criterion                                                |
 | `not_applicable` | the dossier carries no evidence to assess this criterion (e.g. no transcript, no attempts) |
 
-There are **no numeric scores** and **no pass/fail language** — that would be confusable with the mechanical grader verdict (NFR-6). A judgment whose model output cannot be parsed or whose backend is unavailable is recorded honestly as `unparseable` / `model_unavailable` with empty criteria, never faked.
+There are **no numeric scores** and **no pass/fail language** — that would be confusable with the mechanical grader verdict. A judgment whose model output cannot be parsed or whose backend is unavailable is recorded honestly as `unparseable` / `model_unavailable` with empty criteria, never faked.
 
 ## What grounds every judgment
 
@@ -106,8 +106,8 @@ A new criterion is admissible **iff** it:
 
 1. names exactly one of the four closed categories above (a genuinely new category requires a spec amendment, not a rubric edit);
 2. grounds its question in a **structured dossier field** or a **quoted transcript span** — never in data the dossier does not carry;
-3. asks a process question about _how the operator worked_; it never introduces a numeric score, a pass/fail verdict, or any health/clinical claim — the judgment is descriptive process assessment only (NFR-6);
-4. is added by editing **this file** — adding the criterion `id`, its category, its question, and its band grounding — and **bumping `rubric_version`** at the top. No schema change and no store change is ever needed: the store validates bands against `CRITERION_BANDS` and records whatever criterion ids appear here (FR-3).
+3. asks a process question about _how the operator worked_; it never introduces a numeric score, a pass/fail verdict, or any health/clinical claim — the judgment is descriptive process assessment only;
+4. is added by editing **this file** — adding the criterion `id`, its category, its question, and its band grounding — and **bumping `rubric_version`** at the top. No schema change and no store change is ever needed: the store validates bands against `CRITERION_BANDS` and records whatever criterion ids appear here.
 
 ## Anti-pattern (rejected at review)
 

@@ -1,4 +1,4 @@
-"""Contract tests for the Stage 3 analytical-tool contract (WP02).
+"""Contract tests for the Stage 3 analytical-tool contract.
 
 These exercise the bounded extension seam: registration + shared dispatch
 (without a per-tool branch), the result-envelope serialization, and the
@@ -70,7 +70,7 @@ def _available_envelope() -> AnalyticalResultEnvelope:
 
 
 # ---------------------------------------------------------------------------
-# T008: trivial tool registration + dispatch (no per-tool branch)
+# trivial tool registration + dispatch (no per-tool branch)
 # ---------------------------------------------------------------------------
 
 
@@ -129,7 +129,7 @@ def test_dispatch_spec_without_fn_raises_runtimeerror() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T008: serialization of a valid result envelope
+# serialization of a valid result envelope
 # ---------------------------------------------------------------------------
 
 
@@ -174,7 +174,7 @@ def test_refusal_envelope_serializes() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T008: rejection of unknown confound key
+# rejection of unknown confound key
 # ---------------------------------------------------------------------------
 
 
@@ -197,7 +197,7 @@ def test_tool_descriptor_rejects_unknown_confound_key() -> None:
 
 
 def test_committed_confound_vocabulary_is_the_closed_set() -> None:
-    # The correlate mission (WP01) added ``common_cause_plausible`` as a reviewed
+    # The correlate mission added ``common_cause_plausible`` as a reviewed
     # closed key (methodology research Q4). This locks the full committed set so
     # any further addition is a deliberate, reviewed vocabulary change.
     assert CONFOUND_KEYS == frozenset(
@@ -235,7 +235,7 @@ def test_analytical_question_types_are_the_closed_set() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T008: rejection of refusal-with-estimate + missing metadata
+# rejection of refusal-with-estimate + missing metadata
 # ---------------------------------------------------------------------------
 
 
@@ -311,7 +311,7 @@ def test_malformed_descriptor_empty_name_is_rejected() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T008: deterministic repeated serialization
+# deterministic repeated serialization
 # ---------------------------------------------------------------------------
 
 

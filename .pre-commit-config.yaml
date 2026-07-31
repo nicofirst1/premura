@@ -7,6 +7,12 @@ repos:
         language: system
         always_run: true
         pass_filenames: false
+      - id: no-mission-citations
+        name: no spec-kitty mission citations
+        entry: ops/check_no_mission_citations.sh
+        language: system
+        always_run: true
+        pass_filenames: false
       - id: ruff-check
         name: ruff check
         entry: uv run ruff check --force-exclude

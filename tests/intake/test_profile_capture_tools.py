@@ -1,10 +1,10 @@
-"""WP03 — agent-mediated profile capture surface tests.
+"""Agent-mediated profile capture surface tests.
 
 These are black-box tests over the public capture surface (the MCP server
 helpers, the live FastMCP entrypoint, and the thin CLI mirror). They assert on
 returned payloads and stored row effects, never on private helper internals.
 
-They lock the WP03 contract:
+They lock the profile capture contract:
 
 * the supported-fields tool publishes exactly the bounded allowlist;
 * the record tool stores ``birth_date`` / ``sex`` / ``standing_height_cm`` and

@@ -1,4 +1,4 @@
-"""WP06 — the deterministic failure-path record (FR-009 / SC-007).
+"""The deterministic failure-path record.
 
 The spec-named edge case "a parser that fails to import/parse" must still yield a
 **completed, persisted, gradeable FAIL** — never a crash that aborts the run
@@ -18,10 +18,10 @@ session-log store to prove it was persisted (not merely returned).
 Import style (mirrors ``test_live_trial_edge_cases.py``): the live-trial harness
 module + its kept-log run entry point are loaded via ``importlib.import_module``
 and ``getattr`` with concatenated names so the harness import/call substrings the
-committed NFR-005 default-gate guard (``test_live_trial_seam.py``) scans for never
+committed default-gate guard (``test_live_trial_seam.py``) scans for never
 appear in this module's text — keeping that guard an accurate witness while this
 DEFAULT-collected test still runs in the default gate (the injected fake operator
-needs no model server, never the real dump; C-003).
+needs no model server, never the real dump.
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ if TYPE_CHECKING:
     from premura.harness.sandbox import Sandbox
 
 # Loaded dynamically (see module docstring): keeps the harness import/call
-# substrings out of this file's text so the NFR-005 default-gate guard stays an
+# substrings out of this file's text so the default-gate guard stays an
 # accurate witness, while this DEFAULT-collected test still runs in the default
 # gate (the injected broken-parser operator needs no model server).
 _HARNESS_MODULE_NAME = "premura.harness." + "live_trial"
@@ -63,7 +63,7 @@ _PARSER_DEST_RELPATH = _harness._PARSER_DEST_RELPATH
 
 # A deliberately broken parser: importable, but its ``parse()`` raises before any
 # batch (or warehouse file) exists. This is the operator's authored parser — the
-# adversary for the import/parse failure path (FR-009). Written into the sandbox
+# adversary for the import/parse failure path. Written into the sandbox
 # tree exactly as the real cheap-model operator would author it.
 _BROKEN_PARSER_CODE = '''\
 """A deliberately broken operator parser: parse() raises before a batch exists."""
@@ -76,7 +76,7 @@ from premura.parsers.base import IngestBatch
 
 
 class BrokenLiveTrialParser:
-    """parse() raises, modelling a buggy operator-authored parser (FR-009)."""
+    """parse raises, modelling a buggy operator-authored parser."""
 
     source_kind = "fitbit_heart_rate"
     language_hint = None
@@ -85,7 +85,7 @@ class BrokenLiveTrialParser:
         return ["heart_rate"]
 
     def parse(self, path: Path) -> IngestBatch:  # noqa: ARG002 - never produces a batch
-        raise RuntimeError("synthetic broken-parser failure (WP06 failure path)")
+        raise RuntimeError("synthetic broken-parser failure ( failure path)")
 '''
 
 _PARSER_ATTR = "BrokenLiveTrialParser"
@@ -146,12 +146,12 @@ def _read_session_run_kind(session_log_path: Path) -> str:
 
 
 # --------------------------------------------------------------------------- #
-# T026 — a broken parser yields a completed, persisted, failing record (FR-009).
+# a broken parser yields a completed, persisted, failing record.
 # --------------------------------------------------------------------------- #
 
 
 def test_broken_parser_yields_completed_persisted_failing_record() -> None:
-    """A parser that raises in ``parse()`` → completed, persisted FAIL (FR-009 / SC-007).
+    """A parser that raises in ``parse`` → completed, persisted FAIL.
 
     Drives the REAL sandbox → ingest runner → grade → persist path with the broken
     parser installed. The call RETURNS normally (no raise into the suite), the
@@ -163,7 +163,7 @@ def test_broken_parser_yields_completed_persisted_failing_record() -> None:
     operator = StubBrokenParserOperator()
     driver = _ScriptedDriver()
 
-    # The call must NOT raise — reaching the assertions IS the SC-007 "never crash"
+    # The call must NOT raise — reaching the assertions IS the "never crash"
     # property; a leaked exception would fail the test by escaping here.
     result = _run_with_log(
         _LiveTrialConfig(),
@@ -217,10 +217,10 @@ def test_broken_parser_yields_completed_persisted_failing_record() -> None:
 def test_broken_parser_error_is_captured_stage_tagged() -> None:
     """The parser failure is captured as the stage-tagged ``parse:`` runner error.
 
-    The operator's parser raises in ``parse()``; the WP02 runner tags that as the
+    The operator's parser raises in ``parse``; the runner tags that as the
     ``parse:`` intake stage and the harness carries it on the captured provenance
     (transport only). The grader recomputes ``runtime_valid = False`` from it — the
-    captured error is evidence to verify, never a trusted verdict (FR-005).
+    captured error is evidence to verify, never a trusted verdict.
     """
     operator = StubBrokenParserOperator()
     result = _run_with_log(
@@ -243,16 +243,16 @@ def test_broken_parser_error_is_captured_stage_tagged() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T022 seam closure — the captured provenance carries the intake runtime surface
+# seam closure — the captured provenance carries the intake runtime surface
 # (``produced`` + ``error``) so ``IntakeStrategy.runtime_check`` reads REAL values,
-# not ``getattr`` fallbacks. This is the WP04-flagged seam this WP closes.
+# not ``getattr`` fallbacks. This is the -flagged seam this WP closes.
 # --------------------------------------------------------------------------- #
 
 
 def test_captured_provenance_carries_intake_runtime_surface() -> None:
-    """``_CapturedProvenance`` carries ``produced`` + ``error`` (FR-008 / T022).
+    """``_CapturedProvenance`` carries ``produced`` + ``error``.
 
-    The WP04 ``IntakeStrategy.runtime_check`` reads ``produced`` / ``error`` off the
+    The ``IntakeStrategy.runtime_check`` reads ``produced`` / ``error`` off the
     provenance via ``getattr``; before this WP the live ``_CapturedProvenance`` had
     neither field, so the strategy silently fell back to ``None`` defaults. This
     asserts both fields are now real attributes the strategy can read.
@@ -321,7 +321,7 @@ def test_intake_strategy_reads_real_captured_values_not_getattr_default() -> Non
     violation) — proving the strategy reads the captured surface, not the
     ``None``/``False`` fallback a missing field would yield. The negative control
     feeds the stage-tagged ``persist:`` error and confirms the checker witnesses the
-    failed stage from the carried ``error`` (transport-only; FR-005).
+    failed stage from the carried ``error`` (transport-only).
     """
     captured_cls = _harness._CapturedProvenance
     strategy = IntakeStrategy()
@@ -329,7 +329,7 @@ def test_intake_strategy_reads_real_captured_values_not_getattr_default() -> Non
     # A real, validating IntakeBatch — exactly what the in-process run path holds.
     batch = IntakeBatch()
     batch.source_descriptors["s:1"] = SourceDescriptor(
-        source_id="s:1", source_kind="test_intake", app_name="WP06 seam test"
+        source_id="s:1", source_kind="test_intake", app_name=" seam test"
     )
     batch.supplement_events.append(
         SupplementIntakeInput(

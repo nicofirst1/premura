@@ -77,7 +77,7 @@ LABEL = "on_magnesium"
 
 
 # ---------------------------------------------------------------------------
-# Fixture-backed evidence helpers (mirror the WP03 before/after style)
+# Fixture-backed evidence helpers (mirror the before/after style)
 # ---------------------------------------------------------------------------
 
 
@@ -476,7 +476,7 @@ def test_refuses_empty_condition_label() -> None:
 
 
 # ===========================================================================
-# Unknown-kwarg TypeErrors (frozen-dataclass scope guardrails, FR-2)
+# Unknown-kwarg TypeErrors (frozen-dataclass scope guardrails)
 # ===========================================================================
 
 

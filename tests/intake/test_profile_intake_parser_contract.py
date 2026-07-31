@@ -1,4 +1,4 @@
-"""Parser-seam tests for WP02 (parsers/base.py intake types + CONTRACT.md).
+"""Parser-seam tests for parsers/base.py intake types + CONTRACT.md.
 
 These lock the parser-facing contract a future nutrition/supplement parser will
 implement against:

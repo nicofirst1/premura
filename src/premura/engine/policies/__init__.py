@@ -1,9 +1,10 @@
 """Internal Stage 2 policy package surface.
 
 Re-exports only the policy *model* types (closed vocabularies + frozen
-declaration/result dataclasses) that WP02/WP03 build on. This is **not** the
-top-level ``premura.engine`` public surface — that is owned by a later WP. No
-registry, built-in declarations, or evaluator behavior live here yet.
+declaration/result dataclasses) that the Stage 2 policy layer builds on. This
+is **not** the top-level ``premura.engine`` public surface — that is owned
+separately. No registry, built-in declarations, or evaluator behavior live
+here yet.
 """
 
 from __future__ import annotations

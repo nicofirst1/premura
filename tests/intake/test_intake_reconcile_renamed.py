@@ -1,4 +1,4 @@
-"""WP05 T019 — renamed-but-consumed intake column is accounted (two controls).
+"""Renamed-but-consumed intake column is accounted (two controls).
 
 The spec edge case "renamed-but-consumed field": the reference intake parser
 consumes ``logged_at_us`` under a **different internal name** (it decodes the epoch
@@ -8,18 +8,18 @@ count as accounted, never a gap.
 
 Two **distinct** controls guard this, asserted **independently** (not blended):
 
-* **Control A — ``self_reconcile`` (manifest-blind, FR-003 / C-005).** It counts a
+* **Control A — ``self_reconcile`` (manifest-blind).** It counts a
   column accounted iff it is in the parser's ``MAPPED_SOURCE_COLUMNS`` **or**
   declared as a gap. ``logged_at_us`` is in ``MAPPED_SOURCE_COLUMNS``, so it must be
   in ``accounted`` and **not** in ``unaccounted`` — even though its internal name
   changed.
-* **Control B — grader ``honest_about_gaps`` (manifest-derived, FR-005).** A
+* **Control B — grader ``honest_about_gaps`` (manifest-derived).** A
   different oracle: manifest truth vs (loaded ∪ declared). ``logged_at_us`` maps to
   the ``event_timestamp`` home, which is witnessed in the intake warehouse after a
   real load, so the grader must **not** flag it as a silent drop and the rule passes.
 
 Both controls run end-to-end against the real reference parser + real intake load
-(no mocked verdict, D7). Offline / deterministic (NFR-001).
+(no mocked verdict). Offline / deterministic.
 """
 
 from __future__ import annotations
@@ -103,7 +103,7 @@ def _run_and_capture(conn: Any) -> tuple[IntakeBatch, _IntakeProvenance]:
 
 # --------------------------------------------------------------------------- #
 # Control A — self_reconcile: the renamed-but-consumed column is accounted
-# because it is in MAPPED_SOURCE_COLUMNS, never unaccounted (FR-003 / C-005).
+# because it is in MAPPED_SOURCE_COLUMNS, never unaccounted.
 # --------------------------------------------------------------------------- #
 def test_renamed_column_accounted_by_self_reconcile(empty_warehouse) -> None:
     """``logged_at_us`` is ``accounted`` and NOT ``unaccounted`` (manifest-blind).
@@ -126,7 +126,7 @@ def test_renamed_column_accounted_by_self_reconcile(empty_warehouse) -> None:
 
 # --------------------------------------------------------------------------- #
 # Control B — grader honest_about_gaps: the renamed-but-consumed column is NOT a
-# silent drop because its canonical home is witnessed in the warehouse (FR-005).
+# silent drop because its canonical home is witnessed in the warehouse.
 # --------------------------------------------------------------------------- #
 def test_renamed_column_not_silent_drop_in_grader(empty_warehouse) -> None:
     """The grader does NOT flag ``logged_at_us`` as a silent drop; the rule passes.

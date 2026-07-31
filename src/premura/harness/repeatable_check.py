@@ -1,39 +1,39 @@
-"""Always-on deterministic check: the fake-scripted-agent end-to-end loop (FR-004/FR-030).
+"""Always-on deterministic check: the fake-scripted-agent end-to-end loop.
 
 This module wires the whole session-log substrate into one CI-able check. A
 **fake scripted agent** (no model — just this orchestrator scripting fixed
 actions) runs the parser-build flow for a committed reference parser, the harness
 records the named ``tool_call`` log steps it is the **sole** writer of, the
 deterministic grader recomputes a verdict, and a re-run yields a byte-identical
-verdict. It is the MVP that proves SC-001..SC-006 and the piece that runs in CI
-offline from the committed fixture (NFR-001 / NFR-002).
+verdict. It is the MVP that proves the acceptance criteria and the piece that runs in CI
+offline from the committed fixture.
 
-Design boundaries (data-model.md, ``contracts/session-log-writer.md``, WP01..WP05):
+Design boundaries (data-model.md, ``contracts/session-log-writer.md``):
 
-* **The harness is the SOLE log writer (FR-021 / NFR-008).** Only this module
-  opens the session-log file (via WP01's :mod:`premura.session_log.store`) and
-  writes ``log_session`` / ``log_step`` / ``log_ingest_provenance``. The WP03
+* **The harness is the SOLE log writer.** Only this module
+  opens the session-log file (via :mod:`premura.session_log.store`) and
+  writes ``log_session`` / ``log_step`` / ``log_ingest_provenance``. The
   subprocess runner returns its outcome on stdout and never touches the log.
-* **Named ``tool_call`` steps (FR-004).** The scripted dev-time actions are
+* **Named ``tool_call`` steps.** The scripted dev-time actions are
   recorded as NAMED ``tool_call`` steps — ``edit_file`` (install parser),
   ``parser_contract_check`` (informational), and ``ingest_run`` (the
   verdict-bearing step whose detail lands in ``log_ingest_provenance``) — under a
   single ``agent_turn`` parent, by the named-tool convention, never as one
   free-text blob.
-* **Grader-only ``contract_pass`` (FR-065).** ``record_ingest_provenance`` is
+* **Grader-only ``contract_pass``.** ``record_ingest_provenance`` is
   given the GRADER's recomputed ``runtime_valid`` as ``contract_pass``; it is
   never a parser/runner self-report.
 * **Connection discipline.** The session log lives in its OWN file and the parent
   holds the sole writable handle for it. The sandbox warehouse is opened
   **read-only for grading only after** the runner subprocess has closed its
   writable handle (separate files, so handles never contend).
-* **Drive-mode seam (FR-030).** The core flow takes the "agent" as a seam: the
+* **Drive-mode seam.** The core flow takes the "agent" as a seam: the
   scripted (repeatable) path here installs a committed reference parser; the live
-  trial (WP07) reuses :func:`run_repeatable_check` with an operator-edit agent.
+  trial reuses :func:`run_repeatable_check` with an operator-edit agent.
   No model is wired here.
 
-The whole loop tears the sandbox down afterward (NFR-004); the verdict carries no
-ids/timestamps, so two runs serialize byte-identically (NFR-001).
+The whole loop tears the sandbox down afterward; the verdict carries no
+ids/timestamps, so two runs serialize byte-identically.
 """
 
 from __future__ import annotations
@@ -58,7 +58,7 @@ if TYPE_CHECKING:
 
     import duckdb
 
-# Committed slice-one fixture inputs (NFR-002: the check reads ONLY these + the
+# Committed slice-one fixture inputs (the check reads ONLY these + the
 # repo, never a private dump and never the network).
 _FIXTURE_DIR = Path("tests") / "fixtures" / "session_log"
 _SYNTHETIC_CSV = _FIXTURE_DIR / "fitbit_heart_rate_synthetic.csv"
@@ -112,7 +112,7 @@ class RepeatableCheckResult:
 
 
 def _load_manifest(repo_root: Path) -> dict[str, Any]:
-    """Parse the committed honesty ground-truth manifest (D6)."""
+    """Parse the committed honesty ground-truth manifest."""
     return yaml.safe_load((repo_root / _MANIFEST).read_text(encoding="utf-8"))
 
 
@@ -122,13 +122,13 @@ def _run_ingest_subprocess(
     source: Path,
     parser_spec: str,
 ) -> dict[str, Any]:
-    """Invoke the WP03 ingest runner as a subprocess; return its JSON envelope.
+    """Invoke the ingest runner as a subprocess; return its JSON envelope.
 
     The subprocess is rooted in the sandbox with the sandbox's own ``src`` on
     ``PYTHONPATH`` so it imports the sandbox copy of ``premura`` and the installed
     reference parser, getting its OWN DuckDB handles. It writes the warehouse but
-    NEVER the session log (FR-021). The environment is the minimal PATH/HOME — no
-    network client is configured or invoked (NFR-002).
+    NEVER the session log. The environment is the minimal PATH/HOME — no
+    network client is configured or invoked.
     """
     env = {
         "PYTHONPATH": str(sandbox.root / "src"),
@@ -181,35 +181,35 @@ def run_repeatable_check(
 ) -> RepeatableCheckResult:
     """Run the full fake-scripted-agent loop end-to-end and return the verdict.
 
-    The flow, in order (T022):
+    The flow, in order:
 
-    1. :func:`build_sandbox` (WP03); open the sandbox session-log file with WP01's
+    1. :func:`build_sandbox`; open the sandbox session-log file with
        :func:`store.connect` + :func:`store.init_schema`. The parent holds the
        **sole** writable log handle.
     2. :func:`store.open_session` with the fake-scripted sentinels and
        ``run_kind="repeatable_check"``.
     3. Record an ``agent_turn`` parent, then under it the named ``tool_call``
-       steps (FR-004): ``edit_file`` (install the reference parser),
+       steps: ``edit_file`` (install the reference parser),
        ``parser_contract_check`` (informational), and ``ingest_run`` (the runner
        subprocess; its ``result_status`` comes from the envelope).
     4. Persist provenance from the envelope; ``contract_pass`` is filled from the
-       GRADER's recomputed ``runtime_valid`` (FR-065), never a self-report.
+       GRADER's recomputed ``runtime_valid``, never a self-report.
     5. Grade against the sandbox warehouse (opened read-only AFTER the runner
-       closed its writable handle) + the committed manifest (WP05).
+       closed its writable handle) + the committed manifest.
     6. :func:`store.finish_session`; tear the sandbox down (unless ``keep_sandbox``
        is requested for log inspection); return the verdict.
 
     The "agent" is the scripted install of ``parser_src`` — the seam the live
-    trial (WP07) reuses with an operator-edit agent over the SAME machinery
-    (FR-030). No model is invoked, so the flow is identical every run.
+    trial reuses with an operator-edit agent over the SAME machinery.
+    No model is invoked, so the flow is identical every run.
 
     Args:
-        repo_root: the clean clone to sandbox (NFR-002: only the repo + committed
+        repo_root: the clean clone to sandbox (only the repo + committed
             fixtures are read; no private dump, no network).
         parser_src: a committed reference parser module to install.
         parser_attr: the parser class/factory attribute name in that module.
         keep_sandbox: when True, skip teardown so a test can inspect the recorded
-            log; default False (production tears the sandbox down — NFR-004).
+            log; default False (production tears the sandbox down).
 
     Returns:
         A :class:`RepeatableCheckResult` carrying the grader verdict (no
@@ -237,7 +237,7 @@ def run_repeatable_check(
         )
 
         # (3) One agent_turn parent; the scripted dev-time actions hang under it as
-        #     NAMED tool_call steps (FR-004), never a single free-text blob.
+        #     NAMED tool_call steps, never a single free-text blob.
         turn_id = store.record_step(
             log_conn,
             session_id=session_id,
@@ -269,7 +269,7 @@ def run_repeatable_check(
         )
 
         # tool_call: parser_contract_check — informational record. The GRADER is
-        # what the verdict trusts (FR-061); this step is only the dev-time note.
+        # what the verdict trusts; this step is only the dev-time note.
         store.record_step(
             log_conn,
             session_id=session_id,
@@ -313,7 +313,7 @@ def run_repeatable_check(
         #     read never contends (separate file from the log handle anyway). On the
         #     failure path the parser raised before any warehouse file was created;
         #     the helper materializes an EMPTY (0-fact-row) warehouse so grading still
-        #     yields a deterministic FAIL instead of crashing the run (FR-080).
+        #     yields a deterministic FAIL instead of crashing the run.
         warehouse_conn = open_sandbox_warehouse_for_grading(sandbox.warehouse_path)
         try:
             verdict = grade(
@@ -325,7 +325,7 @@ def run_repeatable_check(
             warehouse_conn.close()
 
         # (4) Persist provenance — contract_pass is the GRADER's recomputed
-        #     runtime_valid, the only producer of that value (FR-065).
+        #     runtime_valid, the only producer of that value.
         store.record_ingest_provenance(
             log_conn,
             step_id=ingest_step_id,
@@ -362,9 +362,9 @@ def run_repeatable_check(
 
 
 # --------------------------------------------------------------------------- #
-# Thin good/dishonest entry points (T023): scripted-install both reference
+# Thin good/dishonest entry points: scripted-install both reference
 # parsers over the SAME machinery. Sources resolve under the repo's committed
-# fixtures, so the check stays offline (NFR-002).
+# fixtures, so the check stays offline.
 # --------------------------------------------------------------------------- #
 
 

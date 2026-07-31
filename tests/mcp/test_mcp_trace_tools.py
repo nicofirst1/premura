@@ -1,4 +1,4 @@
-"""WP03 — MCP trace-tool surface tests (session/mark/disclosure).
+"""MCP trace-tool surface tests (session/mark/disclosure).
 
 These exercise the three session-research-trace tools THROUGH the MCP boundary
 (``FastMCP.call_tool``), exactly as a connected agent would reach them, and lock
@@ -175,7 +175,7 @@ def test_disclosure_unknown_session_is_not_found(tmp_path: Path) -> None:
 
     payload = _call(server, "research_trace_disclosure", {"session_id": "sess_nope"})
 
-    # Explicit not-found, NOT an empty successful disclosure (FR-015).
+    # Explicit not-found, NOT an empty successful disclosure.
     assert payload["status"] == "not_found"
     assert "raw_analytical_call_count" not in payload
 
@@ -226,7 +226,7 @@ def test_disclosure_never_says_significant_results(tmp_path: Path) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Surface registration (T013 / T019)
+# Surface registration
 # --------------------------------------------------------------------------- #
 def test_trace_tools_on_default_surface() -> None:
     async def run() -> None:

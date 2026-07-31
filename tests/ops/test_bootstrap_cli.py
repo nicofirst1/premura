@@ -1,21 +1,21 @@
-"""Acceptance-first CLI tests for ``premura bootstrap`` (WP02).
+"""Acceptance-first CLI tests for ``premura bootstrap``.
 
 These tests lock the observable behavior of the ``bootstrap`` command before it
 is implemented. They drive the command through Typer's ``CliRunner`` and
-monkeypatch WP01's service (:func:`premura.bootstrap.run_bootstrap`) at the
+monkeypatch the service (:func:`premura.bootstrap.run_bootstrap`) at the
 boundary the CLI calls, so no real local install runs and the tests focus on CLI
 presentation and exit-code semantics.
 
-Coverage map (subtasks T007-T012):
+Coverage map:
 
-* T007 — acceptance-first command behavior (this whole file).
-* T008 — ``bootstrap`` is registered on the Typer app.
-* T009 — terminal handoff formatting (status, actions, blockers vs warnings,
+* acceptance-first command behavior (this whole file).
+* ``bootstrap`` is registered on the Typer app.
+* terminal handoff formatting (status, actions, blockers vs warnings,
   reload guidance, one next step).
-* T010 — summary status -> exit code mapping (ready=0, partial-warning=0,
+* summary status -> exit code mapping (ready=0, partial-warning=0,
   blocked!=0).
-* T011 — installed console-script coverage (``premura bootstrap`` invokable).
-* T012 — setup-only safety: bootstrap never calls a health-data operation path.
+* installed console-script coverage (``premura bootstrap`` invokable).
+* setup-only safety: bootstrap never calls a health-data operation path.
 
 Assertions target exact high-value phrases, not the whole Rich layout, so the
 tests stay robust to cosmetic formatting changes.
@@ -293,7 +293,7 @@ def _patch_run_bootstrap(monkeypatch: pytest.MonkeyPatch, run: BootstrapRun) -> 
 
 
 # ---------------------------------------------------------------------------
-# T008 — command registration
+# command registration
 # ---------------------------------------------------------------------------
 
 
@@ -317,7 +317,7 @@ def test_cli_bootstrap_help_marks_setup_not_ingest() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T009 / T010 — ready summary: actions + reload guidance, exit 0
+# ready summary: actions + reload guidance, exit 0
 # ---------------------------------------------------------------------------
 
 
@@ -341,7 +341,7 @@ def test_cli_ready_summary_prints_actions_and_reload_guidance(
 
 
 # ---------------------------------------------------------------------------
-# T010 — blocked summary exits non-zero with blocker + next action
+# blocked summary exits non-zero with blocker + next action
 # ---------------------------------------------------------------------------
 
 
@@ -360,7 +360,7 @@ def test_cli_blocked_summary_exits_nonzero(monkeypatch: pytest.MonkeyPatch) -> N
 
 
 # ---------------------------------------------------------------------------
-# T010 — partial with optional-only warnings can exit 0
+# partial with optional-only warnings can exit 0
 # ---------------------------------------------------------------------------
 
 
@@ -412,7 +412,7 @@ def test_cli_blockers_and_warnings_are_distinguishable(
 
 
 # ---------------------------------------------------------------------------
-# T009 — concise success output (200-line NFR)
+# concise success output (200-line budget)
 # ---------------------------------------------------------------------------
 
 
@@ -425,7 +425,7 @@ def test_cli_output_stays_concise(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 # ---------------------------------------------------------------------------
-# T012 — setup-only safety at the CLI layer
+# setup-only safety at the CLI layer
 # ---------------------------------------------------------------------------
 
 
@@ -480,7 +480,7 @@ def test_cli_does_not_swallow_service_errors(monkeypatch: pytest.MonkeyPatch) ->
 
 
 # ---------------------------------------------------------------------------
-# T011 — installed console-script coverage
+# installed console-script coverage
 # ---------------------------------------------------------------------------
 
 
@@ -533,7 +533,7 @@ def test_premura_bootstrap_console_script_is_invokable(tmp_path: Path) -> None:
 
 
 def test_bootstrap_module_is_importable() -> None:
-    """Sanity: the CLI imports the real WP01 service symbol it delegates to."""
+    """Sanity: the CLI imports the real bootstrap service symbol it delegates to."""
     mod = importlib.import_module("premura.cli")
     assert hasattr(mod, "run_bootstrap")
     assert mod.run_bootstrap is bootstrap_service.run_bootstrap

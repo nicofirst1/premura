@@ -1,27 +1,27 @@
-"""WP04 — tool-loop tier: loop protocol + tier persistence (FR-005..008, NFR-006).
+"""Tool-loop tier: loop protocol + tier persistence.
 
 Default-suite tests for the multiturn tool-loop tier. The model server is
 substituted at the OUTSIDE boundary (DIRECTIVE_036) by :class:`FakeChatBackend`
 — a scripted callable injected through the operator's chat seam (the same
-``ollama_chat`` shape the WP03 contract module exposes), so the whole loop runs
+``ollama_chat`` shape the contract module exposes), so the whole loop runs
 deterministically with no network and no Ollama process.
 
 Every test drives the PUBLIC tier entry point over the committed SYNTHETIC
 observation fixture with persistence redirected at ``tmp_path`` (never the real
 ``data/``). Coverage map (contract §§3–5):
 
-* happy path (SC-001): tool calls → gate pass → tier-tagged record + scoreboard;
-* first-snapshot (FR-006): two ``write_parser`` calls grade independently;
+* happy path: tool calls → gate pass → tier-tagged record + scoreboard;
+* first-snapshot: two ``write_parser`` calls grade independently;
 * gate feedback loop: a self-reconcile failure is fed back into the conversation;
-* cap exhaustion (FR-005/SC-005): the loop always terminates into a graded record;
+* cap exhaustion: the loop always terminates into a graded record;
 * turn accounting: an unknown tool call consumes its turn with a corrective
   tool message;
-* outcome states (NFR-006): mid-conversation transport errors return the
+* outcome states: mid-conversation transport errors return the
   explicit ``model_unavailable`` / ``tool_calls_unsupported`` outcomes.
 
 Note on the import style: the tool-loop tier module is loaded via
 :func:`importlib.import_module` with string concatenation rather than literal
-``from ... import`` lines. The committed NFR-005 default-gate guard
+``from ... import`` lines. The committed default-gate guard
 (``test_live_trial_seam.py``) text-scans every OTHER test module for the gating
 harness import/call substrings; this DEFAULT-collected module deliberately
 avoids those literals so the guard stays a true witness while these tests still
@@ -42,7 +42,7 @@ from premura.harness import tool_loop_contract as tlc
 from tests import FIXTURES_DIR
 
 # Loaded dynamically (see module docstring): keeps the gating-harness import/call
-# substrings out of this file's text for the committed NFR-005 default-gate guard.
+# substrings out of this file's text for the committed default-gate guard.
 _TOOL_LOOP_MODULE_NAME = "premura.harness." + "live_trial_" + "tool_loop"
 ltl = importlib.import_module(_TOOL_LOOP_MODULE_NAME)
 scoreboard_mod = importlib.import_module("premura.harness." + "scoreboard")
@@ -71,7 +71,7 @@ if _missing:
 
 
 class FakeChatBackend:
-    """Scripted stand-in for the WP03 chat client (the operator's chat seam).
+    """Scripted stand-in for the chat client (the operator's chat seam).
 
     Same call shape as ``tool_loop_contract.ollama_chat``: it takes the message
     history plus ``model`` / ``tools`` / ``num_ctx`` keywords and returns one
@@ -220,14 +220,14 @@ def persistence_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[
 
 
 # --------------------------------------------------------------------------- #
-# T012 — Happy path (SC-001): tool calls → gate pass → tier-tagged record.
+# Happy path: tool calls → gate pass → tier-tagged record.
 # --------------------------------------------------------------------------- #
 
 
 def test_happy_path_records_tier_tagged_result(
     persistence_paths: tuple[Path, Path],
 ) -> None:
-    """SC-001 / FR-007: a scripted read → write → verify → done run ends tier-tagged.
+    """A scripted read → write → verify → done run ends tier-tagged.
 
     The script exercises all three registered tools in the canonical order, then
     ends the working phase with a no-tool-call reply; the gate passes on the
@@ -247,13 +247,13 @@ def test_happy_path_records_tier_tagged_result(
 
     outcome = _run_entry(operator=operator, source=_SYNTHETIC_CSV)
 
-    # One of the three NFR-006 outcome states: the complete graded record.
+    # One of the three outcome states: the complete graded record.
     assert outcome.model_unavailable is False
     assert outcome.tool_calls_unsupported is False
     record = outcome.record
     assert record is not None
 
-    # Tier-tagged, both verdicts present and independent (FR-006/FR-007).
+    # Tier-tagged, both verdicts present and independent.
     assert record.tier == "tool_loop"
     assert record.final_verdict["passed"] is True
     assert isinstance(record.first_attempt_verdict["passed"], bool)
@@ -286,14 +286,14 @@ def test_happy_path_records_tier_tagged_result(
 
 
 # --------------------------------------------------------------------------- #
-# m2 FR-3 — transcript() maps the final conversation 1:1 to TurnLike items.
+# m2 — transcript maps the final conversation 1:1 to TurnLike items.
 # --------------------------------------------------------------------------- #
 
 
 def test_transcript_maps_final_conversation(
     persistence_paths: tuple[Path, Path],
 ) -> None:
-    """FR-3: ``transcript()`` reflects the final conversation, system prompt included.
+    """``transcript`` reflects the final conversation, system prompt included.
 
     After a read → write → verify → done run the operator's transcript replays
     the system brief and every assistant/tool turn in order; tool-result turns
@@ -328,7 +328,7 @@ def test_transcript_maps_final_conversation(
     tool_names = [t.tool_name for t in turns if t.role == "tool"]
     assert tool_names == ["read_context", "write_parser", "run_ingest"]
 
-    # The last turn is the final assistant message (final-state, FR-3).
+    # The last turn is the final assistant message (final-state).
     assert turns[-1].role == "assistant"
     assert turns[-1].content == "done"
 
@@ -336,11 +336,11 @@ def test_transcript_maps_final_conversation(
 def test_tool_loop_transcript_persists_to_session_log(
     persistence_paths: tuple[Path, Path],
 ) -> None:
-    """FR-5: the harness persists the tool-loop transcript as log_turn rows.
+    """The harness persists the tool-loop transcript as log_turn rows.
 
     End-to-end through the unchanged kept-log harness path: a kept
     synthetic run leaves ordered ``log_turn`` rows that replay the operator's
-    conversation, keyed to the session's root ``agent_turn`` step (FR-1 link),
+    conversation, keyed to the session's root ``agent_turn`` step ( link),
     with tool-result turns carrying their ``tool_name``.
     """
     import duckdb
@@ -386,19 +386,19 @@ def test_tool_loop_transcript_persists_to_session_log(
 
 
 # --------------------------------------------------------------------------- #
-# T012 — First-snapshot (FR-006): the FIRST write_parser body grades independently.
+# First-snapshot: the FIRST write_parser body grades independently.
 # --------------------------------------------------------------------------- #
 
 
 def test_first_write_parser_snapshot_grades_independently(
     persistence_paths: tuple[Path, Path],
 ) -> None:
-    """FR-006: two ``write_parser`` calls → first verdict grades the FIRST body.
+    """Two ``write_parser`` calls → first verdict grades the FIRST body.
 
     The script writes a broken parser, then overwrites it with the good one. The
     final verdict grades the parser on disk at loop end (PASS); the first-parser
     verdict must grade the snapshotted FIRST body (FAIL) — the regression
-    direction WP05 covers rides on this independence.
+    direction covers rides on this independence.
     """
     fake = FakeChatBackend(
         [
@@ -422,7 +422,7 @@ def test_first_write_parser_snapshot_grades_independently(
 
 
 # --------------------------------------------------------------------------- #
-# T012 — Gate feedback loop: a self-reconcile failure re-enters the conversation.
+# Gate feedback loop: a self-reconcile failure re-enters the conversation.
 # --------------------------------------------------------------------------- #
 
 
@@ -467,7 +467,7 @@ def test_gate_failure_feedback_reaches_conversation_and_trial_still_grades(
 
 
 # --------------------------------------------------------------------------- #
-# T012 — Cap exhaustion (FR-005 / SC-005): always terminates into a graded record.
+# Cap exhaustion: always terminates into a graded record.
 # --------------------------------------------------------------------------- #
 
 
@@ -475,7 +475,7 @@ def test_cap_exhaustion_terminates_into_complete_graded_record(
     persistence_paths: tuple[Path, Path],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """FR-005 / SC-005: a never-stopping operator is cut at LIVE_TRIAL_MAX_TURNS.
+    """A never-stopping operator is cut at LIVE_TRIAL_MAX_TURNS.
 
     The script calls tools forever; with the env cap pinned small the loop stops
     exactly at the cap, never raises, and the trial still ends with a complete
@@ -497,7 +497,7 @@ def test_cap_exhaustion_terminates_into_complete_graded_record(
     assert operator.turns_used == 2
     assert len(fake.requests) == 2
 
-    # A complete graded record exists (SC-005): deterministic FAIL on both axes.
+    # A complete graded record exists: deterministic FAIL on both axes.
     record = outcome.record
     assert record is not None
     assert record.tier == "tool_loop"
@@ -514,7 +514,7 @@ def test_cap_exhaustion_terminates_into_complete_graded_record(
 
 
 # --------------------------------------------------------------------------- #
-# T012 — Turn accounting: an unknown tool call consumes a turn, corrective fed back.
+# Turn accounting: an unknown tool call consumes a turn, corrective fed back.
 # --------------------------------------------------------------------------- #
 
 
@@ -640,7 +640,7 @@ def test_fenced_json_tool_call_is_recovered_and_executed(
     # native tool_calls): transcript honesty.
     assistant_turns = [m for m in final_messages if m.get("role") == "assistant"]
     assert all("tool_calls" not in m for m in assistant_turns)
-    # The FIRST recovered write_parser body was snapshotted (FR-006 unchanged).
+    # The FIRST recovered write_parser body was snapshotted ( unchanged).
     assert operator.first_parser_code == code
     # The written parser passed the gate: complete record, final PASS.
     record = outcome.record
@@ -797,7 +797,7 @@ def test_absent_parser_gate_feedback_is_actionable(
     # Never the internal absent-parser import traceback.
     assert "ModuleNotFoundError" not in text
     assert "Traceback" not in text
-    # The trial still grades deterministically (SC-005 unchanged).
+    # The trial still grades deterministically ( unchanged).
     record = outcome.record
     assert record is not None
     assert record.final_verdict["passed"] is False
@@ -807,14 +807,14 @@ def test_absent_parser_gate_feedback_is_actionable(
 
 
 # --------------------------------------------------------------------------- #
-# NFR-006 — the two non-record outcome states return (never raise), mid-trial.
+# the two non-record outcome states return (never raise), mid-trial.
 # --------------------------------------------------------------------------- #
 
 
 def test_tool_calls_unsupported_mid_trial_returns_outcome_and_tears_down(
     persistence_paths: tuple[Path, Path],
 ) -> None:
-    """NFR-006: ToolCallsUnsupportedError mid-conversation → explicit outcome.
+    """ToolCallsUnsupportedError mid-conversation → explicit outcome.
 
     The error propagates OUT of the operator's loop (never swallowed into a
     half-graded trial), the entry point maps it to ``tool_calls_unsupported``,
@@ -842,7 +842,7 @@ def test_tool_calls_unsupported_mid_trial_returns_outcome_and_tears_down(
 def test_model_unavailable_mid_trial_returns_outcome_and_tears_down(
     persistence_paths: tuple[Path, Path],
 ) -> None:
-    """NFR-006: OllamaUnavailableError mid-conversation → ``model_unavailable``."""
+    """OllamaUnavailableError mid-conversation → ``model_unavailable``."""
     runs_dir, scoreboard_path = persistence_paths
     operator = ltl.ToolLoopOperator(
         _SYNTHETIC_CSV,

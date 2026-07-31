@@ -1,20 +1,20 @@
-"""Migration-level verification for 005_trace_audit.sql (WP01).
+"""Migration-level verification for 005_trace_audit.sql.
 
 Black-box stance: the warehouse is always initialized through the public
 ``premura.store.duck`` initialization path (``initialize`` / ``run_migrations``),
 never by feeding raw SQL fragments or importing migration internals. The
-assertions target the storage-shape contract WP01 owns:
+assertions target the storage-shape contract this migration owns:
 
   * the dedicated ``trace`` schema and its tables exist after init,
   * the pre-existing ``hp.*`` fact/note tables survive untouched (the trace
     migration replaces nothing in ``hp.*``),
   * the migration re-runs idempotently through the normal loader,
   * schema-ownership boundary: the trace migration creates NO new ``hp.*``
-    provenance table (FR-007 / NFR-002 boundary guardrail),
+    provenance table,
   * append-only shaping: stable primary keys, no mutable aggregate/disclosure
     cache table, and result/mark rows attach to immutable call ids.
 
-WP01 does not implement the Python trace service or MCP tools (WP02/WP03), so
+This migration does not implement the Python trace service or MCP tools, so
 these tests exercise the schema directly, not a public write API.
 """
 
@@ -77,7 +77,7 @@ def _pk_columns(conn: duckdb.DuckDBPyConnection, schema: str, table: str) -> lis
 
 
 # --------------------------------------------------------------------------- #
-# T002 — the trace schema/tables exist via the public init path; hp.* survives.
+# the trace schema/tables exist via the public init path; hp.* survives.
 # --------------------------------------------------------------------------- #
 def test_trace_schema_exists_after_initialize(empty_warehouse) -> None:
     assert "trace" in _schemas(empty_warehouse), "trace schema was not created"
@@ -116,14 +116,14 @@ def test_migration_is_idempotent_through_the_normal_loader(tmp_path: Path) -> No
 
 
 # --------------------------------------------------------------------------- #
-# T003 — schema-ownership guardrail: trace provenance never lands in hp.*.
+# schema-ownership guardrail: trace provenance never lands in hp.*.
 # --------------------------------------------------------------------------- #
 def test_trace_migration_adds_no_new_hp_provenance_tables(empty_warehouse) -> None:
     """The trace migration must not create any new table under hp.*.
 
     `trace.*` contains tool-use provenance; `hp.*` contains health facts. This
-    migration must not add trace/provenance tables to hp.* (FR-007 / NFR-002
-    boundary). After init, every hp.* table must be one of the known
+    migration must not add trace/provenance tables to hp.*. After init, every
+    hp.* table must be one of the known
     health-fact homes from migrations 001-004 — nothing trace-shaped sneaks in.
     """
     hp_tables = _schema_tables(empty_warehouse, "hp")
@@ -162,7 +162,7 @@ def test_trace_tables_are_only_under_trace_schema(empty_warehouse) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T004 — append-only shaping at the storage boundary.
+# append-only shaping at the storage boundary.
 # --------------------------------------------------------------------------- #
 def test_every_trace_table_has_a_stable_primary_key(empty_warehouse) -> None:
     """Stable PKs prevent accidental duplicate rows for the same identity."""
@@ -181,7 +181,7 @@ def test_no_mutable_aggregate_or_disclosure_cache_table(empty_warehouse) -> None
     """Disclosure (N/K counts) must stay a derived query, not a stored cache.
 
     A persisted aggregate table would be a second source of truth that can drift
-    from the canonical call/result/mark rows. WP01 must not ship one.
+    from the canonical call/result/mark rows. This migration must not ship one.
     """
     trace_tables = _schema_tables(empty_warehouse, "trace")
     cache_like = {

@@ -1,4 +1,4 @@
-"""WP2 — analyze-and-answer seam + capture tests (FR-4, FR-5).
+"""WP2 — analyze-and-answer seam + capture tests.
 
 End-to-end over ``run_answer_trial``:
 
@@ -53,7 +53,7 @@ def _run(tmp_path: Path, operator, *, seed: int = 7):
 
 
 # --------------------------------------------------------------------------- #
-# FR-4 — honest pass end to end.
+# honest pass end to end.
 # --------------------------------------------------------------------------- #
 
 
@@ -94,7 +94,7 @@ def test_operator_receives_only_bounded_surface(tmp_path: Path) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# FR-5 — session-log capture + scoreboard persistence.
+# session-log capture + scoreboard persistence.
 # --------------------------------------------------------------------------- #
 
 

@@ -1,4 +1,4 @@
-"""WP01 — the observation golden-verdict regression (C-004 / SC-006).
+"""The observation golden-verdict regression.
 
 Proves the scenario refactor changed **nothing** about observation grading: the
 refactored ``grade()`` driven through the observation scenario over the committed
@@ -6,7 +6,7 @@ synthetic fixture reproduces the pre-refactor verdict **byte-for-byte**.
 
 The golden (:data:`GOLDEN_OBSERVATION_VERDICT`) was captured from ``master``'s
 grader — *before* the scenario/strategy refactor — by running the known-good
-reference parser through the real WP03 sandbox runner, then grading. It is the
+reference parser through the real sandbox runner, then grading. It is the
 frozen baseline, not a hand-authored expectation.
 
 Test method (mirrors ``tests/test_grader.py``): build a real sandbox, install +
@@ -49,7 +49,7 @@ if _missing:
 
 
 # --------------------------------------------------------------------------- #
-# T001 — the GOLDEN, captured from master's grader BEFORE the refactor.
+# The GOLDEN, captured from master's grader BEFORE the refactor.
 # Captured by running the good reference parser through the real sandbox runner
 # and grading with the pre-refactor grade(). Frozen here; do not hand-edit.
 # --------------------------------------------------------------------------- #
@@ -86,7 +86,7 @@ class _Provenance:
 
 
 def _run_runner_envelope(sandbox: Any, *, parser: str) -> dict[str, Any]:
-    """Run the parser through the real WP03 subprocess runner; return its envelope."""
+    """Run the parser through the real subprocess runner; return its envelope."""
     env = {
         "PYTHONPATH": str(sandbox.root / "src"),
         "PATH": os.environ.get("PATH", ""),
@@ -146,16 +146,16 @@ def _grade_observation_via_scenario() -> dict[str, Any]:
 
 
 def test_observation_verdict_matches_golden_value() -> None:
-    """The refactored grader reproduces the golden verdict as a dict (C-004)."""
+    """The refactored grader reproduces the golden verdict as a dict."""
     verdict = _grade_observation_via_scenario()
     assert verdict == GOLDEN_OBSERVATION_VERDICT
 
 
 def test_observation_verdict_byte_identical_to_golden() -> None:
-    """Serialized (sorted-key) verdict is BYTE-for-byte the golden (SC-006).
+    """Serialized (sorted-key) verdict is BYTE-for-byte the golden.
 
     Determinism rail: arrays sorted, no ids, no timestamps — so the canonical JSON
-    serialization is reproducible across runs (D5 / NFR-001).
+    serialization is reproducible across runs.
     """
     verdict = _grade_observation_via_scenario()
     assert json.dumps(verdict, sort_keys=True) == json.dumps(
@@ -164,7 +164,7 @@ def test_observation_verdict_byte_identical_to_golden() -> None:
 
 
 def test_default_strategy_reproduces_golden() -> None:
-    """Omitting ``strategy`` defaults to observation → same golden (C-004).
+    """Omitting ``strategy`` defaults to observation → same golden.
 
     The default-keeps-call-sites-working seam: ``live_trial.py`` / ``repeatable_check.py``
     still call ``grade()`` with no ``strategy`` and must get observation behavior.

@@ -14,7 +14,7 @@ The structural guarantees this file locks down:
 * the full catalog is exactly six named tools, each dispatchable;
 * the paired-input seams the ``paired_t_test`` / ``condition_paired_t_test`` MCP
   wrappers need are re-exported from the public engine surface;
-* listing the catalog stays well under one second (NFR-007).
+* listing the catalog stays well under one second.
 
 Pure engine surface only — no MCP, no warehouse.
 """
@@ -63,7 +63,7 @@ def test_default_catalog_is_exactly_six_tools() -> None:
 
 
 def test_newly_published_tool_is_on_the_surface() -> None:
-    """``condition_paired_t_test`` reaches the default surface (m8 FR-4)."""
+    """``condition_paired_t_test`` reaches the default surface (m8)."""
     names = {spec.name for spec in list_analytical_tools()}
     assert _NEWLY_PUBLISHED <= names
 
@@ -173,7 +173,7 @@ def test_before_after_paired_seam_is_publicly_exported() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 4. NFR-007 — listing the catalog stays well under one second.
+# 4. — listing the catalog stays well under one second.
 # ---------------------------------------------------------------------------
 
 

@@ -1,14 +1,14 @@
-"""Doc<->code consistency guards for WP06 (T030).
+"""Doc<->code consistency guards for the intake docs.
 
 These tests do not freeze prose. They assert only that the load-bearing
-**symbols and registration points** the WP06 docs name actually exist in code,
+**symbols and registration points** the intake docs name actually exist in code,
 so the parser-generator skill and the add-a-dimension rule cannot silently drift
-into describing an API that WP01/WP03/WP04/WP05 did not ship. A mismatch here is
-the exact drift dimension this mission guards against.
+into describing an API that was never shipped. A mismatch here is the exact
+drift dimension this guards against.
 
 The docs themselves live at:
-* ``src/premura/skills/parser-generator/SKILL.md`` (FR-007 skill half / SC-004)
-* ``src/premura/engine/INTAKE_DIMENSIONS.md`` (FR-009 / SC-005)
+* ``src/premura/skills/parser-generator/SKILL.md``
+* ``src/premura/engine/INTAKE_DIMENSIONS.md``
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ def _read(path: Path) -> str:
 
 
 # --------------------------------------------------------------------------- #
-# T027 / FR-007 — the skill must describe the WP01 protocol as implemented.
+# The skill must describe the intake protocol as implemented.
 # --------------------------------------------------------------------------- #
 
 
@@ -77,7 +77,7 @@ def test_parse_returns_documented_union() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T028 / FR-009 / SC-005 — the rule's four steps must match the real seams.
+# The rule's four steps must match the real seams.
 # --------------------------------------------------------------------------- #
 
 
@@ -136,7 +136,7 @@ def test_rule_pins_matcher_to_authoritative_symbol() -> None:
 
 
 def test_rule_cites_nfr005_structural_proof() -> None:
-    """SC-005: the rule cites the real 'no shared-seam branch' test, which exists."""
+    """The rule cites the real 'no shared-seam branch' test, which exists."""
     text = _read(RULE)
     assert "test_shared_seam_has_no_per_domain_branch" in text
     nfr = REPO_ROOT / "tests" / "intake" / "test_intake_resolvers.py"

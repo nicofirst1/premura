@@ -1,4 +1,4 @@
-"""Intake runtime contract checker (FR-010 / SC-008).
+"""Intake runtime contract checker.
 
 The intake analogue of the observation ``check_runtime_contract``
 (:mod:`premura.parsers.contract_check`): a **pure function over captured
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 # The exact, ordered clause names for the intake runtime tier. Pinned here so the
 # contract test can assert the implementation's clause set matches the contract
 # doc — and so the checker cannot silently drift toward the observation or full
-# review contract (FR-010 invariant: names + count must match).
+# review contract (an invariant: names + count must match).
 INTAKE_RUNTIME_CLAUSES: tuple[str, ...] = (
     "parser_imports_and_parses",
     "batch_validates",

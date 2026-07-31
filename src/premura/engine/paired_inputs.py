@@ -1,19 +1,19 @@
-"""Stage 3 — the simple anchor-date before/after *paired-input* layer (WP03).
+"""Stage 3 — the simple anchor-date before/after *paired-input* layer.
 
 This module is the narrow preparation seam that the ``paired_t_test`` analytical
-tool (WP04) needs before any paired estimate can run. Its single job is to turn
+tool needs before any paired estimate can run. Its single job is to turn
 one already-admitted ordered :class:`~premura.engine.analytical_inputs.AnalyticalInputSeries`
 plus a caller-declared :class:`BeforeAfterPairedRequest` (metric, anchor date,
 before window, after window, expected direction) into either:
 
 * a usable :class:`BeforeAfterPairedInput` carrying ordered, computation-ready
-  matched pairs and enough span/imputation metadata for WP04 to report pair count
-  and the admissible paired span (FR-006), **or**
-* a first-class :class:`RefusalOutcome` and **no** pairs (FR-007).
+  matched pairs and enough span/imputation metadata for the caller to report pair
+  count and the admissible paired span, **or**
+* a first-class :class:`RefusalOutcome` and **no** pairs.
 
 It never computes the mean paired difference, the uncertainty, or the analytical
-envelope — that is WP04's job. This layer produces a *prepared pair set or a
-refusal*, full stop. The seam WP04 consumes is exactly
+envelope — that is the caller's job. This layer produces a *prepared pair set or a
+refusal*, full stop. The seam the caller consumes is exactly
 :func:`prepare_before_after_paired_input` (and :func:`before_after_pairs_for_computation`
 to read pairs only when the input is usable).
 
@@ -39,8 +39,8 @@ metric-specific or condition-specific tool):
   a pair.
 * ``difference = after_value - before_value``.
 
-What this layer deliberately does **not** do (scope guardrails, FR-014 / C-004
-and the ``paired-t-test-contract``'s "Deferred Extension"): it does not scan
+What this layer deliberately does **not** do (scope guardrails from the
+``paired-t-test-contract``'s "Deferred Extension"): it does not scan
 anchor dates, before/after windows, or pair-selection strategies; it does not
 support ``condition_label`` pairing, arbitrary pair maps, or candidate-anchor/
 candidate-window lists. The request shape carries none of those fields, so they
@@ -80,7 +80,7 @@ __all__ = [
 
 
 # ---------------------------------------------------------------------------
-# Parameter bounds (mirrors the WP01 policy-layer raw-pair floor)
+# Parameter bounds (mirrors the evidence-admissibility policy layer's raw-pair floor)
 # ---------------------------------------------------------------------------
 
 MAX_WINDOW_DAYS = 365
@@ -91,10 +91,11 @@ anchor-date before/after comparison."""
 
 BEFORE_AFTER_MIN_PAIRS = 8
 """The conservative raw *pair* floor for the simple anchor-date paired
-comparison. Mirrors the WP01 policy-layer ``_PAIRED_DIFFERENCE_MIN_PAIRS`` so the
-same number gates both the per-series admissibility evidence and the post-pairing
-count: below this many usable matched pairs a single mean paired difference would
-carry essentially no information, so the preparer refuses before WP04 can run.
+comparison. Mirrors the evidence-admissibility policy layer's
+``_PAIRED_DIFFERENCE_MIN_PAIRS`` so the same number gates both the per-series
+admissibility evidence and the post-pairing count: below this many usable
+matched pairs a single mean paired difference would carry essentially no
+information, so the preparer refuses before the caller can compute an estimate.
 The boundary is inclusive — exactly ``BEFORE_AFTER_MIN_PAIRS`` pairs is usable."""
 
 
@@ -104,12 +105,13 @@ The boundary is inclusive — exactly ``BEFORE_AFTER_MIN_PAIRS`` pairs is usable
 
 
 class BeforeAfterDirection(StrEnum):
-    """The closed, pre-registered expected sign of ``after - before`` (FR-005).
+    """The closed, pre-registered expected sign of ``after - before``.
 
     The caller must declare this **before** the result exists — declaring the
-    expected direction up front is the anti-p-hacking discipline FR-005 calls
-    out. It is a closed vocabulary so an agent cannot smuggle a free-form
-    ``"up a bit"``; WP04 compares the observed sign against this declared value.
+    expected direction up front is the anti-p-hacking discipline this shape
+    exists to enforce. It is a closed vocabulary so an agent cannot smuggle a
+    free-form ``"up a bit"``; the caller compares the observed sign against
+    this declared value.
     """
 
     INCREASE = "increase"
@@ -122,7 +124,7 @@ class BeforeAfterPairRefusalReason(StrEnum):
     These are the paired-stage reasons, kept machine-distinct so an agent can
     branch on exactly what failed. When the *constituent* series is itself
     refused, the paired refusal propagates that series' admissibility reason
-    verbatim (admissibility is the WP01 evidence policy's job, never
+    verbatim (admissibility is the evidence-admissibility policy's job, never
     reimplemented here); these reasons cover only the gates that exist because
     there is an anchor-date pairing request on top of an admitted series.
     """
@@ -165,11 +167,11 @@ class BeforeAfterPairedRequest:
 
     A ``paired_t_test`` call is *pre-registered*: the metric, the anchor date, the
     before/after window sizes, and the expected direction are all fixed inputs
-    declared **before** the result exists (FR-005). The shape intentionally
+    declared **before** the result exists. The shape intentionally
     carries **no** ``condition_label``, ``anchor_dates`` list, ``before_days``/
     ``after_days`` option lists, ``pair_map``, or "choose best split" field — any
-    such keyword is a ``TypeError`` at construction (FR-014 / C-004 scope
-    guardrail). Adding condition-label pairing is a future mission with its own
+    such keyword is a ``TypeError`` at construction (a deliberate scope
+    guardrail). Adding condition-label pairing is future work with its own
     contract; it must not be smuggled into this shape.
 
     Construction is permissive about *value* validity (a missing anchor date or
@@ -258,7 +260,7 @@ class BeforeAfterPair:
 
 @dataclass(frozen=True)
 class BeforeAfterPairedInput:
-    """The post-admissibility paired input consumed by ``paired_t_test`` (WP04).
+    """The post-admissibility paired input consumed by ``paired_t_test``.
 
     Exactly one of two states, distinguished by ``refusal``:
 
@@ -392,15 +394,16 @@ def prepare_before_after_paired_input(
 ) -> BeforeAfterPairedInput:
     """Prepare a simple anchor-date before/after paired input, or refuse.
 
-    This is the single seam ``paired_t_test`` (WP04) calls to obtain a usable
+    This is the single seam ``paired_t_test`` calls to obtain a usable
     matched-pair set. It produces a :class:`BeforeAfterPairedInput` carrying
     ordered pairs and span metadata, or a :class:`RefusalOutcome` and no pairs —
     it **never** computes the mean paired difference, the uncertainty, or an
-    estimate (WP04 owns those).
+    estimate (the caller owns those).
 
     The supported surface is exactly ``(series, request)``. Any extra positional
     or keyword argument is a request to scan/select a split (or some other
-    out-of-scope shape) and is refused **before** any pairing (FR-014 / C-004).
+    out-of-scope shape) and is refused **before** any pairing (a deliberate
+    scope guardrail).
 
     Pairing follows the one fixed rule documented in the module docstring:
     local-calendar-day keying, anchor day excluded, nearest-to-anchor-outward
@@ -425,7 +428,7 @@ def prepare_before_after_paired_input(
 
     # 0. Forbidden-request gate: refuse BEFORE any pairing. The supported surface
     #    is exactly (series, request); any extra argument is an attempt to widen
-    #    the tool past its one declared anchor split (FR-014 / C-004).
+    #    the tool past its one declared anchor split (a deliberate scope guardrail).
     if args or kwargs:
         offending = [f"positional[{i}]" for i in range(len(args))] + sorted(kwargs)
         return _refused(
@@ -445,7 +448,7 @@ def prepare_before_after_paired_input(
         )
 
     # 1. Refused/inadmissible input series short-circuits, propagating its reason
-    #    verbatim (admissibility is the WP01 evidence policy's job, never redone).
+    #    verbatim (admissibility is the evidence-admissibility policy's job, never redone).
     if series.refusal is not None:
         src = series.refusal
         return _refused(
@@ -609,7 +612,7 @@ def prepare_before_after_paired_input(
     )
 
     # 8. Usable bundle. Window spans reflect the actual paired days used (so the
-    #    admissible paired span WP04 reports under FR-006 is honest). Imputation
+    #    admissible paired span the caller reports is honest). Imputation
     #    percentage counts pairs where EITHER side is imputed.
     used_before_days = [pairs[i].before_day for i in range(pair_count)]
     used_after_days = [pairs[i].after_day for i in range(pair_count)]
@@ -658,7 +661,7 @@ def before_after_pairs_for_computation(
     The before/after twin of
     :func:`~premura.engine.analytical_inputs.points_for_computation`: a refused
     paired input raises :class:`RuntimeError` rather than hand back pairs, so the
-    WP04 paired-difference step cannot accidentally compute over an input that did
+    paired-difference step cannot accidentally compute over an input that did
     not pass the paired gates even if it forgets to branch on ``paired.refusal``.
     """
     if paired.refusal is not None:

@@ -1,29 +1,29 @@
-"""Behavioral tests for the WP03 intake resolvers + parameterized compute seam.
+"""Behavioral tests for the intake resolvers + parameterized compute seam.
 
 Every resolver test drives behavior through the *public* engine seam
 (``from premura.engine import resolve_dependency``) — there are no imports of
 ``premura.engine.views.nutrition_intake`` / ``...supplement_intake``. The lazy
 loader inside :func:`premura.engine.resolve_dependency` is what binds the two
 intake resolvers to those modules via the ``@resolver(domain=...)`` registry, so
-these tests prove the binding works end-to-end (T013, registration-as-discovery).
+these tests prove the binding works end-to-end (registration-as-discovery).
 
 Intake rows are seeded directly via ``persist_intake_batch`` (the already-shipped
-store path); this WP does not depend on WP01/WP02. Tests assert on the resolved
-payload + honest-refusal envelope, never on resolver internals.
+store path). Tests assert on the resolved payload + honest-refusal envelope,
+never on resolver internals.
 
 What is locked here:
 
-* FR-001/FR-002: both domains resolve usable rows to the generic payload and
-  refuse honestly (``usable=False`` + explicit ``absence_reason``) when none.
-* NFR-003 (T014): a same-named *observation* row never satisfies an intake
-  dependency — the resolvers read intake tables only, no hidden fallback.
-* NFR-005 (T015): the shared ``resolve_dependency`` path has no per-domain branch
-  for the two intake domains; both reach their resolver purely via the registry.
-* NFR-006 (T016): a row whose ``local_tz`` puts it on a different local day than
-  its UTC date resolves with ``day_basis == "local_calendar_day"`` and the local
-  day in its day set.
-* T031: a parameterized in-test signal receives params through ``compute(...)``;
-  an existing zero-arg signal still computes unchanged.
+* Both domains resolve usable rows to the generic payload and refuse honestly
+  (``usable=False`` + explicit ``absence_reason``) when none.
+* A same-named *observation* row never satisfies an intake dependency — the
+  resolvers read intake tables only, no hidden fallback.
+* The shared ``resolve_dependency`` path has no per-domain branch for the two
+  intake domains; both reach their resolver purely via the registry.
+* A row whose ``local_tz`` puts it on a different local day than its UTC date
+  resolves with ``day_basis == "local_calendar_day"`` and the local day in its
+  day set.
+* A parameterized in-test signal receives params through ``compute(...)``; an
+  existing zero-arg signal still computes unchanged.
 """
 
 from __future__ import annotations
@@ -205,7 +205,7 @@ def _seed_same_named_observation(
 ) -> None:
     """Register a metric + insert one observation row sharing an intake key.
 
-    This is the trap NFR-003 guards against: an observation in
+    This is the trap the intake resolvers guard against: an observation in
     ``hp.fact_measurement`` whose ``metric_id`` collides with an intake key. The
     intake resolvers must read intake tables only and never satisfy a declared
     intake dependency from this row.
@@ -273,7 +273,7 @@ def _supplement_request(
 
 
 # ---------------------------------------------------------------------------
-# FR-001: usable resolution to the generic payload
+# Usable resolution to the generic payload
 # ---------------------------------------------------------------------------
 
 
@@ -382,7 +382,7 @@ def test_supplement_matcher_is_case_insensitive_substring_and(
 
 
 # ---------------------------------------------------------------------------
-# FR-002: honest refusal when no matching row
+# Honest refusal when no matching row
 # ---------------------------------------------------------------------------
 
 
@@ -405,14 +405,14 @@ def test_supplement_intake_refuses_when_empty(empty_warehouse: Any, anchor_ts: d
 
 
 # ---------------------------------------------------------------------------
-# T014 / NFR-003: no hidden fallback — an observation row never satisfies intake
+# No hidden fallback — an observation row never satisfies intake
 # ---------------------------------------------------------------------------
 
 
 def test_observation_row_never_satisfies_nutrition_intake(
     empty_warehouse: Any, anchor_ts: datetime
 ) -> None:
-    """A same-named observation must not back-fill an intake dependency (NFR-003).
+    """A same-named observation must not back-fill an intake dependency.
 
     Seed an ``energy`` observation in ``hp.fact_measurement`` but no nutrition
     intake row. The nutrition resolver reads intake tables only, so the declared
@@ -437,7 +437,7 @@ def test_observation_row_never_satisfies_nutrition_intake(
 def test_observation_row_never_satisfies_supplement_intake(
     empty_warehouse: Any, anchor_ts: datetime
 ) -> None:
-    """The supplement resolver must not read any observation row (NFR-003)."""
+    """The supplement resolver must not read any observation row."""
     conn = empty_warehouse
     _seed_same_named_observation(
         conn,
@@ -456,7 +456,7 @@ def test_observation_row_never_satisfies_supplement_intake(
 
 
 # ---------------------------------------------------------------------------
-# T015 / NFR-005: structural generalization — no per-domain branch in the seam
+# Structural generalization — no per-domain branch in the seam
 # ---------------------------------------------------------------------------
 
 
@@ -479,7 +479,7 @@ def _dispatcher_code_without_docstring(fn: Any) -> str:
 
 
 def test_shared_seam_has_no_per_domain_branch() -> None:
-    """The shared ``resolve_dependency`` path names no intake domain (NFR-005).
+    """The shared ``resolve_dependency`` path names no intake domain.
 
     Both intake domains must be reached purely through the ``@resolver`` registry
     — exactly like ``observation_history`` / ``profile_context`` — not through an
@@ -516,12 +516,12 @@ def test_intake_domains_reached_purely_via_registry(
 
 
 # ---------------------------------------------------------------------------
-# T016 / NFR-006: local-calendar-day basis crosses local midnight
+# Local-calendar-day basis crosses local midnight
 # ---------------------------------------------------------------------------
 
 
 def test_nutrition_uses_local_calendar_day(empty_warehouse: Any) -> None:
-    """A near-midnight event resolves on its LOCAL day, not its UTC date (NFR-006).
+    """A near-midnight event resolves on its LOCAL day, not its UTC date.
 
     ``2026-05-20T11:30:00`` UTC in ``Pacific/Auckland`` (+12) is local
     ``2026-05-20 23:30`` — same calendar date as UTC would be wrong to assume in
@@ -555,7 +555,7 @@ def test_nutrition_uses_local_calendar_day(empty_warehouse: Any) -> None:
 
 
 def test_supplement_uses_local_calendar_day(empty_warehouse: Any) -> None:
-    """Supplement coverage uses the local calendar day too (NFR-006)."""
+    """Supplement coverage uses the local calendar day too."""
     utc_instant = datetime(2026, 5, 20, 13, 0, 0)
     anchor = datetime(2026, 5, 28, 12, 0, 0, tzinfo=UTC)
     _seed_supplement(
@@ -601,7 +601,7 @@ def test_utc_fallback_basis_when_no_local_tz(empty_warehouse: Any, anchor_ts: da
 
 
 # ---------------------------------------------------------------------------
-# T031: parameterized-signal invocation seam (backward compatible)
+# Parameterized-signal invocation seam (backward compatible)
 # ---------------------------------------------------------------------------
 
 

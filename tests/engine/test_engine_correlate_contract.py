@@ -1,4 +1,4 @@
-"""Contract tests for the `correlate` lagged-association vocabulary (WP01).
+"""Contract tests for the `correlate` lagged-association vocabulary.
 
 These pin the *public contract* `correlate` needs before any paired computation
 exists: a reviewed closed analytical question type for lagged association, the
@@ -7,7 +7,7 @@ multi-input tool descriptor declare the paired input shape without a dispatcher
 branch. Everything is observed through the contract module's public surface;
 nothing here touches SQL, the warehouse, MCP, PubMed, or the network.
 
-Subtasks covered: T001 (failing vocabulary contract) and T004 (paired
+Subtasks covered: (failing vocabulary contract) and (paired
 input-shape + forbidden-confound-key validation at the extension seam).
 """
 
@@ -49,7 +49,7 @@ def _clean_registry():
 
 
 # ---------------------------------------------------------------------------
-# T001: lagged-association is reviewed closed vocabulary
+# lagged-association is reviewed closed vocabulary
 # ---------------------------------------------------------------------------
 
 
@@ -107,7 +107,7 @@ def test_common_cause_plausible_usable_in_a_confound_entry() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T004: paired input shape + confound key at the extension seam, no dispatch
+# paired input shape + confound key at the extension seam, no dispatch
 #        branch required
 # ---------------------------------------------------------------------------
 
@@ -193,7 +193,7 @@ def test_paired_descriptor_can_register_through_the_shared_decorator() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T005: no runtime network / PubMed dependency reachable from the contract
+# no runtime network / PubMed dependency reachable from the contract
 # ---------------------------------------------------------------------------
 
 

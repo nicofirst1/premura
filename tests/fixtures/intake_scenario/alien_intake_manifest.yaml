@@ -1,4 +1,4 @@
-# GRADER-ONLY — never expose to an operator (C-005).
+# GRADER-ONLY — never expose to an operator.
 #
 # This is the boundary truth the grader reconciles a parser's run against. It is
 # read ONLY by grader/test code; it MUST NOT be copied into the operator sandbox
@@ -34,7 +34,7 @@ columns:
     expected_outcome: loaded
   # The `note` column is free text with no canonical home in the intake seam.
   # The reference parser must DECLARE it as a gap (unmapped_metrics), never drop
-  # it silently. This is the SC-004 declared-gap case.
+  # it silently. This is the declared-gap case.
   - source_column: note
     drawer: intake
     canonical_home: null

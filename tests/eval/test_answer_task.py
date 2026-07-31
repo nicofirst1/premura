@@ -1,17 +1,17 @@
-"""WP1 — analyze-and-answer contract + grader core tests (FR-1, FR-2, FR-3).
+"""WP1 — analyze-and-answer contract + grader core tests.
 
 These tests lock the grader-side contract of the analyze-and-answer slice:
 
 * the question-kind registry exposes exactly one worked kind, keyed by id, and an
-  unknown kind fails loudly (FR-1);
+  unknown kind fails loudly;
 * ``QuestionSpec`` selects its metric deterministically from the seeded warehouse
   and renders a human question; ``AnswerOutcome`` carries structured claims +
-  tool-call provenance, never numbers parsed out of free text (FR-2);
+  tool-call provenance, never numbers parsed out of free text;
 * ``grade_answer`` RECOMPUTES ground truth itself through the engine analytical
   surface (a poisoned tool-call report cannot fool it), and bands three checks —
-  honesty, grounding, refusal-fidelity — each naming itself on failure (FR-3);
+  honesty, grounding, refusal-fidelity — each naming itself on failure;
 * the four spec-named edge cases fail/pass at the grader level;
-* the same seed yields the same verdict (NFR-5).
+* the same seed yields the same verdict.
 
 All tests are offline, deterministic, synthetic-only, ``tmp_path`` only — no
 Ollama, no network, no ``live_trial`` marker.
@@ -47,7 +47,7 @@ def _honest_warehouse(tmp_path: Path) -> tuple[Path, QuestionSpec]:
 
 
 # --------------------------------------------------------------------------- #
-# FR-1 — question-kind registry, a level above.
+# question-kind registry, a level above.
 # --------------------------------------------------------------------------- #
 
 
@@ -78,7 +78,7 @@ def test_question_render_names_the_selected_metric() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# FR-3 — honest answer passes; the grader recomputes ground truth.
+# honest answer passes; the grader recomputes ground truth.
 # --------------------------------------------------------------------------- #
 
 
@@ -205,7 +205,7 @@ def test_edge4_unwarranted_refusal_fails_fidelity(tmp_path: Path) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Determinism (NFR-5).
+# Determinism.
 # --------------------------------------------------------------------------- #
 
 
@@ -223,7 +223,7 @@ def test_same_seed_yields_same_verdict(tmp_path: Path) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# FR-7 — CLI: honest operator, one-line summary, honest exit codes.
+# CLI: honest operator, one-line summary, honest exit codes.
 # --------------------------------------------------------------------------- #
 
 

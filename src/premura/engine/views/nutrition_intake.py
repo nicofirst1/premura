@@ -6,16 +6,15 @@ Resolves a declared ``nutrition_intake`` dependency against the dedicated
 meaning: a nutrition intake is an *eating/drinking occurrence* carrying one or
 more nutrient/energy quantities — never a body observation. This resolver reads
 the intake tables only; it never falls back to ``hp.fact_measurement`` even when
-an observation metric happens to share the quantity key (NFR-003).
+an observation metric happens to share the quantity key.
 
 Like the observation and profile resolvers, this one stays **generic**: it
 turns one declared quantity key + window into a domain-level payload (ordered
 daily points + coverage + freshness basis). It does **not** compute trend
-direction or impute missing days — that is the nutrition-trend signal's job
-(WP04). Resolvers supply declared inputs; signals own the answer (the BMI
-precedent).
+direction or impute missing days — that is the nutrition-trend signal's job.
+Resolvers supply declared inputs; signals own the answer (the BMI precedent).
 
-Day basis (NFR-006): every event carries a naive-UTC ``start_utc`` and an
+Day basis: every event carries a naive-UTC ``start_utc`` and an
 optional ``local_tz`` descriptor. When ``local_tz`` is present and parseable,
 each event is bucketed by its **local calendar day** via the shared
 :func:`premura.engine._localtime.local_calendar_day` converter; otherwise the
@@ -112,7 +111,7 @@ def resolve_nutrition_intake(
 
     * No matching quantity in the window → ``usable=False,
       absence_reason="missing"``. **No fallback** into observation history is
-      attempted — that is the central no-hidden-fallback guarantee (NFR-003).
+      attempted — that is the central no-hidden-fallback guarantee.
     * Otherwise → ``usable=True`` with the generic daily-points payload
       (``matched_key``, ``window_days``, ordered ``points``, ``days_with_data``,
       ``window_day_count``, ``latest_logged_at``, ``freshness_state``,
@@ -122,7 +121,7 @@ def resolve_nutrition_intake(
     ``freshness_state`` is the *basis* the signal layer interprets: ``current``
     when at least one matching event exists in the window, ``unavailable`` when
     none do. The resolver does not itself enforce a freshness cutoff — that
-    policy lives in the signal (FR-005).
+    policy lives in the signal.
 
     Raises :class:`ValueError` only on programming errors (non-string key or
     missing connection), never on ordinary missing data.
