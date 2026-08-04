@@ -1,4 +1,4 @@
-"""FR-8: launchd plist renders + parses as a valid Apple plist."""
+"""launchd plist renders + parses as a valid Apple plist."""
 
 from __future__ import annotations
 

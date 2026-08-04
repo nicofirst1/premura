@@ -1,18 +1,18 @@
-"""WP05 T021 — the machine-checkable no-fork guarantee (NFR-005 / NFR-006 / SC-003).
+"""The machine-checkable no-fork guarantee.
 
-The structural proof of the mission's central doctrine claim (``DOCTRINE.md``
+The structural proof of the project's central doctrine claim (``DOCTRINE.md``
 §"guide, don't enumerate"): a new acceptance source is added by **registering a
 scenario**, never by forking the shared grade path. Two halves, each a real guard
 that fails the moment someone reintroduces a per-drawer branch:
 
-1. **Structural (NFR-005).** Parse the source of :func:`premura.harness.grader.grade`
+1. **Structural.** Parse the source of :func:`premura.harness.grader.grade`
    (and the helper it orchestrates) and assert its body contains **no** per-drawer
    token — no ``intake`` / ``nutrition`` / ``supplement`` / ``fact_`` literal and no
    ``if ... drawer`` switch. All drawer-specific facts must reach the body only
    through the injected :class:`~premura.harness.scenario.DrawerGradingStrategy`
    seam. This is an AST + token scan over the *actual function body*, so an
    ``if intake:`` ladder added later trips it.
-2. **Declared dispatch, not name-matching (NFR-006 / SC-003).** Every
+2. **Declared dispatch, not name-matching.** Every
    :class:`~premura.harness.scenario.Scenario` declares its own grading entry
    point via ``grade_fn`` (``None`` means "use the shared ``grade()``"); the
    caller (``live_trial.py``) resolves ``scenario.grade_fn or grade`` and never
@@ -26,7 +26,7 @@ that fails the moment someone reintroduces a per-drawer branch:
    as a declared, structural exception, not exercised through the recorder.
 
 Offline / deterministic: no network, no model server, no warehouse writes for the
-structural half (NFR-001).
+structural half.
 """
 
 from __future__ import annotations
@@ -44,14 +44,14 @@ from premura.harness.grader import grade, grade_garbage_refusal
 from premura.harness.scenario_registry import all_scenarios
 
 # --------------------------------------------------------------------------- #
-# Forbidden per-drawer tokens (the exact set WP05 enumerates). A drawer name, an
-# intake table noun, or a ``fact_`` warehouse prefix appearing INSIDE grade()'s body
-# would mean the shared path knows about a specific drawer — exactly the fork
-# NFR-005 forbids. The strategy methods (boundary_truth / runtime_check / gap_set)
+# Forbidden per-drawer tokens. A drawer name, an intake table noun, or a
+# ``fact_`` warehouse prefix appearing INSIDE grade()'s body would mean the
+# shared path knows about a specific drawer — exactly the fork this guards
+# against. The strategy methods (boundary_truth / runtime_check / gap_set)
 # are the only places these may appear.
 #
 # ``observation`` is deliberately NOT here: ``grade()`` legitimately names
-# ``observation_scenario().strategy`` once as the C-004 *default* (so existing
+# ``observation_scenario().strategy`` once as the default (so existing
 # call sites that pass no strategy keep observation behavior). That single default
 # selection is not a per-drawer branch; the separate ``no conditional drawer
 # switch`` assertion below is what guards against an ``if <drawer>:`` ladder.
@@ -65,7 +65,7 @@ FORBIDDEN_DRAWER_TOKENS: tuple[str, ...] = (
 )
 
 # The one allowed drawer-named expression in grade()'s body: selecting the default
-# strategy when the caller passes none (C-004). It must remain a single unconditional
+# strategy when the caller passes none. It must remain a single unconditional
 # default, never grow into a drawer switch.
 _ALLOWED_DEFAULT_STRATEGY_EXPR = "observation_scenario().strategy"
 
@@ -94,7 +94,7 @@ def _function_body_source(func: Any) -> str:
 
 
 def test_grade_body_names_no_drawer_token() -> None:
-    """``grade()``'s executable body contains no per-drawer token (NFR-005).
+    """``grade()``'s executable body contains no per-drawer token.
 
     The structural enforcement of guide-don't-enumerate: every drawer-specific
     fact reaches ``grade()`` only via the injected strategy. If a future change
@@ -110,7 +110,7 @@ def test_grade_body_names_no_drawer_token() -> None:
 
 
 def test_grade_body_has_no_conditional_drawer_switch() -> None:
-    """``grade()``'s only branch is the C-004 default-strategy guard — no drawer switch.
+    """``grade()``'s only branch is the default-strategy guard — no drawer switch.
 
     The complement to the token scan: even a token-free fork (``if some_flag:`` that
     selects a drawer) is forbidden. We assert the body's *only* conditional is the
@@ -122,7 +122,7 @@ def test_grade_body_has_no_conditional_drawer_switch() -> None:
     branches = [n for n in ast.walk(body_ast) if isinstance(n, (ast.If, ast.Match))]
     assert len(branches) == 1, (
         f"grade() body has {len(branches)} conditional branches; only the single "
-        "C-004 default-strategy guard is allowed — a drawer switch must not appear."
+        "default-strategy guard is allowed — a drawer switch must not appear."
     )
 
     # The lone branch is the default-strategy guard, and it sets the allowed default.
@@ -134,7 +134,7 @@ def test_grade_body_has_no_conditional_drawer_switch() -> None:
 
 
 def test_grade_orchestration_helper_names_no_drawer_token() -> None:
-    """The grade-orchestration helper is drawer-blind too (NFR-005).
+    """The grade-orchestration helper is drawer-blind too.
 
     ``grade()`` delegates honesty to ``_grade_honest_about_gaps``; that helper must
     not fork on a drawer either, or the no-fork guarantee would be evaded one level
@@ -166,7 +166,7 @@ def test_grade_signature_is_strategy_injected_not_source_keyed() -> None:
 
 
 def test_at_least_two_scenarios_registered() -> None:
-    """The registry lists ≥2 scenarios (SC-003 / NFR-006).
+    """The registry lists at least two scenarios.
 
     The abstraction is only meaningfully proven when more than one source rides
     it; the registry is the bounded list new sources are appended to.

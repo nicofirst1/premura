@@ -1,17 +1,17 @@
-"""WP04 — Layer-1 happy-path intake grading e2e (SC-001 / FR-003..006).
+"""Layer-1 happy-path intake grading e2e.
 
 Proves the first user-visible intake value: the **reference intake parser** over
 the synthetic *alien* source scores a clean three-rule pass when driven through
 the **generic** :func:`premura.harness.grader.grade` with the intake
 :class:`~premura.harness.intake_strategy.IntakeStrategy` injected — the SAME grader
-the observation scenario flows through, with NO intake-specific branch (NFR-005).
+the observation scenario flows through, with NO intake-specific branch.
 
 Stance (mirrors ``test_observation_scenario_golden.py`` / ``test_grader.py``): no
 mocks of the grade path. We run the real reference parser → real
 ``persist_intake_batch`` into a real warehouse → capture provenance → grade. The
 warehouse holds genuine boundary truth; the verdict is recomputed, never trusted.
 
-Offline / deterministic — no network, no model server (NFR-001).
+Offline / deterministic — no network, no model server.
 """
 
 from __future__ import annotations
@@ -54,7 +54,7 @@ class _IntakeProvenance:
 
     Every field is captured measured evidence or a parser claim — never a
     precomputed rule verdict. ``produced`` carries the parser's batch and ``error``
-    the stage-tagged failure detail; both are what WP02's checker re-derives over.
+    the stage-tagged failure detail; both are what the runtime checker re-derives over.
     """
 
     # IngestProvenance Protocol surface (observation-shaped; intake leaves the
@@ -115,10 +115,10 @@ def _grade_intake(conn: Any) -> dict[str, Any]:
 
 
 # --------------------------------------------------------------------------- #
-# T016 — the layer-1 happy-path full three-rule pass (SC-001).
+# The layer-1 happy-path full three-rule pass.
 # --------------------------------------------------------------------------- #
 def test_intake_reference_parser_full_three_rule_pass(empty_warehouse) -> None:
-    """Reference intake parser over the alien source → clean three-rule PASS (SC-001).
+    """Reference intake parser over the alien source → clean three-rule PASS.
 
     All three rules green, driven through the GENERIC grade() with the intake
     strategy injected: loaded (intake rows present + consistent with the loader
@@ -146,7 +146,7 @@ def test_loaded_reads_intake_warehouse_not_fact_tables(empty_warehouse) -> None:
 
 
 def test_note_column_accounted_as_declared_gap_not_silent_drop(empty_warehouse) -> None:
-    """The `note` column (canonical_home: null) is DECLARED → not a silent drop (SC-004).
+    """The `note` column (canonical_home: null) is DECLARED → not a silent drop.
 
     The happy-path honesty proof: the one column with no canonical home is honestly
     surfaced via `unmapped_metrics`, so it is accounted (declared) and the gap set
@@ -161,7 +161,7 @@ def test_note_column_accounted_as_declared_gap_not_silent_drop(empty_warehouse) 
 
 
 # --------------------------------------------------------------------------- #
-# Registry surface — both scenarios reachable (SC-003).
+# Registry surface — both scenarios reachable.
 # --------------------------------------------------------------------------- #
 def test_registry_lists_both_scenarios() -> None:
     """`all_scenarios()` returns ≥ 2 scenarios including observation + intake."""

@@ -1,9 +1,9 @@
-"""Migration-level verification for 004_profile_intake.sql (WP01).
+"""Migration-level verification for 004_profile_intake.sql.
 
 Black-box stance: the warehouse is always initialized through the public
 ``premura.store.duck`` initialization path (``initialize`` /
 ``run_migrations``), never by feeding raw SQL fragments. The assertions target
-the storage-shape contract WP01 owns:
+the storage-shape contract this migration owns:
 
   * the three new domains (profile / nutrition / supplement) get their own
     explicit tables under ``hp.`` (no generic JSON catch-all bucket),
@@ -37,7 +37,7 @@ NEW_SUPPLEMENT_TABLES = {
 }
 NEW_TABLES = NEW_PROFILE_TABLES | NEW_NUTRITION_TABLES | NEW_SUPPLEMENT_TABLES
 
-# Pre-existing observation/note homes that must NOT be disturbed by this WP.
+# Pre-existing observation/note homes that must NOT be disturbed by this migration.
 EXISTING_FACT_TABLES = {
     "fact_measurement",
     "fact_interval",
@@ -72,7 +72,7 @@ def _seed_source(conn: duckdb.DuckDBPyConnection, source_id: str = "src_test") -
 
 
 # --------------------------------------------------------------------------- #
-# T003 — the new tables exist via the public init path.
+# The new tables exist via the public init path.
 # --------------------------------------------------------------------------- #
 def test_new_domain_tables_exist_after_initialize(empty_warehouse) -> None:
     present = _hp_tables(empty_warehouse)

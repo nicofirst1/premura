@@ -1,4 +1,4 @@
-"""Seam tests for the Stage 2 engine contributor contract (WP01).
+"""Seam tests for the Stage 2 engine contributor contract.
 
 These lock the extension surface before signal implementation begins. They
 assert through public imports and observable behavior, not future signal
@@ -14,7 +14,7 @@ from datetime import date, datetime
 
 import pytest
 
-# --- T001: additive registry metadata contract ---------------------------
+# ---: additive registry metadata contract ---------------------------
 
 
 def test_signal_spec_exposes_optional_stage2_metadata_with_safe_defaults() -> None:
@@ -79,7 +79,7 @@ def test_existing_lab_ratio_registrations_stay_valid_without_new_metadata() -> N
     assert ratio.caveat_summary == ()
 
 
-# --- T002: result-helper surface is importable and serializable -----------
+# ---: result-helper surface is importable and serializable -----------
 
 
 def test_result_envelopes_importable_from_public_engine_surface() -> None:
@@ -231,7 +231,7 @@ def test_missing_input_report_serializes() -> None:
     assert d["missing_inputs"] == ["resting_heart_rate"]
 
 
-# --- T003: lazy built-in loading still behaves correctly ------------------
+# ---: lazy built-in loading still behaves correctly ------------------
 
 
 @contextmanager
@@ -311,7 +311,7 @@ def test_importing_engine_does_not_eagerly_load_signal_modules() -> None:
         assert "premura.engine.lab_ratios" in sys.modules
 
 
-# --- WP01: custom pre-registration must not suppress built-ins ------------
+# ---: custom pre-registration must not suppress built-ins ------------
 
 
 def test_custom_pre_registration_does_not_suppress_builtins() -> None:
@@ -351,7 +351,7 @@ def test_custom_pre_registration_does_not_suppress_builtins() -> None:
         engine._BUILTINS_LOADED = saved_flag
 
 
-# --- T005: WP01 Stage 2 catalog/summary helpers lazy-load contract ----------
+# ---: Stage 2 catalog/summary helpers lazy-load contract ----------
 
 
 def test_catalog_and_summary_helpers_exported_from_public_surface() -> None:

@@ -1,9 +1,9 @@
-"""The rubric-driven AI judge (judge-ai m3 WP2, FR-3/FR-4).
+"""The rubric-driven AI judge.
 
 The judge is harness-side code that assesses one **recorded live-trial session**
 against a versioned rubric and persists exactly one descriptive judgment back into
-the session log. It is the consumer the improvement hook (next mission) will read;
-this mission only *produces* the judgment.
+the session log. It is the consumer the improvement hook reads;
+the judge only *produces* the judgment.
 
 The flow of :func:`judge_session`:
 
@@ -11,10 +11,10 @@ The flow of :func:`judge_session`:
    session (the judge never reaches into the log tables ad hoc; the read surface opens
    the log strictly read-only).
 2. Load the bounded rubric (:func:`load_rubric`) — its criterion *ids* are rubric-owned
-   data, never enumerated in code (FR-3).
+   data, never enumerated in code.
 3. Build a prompt from dossier + rubric and call a **local** model through an injectable
-   transport seam (same DIRECTIVE_036 pattern as the tool-loop ``Transport``). The
-   default transport reuses the existing local-only Ollama guard verbatim (NFR-2): the
+   transport seam (same pattern as the tool-loop ``Transport``). The
+   default transport reuses the existing local-only Ollama guard verbatim: the
    PHI-bearing dossier may only reach a local model backend.
 4. Parse and validate the model's structured verdict — bands against the store's
    ``CRITERION_BANDS``, criterion ids against the rubric. A malformed response is retried
@@ -25,7 +25,7 @@ The flow of :func:`judge_session`:
    out of its write reach by construction (it only opens the dossier read-only and only
    writes ``log_judgment``).
 
-No code path here syncs or exports the dossier, the prompt, or the judgment (NFR-2).
+No code path here syncs or exports the dossier, the prompt, or the judgment.
 """
 
 from __future__ import annotations
@@ -49,18 +49,18 @@ if TYPE_CHECKING:
 
     from premura.session_log.dossier import SessionDossier
 
-# The rubric document packaged with the harness (FR-3). Single home for the
+# The rubric document packaged with the harness. Single home for the
 # criterion ids + the add-a-criterion rule; the judge reads it, never enumerates it.
 _RUBRIC_FILE = "JUDGE_RUBRIC.md"
 _PACKAGE = "premura.harness"
 
-#: A judge transport is the OUTSIDE boundary (DIRECTIVE_036): it takes the assembled
+#: A judge transport is the OUTSIDE boundary: it takes the assembled
 #: judge prompt + the model id and returns the model's raw text output (or raises
 #: :class:`OllamaUnavailableError`). The default goes through the local-only Ollama
 #: ``/api/generate``; tests and the harness wiring substitute a scripted callable.
 JudgeTransport = Callable[..., str]
 
-#: Default bounded retry budget for a malformed model response (FR-4).
+#: Default bounded retry budget for a malformed model response.
 _DEFAULT_MAX_RETRIES = 2
 
 #: Minimum substantive length for a criterion's ``evidence_quote`` (issue #67). A
@@ -90,7 +90,7 @@ class _UngroundedEvidenceError(_MalformedVerdictError):
 
 @dataclass(frozen=True, slots=True)
 class Rubric:
-    """The loaded judge rubric (FR-3): its version + its criterion ids.
+    """The loaded judge rubric: its version + its criterion ids.
 
     ``criterion_ids`` is parsed from the rubric document's criterion headings —
     the rubric is the single source of the id set, so adding a criterion is a
@@ -113,7 +113,7 @@ class Rubric:
 
 
 def load_rubric() -> Rubric:
-    """Load the packaged judge rubric: version, criterion ids, categories (FR-3).
+    """Load the packaged judge rubric: version, criterion ids, categories.
 
     Parses ``rubric_version``, the ``### `<id>``` criterion headings, and each
     criterion's ``- **category:** `<category>``` line out of the bundled
@@ -151,7 +151,7 @@ def load_rubric() -> Rubric:
 
 
 def _default_transport(prompt: str, *, model: str) -> str:
-    """The default local-only transport: the existing Ollama generate path (NFR-2).
+    """The default local-only transport: the existing Ollama generate path.
 
     Reuses ``live_trial_ollama._ollama`` verbatim, so the local-only URL guard
     carries over to the judge: the PHI-bearing dossier prompt can never be sent
@@ -185,7 +185,7 @@ def _render_attempts(doc: SessionDossier) -> str:
 
 
 def grounding_text(doc: SessionDossier) -> str:
-    """The dossier text a verdict's ``evidence_quote`` must verbatim-quote from (FR-4).
+    """The dossier text a verdict's ``evidence_quote`` must verbatim-quote from.
 
     Exactly the dossier-derived sections the judge is served — grader facts,
     per-attempt telemetry, and the transcript — concatenated as they appear in the
@@ -210,7 +210,7 @@ def grounding_text(doc: SessionDossier) -> str:
 
 
 def build_prompt(doc: SessionDossier, rubric: Rubric) -> str:
-    """Assemble the judge prompt from the dossier + rubric (FR-4).
+    """Assemble the judge prompt from the dossier + rubric.
 
     The model is given the grader's recomputed facts (which it evaluates but never
     alters), the per-attempt telemetry, the full transcript, and the rubric text,
@@ -248,12 +248,12 @@ def build_prompt(doc: SessionDossier, rubric: Rubric) -> str:
 
 
 def _parse_verdict(raw: str, rubric: Rubric, grounding: str) -> dict:
-    """Parse + validate a model response into a rubric verdict (FR-4, issue #52).
+    """Parse + validate a model response into a rubric verdict (issue #52).
 
     Raises :class:`_MalformedVerdictError` if the output is not JSON, not the
     expected shape, names a criterion id the rubric does not define, or carries a
-    band outside ``CRITERION_BANDS``. The criterion-id check enforces FR-3 from
-    the judge side: an off-rubric id is malformed, never silently recorded.
+    band outside ``CRITERION_BANDS``. The criterion-id check enforces the rubric-owned
+    id set from the judge side: an off-rubric id is malformed, never silently recorded.
 
     Raises the :class:`_UngroundedEvidenceError` subtype if any criterion's
     ``evidence_quote`` is missing, is not a verbatim substring of ``grounding``
@@ -345,7 +345,7 @@ def judge_session(
     transport: JudgeTransport | None = None,
     max_retries: int = _DEFAULT_MAX_RETRIES,
 ) -> JudgmentResult:
-    """Judge one recorded session against the rubric; persist one judgment (FR-4).
+    """Judge one recorded session against the rubric; persist one judgment.
 
     Assembles the read-only dossier, loads the rubric, prompts the local model
     through ``transport`` (default: the local-only Ollama path), parses/validates
@@ -358,7 +358,7 @@ def judge_session(
         log_path: the session-log file the recorded session lives in.
         session_id: the session to judge.
         model: the local model id to pass to the transport.
-        transport: the injectable model backend (DIRECTIVE_036). Default is the
+        transport: the injectable model backend. Default is the
             local-only Ollama generate path; tests pass a scripted callable.
         max_retries: bounded retries for a malformed response (default 2).
 
@@ -406,7 +406,7 @@ def judge_session(
         rationale = verdict["rationale"]
         break
 
-    # An honest error status carries empty criteria + NULL overall_band (FR-1).
+    # An honest error status carries empty criteria + NULL overall_band.
     if status != "complete":
         criteria = {}
         overall_band = None

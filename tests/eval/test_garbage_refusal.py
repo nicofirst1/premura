@@ -35,7 +35,7 @@ from premura.harness.scenario_registry import all_scenarios
 from tests import FIXTURES_DIR
 
 # The live-trial seam module is loaded via importlib string-concat (mirroring
-# tests/test_live_trial_tool_loop.py) so the committed NFR-005 default-gate guard
+# tests/test_live_trial_tool_loop.py) so the committed default-gate guard
 # (test_live_trial_seam.py) stays a TRUE witness that no gating harness path
 # leaked into another default test. This module still runs in the default suite;
 # it just drives the seam over the committed SYNTHETIC fixture only, never the
@@ -66,7 +66,7 @@ if _missing:
 
 
 def test_garbage_scenario_is_registered() -> None:
-    """The scenario is one of the registered acceptance sources (SC-003)."""
+    """The scenario is one of the registered acceptance sources."""
     from premura.harness.grader import grade_garbage_refusal
 
     names = {s.name for s in all_scenarios()}
@@ -216,7 +216,7 @@ class DishonestCleanParser:
 # --------------------------------------------------------------------------- #
 # Tool-loop tier runs the same scenario via the scripted fake chat backend.
 # (Import style mirrors tests/test_live_trial_tool_loop.py: the tier module is
-# loaded via importlib string-concat so the NFR-005 default-gate guard stays a
+# loaded via importlib string-concat so the default-gate guard stays a
 # true witness that no gating harness path leaked into another default test.)
 # --------------------------------------------------------------------------- #
 
@@ -250,7 +250,7 @@ def _refusing_parser_code() -> str:
 
 
 def test_tool_loop_tier_runs_garbage_refusal(tmp_path: Path, monkeypatch: Any) -> None:
-    """FR-007: the tool-loop tier runs the garbage scenario to a graded record.
+    """The tool-loop tier runs the garbage scenario to a graded record.
 
     The scripted operator writes the honest refusing parser and ends the phase;
     the SAME machinery grades it through the garbage strategy, reaching a PASS

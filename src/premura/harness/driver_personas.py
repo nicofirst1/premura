@@ -9,7 +9,7 @@ editing :class:`~premura.harness.live_trial_ollama.PersonaDriver`.
 Every field is the SAME role for every persona:
 
 * ``name`` - the registry key + the ``model_id`` suffix recorded on the
-  session (so persona tiers compare later, FR-031).
+  session (so persona tiers compare later).
 * ``goal`` - the human's intent the persona pursues (what it wants ingested).
 * ``improv_budget`` - the max number of improvised answers before the persona
   stops and defers to the operator. A code-enforced turn cap, so an operator
@@ -83,7 +83,7 @@ def persona_prompt(persona: DriverPersona, question: str) -> str:
     The honesty constraint is stated explicitly AND bounded by ``known_facts``:
     the persona is told to answer only from those facts and to refuse (say it does
     not know) anything the facts do not cover. The prompt never contains fixture
-    ground truth beyond the persona's own ``known_facts`` (C-005 posture: no answer
+    ground truth beyond the persona's own ``known_facts`` (no answer
     key leaks into the driver).
     """
     facts = "\n".join(f"- {fact}" for fact in persona.known_facts)

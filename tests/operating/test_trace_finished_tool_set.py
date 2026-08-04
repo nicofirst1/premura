@@ -1,19 +1,19 @@
-"""WP05 — trace identity + recording for the finished analytical tool set.
+"""Trace identity + recording for the finished analytical tool set.
 
-These pin FR-011 / FR-012 / SC-005 / NFR-006 for the two newly published tools
+These pin trace behavior for the two newly published tools
 (``rolling_mean`` and ``paired_t_test``):
 
 * normalized hypothesis identity registered through the trace registry seam
   (not a disclosure-counting branch): omitted defaults collapse where the engine
   supports them; different windows / anchors are different hypotheses;
 * through the MCP boundary, a traced call to either new tool records EXACTLY one
-  analytical call (NFR-006) — no double-count, no zero-count;
+  analytical call - no double-count, no zero-count;
 * exact retries collapse in the unique-hypothesis count while raw climbs;
 * a refused call still counts toward the examined-hypothesis denominator and the
   refusal breakdown;
 * a surfaced mark can target a call from either new tool;
 * a traced and an untraced engine envelope are BYTE-EQUIVALENT aside from the
-  wrapper-layer ``trace`` metadata (FR-011 / NFR-001).
+  wrapper-layer ``trace`` metadata.
 
 The identity tests use the pure ``premura.trace`` service; the recording tests
 go through the real MCP ``build_server`` surface over a synthetic warehouse.
@@ -60,7 +60,7 @@ def _ensure_live_analytical_registry() -> None:
 
 
 # ===========================================================================
-# Part A — normalized hypothesis identity through the registry seam (T023)
+# Part A — normalized hypothesis identity through the registry seam
 # ===========================================================================
 
 
@@ -148,7 +148,7 @@ def test_paired_t_test_different_anchor_is_distinct_hypothesis() -> None:
 
 
 def test_paired_t_test_different_direction_is_distinct_hypothesis() -> None:
-    """A different declared expected direction is a distinct hypothesis (FR-005)."""
+    """A different declared expected direction is a distinct hypothesis."""
     base = {
         "metric_id": _METRIC,
         "anchor_date": "2026-05-01",
@@ -161,7 +161,7 @@ def test_paired_t_test_different_direction_is_distinct_hypothesis() -> None:
 
 
 # ===========================================================================
-# Part B — recording through the MCP surface (T024 / NFR-006)
+# Part B — recording through the MCP surface
 # ===========================================================================
 
 
@@ -254,7 +254,7 @@ def test_traced_rolling_mean_records_exactly_one_call(tmp_path: Path) -> None:
     assert payload["trace"]["result_id"]
 
     d = _disclosure(server, session_id)
-    assert d["raw_analytical_call_count"] == 1  # NFR-006: exactly one row
+    assert d["raw_analytical_call_count"] == 1  # exactly one row
     assert d["unique_hypothesis_count"] == 1
 
 
@@ -269,7 +269,7 @@ def test_traced_paired_t_test_records_exactly_one_call(tmp_path: Path) -> None:
     assert payload["trace"]["result_id"]
 
     d = _disclosure(server, session_id)
-    assert d["raw_analytical_call_count"] == 1  # NFR-006
+    assert d["raw_analytical_call_count"] == 1
     assert d["unique_hypothesis_count"] == 1
 
 
@@ -358,7 +358,7 @@ def test_non_analytical_calls_still_do_not_count(tmp_path: Path) -> None:
 
 
 # ===========================================================================
-# Part C — byte-equivalence of traced vs untraced envelopes (T025 / FR-011)
+# Part C — byte-equivalence of traced vs untraced envelopes
 # ===========================================================================
 
 
@@ -375,7 +375,7 @@ def _pin_engine_clock(monkeypatch: Any) -> None:
     observation forward into the trailing bucket whose timestamp is derived from
     ``now()``. That is genuine *evidence-read* non-determinism between two separate
     dispatches, independent of tracing. Pinning the clock isolates the property
-    FR-011 actually governs: tracing must not change the engine envelope produced
+    this test actually governs: tracing must not change the engine envelope produced
     for one dispatch. The pinned instant stays inside ``resting_hr``'s freshness
     window so the series remains admissible.
 

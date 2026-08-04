@@ -1,4 +1,4 @@
-"""WP02 descriptive Stage 2 signal tests.
+"""Descriptive Stage 2 signal tests.
 
 Behavior is driven through the public engine surface: signals are registered via
 ``descriptive_signals.register_builtin_signals()`` (the built-in registration
@@ -8,9 +8,9 @@ helper behavior. Fixtures are temporary DuckDB warehouses like the existing
 engine tests.
 
 NOTE: ``descriptive_signals`` is not yet in ``engine._BUILTIN_SIGNAL_MODULES``
-(that static list lives in WP01-owned ``__init__.py``). Registering explicitly
+(that static list lives in -owned ``__init__.py``). Registering explicitly
 here both isolates these tests and proves the signals resolve through
-``engine.compute`` once registered. See the WP02 report for the one-line
+``engine.compute`` once registered. See the report for the one-line
 integration follow-up.
 """
 
@@ -27,7 +27,7 @@ from premura.engine._results import FreshnessState, TrendDirection
 
 @pytest.fixture()
 def registered(empty_warehouse):
-    """Warehouse with the WP02 descriptive signals registered in REGISTRY.
+    """Warehouse with the descriptive signals registered in REGISTRY.
 
     Snapshots and restores REGISTRY so registration does not leak across tests.
     """
@@ -91,7 +91,7 @@ def test_signals_resolve_through_compute(registered) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T007 — resting_hr_status: current / stale / no value
+# resting_hr_status: current / stale / no value
 # --------------------------------------------------------------------------- #
 def test_resting_hr_status_current(registered) -> None:
     conn = registered
@@ -145,7 +145,7 @@ def test_resting_hr_status_no_value(registered) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T008 — resting_hr_trend: clear / sparse / insufficient
+# resting_hr_trend: clear / sparse / insufficient
 # --------------------------------------------------------------------------- #
 def test_resting_hr_trend_clear_direction(registered) -> None:
     conn = registered
@@ -229,7 +229,7 @@ def test_resting_hr_trend_insufficient_data(registered) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T009 — steps_trend: gaps stay gaps, NEVER imputed
+# steps_trend: gaps stay gaps, NEVER imputed
 # --------------------------------------------------------------------------- #
 def test_steps_trend_gaps_stay_gaps(registered) -> None:
     conn = registered
@@ -268,7 +268,7 @@ def test_steps_trend_no_data(registered) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T010 — weight_trend: carried-forward flagged, stale not misreported
+# weight_trend: carried-forward flagged, stale not misreported
 # --------------------------------------------------------------------------- #
 def test_weight_trend_carried_forward_flagged(registered) -> None:
     conn = registered

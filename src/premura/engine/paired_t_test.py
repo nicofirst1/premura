@@ -1,4 +1,4 @@
-"""Stage 3 — the ``paired_t_test`` analytical tool (WP04), behind the WP02 contract.
+"""Stage 3 — the ``paired_t_test`` analytical tool, behind the analytical contract.
 
 ``paired_t_test`` reports a **simple declared before/after paired-difference**
 comparison over matched observations from **one** operator's series, split by one
@@ -7,19 +7,18 @@ metric M across declared anchor date D, expecting an increase/decrease" applied
 to any admitted series — not a metric-specific or condition-specific tool. The
 metric, the anchor date, the before/after windows, and the expected direction are
 all caller-declared **before** the result exists (the anti-p-hacking discipline
-FR-005 calls out); the tool never scans anchor dates or windows to pick the
-strongest-looking split (FR-014 / C-004).
+the tool applies throughout); the tool never scans anchor dates or windows to pick
+the strongest-looking split.
 
-It is a **registration against the WP02 contract**, not a new dispatcher branch:
-importing this module runs the
+It is a **registration against the analytical contract**, not a new dispatcher
+branch: importing this module runs the
 :func:`~premura.engine.analytical_contract.analytical_tool` decorator, which adds
-the tool to the shared ``REGISTRY``. WP05's default public surface appends this
-module to its static built-in list and can then discover/dispatch it through
+the tool to the shared ``REGISTRY``. The default public analytical surface appends
+this module to its static built-in list and can then discover/dispatch it through
 :func:`~premura.engine.analytical_contract.dispatch` with no per-tool code. This
-WP does **not** publish the tool through the default loader, MCP, or the trace
-recorder.
+tool is **not** published through the default loader, MCP, or the trace recorder.
 
-It **consumes the WP03 seam** and never re-derives matched pairs: it takes a
+It **consumes the paired-input seam** and never re-derives matched pairs: it takes a
 prepared :class:`~premura.engine.paired_inputs.BeforeAfterPairedInput` and reads
 its pairs only through
 :func:`~premura.engine.paired_inputs.before_after_pairs_for_computation`, so a
@@ -28,7 +27,7 @@ refused paired input can never reach the arithmetic. Every upstream refusal
 pairs, too few pairs, scan request) is surfaced verbatim as a ``paired_t_test``
 refusal envelope with a machine-readable reason and **no** estimate.
 
-Honesty boundary (plan C-003 / FR-007): the tool keeps the familiar name
+Honesty boundary: the tool keeps the familiar name
 ``paired_t_test`` for caller familiarity, but it is **not** a hypothesis test and
 it must **never** emit a p-value, a "significant"/"significance" verdict, or any
 hypothesis-test-pass language. It reports the *mean paired difference and its
@@ -173,7 +172,7 @@ def paired_t_test(
     """Compute a simple before/after paired-difference estimate, or refuse.
 
     The tool consumes a prepared
-    :class:`~premura.engine.paired_inputs.BeforeAfterPairedInput` (the WP03 seam)
+    :class:`~premura.engine.paired_inputs.BeforeAfterPairedInput` (the paired-input seam)
     and obtains its matched pairs only through
     :func:`~premura.engine.paired_inputs.before_after_pairs_for_computation`, so a
     refused paired input can never reach computation. When the paired input is
@@ -193,7 +192,7 @@ def paired_t_test(
 
     The supported surface is exactly ``(paired)``. Any extra positional or keyword
     argument is a request to scan/select an anchor or window (or some other
-    unsupported behaviour) and is refused **before** computation (FR-014 / C-004).
+    unsupported behaviour) and is refused **before** computation.
 
     Refuses (no estimate) when: the paired input is already refused
     (inadmissible/stale series, missing direction, out-of-bounds window, no valid
@@ -205,7 +204,7 @@ def paired_t_test(
     # --- Forbidden-request gate: refuse BEFORE any computation. ---------------
     # The supported surface is exactly (paired). Any extra positional or keyword
     # argument is an attempt to scan/select an anchor or window or otherwise widen
-    # the tool past its one declared hypothesis (FR-014 / C-004).
+    # the tool past its one declared hypothesis.
     if args or kwargs:
         offending = [f"positional[{i}]" for i in range(len(args))] + sorted(kwargs)
         return _refusal_envelope(
@@ -258,7 +257,7 @@ def paired_t_test(
     # --- Constant-difference refusal: no honest uncertainty band. -------------
     # When every matched pair has the same difference the spread is zero, so the
     # mean difference carries no expressible uncertainty. Refuse rather than emit
-    # a fabricated zero-width interval (FR-007 / data-model PairedTTestEstimate).
+    # a fabricated zero-width interval (see data-model PairedTTestEstimate).
     if std_difference == 0.0 or not isfinite(std_difference):
         return _refusal_envelope(
             paired,

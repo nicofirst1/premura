@@ -162,7 +162,7 @@ SurfaceProbe = Callable[[str], tuple[bool, str]]
 
 #: Bound on a single local setup command. A fresh-clone bootstrap must fail with
 #: an actionable blocker rather than hang the agent indefinitely if dependency
-#: resolution stalls. Sized generously above the NFR-001 10-minute success
+#: resolution stalls. Sized generously above the 10-minute success
 #: target so a healthy clean sync never trips it.
 _LOCAL_COMMAND_TIMEOUT_SECONDS = 900
 

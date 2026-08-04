@@ -1,11 +1,11 @@
-"""Manifest-blind self-reconciliation gate (FR-003 / C-005).
+"""Manifest-blind self-reconciliation gate.
 
 The runtime-faithful honesty gate the operator retry loop uses. It is the
 answer-key-free twin of :func:`premura.harness.grader._grade_honest_about_gaps`:
 where the grader enumerates source-field names from the committed fixture
 manifest, this gate reads the **same** names directly from the source file's
 header/structure — so it needs **no** ground-truth manifest and must never read
-one (C-005).
+one.
 
 The honesty rule both sides share is *loaded-or-declared*: a source column is
 honest iff the parser consumed it (mapped) or declared it as a gap
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True, slots=True)
 class SelfReconciliationResult:
-    """Outcome of the manifest-blind honesty gate (FR-003).
+    """Outcome of the manifest-blind honesty gate.
 
     Invariant: ``passed == (bool(source_columns) and unaccounted == [])`` — an
     empty/headerless source cannot witness honesty, so it never silently passes.
@@ -71,7 +71,7 @@ def self_reconcile(
     batch: IngestBatch | IntakeBatch,
     mapped_columns: Iterable[str],
 ) -> SelfReconciliationResult:
-    """Check that every raw source column is mapped or declared (FR-003 / C-005).
+    """Check that every raw source column is mapped or declared.
 
     Args:
         source_path: the source artifact. Its header/structure is the ground set
@@ -80,9 +80,9 @@ def self_reconcile(
             :class:`~premura.parsers.base.IntakeBatch`. Only its declared gaps are
             consulted: ``unmapped_metrics`` and each ``skipped_rows`` entry's
             ``raw_field`` — both fields are present on either batch type, so the
-            gate is drawer-agnostic with **no logic change** (FR-008 / D9).
+            gate is drawer-agnostic with **no logic change**.
         mapped_columns: the source columns the parser consumed to emit its
-            metrics. An **explicit** caller input (the WP03 operator supplies it,
+            metrics. An **explicit** caller input (the tool-loop operator supplies it,
             tests pass it directly); the gate never infers it from the batch.
 
     Returns:
@@ -96,7 +96,7 @@ def self_reconcile(
     never a silent pass: honesty cannot be proven without columns to reconcile.
 
     This never reads, imports, or accepts the fixture manifest or any
-    ground-truth mapping (C-005): its only inputs are the source artifact and the
+    ground-truth mapping: its only inputs are the source artifact and the
     parser's own batch. It is pure and deterministic.
     """
     source_columns = _read_source_columns(source_path)

@@ -361,7 +361,7 @@ def test_wrapper_performs_no_statistics() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 5. FR-6 — trace identity for the new tool.
+# 5. Trace identity for the new tool.
 # ---------------------------------------------------------------------------
 
 

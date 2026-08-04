@@ -117,7 +117,7 @@ def _open_warehouse(warehouse_path: Path | None) -> Iterator[duckdb.DuckDBPyConn
 
 
 # --------------------------------------------------------------------------- #
-# Agent-mediated bounded profile capture (WP03).
+# Agent-mediated bounded profile capture.
 #
 # These two helpers are the runtime write surface for stable baseline profile
 # facts. They are the only profile-capture path the MCP/CLI layers touch, and
@@ -1317,7 +1317,7 @@ def list_metrics(
 
     When ``metric_ids`` is provided the catalog is built for exactly those IDs
     (``limit`` / ``offset`` are ignored) and an unknown ID yields an explicit
-    ``unavailable`` entry rather than being silently dropped (FR-004).  When
+    ``unavailable`` entry rather than being silently dropped.  When
     ``metric_ids`` is ``None`` the registered metrics are enumerated and paged.
 
     Returns explicit ``validity_status`` / ``validity_window`` /
@@ -1359,7 +1359,7 @@ def metric_summary(metric_id: str, *, warehouse_path: Path | None = None) -> dic
 
 
 # --------------------------------------------------------------------------- #
-# Signal-backed Stage 3 tools (WP04)
+# Signal-backed Stage 3 tools
 #
 # Each wrapper opens the warehouse through the same safe read-only path the raw
 # tools use, then delegates entirely to the Stage 2 signal engine. There is NO
@@ -1488,8 +1488,8 @@ def _run_signal(
     """Open the warehouse, run one registered engine signal, serialize the result.
 
     ``params`` threads a parameterized signal's caller arguments (an intake
-    matcher / quantity key + window) through the WP03-extended ``compute()`` seam
-    (T031). When ``params is None`` the zero-arg signals are invoked exactly as
+    matcher / quantity key + window) through the ``compute()`` seam.
+    When ``params is None`` the zero-arg signals are invoked exactly as
     before; when supplied, the engine forwards them to a signal whose ``fn``
     declared a ``params`` keyword. The wrapper performs NO warehouse reads or
     intake math of its own — the engine owns the resolver, the coverage/direction
@@ -1501,14 +1501,14 @@ def _run_signal(
 
 
 # --------------------------------------------------------------------------- #
-# Intake signal-backed Stage 3 tools (WP05)
+# Intake signal-backed Stage 3 tools
 #
-# These two wrappers expose WP04's parameterized intake signals on the default
-# MCP surface. They are deliberately THIN: each validates only the caller-facing
-# parameter shape, then delegates ENTIRELY to the WP04 signal through the same
-# ``_run_signal`` path the zero-arg signals use, passing the caller's matcher /
-# quantity-key + window through the WP03-extended ``compute(..., params=...)``
-# seam (T031). There is NO raw fact-table SQL, NO re-read of the intake tables,
+# These two wrappers expose the engine's parameterized intake signals on the
+# default MCP surface. They are deliberately THIN: each validates only the
+# caller-facing parameter shape, then delegates ENTIRELY to the signal through
+# the same ``_run_signal`` path the zero-arg signals use, passing the caller's
+# matcher / quantity-key + window through the ``compute(..., params=...)``
+# seam. There is NO raw fact-table SQL, NO re-read of the intake tables,
 # and NO re-derivation of coverage/trend semantics here — the engine owns the
 # resolver, the math, and the freshness/sufficiency verdict; the wrapper only
 # assembles the params dict and serializes the engine envelope. The four
@@ -1526,11 +1526,11 @@ def supplement_intake_adherence(
 ) -> dict[str, Any]:
     """Coverage "K of N days" for a caller-declared supplement matcher (delegates to engine).
 
-    The caller declares the supplement ``matcher`` (interpreted by the WP03
+    The caller declares the supplement ``matcher`` (interpreted by the
     resolver's pinned matcher semantics), an optional bounded ``window_days``, and
     an optional ``min_logged_days`` — the minimum distinct logged days the caller
     needs before a coverage answer is meaningful (default ``1``). All three pass
-    straight through to the WP04 ``supplement_intake_adherence`` signal via
+    straight through to the ``supplement_intake_adherence`` signal via
     ``compute(..., params=...)``. This wrapper validates only the caller-facing
     parameter shape — it re-reads no intake rows and re-derives no coverage. The
     engine returns one of four structurally-distinct states (``available`` /
@@ -1565,8 +1565,8 @@ def nutrition_intake_trend(
     """Plain up/down/flat direction of a caller-declared nutrient/energy key (delegates to engine).
 
     The caller declares the nutrition ``quantity_key`` (e.g. ``"energy"`` /
-    ``"protein"``, interpreted by the WP03 resolver) and an optional bounded
-    ``window_days``; both pass straight through to the WP04
+    ``"protein"``, interpreted by the resolver) and an optional bounded
+    ``window_days``; both pass straight through to the
     ``nutrition_intake_trend`` signal via ``compute(..., params=...)``. This
     wrapper validates only the caller-facing parameter shape — it re-reads no
     intake rows and re-derives no direction, and it never imputes a missing day
@@ -1594,9 +1594,9 @@ def _require_matcher(name: str, value: str) -> str:
 
 
 # --------------------------------------------------------------------------- #
-# Stage 3 analytical tools (WP06) — change_point and smoothed_average
+# Stage 3 analytical tools — change_point and smoothed_average
 #
-# These two wrappers expose the WP04 proof tools on the default MCP surface.
+# These two wrappers expose the engine's proof tools on the default MCP surface.
 # They are deliberately THIN: each validates only the caller-facing parameter
 # shape, reads warehouse evidence through the SAME engine-owned Stage 2 query
 # layer the descriptive signals use (``premura.engine._query`` — the wrapper
@@ -1709,7 +1709,7 @@ def rolling_mean(
 
 
 # --------------------------------------------------------------------------- #
-# Stage 3 simple anchor-date before/after paired difference (WP04) — paired_t_test
+# Stage 3 simple anchor-date before/after paired difference — paired_t_test
 #
 # ``paired_t_test`` is the single-series paired sibling of ``correlate``. It is
 # just as THIN: it validates only the caller-facing parameter shape, reads ONE
@@ -1738,7 +1738,7 @@ def paired_t_test(
 
     The caller pre-registers the metric, the anchor date, the before/after window
     sizes, and the ``expected_direction`` ("increase"/"decrease") BEFORE seeing the
-    result — the anti-p-hacking discipline of FR-005. The anchor only splits the
+    result — an anti-p-hacking discipline. The anchor only splits the
     before/after windows; it is never shown to be the cause of any change.
 
     This wrapper validates only the caller-facing parameter shape and assembles the
@@ -1905,7 +1905,7 @@ def _parse_episode_date(name: str, value: str) -> date:
 
 
 # --------------------------------------------------------------------------- #
-# Stage 3 pre-registered lagged association (WP04) — correlate
+# Stage 3 pre-registered lagged association — correlate
 #
 # ``correlate`` is the paired sibling of the single-series analytical tools.
 # It is just as THIN: it validates only the caller-facing parameter shape, builds
@@ -2234,7 +2234,7 @@ def _classify_result_status(payload: dict[str, Any]) -> str:
     single error: missing input, stale-but-present input, and insufficient data
     are different facts the caller may want to act on differently.
 
-    Parameterized intake signals (WP04/WP05) already compute their own
+    Parameterized intake signals already compute their own
     structurally-distinct ``status`` on the engine side (available / missing_input
     / stale_input / insufficient_data). When the envelope carries that field we
     trust it verbatim rather than re-deriving the verdict in the wrapper — the
@@ -2297,9 +2297,9 @@ def _result_message(payload: dict[str, Any], status: str, hint: str | None = Non
 
 
 # --------------------------------------------------------------------------- #
-# PubMed grounding wrappers (WP03)
+# PubMed grounding wrappers
 #
-# These two wrappers expose WP02's Premura-owned PubMed provider
+# These two wrappers expose Premura's own PubMed provider
 # (``premura.mcp.pubmed``) on the Stage 3 server helper surface. They are
 # deliberately THIN: each validates only the trivial caller-facing input shape
 # (mirroring the other server helpers) and delegates entirely to the provider's
@@ -2317,7 +2317,7 @@ def pubmed_search(
     limit: int = pubmed.DEFAULT_SEARCH_LIMIT,
     sort: str | None = None,
 ) -> dict[str, Any]:
-    """Search PubMed for candidate records (delegates to the WP02 provider).
+    """Search PubMed for candidate records (delegates to the PubMed provider).
 
     Candidates are discovery hints only and are never citeable; the returned
     payload carries the provider's ``citation_rule`` and each candidate's
@@ -2330,7 +2330,7 @@ def pubmed_search(
 
 
 def pubmed_fetch(pmid: str) -> dict[str, Any]:
-    """Fetch one PubMed record by exact PMID (delegates to the WP02 provider).
+    """Fetch one PubMed record by exact PMID (delegates to the PubMed provider).
 
     Only a fetched record is citeable (``citation_status =
     citeable_fetched_record``) and carries the ``pubmed_url`` provenance an honest

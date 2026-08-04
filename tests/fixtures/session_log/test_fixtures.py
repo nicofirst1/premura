@@ -1,4 +1,4 @@
-"""Self-tests for the WP04 synthetic Fitbit-HR fixtures + reference parsers.
+"""Self-tests for the synthetic Fitbit-HR fixtures + reference parsers.
 
 These assert the fixtures behave EXACTLY as labelled, black-box, against the
 real ``IngestBatch`` seam (``src/premura/parsers/base.py``):
@@ -7,7 +7,7 @@ real ``IngestBatch`` seam (``src/premura/parsers/base.py``):
 * each mappable field maps to a DISTINCT canonical metric (D6),
 * the ``good`` parser declares every gap (no silent drop),
 * the ``dishonest`` parser silently drops exactly ``altitude_m`` — the planted
-  defect the honesty rail must catch (NFR-006 / NFR-007).
+  defect the honesty rail must catch.
 
 The parsers under ``parsers/`` are not a package, so they are loaded by path via
 ``importlib`` rather than imported as modules.

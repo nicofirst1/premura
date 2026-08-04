@@ -1,4 +1,4 @@
-"""Tests for the runtime contract checker (WP02, FR-050/FR-061/FR-063).
+"""Tests for the runtime contract checker.
 
 Black-box: assert only on the returned ``ContractCheckResult``. Each runtime
 clause is exercised passing and failing independently (presence-vs-absence per

@@ -22,8 +22,8 @@ specific enough to fix the declaration from the exception text. There is no
 JSON Schema, Pydantic model, OPA, or policy-engine dependency here, and this
 module reads nothing from the warehouse and makes no network calls.
 
-This is an *internal* package surface for WP02/WP03. The top-level
-``premura.engine`` public surface is owned by a later WP.
+This is an *internal* package surface for the Stage 2 policy layer. The
+top-level ``premura.engine`` public surface is owned separately.
 """
 
 from __future__ import annotations

@@ -1,9 +1,9 @@
-"""Structural routing-preview capability (m7 WP1).
+"""Structural routing-preview capability.
 
 `premura inspect` consumes a *structural* parser capability — a parser that can
 preview routing exposes ``preview_routing(member_names) -> RoutingPreview`` — and
 never special-cases any vendor. These tests pin the capability shape and the
-Garmin implementation that delegates to its existing dispatcher (FR-1.1, FR-1.4).
+Garmin implementation that delegates to its existing dispatcher.
 
 The preview is name-based dry-run only: routing a member must not read file
 contents, open a warehouse connection, or mutate anything.
@@ -23,7 +23,7 @@ def test_routing_preview_holds_ordered_member_handler_pairs() -> None:
 
 
 def test_garmin_previews_routing_via_its_dispatcher() -> None:
-    """FR-1.4 — Garmin delegates to its _dispatch/_HANDLERS table; a known member
+    """Garmin delegates to its _dispatch/_HANDLERS table; a known member
     routes to a named handler, an unknown member is reported unhandled."""
     parser = GarminGDPRParser()
     members = [

@@ -4,35 +4,34 @@ This module is the substrate the rest of the session-log mission stands on. It
 records what an *operating* agent did during a run — the session, the step tree
 (turn -> model/tool call), and the Premura-internal facts of each ingest — into
 the session log's **own** local DuckDB file, so the deterministic grader can
-later recompute a verdict from the log alone (FR-080).
+later recompute a verdict from the log alone.
 
-Design boundaries (data-model.md, ``contracts/session-log-writer.md``, ADR 0011,
-spec C-001/C-002):
+Design boundaries (data-model.md, ``contracts/session-log-writer.md``, ADR 0011):
 
 * **Its own file, its own schema bootstrap.** This module owns ``connect()`` for
   the log file and applies its **own** :data:`schema.sql` via :func:`init_schema`
   (idempotent ``CREATE IF NOT EXISTS``). It does **not** route through
   ``premura.store.duck.run_migrations`` and does **not** fold into the warehouse
-  ``hp.*`` / research-trace ``trace.*`` tables (FR-070 / C-001). Keeping it a
+  ``hp.*`` / research-trace ``trace.*`` tables. Keeping it a
   separate file is what removes the single-file write contention; the harness is
-  the sole writer (FR-021 / NFR-008) and the subprocess runner never opens it.
+  the sole writer and the subprocess runner never opens it.
 * **Connection-agnostic writers.** Like ``premura.trace``, every writer function
   takes an already-open ``duckdb.DuckDBPyConnection`` and never opens/closes it.
   The caller (the harness) owns the single writable connection.
 * **Boundary input validation.** ``result_status``, ``run_kind``, and ``kind``
-  are validated against fixed vocabularies at this seam (FR-003 / FR-032);
+  are validated against fixed vocabularies at this seam;
   arbitrary strings raise :class:`ValueError` rather than being silently stored.
 * **Two-origin provenance, claims preserved.** :func:`record_ingest_provenance`
   persists loader-MEASURED ints as authoritative columns and the parser's
   DECLARED claims (unmapped / skipped) as JSON, clearly distinguished, alongside
   the separately-captured declared/emitted metric sets — claims are persisted for
-  the grader to reconcile, never discarded (FR-010..FR-013).
+  the grader to reconcile, never discarded.
 * **Grader-only ``contract_pass``.** :func:`record_ingest_provenance` persists
-  ``contract_pass`` exactly as the caller (the grader) supplies it. This WP has
+  ``contract_pass`` exactly as the caller (the grader) supplies it. This module has
   no other source for it — it is the grader's recomputed runtime-subset result,
-  never a parser/runner self-report (FR-061 / FR-065).
+  never a parser/runner self-report.
 
-No code path in this module syncs or exports the file (NFR-004); summaries are
+No code path in this module syncs or exports the file; summaries are
 PHI-safe envelopes supplied by the caller.
 """
 
@@ -58,29 +57,29 @@ _SCHEMA_FILE = "schema.sql"
 # Fixed vocabularies (validated at this boundary seam).
 # ---------------------------------------------------------------------------
 
-# FR-003 — the fixed step-result vocabulary. Pinned here; arbitrary strings are
+# The fixed step-result vocabulary. Pinned here; arbitrary strings are
 # rejected so a result_status can never be a silently-accepted free string.
 RESULT_STATUSES: frozenset[str] = frozenset(
     {"available", "missing", "stale", "insufficient", "refused", "error"}
 )
 
-# FR-032 — the fixed run kinds.
+# The fixed run kinds.
 RUN_KINDS: frozenset[str] = frozenset({"repeatable_check", "live_trial"})
 
 # data-model — the fixed step kinds (OTel GenAI tree shape, by hand).
 STEP_KINDS: frozenset[str] = frozenset({"agent_turn", "model_call", "tool_call"})
 
-# FR-1 — the fixed conversation-turn roles, mirroring the chat-API role standard.
+# The fixed conversation-turn roles, mirroring the chat-API role standard.
 # Validated at this boundary seam (same style as RESULT_STATUSES): an out-of-
 # vocabulary role raises ValueError rather than being silently stored. The rule
 # for extending it is the same as the other vocabularies — add the value here and
 # extend the vocab test, in this module only; do not enumerate per-tier roles.
 TURN_ROLES: frozenset[str] = frozenset({"system", "user", "assistant", "tool"})
 
-# judge-ai m3 FR-1 — the two closed judgment vocabularies, validated at this
+# The two closed judgment vocabularies, validated at this
 # boundary seam (same style as the vocabularies above). They are DESCRIPTIVE only:
 # no numeric scores and no pass/fail language confusable with the mechanical
-# grader verdict (NFR-6). The rule for extending either is the existing one — add
+# grader verdict. The rule for extending either is the existing one — add
 # the value here and extend the vocab test, in this module only.
 #
 # JUDGMENT_STATUSES is the honesty axis: a judgment attempt is always recorded,
@@ -90,17 +89,17 @@ JUDGMENT_STATUSES: frozenset[str] = frozenset({"complete", "unparseable", "model
 
 # CRITERION_BANDS is the assessment axis: every criterion's band AND the optional
 # overall band are validated against this set. The criterion IDS themselves are
-# rubric-owned data (FR-3) and are deliberately NOT enumerated here — code
+# rubric-owned data and are deliberately NOT enumerated here — code
 # validates bands and records whatever criterion ids the rubric defined.
 CRITERION_BANDS: frozenset[str] = frozenset({"strong", "adequate", "weak", "not_applicable"})
 
-# improvement-hook m4 FR-1 — the closed improvement-proposal lifecycle vocabulary,
+# The closed improvement-proposal lifecycle vocabulary,
 # validated at this boundary seam (same style as the vocabularies above). The
 # improvement hook only ever writes ``open``; ``dismissed`` / ``addressed`` exist
-# now so a later lifecycle mission can transition a proposal with NO schema
+# now so a later lifecycle change can transition a proposal with NO schema
 # migration. The rule for extending it is the existing one — add the value here
 # and extend the vocab test, in this module only. The proposal *area* ids are
-# playbook-owned data (FR-3) and are deliberately NOT enumerated here, exactly as
+# playbook-owned data and are deliberately NOT enumerated here, exactly as
 # the criterion ids are rubric-owned: code validates the closed status vocabulary
 # and records whatever area the playbook defined.
 PROPOSAL_STATUSES: frozenset[str] = frozenset({"open", "dismissed", "addressed"})
@@ -146,7 +145,7 @@ def connect(db_path: Path, *, read_only: bool = False) -> duckdb.DuckDBPyConnect
     Mirrors ``premura.store.duck.connect`` (same idiom), but opens the session
     log's **own** file — never the warehouse. The caller is responsible for
     calling :func:`init_schema` once after creation. The harness opens exactly
-    **one** writable connection per run and is the sole writer (FR-021); the
+    **one** writable connection per run and is the sole writer; the
     subprocess runner never opens this file, and DuckDB's file lock rejects any
     *other* process that tries to open it read-write while the harness holds it.
     """
@@ -160,7 +159,7 @@ def init_schema(conn: duckdb.DuckDBPyConnection) -> None:
     Reads the bundled DDL via :mod:`importlib.resources` and executes it. Every
     statement is ``CREATE ... IF NOT EXISTS`` so re-running on an already-
     initialized connection is a no-op. This is the session-log package's **own**
-    bootstrap — not the warehouse migration runner (FR-070 / C-001).
+    bootstrap — not the warehouse migration runner.
     """
     schema_sql = resources.files(_PACKAGE).joinpath(_SCHEMA_FILE).read_text(encoding="utf-8")
     conn.execute(schema_sql)
@@ -190,7 +189,7 @@ def open_session(
     isolation_tag: str,
     run_kind: str,
 ) -> str:
-    """Insert one ``log_session`` row and return its ``session_id`` (FR-031/FR-032).
+    """Insert one ``log_session`` row and return its ``session_id``.
 
     Captures the run identity a maintainer/grader needs to situate the run:
     ``operator_model`` / ``driver_model`` (sentinels for the fake scripted agent /
@@ -241,7 +240,7 @@ def record_step(
     root (e.g. an ``agent_turn``) and the parent's id for a child (e.g. a
     ``tool_call`` whose ``tool_name='ingest_run'`` is the verdict-bearing step).
     ``kind`` is validated against :data:`STEP_KINDS` and ``result_status`` against
-    the fixed :data:`RESULT_STATUSES` vocabulary (FR-003); an out-of-vocabulary
+    the fixed :data:`RESULT_STATUSES` vocabulary; an out-of-vocabulary
     value raises :class:`ValueError` rather than being silently stored.
     Summaries must be PHI-safe envelopes supplied by the caller.
     """
@@ -305,8 +304,8 @@ def record_ingest_provenance(
       grader to reconcile; they are the parser's claim, never discarded.
 
     ``contract_pass`` is the **grader's** recomputed runtime-subset result,
-    supplied by the caller and persisted verbatim. This WP has **no other source**
-    for it — it is never a parser/runner self-report (FR-061 / FR-065).
+    supplied by the caller and persisted verbatim. This module has **no other source**
+    for it — it is never a parser/runner self-report.
     """
     conn.execute(
         """
@@ -358,7 +357,7 @@ def record_live_trial_attempt(
     self_reconciliation: SelfReconciliationLike,
     parser_error: str | None,
 ) -> str:
-    """Insert one durable cheap-model attempt telemetry row (FR-008)."""
+    """Insert one durable cheap-model attempt telemetry row."""
     attempt_id = _mint_id()
     conn.execute(
         """
@@ -393,7 +392,7 @@ def record_turn(
     model: str | None = None,
     token_count: int | None = None,
 ) -> str:
-    """Insert one ``log_turn`` row and return its ``turn_id`` (FR-1).
+    """Insert one ``log_turn`` row and return its ``turn_id``.
 
     Records a single conversation turn of a live-trial run's transcript. ``role``
     is validated against the fixed :data:`TURN_ROLES` vocabulary at this boundary
@@ -403,9 +402,9 @@ def record_turn(
     turn_index)`` is unique — re-using a slot for a session is rejected by the DB
     constraint. ``step_id`` is nullable and, when set, links the turn to the
     ``log_step`` node it occurred under (typically the run's root ``agent_turn``).
-    ``content`` carries the full turn content (PHI-bearing, local-only per NFR-002 /
+    ``content`` carries the full turn content (PHI-bearing, local-only per
     ADR 0011); ``tool_name`` / ``model`` / ``token_count`` are optional per-turn
-    telemetry. The harness is the sole writer (FR-021 / NFR-1).
+    telemetry. The harness is the sole writer.
     """
     if role not in TURN_ROLES:
         raise ValueError(f"role must be one of {sorted(TURN_ROLES)!r}, got {role!r}.")
@@ -445,7 +444,7 @@ def record_judgment(
     raw_output: str | None = None,
     ungrounded_rejections: int = 0,
 ) -> str:
-    """Insert one ``log_judgment`` row and return its ``judgment_id`` (FR-1).
+    """Insert one ``log_judgment`` row and return its ``judgment_id``.
 
     Records exactly one AI-judge verdict over a recorded session. ``status`` is
     validated against :data:`JUDGMENT_STATUSES` and every band — each criterion's
@@ -453,7 +452,7 @@ def record_judgment(
     at this boundary (same style as ``result_status`` / ``role``); an
     out-of-vocabulary value raises :class:`ValueError` rather than being silently
     stored. The criterion *ids* are NOT enumerated here — they belong to the
-    rubric (FR-3); ``criteria`` is stored verbatim as a JSON object mapping
+    rubric; ``criteria`` is stored verbatim as a JSON object mapping
     criterion id -> ``{band, rationale, evidence_quote}`` (issue #52 — the judge
     verified each ``evidence_quote`` is a verbatim dossier span before this call).
     ``ungrounded_rejections`` records how many verdicts the judge rejected for a
@@ -465,9 +464,9 @@ def record_judgment(
     judgment attempt is always recorded honestly — on ``unparseable`` /
     ``model_unavailable`` the caller passes an empty ``criteria`` and
     ``overall_band=None`` while ``raw_output`` preserves what the model actually
-    said (if anything). The harness is the sole writer (FR-021 / NFR-1).
+    said (if anything). The harness is the sole writer.
 
-    The bands are DESCRIPTIVE only (NFR-6): no numeric scores, no language
+    The bands are DESCRIPTIVE only: no numeric scores, no language
     confusable with the mechanical grader verdict.
     """
     if status not in JUDGMENT_STATUSES:
@@ -512,7 +511,7 @@ def record_judgment(
 
 
 def _require_non_empty(value: str, *, field: str) -> str:
-    """Reject a blank/whitespace-only field at the store seam (FR-1)."""
+    """Reject a blank/whitespace-only field at the store seam."""
     if not value or not value.strip():
         raise ValueError(f"{field} must be a non-empty string, got {value!r}.")
     return value
@@ -530,7 +529,7 @@ def record_improvement(
     playbook_version: str,
     status: str,
 ) -> str:
-    """Insert one ``log_improvement`` row and return its ``improvement_id`` (FR-1).
+    """Insert one ``log_improvement`` row and return its ``improvement_id``.
 
     Records exactly one durable improvement PROPOSAL the improvement hook derived
     from a judgment. ``status`` is validated against :data:`PROPOSAL_STATUSES` and
@@ -544,9 +543,9 @@ def record_improvement(
     ``criterion_id`` is NULLABLE and opaque (rubric-owned data, never enumerated in
     code): NULL for a judgment-level proposal, the rubric criterion id otherwise.
     ``area`` is a playbook-owned id — code never hardcodes area semantics; it
-    records whatever area the playbook mapped the evidence to. This mission only
-    ever writes ``"open"``; the other statuses exist so a later lifecycle mission
-    needs no schema migration. The harness is the sole writer (FR-021 / NFR-1).
+    records whatever area the playbook mapped the evidence to. This module only
+    ever writes ``"open"``; the other statuses exist so a later lifecycle change
+    needs no schema migration. The harness is the sole writer.
     """
     if status not in PROPOSAL_STATUSES:
         raise ValueError(f"status must be one of {sorted(PROPOSAL_STATUSES)!r}, got {status!r}.")

@@ -1,10 +1,10 @@
-"""Tests for the Stage 3 proof analytical tools (WP04).
+"""Tests for the Stage 3 proof analytical tools.
 
 These exercise the two proof tools — ``change_point`` and ``smoothed_average`` —
-*behind* the WP02 analytical contract and *through* the WP03 admissible-input
+*behind* the analytical contract and *through* the admissible-input
 layer:
 
-* Both tools register against the shared contract registry, so WP05's public
+* Both tools register against the shared contract registry, so the default
   surface can discover and dispatch them with no per-tool branch.
 * Both consume a prepared :class:`AnalyticalInputSeries`; a refused series is
   surfaced as a refusal envelope rather than computed over (the refusal path is
@@ -69,7 +69,7 @@ METRIC = "resting_heart_rate"
 
 
 # ---------------------------------------------------------------------------
-# Fixture-backed evidence helpers (mirrors the WP03 test scaffolding)
+# Fixture-backed evidence helpers (mirrors the test scaffolding)
 # ---------------------------------------------------------------------------
 
 
@@ -228,7 +228,7 @@ def test_tools_invoke_through_shared_dispatch() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T015: change_point — supported level shift is deterministic
+# change_point — supported level shift is deterministic
 # ---------------------------------------------------------------------------
 
 
@@ -278,7 +278,7 @@ def test_change_point_uncertainty_carries_no_pvalue() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T015: change_point — insufficient data / bad params refuse with no estimate
+# change_point — insufficient data / bad params refuse with no estimate
 # ---------------------------------------------------------------------------
 
 
@@ -320,7 +320,7 @@ def test_change_point_surfaces_refused_input_without_computing() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T015: smoothed_average — supported run is deterministic
+# smoothed_average — supported run is deterministic
 # ---------------------------------------------------------------------------
 
 
@@ -373,7 +373,7 @@ def test_smoothed_average_does_not_fill_undercovered_window() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T015: smoothed_average — out-of-bounds params refuse with no estimate
+# smoothed_average — out-of-bounds params refuse with no estimate
 # ---------------------------------------------------------------------------
 
 
@@ -433,7 +433,7 @@ def test_smoothed_average_surfaces_refused_input_without_computing() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T016: doctrine — no causation, no significance, no diagnosis, no prediction
+# doctrine — no causation, no significance, no diagnosis, no prediction
 # ---------------------------------------------------------------------------
 
 

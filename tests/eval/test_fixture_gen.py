@@ -1,8 +1,8 @@
-"""Tests for the synthetic fixture auto-generator (m5 / FR-1..FR-7).
+"""Tests for the synthetic fixture auto-generator (m5).
 
-All offline + deterministic (NFR-5): no model, no network, no clock, no Ollama
+All offline + deterministic: no model, no network, no clock, no Ollama
 marker. Determinism is asserted by generating twice from one seed and comparing
-bytes (FR-1). The metric registry the generator draws from is the committed
+bytes. The metric registry the generator draws from is the committed
 ``src/premura/dim_metric.yaml`` (the repo's real metric registry seed — see the
 mission deviation note); never a list hardcoded in ``fixture_gen``.
 """
@@ -23,7 +23,7 @@ _REAL_VENDORS = {"fitbit", "garmin", "apple", "oura", "whoop", "withings", "sams
 
 
 def test_same_seed_yields_byte_identical_output() -> None:
-    """FR-1: same spec -> byte-identical CSV and manifest text (determinism)."""
+    """Same spec -> byte-identical CSV and manifest text (determinism)."""
     spec = FixtureSpec(seed=7)
     a = generate_fixture(spec)
     b = generate_fixture(spec)
@@ -32,7 +32,7 @@ def test_same_seed_yields_byte_identical_output() -> None:
 
 
 def test_different_seeds_yield_different_fixtures() -> None:
-    """FR-1: a different seed produces a different fixture (not a constant)."""
+    """A different seed produces a different fixture (not a constant)."""
     a = generate_fixture(FixtureSpec(seed=1))
     b = generate_fixture(FixtureSpec(seed=2))
     assert (a.csv_text, a.manifest_text) != (b.csv_text, b.manifest_text)
@@ -40,7 +40,7 @@ def test_different_seeds_yield_different_fixtures() -> None:
 
 @pytest.mark.parametrize("seed", range(20))
 def test_challenge_invariants_present(seed: int) -> None:
-    """FR-3: every generated observation fixture is a fair, honest challenge.
+    """Every generated observation fixture is a fair, honest challenge.
 
     (a) >=1 mappable column whose distinct canonical metric is in the registry,
     (b) >=1 declared-gap column with no canonical home,
@@ -70,7 +70,7 @@ def test_challenge_invariants_present(seed: int) -> None:
 
 @pytest.mark.parametrize("seed", range(20))
 def test_source_name_is_not_a_real_vendor(seed: int) -> None:
-    """FR-3 / NFR-1: the fabricated source name is never a real vendor brand."""
+    """The fabricated source name is never a real vendor brand."""
     fixture = generate_fixture(FixtureSpec(seed=seed))
     lowered = fixture.source_name.lower()
     assert not any(vendor in lowered for vendor in _REAL_VENDORS)
@@ -78,7 +78,7 @@ def test_source_name_is_not_a_real_vendor(seed: int) -> None:
 
 @pytest.mark.parametrize("seed", range(20))
 def test_mapped_column_name_does_not_leak_the_canonical_metric(seed: int) -> None:
-    """FR-3: a mapped column's vendor-weird name must not leak its canonical metric.
+    """A mapped column's vendor-weird name must not leak its canonical metric.
 
     The challenge is an UNFAMILIAR vendor export; a header derived from the canonical
     id (e.g. ``lab:stool_lactoferrin`` -> ``lab:stoolLactoferrinReading``) would hand
@@ -98,13 +98,13 @@ def test_mapped_column_name_does_not_leak_the_canonical_metric(seed: int) -> Non
 
 
 def test_unknown_drawer_fails_loudly() -> None:
-    """FR-2: a drawer with no registered strategy raises, never defaults silently."""
+    """A drawer with no registered strategy raises, never defaults silently."""
     with pytest.raises(UnknownDrawerError):
         generate_fixture(FixtureSpec(seed=1, drawer="intake"))
 
 
 # --------------------------------------------------------------------------- #
-# FR-5 self-validation — each invariant violated individually.
+# self-validation — each invariant violated individually.
 # --------------------------------------------------------------------------- #
 from premura.harness.fixture_gen import (  # noqa: E402
     GeneratedFixture,
@@ -123,7 +123,7 @@ def test_validate_accepts_a_generated_fixture() -> None:
 
 
 def test_validate_rejects_column_missing_from_manifest() -> None:
-    """FR-5: a CSV column not enumerated in source_fields is a violation."""
+    """A CSV column not enumerated in source_fields is a violation."""
     good = _good_fixture()
     # Drop the last source_field but keep the CSV: a column without a manifest row.
     broken = GeneratedFixture(
@@ -140,7 +140,7 @@ def test_validate_rejects_column_missing_from_manifest() -> None:
 
 
 def test_validate_rejects_duplicate_canonical_metric() -> None:
-    """FR-5: a non-null canonical metric appearing twice is a violation (D6)."""
+    """A non-null canonical metric appearing twice is a violation (D6)."""
     good = _good_fixture()
     metric = good.mappable_fields[0].canonical_metric
     # Re-label a gap column to reuse an already-used canonical metric.
@@ -163,7 +163,7 @@ def test_validate_rejects_duplicate_canonical_metric() -> None:
 
 
 def test_validate_rejects_metric_not_in_registry() -> None:
-    """FR-5: a non-null canonical metric absent from the registry is a violation."""
+    """A non-null canonical metric absent from the registry is a violation."""
     good = _good_fixture()
     fields = list(good.source_fields)
     for i, f in enumerate(fields):
@@ -184,7 +184,7 @@ def test_validate_rejects_metric_not_in_registry() -> None:
 
 
 def test_validate_rejects_no_mappable_column() -> None:
-    """FR-5: at least one mappable column is required."""
+    """At least one mappable column is required."""
     good = _good_fixture()
     fields = tuple(SourceField(name=f.name, canonical_metric=None) for f in good.source_fields)
     broken = GeneratedFixture(
@@ -201,7 +201,7 @@ def test_validate_rejects_no_mappable_column() -> None:
 
 
 def test_validate_rejects_no_gap_column() -> None:
-    """FR-5: at least one null-metric (declared-gap) column is required."""
+    """At least one null-metric (declared-gap) column is required."""
     good = _good_fixture()
     ids = iter(sorted(registry_metric_ids()))
     fields = tuple(SourceField(name=f.name, canonical_metric=next(ids)) for f in good.source_fields)
@@ -219,7 +219,7 @@ def test_validate_rejects_no_gap_column() -> None:
 
 
 def test_validate_rejects_wrong_row_count() -> None:
-    """FR-5: the CSV must carry exactly row_count data rows."""
+    """The CSV must carry exactly row_count data rows."""
     good = _good_fixture()
     truncated = "\n".join(good.csv_text.splitlines()[:-1]) + "\n"
     broken = GeneratedFixture(
@@ -236,7 +236,7 @@ def test_validate_rejects_wrong_row_count() -> None:
 
 
 def test_validate_rejects_unparseable_timestamp() -> None:
-    """FR-5: every timestamp cell must decode in the declared encoding."""
+    """Every timestamp cell must decode in the declared encoding."""
     good = _good_fixture()
     lines = good.csv_text.splitlines()
     # Corrupt the first data row's first cell (the structural timestamp column).
@@ -257,12 +257,12 @@ def test_validate_rejects_unparseable_timestamp() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# FR-4 manifest fidelity — same code path that reads the committed manifest.
+# manifest fidelity — same code path that reads the committed manifest.
 # --------------------------------------------------------------------------- #
 
 
 def test_generated_manifest_reads_via_committed_code_path(tmp_path) -> None:
-    """FR-4: the generated manifest parses with the SAME loader as the committed one.
+    """The generated manifest parses with the SAME loader as the committed one.
 
     The committed observation manifest (``fixture_fields.yaml``) is read by
     ``yaml.safe_load(path.read_text(...))`` — both by the committed fixtures'
@@ -301,7 +301,7 @@ def test_generated_manifest_reads_via_committed_code_path(tmp_path) -> None:
 
 
 def test_write_fixture_refuses_overwrite(tmp_path) -> None:
-    """FR-6: the writer refuses to clobber an existing pair unless told to."""
+    """The writer refuses to clobber an existing pair unless told to."""
     from premura.harness.fixture_gen import write_fixture
 
     fixture = generate_fixture(FixtureSpec(seed=9))
@@ -314,7 +314,7 @@ def test_write_fixture_refuses_overwrite(tmp_path) -> None:
 
 
 def test_write_fixture_lands_only_where_pointed(tmp_path) -> None:
-    """NFR-3: output goes ONLY under out_dir, never into tests/fixtures/."""
+    """Output goes ONLY under out_dir, never into tests/fixtures/."""
     from premura.harness.fixture_gen import write_fixture
 
     fixture = generate_fixture(FixtureSpec(seed=11))
@@ -325,7 +325,7 @@ def test_write_fixture_lands_only_where_pointed(tmp_path) -> None:
 
 
 def test_generated_source_is_synthetic_via_marker(tmp_path) -> None:
-    """FR-6: a written generated source is recognized synthetic via its marker."""
+    """A written generated source is recognized synthetic via its marker."""
     from premura.harness.fixture_gen import is_generated_synthetic_source, write_fixture
 
     fixture = generate_fixture(FixtureSpec(seed=13))
@@ -334,7 +334,7 @@ def test_generated_source_is_synthetic_via_marker(tmp_path) -> None:
 
 
 def test_real_looking_path_stays_non_synthetic(tmp_path) -> None:
-    """FR-6: a real-looking CSV with NO marker beside it is NOT synthetic.
+    """A real-looking CSV with NO marker beside it is NOT synthetic.
 
     The synthetic recognition must not loosen for arbitrary/real paths: a plausible
     operator dump that was never written by the generator (no marker) must stay
@@ -348,7 +348,7 @@ def test_real_looking_path_stays_non_synthetic(tmp_path) -> None:
 
 
 def test_harness_synthetic_rule_unchanged_for_real_path(tmp_path) -> None:
-    """FR-6: the harness's committed-source rule still rejects a real-looking path.
+    """The harness's committed-source rule still rejects a real-looking path.
 
     The harness's committed-source synthetic recognizer only ever counts a committed
     scenario source. A generated/real path it has never seen stays non-synthetic —
@@ -371,7 +371,7 @@ def test_harness_synthetic_rule_unchanged_for_real_path(tmp_path) -> None:
 
 
 def test_generated_source_is_persistable_through_the_harness_gate(tmp_path) -> None:
-    """FR-6: the harness's real persistence gate recognizes a generated fixture.
+    """The harness's real persistence gate recognizes a generated fixture.
 
     The integrated direction the per-function marker check alone cannot prove: a
     generated+written fixture, routed through the harness's actual persistence gate
@@ -413,12 +413,12 @@ def test_generated_source_is_persistable_through_the_harness_gate(tmp_path) -> N
 
 
 # --------------------------------------------------------------------------- #
-# FR-6 scenario adapter — yields a Scenario the harness accepts unchanged.
+# scenario adapter — yields a Scenario the harness accepts unchanged.
 # --------------------------------------------------------------------------- #
 
 
 def test_scenario_for_yields_a_valid_scenario(tmp_path) -> None:
-    """FR-6: scenario_for builds a Scenario wired to the written pair + observation."""
+    """Scenario_for builds a Scenario wired to the written pair + observation."""
     from premura.harness.fixture_gen import scenario_for, write_fixture
     from premura.harness.scenario import ObservationStrategy, Scenario
 
@@ -434,7 +434,7 @@ def test_scenario_for_yields_a_valid_scenario(tmp_path) -> None:
 
 
 def test_scenario_for_manifest_grades_via_observation_strategy(tmp_path) -> None:
-    """FR-6: the scenario's manifest is consumable by the observation gap_set rule.
+    """The scenario's manifest is consumable by the observation gap_set rule.
 
     Proves the generated manifest reconciles through the real ObservationStrategy
     code the grader drives — the same code path that grades the committed fixture.
@@ -465,12 +465,12 @@ def test_scenario_for_manifest_grades_via_observation_strategy(tmp_path) -> None
 
 
 # --------------------------------------------------------------------------- #
-# FR-7 CLI entry — generate/validate/write + honest exit codes.
+# CLI entry — generate/validate/write + honest exit codes.
 # --------------------------------------------------------------------------- #
 
 
 def test_cli_writes_pair_and_returns_zero(tmp_path, capsys) -> None:
-    """FR-7: --seed/--out generates, writes, prints paths + summary, exits 0."""
+    """--seed/--out generates, writes, prints paths + summary, exits 0."""
     from premura.harness.fixture_gen import _main
 
     rc = _main(["--seed", "42", "--out", str(tmp_path), "--rows", "6"])
@@ -492,7 +492,7 @@ def test_cli_writes_pair_and_returns_zero(tmp_path, capsys) -> None:
 
 
 def test_cli_same_seed_byte_identical(tmp_path) -> None:
-    """FR-1 via CLI: the same --seed writes byte-identical CSV + manifest."""
+    """Via CLI: the same --seed writes byte-identical CSV + manifest."""
     from premura.harness.fixture_gen import _main
 
     a, b = tmp_path / "a", tmp_path / "b"
@@ -507,7 +507,7 @@ def test_cli_same_seed_byte_identical(tmp_path) -> None:
 
 
 def test_cli_unknown_drawer_returns_nonzero(tmp_path, capsys) -> None:
-    """FR-7: a failure (unknown drawer) returns a nonzero exit code, no crash."""
+    """A failure (unknown drawer) returns a nonzero exit code, no crash."""
     from premura.harness.fixture_gen import _main
 
     rc = _main(["--seed", "1", "--drawer", "intake", "--out", str(tmp_path)])
@@ -515,7 +515,7 @@ def test_cli_unknown_drawer_returns_nonzero(tmp_path, capsys) -> None:
 
 
 def test_cli_refuses_overwrite_returns_nonzero(tmp_path) -> None:
-    """FR-7 / FR-6: writing twice to the same dir without --overwrite fails loudly."""
+    """Writing twice to the same dir without --overwrite fails loudly."""
     from premura.harness.fixture_gen import _main
 
     assert _main(["--seed", "7", "--out", str(tmp_path)]) == 0

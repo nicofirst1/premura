@@ -3,7 +3,7 @@
 # value_kind: 'instantaneous' = single point-in-time, 'aggregate' = pre-summarized (e.g. daily),
 #             'interval' = has start/end (lives in hp.fact_interval).
 #
-# WP01 (v2 skeleton) adds six ontology fields to every row that needs them:
+# The v2 skeleton adds six ontology fields to every row that needs them:
 #   category, validity_window, missing_data_policy, aliases, loinc, ieee1752
 # Legacy v1 metric_ids are preserved as-is; the eventual canonical-vocabulary
 # rewrite (e.g. namespacing) is deferred to a later full-rebuild mission.
@@ -570,7 +570,7 @@
   validity_window: P1D
   missing_data_policy: none
 
-# === Wearable expansion (WP01) ===
+# === Wearable expansion ===
 - metric_id: max_hr
   display_name: Maximum heart rate
   canonical_unit: bpm

@@ -32,7 +32,7 @@ not a hardcoded broken-file shape, and this parser is not where it lives:
 registry) that this parser, the tests, and the fixture description all import.
 A future agent adds a new malformation kind by appending one entry there (and a
 garbage line that exhibits it) — never by editing an if/elif ladder here. This
-parser never reads the grader-only manifest (C-005); it classifies from the raw
+parser never reads the grader-only manifest; it classifies from the raw
 bytes alone via the shared registry.
 """
 

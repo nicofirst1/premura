@@ -1,4 +1,4 @@
-"""Policy-layer tests for `correlate` lagged-association admissibility (WP01).
+"""Policy-layer tests for `correlate` lagged-association admissibility.
 
 `correlate` is gated on its OWN first-class analytical question type, with its
 own freshness/sufficiency declarations — never collapsed onto ``recent_trend``,
@@ -15,7 +15,7 @@ These tests pin:
 
 Nothing here imports MCP, DuckDB, PubMed, or any network module.
 
-Subtasks covered: T001 (policy-half failing contract) and T003 (mapping +
+Subtasks covered: (policy-half failing contract) and (mapping +
 default sufficiency/freshness declarations).
 """
 
@@ -39,7 +39,7 @@ RAW_PAIRED_FLOOR = 20
 
 
 # ---------------------------------------------------------------------------
-# T001 / T003: first-class policy question type for lagged association
+# first-class policy question type for lagged association
 # ---------------------------------------------------------------------------
 
 
@@ -61,7 +61,7 @@ def test_analytical_to_policy_mapping_wires_lagged_association() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T003: default sufficiency/freshness declarations on recent-run families
+# default sufficiency/freshness declarations on recent-run families
 # ---------------------------------------------------------------------------
 
 

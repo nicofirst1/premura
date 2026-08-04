@@ -1,8 +1,8 @@
 """Reference parser: a parser whose ``parse()`` RAISES before producing a batch.
 
 This is a test fixture, NOT a shipped production parser. It is the adversary for
-the ingest-failure path (spec edge case "parser raises / never produces a batch",
-FR-080): a real ``PluginParser`` whose ``parse()`` raises before any
+the ingest-failure path (spec edge case "parser raises / never produces a batch"):
+a real ``PluginParser`` whose ``parse()`` raises before any
 :class:`IngestBatch` exists, so the in-sandbox ingest runner never reaches
 ``duck.initialize(warehouse)`` and NO warehouse file is created.
 

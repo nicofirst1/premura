@@ -6,10 +6,10 @@ dispatches during a research session, derives a *measured* multiplicity
 disclosure ("K user-facing findings among N unique hypotheses examined"), and
 lets the agent mark which results it actually surfaced in a user-facing answer.
 
-Design boundaries (ADR-0009, the mission spec, and the audit-consumer contract):
+Design boundaries (ADR-0009 and the audit-consumer contract):
 
 * **MCP-agnostic.** This module imports nothing from the MCP layer. It exposes a
-  narrow, boring set of functions an MCP wrapper (WP03) calls; the service is
+  narrow, boring set of functions an MCP wrapper calls; the service is
   fully testable on its own DuckDB connection without an MCP server.
 * **Engine-agnostic and engine-pure.** Recording happens *around* dispatch and
   never reads ``hp.*`` health facts or computes a statistic. The analytical
@@ -18,7 +18,7 @@ Design boundaries (ADR-0009, the mission spec, and the audit-consumer contract):
 * **Append-only.** Sessions, calls, results, and marks are inserted and never
   updated/deleted in normal operation. A call row is written before dispatch and
   *finalized* (its terminal status filled in) after — that finalize is the only
-  in-place write, and it only fills the nullable terminal columns the WP01
+  in-place write, and it only fills the nullable terminal columns the original
   migration left open. Results and marks are separate immutable rows.
 * **Measured, not self-reported.** N (unique hypotheses) and the raw call count
   are derived by a single bounded query over the recorded rows. A false count an
@@ -59,7 +59,7 @@ TRACE_SCHEMA_VERSION = "1"
 DISCLOSURE_CONTRACT_VERSION = "1"
 
 # Default cap on the number of call records a disclosure inlines. A large
-# session stays a single bounded query, never an unbounded row dump (NFR-005).
+# session stays a single bounded query, never an unbounded row dump.
 DEFAULT_CALL_LIMIT = 1000
 
 # Terminal statuses a recorded call may finish in.
@@ -87,7 +87,7 @@ KNOWN_MARK_ROLES = ("claim", "summary", "recommendation", "next_step", "caveat")
 
 
 # ===========================================================================
-# Public result shapes (T006)
+# Public result shapes
 #
 # Every public function returns one of these frozen dataclasses. They carry a
 # ``status`` string so an MCP wrapper can branch on a machine-readable outcome
@@ -251,7 +251,7 @@ class SurfacedSummary:
 
 @dataclass(frozen=True)
 class TraceDisclosure:
-    """The derived multiplicity disclosure over one research session (T011).
+    """The derived multiplicity disclosure over one research session.
 
     This is the audit-consumer "Session Disclosure" object. The counts are
     derived from recorded rows, never self-reported. ``status`` is ``available``
@@ -289,7 +289,7 @@ class TraceDisclosure:
 
 
 # ===========================================================================
-# Deterministic hashing + normalized hypothesis identity (T008)
+# Deterministic hashing + normalized hypothesis identity
 # ===========================================================================
 
 
@@ -396,7 +396,7 @@ def _identity_smoothed_average(req: Mapping[str, Any]) -> dict[str, Any]:
 def _identity_correlate(req: Mapping[str, Any]) -> dict[str, Any]:
     """``correlate``: a pre-registered lagged association between two metrics.
 
-    Identity fields (ADR-0008/0009 + the MCP request shape): left metric, right
+    Identity fields (ADR-0008/ADR-0009 + the MCP request shape): left metric, right
     metric, integer lag, expected direction, the *presence/shape* of the lag
     justification, and the *shape* of the common-cause declaration. The free
     text of the justification and the specific candidate list are deliberately
@@ -452,7 +452,7 @@ def _identity_rolling_mean(req: Mapping[str, Any]) -> dict[str, Any]:
 def _identity_paired_t_test(req: Mapping[str, Any]) -> dict[str, Any]:
     """``paired_t_test``: a pre-registered simple before/after anchor-date split.
 
-    Identity fields (the pre-registered declaration of FR-005 + the MCP request
+    Identity fields (the pre-registered declaration + the MCP request
     shape): metric id, anchor date, before-window days, after-window days, and the
     declared expected direction. All five are caller-declared *before* the result
     exists and have no MCP-side default, so every one is identity-bearing: an exact
@@ -609,7 +609,7 @@ def _mint_id(prefix: str) -> str:
     """Mint a stable, unique VARCHAR id at the Python boundary (not a DB sequence).
 
     A call can be addressed before insert and across processes, matching the
-    WP01 schema's VARCHAR primary keys.
+    schema's VARCHAR primary keys.
     """
     return f"{prefix}_{uuid.uuid4().hex}"
 
@@ -632,7 +632,7 @@ def _session_exists(conn: duckdb.DuckDBPyConnection, session_id: str) -> bool:
 
 
 # ===========================================================================
-# Session opening (T007)
+# Session opening
 # ===========================================================================
 
 
@@ -642,12 +642,12 @@ def open_research_session(
     client_label: str | None = None,
     created_by: str | None = None,
 ) -> TraceSession:
-    """Open an explicit research session and persist it (FR-001).
+    """Open an explicit research session and persist it.
 
     Captures a pragmatic-but-stable warehouse fingerprint and the trace schema
     version so a disclosure can carry the context it was computed against. The
     fingerprint reuses DuckDB's own state rather than building a cryptographic
-    inventory of the warehouse — pragmatic per the WP scope.
+    inventory of the warehouse — pragmatic by design.
 
     Returns a :class:`TraceSession` with ``status="opened"``.
     """
@@ -686,7 +686,7 @@ def _warehouse_fingerprint(conn: duckdb.DuckDBPyConnection) -> str:
     inventory (catalog/schema/table names). This is stable across reads of the
     same warehouse shape and changes when the schema changes, which is the
     reproduction signal a disclosure needs — without reading any ``hp.*`` health
-    rows (NFR-002 / provenance boundary). If the catalog query is unavailable for
+    rows (provenance boundary). If the catalog query is unavailable for
     any reason, fall back to the library version alone rather than failing the
     session open.
     """
@@ -711,7 +711,7 @@ def _warehouse_fingerprint(conn: duckdb.DuckDBPyConnection) -> str:
 
 
 # ===========================================================================
-# Call/result recording (T009)
+# Call/result recording
 # ===========================================================================
 
 
@@ -723,7 +723,7 @@ def start_recorded_call(
     *,
     call_kind: str = CALL_KIND_ANALYTICAL,
 ) -> PendingCall | TraceError:
-    """Record an analytical or evidence-source call *before* dispatch (FR-002, FR-003).
+    """Record an analytical or evidence-source call *before* dispatch.
 
     Mints a stable ``call_id``, computes the deterministic request hash and the
     normalized hypothesis identity, and inserts a call row with no terminal
@@ -783,7 +783,7 @@ def finish_recorded_call(
     refusal_reason: str | None = None,
     error_kind: str | None = None,
 ) -> RecordedCall | TraceError:
-    """Finalize a recorded call *after* dispatch (FR-002, FR-004).
+    """Finalize a recorded call *after* dispatch.
 
     ``terminal_status`` must be ``available``, ``refused``, or ``error``:
 
@@ -812,8 +812,8 @@ def finish_recorded_call(
             message="A refused call requires a machine-readable refusal_reason.",
             field="refusal_reason",
         )
-    # Append-only enforcement (NFR-003): a recorded call is finalized exactly
-    # once. The insert-then-finish shape (WP01) leaves ``terminal_status`` NULL
+    # Append-only enforcement: a recorded call is finalized exactly
+    # once. The insert-then-finish shape leaves ``terminal_status`` NULL
     # until this call; a SECOND finalize would *mutate* a completed row (changing
     # its terminal status / metadata and appending another result), so reject it
     # rather than overwrite. Immutability is verified through the public surface.
@@ -879,10 +879,10 @@ def discard_recorded_call(
     The MCP boundary records BEFORE dispatch, but a request that fails
     *pre-question* parameter validation (empty metric id, invalid enum,
     unsupported lag) is explicitly NOT a recorded analytical call and MUST NOT
-    count toward N or the raw analytical-call count (FR-008 / AS-3). This removes
+    count toward N or the raw analytical-call count. This removes
     only the not-yet-finalized row for ``pending`` — it is bookkeeping for a row
     that should not have existed, not a delete of a *finalized* recorded call
-    (append-only / NFR-003 governs finalized rows, which :func:`finish_recorded_call`
+    (append-only governs finalized rows, which :func:`finish_recorded_call`
     refuses to mutate). A genuine engine fault *after* a valid question is instead
     finalized as ``error`` by the caller, so it stays counted and consistent.
     """
@@ -951,7 +951,7 @@ def _record_result(
 
 
 # ===========================================================================
-# Surfaced marks (T010)
+# Surfaced marks
 # ===========================================================================
 
 
@@ -962,7 +962,7 @@ def mark_surfaced(
     role: str,
     rationale: str,
 ) -> SurfacedMark | TraceError:
-    """Mark a recorded call as surfaced in the user-facing answer (FR-009).
+    """Mark a recorded call as surfaced in the user-facing answer.
 
     "Surfaced" = selected for presentation (a claim/summary/recommendation/
     next-step/caveat in the answer). It is *never* a statistical-significance
@@ -1024,9 +1024,9 @@ def mark_surfaced(
             ),
             field="call_id",
         )
-    # K counts distinct surfaced *calls* (FR-010), not mark rows. A second mark on
+    # K counts distinct surfaced *calls*, not mark rows. A second mark on
     # the same call would let K exceed N and break the disclosure invariant
-    # raw >= N >= K (NFR-006), so surfaced marks are one-per-call: re-marking a
+    # raw >= N >= K, so surfaced marks are one-per-call: re-marking a
     # call is rejected rather than appended.
     existing_mark = conn.execute(
         "SELECT mark_id FROM trace.surfaced_mark WHERE session_id = ? AND call_id = ? LIMIT 1",
@@ -1157,10 +1157,10 @@ def bound_claim_calls(
 
 
 # ===========================================================================
-# Disclosure computation + exports (T011)
+# Disclosure computation + exports
 # ===========================================================================
 
-# The exact framing required by FR-010 / the data-model: search effort, never
+# The exact framing required by the data-model: search effort, never
 # "significant results"/"tests".
 _SURFACED_UNAVAILABLE_MESSAGE = (
     "Surfaced count unavailable: the agent did not mark any included results for this session."
@@ -1174,11 +1174,11 @@ def get_research_disclosure(
     include_calls: bool = True,
     call_limit: int = DEFAULT_CALL_LIMIT,
 ) -> TraceDisclosure | TraceError:
-    """Derive the measured multiplicity disclosure for a session (FR-006..FR-012).
+    """Derive the measured multiplicity disclosure for a session.
 
     Returns a :class:`TraceDisclosure` whose counts are computed by bounded
     queries over the recorded rows — never self-reported. For an unknown /
-    never-opened session returns a :class:`TraceError` (``not_found``, FR-015),
+    never-opened session returns a :class:`TraceError` (``not_found``),
     which is distinct from a valid-but-empty session (raw=N=0, surfaced
     unavailable).
 
@@ -1190,7 +1190,7 @@ def get_research_disclosure(
     * **unique_hypothesis_count (N)** — ``COUNT(DISTINCT hypothesis_identity)``,
       so exact retries collapse but refusals still count.
     * **surfaced (K)** — count of surfaced marks; reported *unavailable* with an
-      explicit message when calls exist but no marks do (FR-011), never guessed.
+      explicit message when calls exist but no marks do, never guessed.
     * **refusal_breakdown** — counts by ``refusal_reason``.
     * **calls** — bounded list of stable call/result references for audit
       consumers (omitted when ``include_calls`` is false; truncated at
@@ -1273,7 +1273,7 @@ def _surfaced_summary(
     session_id: str,
     raw_calls: int,
 ) -> SurfacedSummary:
-    """Compute the surfaced (K) section with the conservative fallback (FR-011)."""
+    """Compute the surfaced (K) section with the conservative fallback."""
     mark_rows = conn.execute(
         """
         SELECT mark_id, session_id, call_id, role, rationale, marked_at_utc
@@ -1304,9 +1304,9 @@ def _surfaced_summary(
         )
         for r in mark_rows
     )
-    # K = count of distinct surfaced *calls* (FR-010), not mark rows. mark_surfaced
+    # K = count of distinct surfaced *calls*, not mark rows. mark_surfaced
     # enforces one mark per call, but count distinct call_ids defensively so K can
-    # never exceed N (NFR-006) even if legacy rows carried duplicates.
+    # never exceed N even if legacy rows carried duplicates.
     surfaced_call_ids = {m.call_id for m in marks}
     return SurfacedSummary(
         status="available",
@@ -1377,7 +1377,7 @@ def _disclosure_text(
     surfaced: SurfacedSummary,
     refusal_breakdown: dict[str, int],
 ) -> str:
-    """Render the honest disclosure sentence (FR-010).
+    """Render the honest disclosure sentence.
 
     Uses the required framing "user-facing findings among unique hypotheses
     examined" and shows the raw call count separately. It never says
@@ -1402,7 +1402,7 @@ def _disclosure_text(
 
 
 # ===========================================================================
-# Human-readable exports (T011, FR-014) — generated from the structured trace,
+# Human-readable exports — generated from the structured trace,
 # never the canonical record.
 # ===========================================================================
 
@@ -1417,7 +1417,7 @@ def disclosure_to_markdown(disclosure: TraceDisclosure) -> str:
 
     Generated from the structured disclosure so it can never drift from the
     canonical counts. Mirrors the audit-consumer fields in a human-readable
-    shape without becoming a source of truth (FR-014).
+    shape without becoming a source of truth.
     """
     d = disclosure
     lines: list[str] = []

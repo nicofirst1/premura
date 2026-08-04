@@ -1,4 +1,4 @@
-"""WP04 — default-surface tests for the agent-facing ``correlate`` wrapper.
+"""Default-surface tests for the agent-facing ``correlate`` wrapper.
 
 These lock the contract from ``contracts/correlate-contract.md`` at the MCP
 boundary:
@@ -35,9 +35,8 @@ from premura.mcp import server
 from premura.mcp.entrypoint import build_operator_server, build_server
 from premura.store import duck
 
-# WP04 adds ``correlate`` to the prior twelve default tools (WP06 left twelve).
-# session-research-trace WP03 adds the three trace tools to the same surface.
-# WP05 (finish-analytical-tool-set) adds rolling_mean + paired_t_test (-> 18).
+# ``correlate`` is added to the prior twelve default tools, then the three
+# trace tools join the same surface, then rolling_mean + paired_t_test (-> 18).
 _DEFAULT_TOOLS_WITH_CORRELATE = sorted(
     [
         "list_metrics",
@@ -155,7 +154,7 @@ def test_default_surface_lists_exactly_the_expected_tools() -> None:
     async def run() -> None:
         names = sorted(tool.name for tool in await build_server().list_tools())
         assert names == _DEFAULT_TOOLS_WITH_CORRELATE
-        # WP05 added rolling_mean + paired_t_test to the default surface (-> 18).
+        # rolling_mean + paired_t_test were added to the default surface (-> 18).
         assert len(names) == len(_DEFAULT_TOOLS_WITH_CORRELATE)
 
     asyncio.run(run())
@@ -401,7 +400,7 @@ def test_correlate_delegates_paired_prep_and_dispatch_to_engine(
 
 
 def test_correlate_wrapper_does_no_statistics_or_network() -> None:
-    """Static guard (T020): the wrapper module must not implement statistics,
+    """Static guard: the wrapper module must not implement statistics,
     raw fact-table analysis, or any network/PubMed work. Statistical primitives,
     pairing logic, and network/HTTP imports belong to the engine — not the MCP
     boundary. This fails if a future change moves computation into MCP.

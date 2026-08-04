@@ -1,4 +1,4 @@
-"""Analyze-and-answer task: contract + deterministic grader (m6, FR-1..FR-3).
+"""Analyze-and-answer task: contract + deterministic grader.
 
 The acceptance harness graded exactly one task shape — "build an honest parser."
 This module teaches it a *second* task kind: the operator is handed a
@@ -80,7 +80,7 @@ def warehouse_analytical_surface(warehouse_path: Path) -> AnalyticalSurface:
     engine's Stage 2 query helpers and dispatch through the engine's analytical
     registry. The caller receives only the serialized engine envelope — never the
     path it closed over. This is the seam the grader recomputes ground truth
-    through and the operator answers from (FR-3/FR-4).
+    through and the operator answers from.
     """
     # Imported lazily: the MCP server pulls in the warehouse store layer, and the
     # contract/grader core must stay importable without it.
@@ -103,7 +103,7 @@ def warehouse_analytical_surface(warehouse_path: Path) -> AnalyticalSurface:
 
 
 # --------------------------------------------------------------------------- #
-# Forbidden-claim pattern registry (FR-3 honesty scan).
+# Forbidden-claim pattern registry (the honesty scan).
 # --------------------------------------------------------------------------- #
 
 
@@ -153,7 +153,7 @@ def scan_forbidden_claims(answer_text: str) -> list[str]:
 
 
 # --------------------------------------------------------------------------- #
-# Structured answer (FR-2).
+# Structured answer.
 # --------------------------------------------------------------------------- #
 
 
@@ -171,7 +171,7 @@ class ToolCall:
 
 @dataclass(frozen=True)
 class AnswerOutcome:
-    """The operator's structured answer to a rendered question (FR-2).
+    """The operator's structured answer to a rendered question.
 
     Exactly one of two shapes, distinguished by ``refusal_reason``:
 
@@ -200,13 +200,13 @@ class AnswerOutcome:
 
 
 # --------------------------------------------------------------------------- #
-# Question kinds (FR-1) — the bounded registry.
+# Question kinds — the bounded registry.
 # --------------------------------------------------------------------------- #
 
 
 @dataclass(frozen=True)
 class GroundTruth:
-    """The grader's own recomputation of the engine result (FR-3).
+    """The grader's own recomputation of the engine result.
 
     Mirrors the two answer shapes: a non-refusal carries the engine's structured
     ``estimates`` (the same keys a grounded answer must match); a refusal carries
@@ -222,7 +222,7 @@ class GroundTruth:
 
 @dataclass(frozen=True)
 class QuestionSpec:
-    """One analyze-and-answer question (FR-1), a level above the concrete case.
+    """One analyze-and-answer question, a level above the concrete case.
 
     A spec declares everything the harness and grader need without enumerating a
     question list in code:
@@ -250,7 +250,7 @@ class QuestionSpec:
         object.__setattr__(self, "seed_series", tuple(self.seed_series))
 
     def seed_warehouse(self, warehouse_path: Path) -> None:
-        """Seed a synthetic warehouse with this spec's series for its metric (FR-4).
+        """Seed a synthetic warehouse with this spec's series for its metric.
 
         The harness calls this to build the operator's analyzable data. Synthetic by
         construction: the metric is drawn from the committed registry, the values are
@@ -266,7 +266,7 @@ class QuestionSpec:
         )
 
     def compute_ground_truth(self, surface: AnalyticalSurface) -> GroundTruth:
-        """Recompute ground truth through the engine surface (FR-3).
+        """Recompute ground truth through the engine surface.
 
         The grader calls this — it NEVER trusts the operator's tool-call report.
         Dispatches the kind's declared tool over the surface, then projects the
@@ -289,7 +289,7 @@ class QuestionSpec:
 
 
 class UnknownQuestionKindError(ValueError):
-    """Raised when a question-kind id has no registered builder (FR-1)."""
+    """Raised when a question-kind id has no registered builder."""
 
 
 #: The deterministic level-shift seeding profile: a clearly-shifted daily series
@@ -358,7 +358,7 @@ def _registry_metric_ids() -> frozenset[str]:
 
     The warehouse seeds its ``dim_metric`` from this same file, so a metric must
     appear here to be loadable as a fact row at all. Read at selection time — never
-    a metric list hardcoded in this module (NFR-4)."""
+    a metric list hardcoded in this module."""
     text = resources.files("premura").joinpath("dim_metric.yaml").read_text(encoding="utf-8")
     rows = yaml.safe_load(text) or []
     return frozenset(row["metric_id"] for row in rows if isinstance(row.get("metric_id"), str))
@@ -441,7 +441,7 @@ def _select_admissible_metric(
     """Deterministically pick an analyzable metric for the kind from ``seed``.
 
     Chosen by a seeded selection out of :func:`_admissible_metrics` — never a
-    metric id hardcoded in this module (NFR-4)."""
+    metric id hardcoded in this module."""
     candidates = _admissible_metrics(question_type, tool_name, parameters)
     if not candidates:  # pragma: no cover - defensive: built-ins always cover some
         raise UnknownQuestionKindError(f"no analyzable metric available for {question_type.value}")
@@ -478,7 +478,7 @@ def list_question_kinds() -> list[str]:
 
 
 def question_spec_for(kind: str, *, seed: int) -> QuestionSpec:
-    """Build the :class:`QuestionSpec` for ``kind`` from ``seed`` (FR-1).
+    """Build the :class:`QuestionSpec` for ``kind`` from ``seed``.
 
     Looks the kind up in :data:`_QUESTION_KINDS` and calls its builder. An unknown
     kind raises :class:`UnknownQuestionKindError` — the registry fails loudly
@@ -495,13 +495,13 @@ def question_spec_for(kind: str, *, seed: int) -> QuestionSpec:
 
 
 # --------------------------------------------------------------------------- #
-# Deterministic answer grader (FR-3).
+# Deterministic answer grader.
 # --------------------------------------------------------------------------- #
 
 
 @dataclass(frozen=True)
 class CheckResult:
-    """One named grader check's outcome (FR-3): passed + a plain-language detail."""
+    """One named grader check's outcome: passed + a plain-language detail."""
 
     name: str
     passed: bool
@@ -510,7 +510,7 @@ class CheckResult:
 
 @dataclass(frozen=True)
 class AnswerVerdict:
-    """The structured verdict of grading one answer (FR-3).
+    """The structured verdict of grading one answer.
 
     ``passed`` is the conjunction of the per-check results; ``checks`` carries the
     three named checks (honesty, grounding, refusal_fidelity), each naming itself
@@ -589,7 +589,7 @@ def grade_answer(
     answer: AnswerOutcome,
     surface: AnalyticalSurface,
 ) -> AnswerVerdict:
-    """Grade one analyze-and-answer outcome deterministically (FR-3).
+    """Grade one analyze-and-answer outcome deterministically.
 
     The grader RECOMPUTES ground truth itself through ``surface`` (the same engine
     analytical surface), never trusting ``answer``'s tool-call report. It bands
@@ -658,7 +658,7 @@ def grade_answer(
 
 
 # --------------------------------------------------------------------------- #
-# CLI entry (FR-7). Mirrors fixture_gen._main / live_trial_ollama._main: honest
+# CLI entry. Mirrors fixture_gen._main / live_trial_ollama._main: honest
 # exit codes, one-line summary, never raises into a caller.
 # --------------------------------------------------------------------------- #
 
@@ -684,7 +684,7 @@ def _build_arg_parser() -> Any:
 
 
 def _main(argv: Sequence[str] | None = None) -> int:
-    """CLI: seed a temp sandbox, run the honest trial, print a summary (FR-7).
+    """CLI: seed a temp sandbox, run the honest trial, print a summary.
 
     Returns 0 when every grader check passes, nonzero on any failure (unknown kind,
     or a check that did not pass). Never raises into a caller — mirrors the m5

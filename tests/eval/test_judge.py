@@ -1,9 +1,9 @@
-"""Offline tests for the rubric-driven AI judge (judge-ai m3 WP2, FR-3/FR-4).
+"""Offline tests for the rubric-driven AI judge (judge-ai m3 WP2).
 
 The model backend is substituted at the OUTSIDE boundary (DIRECTIVE_036, same
 pattern as the tool-loop ``Transport``) by a scripted callable injected through
 ``judge_session(..., transport=...)`` — so the whole judge runs deterministically
-with no Ollama process and no network (NFR-5). Each test builds a recorded
+with no Ollama process and no network. Each test builds a recorded
 session with the public store API, runs the judge over it, and asserts on the one
 persisted ``log_judgment`` row.
 """
@@ -21,7 +21,7 @@ from premura.session_log import store
 
 # The local-only "model unavailable" sentinel lives in the cheap-model harness
 # module. We resolve it via importlib with a concatenated module name so the
-# gating-harness import substrings the NFR-005 default-gate guard scans for never
+# gating-harness import substrings the default-gate guard scans for never
 # appear in this DEFAULT-collected module's text — keeping that guard
 # (``test_live_trial_seam.py``) an accurate witness. The judge core itself never
 # runs a live trial, so this test runs in the default gate with no model server.
@@ -100,7 +100,7 @@ def _well_formed_verdict() -> dict:
 
 
 def test_well_formed_verdict_persisted_faithfully(tmp_path: Path) -> None:
-    """FR-4: a well-formed scripted verdict is persisted as exactly one complete
+    """A well-formed scripted verdict is persisted as exactly one complete
     log_judgment row whose criteria replay under the rubric's criterion ids."""
     log_path = tmp_path / "session_log.duckdb"
     conn = _open_initialized(log_path)
@@ -134,7 +134,7 @@ def test_well_formed_verdict_persisted_faithfully(tmp_path: Path) -> None:
 
 
 def test_criteria_ids_come_from_the_rubric_not_code(tmp_path: Path) -> None:
-    """FR-3/FR-4: the persisted criterion ids are exactly the rubric's ids — code
+    """The persisted criterion ids are exactly the rubric's ids — code
     never enumerates them. The judge validates bands, not ids; an id the rubric
     defines round-trips, and the rubric is the single source of the id set."""
     log_path = tmp_path / "session_log.duckdb"
@@ -166,7 +166,7 @@ def test_criteria_ids_come_from_the_rubric_not_code(tmp_path: Path) -> None:
 
 
 def test_malformed_then_bounded_retry_then_unparseable(tmp_path: Path) -> None:
-    """FR-4: a malformed response is retried a bounded number of times; if every
+    """A malformed response is retried a bounded number of times; if every
     retry is malformed the judgment is an honest ``unparseable`` row preserving
     the raw output, with empty criteria and NULL overall_band."""
     log_path = tmp_path / "session_log.duckdb"
@@ -202,7 +202,7 @@ def test_malformed_then_bounded_retry_then_unparseable(tmp_path: Path) -> None:
 
 
 def test_malformed_then_recovers_within_retry(tmp_path: Path) -> None:
-    """FR-4: a malformed first response that recovers on retry yields a complete
+    """A malformed first response that recovers on retry yields a complete
     judgment — the retry budget is for recovery, not just failure."""
     log_path = tmp_path / "session_log.duckdb"
     conn = _open_initialized(log_path)
@@ -224,7 +224,7 @@ def test_malformed_then_recovers_within_retry(tmp_path: Path) -> None:
 
 
 def test_unavailable_backend_records_model_unavailable(tmp_path: Path) -> None:
-    """FR-4: an unavailable local backend yields an honest ``model_unavailable``
+    """An unavailable local backend yields an honest ``model_unavailable``
     row with empty criteria, never a crash or a faked verdict."""
     log_path = tmp_path / "session_log.duckdb"
     conn = _open_initialized(log_path)
@@ -250,7 +250,7 @@ def test_unavailable_backend_records_model_unavailable(tmp_path: Path) -> None:
 
 
 def test_unknown_criterion_id_rejected_as_unparseable(tmp_path: Path) -> None:
-    """FR-4: a verdict that bands a criterion id the rubric does not define is
+    """A verdict that bands a criterion id the rubric does not define is
     malformed — the judge rejects it (and on exhaustion records ``unparseable``),
     never persisting an off-rubric criterion."""
     log_path = tmp_path / "session_log.duckdb"
@@ -276,7 +276,7 @@ def test_unknown_criterion_id_rejected_as_unparseable(tmp_path: Path) -> None:
 
 
 def test_unknown_band_rejected_as_unparseable(tmp_path: Path) -> None:
-    """FR-4: a verdict with a band outside CRITERION_BANDS is malformed and
+    """A verdict with a band outside CRITERION_BANDS is malformed and
     rejected (records ``unparseable`` on exhaustion), never persisted."""
     log_path = tmp_path / "session_log.duckdb"
     conn = _open_initialized(log_path)
@@ -467,7 +467,7 @@ def test_evidence_quote_length_floor_flips_verdict(tmp_path: Path) -> None:
 
 
 def test_prompt_contains_dossier_and_rubric(tmp_path: Path) -> None:
-    """FR-4: the judge builds the prompt from dossier + rubric — the transcript
+    """The judge builds the prompt from dossier + rubric — the transcript
     content and the rubric criterion ids both appear in the prompt the model sees."""
     log_path = tmp_path / "session_log.duckdb"
     conn = _open_initialized(log_path)

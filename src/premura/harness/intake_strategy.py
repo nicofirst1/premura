@@ -1,9 +1,9 @@
-"""The intake drawer's :class:`DrawerGradingStrategy` + its scenario (FR-003..006).
+"""The intake drawer's :class:`DrawerGradingStrategy` + its scenario.
 
 The intake analogue of :class:`premura.harness.scenario.ObservationStrategy`: it
 supplies the three drawer-specific facts the generic
 :func:`premura.harness.grader.grade` body calls into, so the *same* grader scores
-an intake run with **no per-drawer branch** (NFR-005). Adding the intake source is
+an intake run with **no per-drawer branch**. Adding the intake source is
 registering one :class:`~premura.harness.scenario.Scenario`; the shared grade path
 is never edited.
 
@@ -11,11 +11,10 @@ The three responsibilities, intake-shaped:
 
 * ``boundary_truth(conn)`` — loaded row count + present drawer keys recomputed from
   the **intake** warehouse tables only (``hp.nutrition_intake_*`` /
-  ``hp.supplement_intake_*``), never from the parser's report (FR-006). A
+  ``hp.supplement_intake_*``), never from the parser's report. A
   nutrition/supplement row that landed in ``hp.fact_*`` is, by construction, absent
-  here and so cannot witness a loaded field — that is the failing-case property
-  (the proof is WP05).
-* ``runtime_check(provenance, conn)`` — delegates to WP02's
+  here and so cannot witness a loaded field — that is the failing-case property.
+* ``runtime_check(provenance, conn)`` — delegates to
   :func:`premura.harness.intake_contract_check.check_intake_runtime_contract` over
   the captured produce/persist evidence; intake has no canonical declared/emitted
   *metric* surface, so the truthful coherence is on the source dimension via
@@ -24,7 +23,7 @@ The three responsibilities, intake-shaped:
   drops: a source column accounted iff it is **loaded** (witnessed by warehouse
   boundary truth) OR **declared** by the parser (``unmapped_metrics`` /
   ``skipped_rows``). A column that is neither is a silent drop and fails
-  ``honest_about_gaps`` (FR-005). Declared metadata is evidence to verify, never
+  ``honest_about_gaps``. Declared metadata is evidence to verify, never
   proof.
 
 This module is import-light (no Ollama, no network) so it is safe to import from
@@ -55,7 +54,7 @@ if TYPE_CHECKING:
 # The intake event tables that hold boundary truth for the ``loaded`` rule. Only
 # the intake drawer's own homes (migration 004) — a row in ``hp.fact_*`` is
 # deliberately NOT counted here, so an intake field "loaded" into the wrong drawer
-# cannot witness a loaded column (FR-006 / NFR-006).
+# cannot witness a loaded column.
 _INTAKE_EVENT_TABLES: tuple[str, ...] = (
     "hp.nutrition_intake_event",
     "hp.supplement_intake_event",
@@ -93,7 +92,7 @@ _INTAKE_HOME_WITNESS_SQL: dict[str, str] = {
     ),
 }
 
-# Committed synthetic alien source + its grader-only ground-truth manifest (C-005).
+# Committed synthetic alien source + its grader-only ground-truth manifest.
 _INTAKE_FIXTURE_DIR = Path(REPO_ROOT) / "tests" / "fixtures" / "intake_scenario"
 _INTAKE_SOURCE = _INTAKE_FIXTURE_DIR / "alien_intake.csv"
 _INTAKE_MANIFEST = _INTAKE_FIXTURE_DIR / "alien_intake_manifest.yaml"
@@ -109,18 +108,18 @@ _INTAKE_REFERENCE_PARSER = (
 class IntakeStrategy:
     """The intake drawer's grading, satisfying the ``DrawerGradingStrategy`` Protocol.
 
-    Wraps intake-table boundary truth (T012), the WP02 intake runtime checker
-    (delegated), and the intake manifest honesty reconcile (T013). The shared
+    Wraps intake-table boundary truth, the intake runtime checker
+    (delegated), and the intake manifest honesty reconcile. The shared
     ``grade()`` body names none of these — they are reached only through the
     Protocol seam, which is how the intake scenario flows through the unchanged
-    generic grader (NFR-005).
+    generic grader.
     """
 
     event_tables: tuple[str, ...] = _INTAKE_EVENT_TABLES
 
-    # --- T012: intake boundary-truth reader ------------------------------- #
+    # --- intake boundary-truth reader ------------------------------- #
     def boundary_truth(self, warehouse_conn: duckdb.DuckDBPyConnection) -> BoundaryTruth:
-        """Persisted intake-event row count + present home keys (FR-006).
+        """Persisted intake-event row count + present home keys.
 
         ``row_count`` counts persisted intake **events** (the ``loaded`` support,
         consistent with the loader-measured event inserts). ``present_keys`` is the
@@ -142,13 +141,13 @@ class IntakeStrategy:
 
         return BoundaryTruth(row_count=total, present_keys=frozenset(present))
 
-    # --- T014 wiring: delegate runtime check to WP02 ---------------------- #
+    # --- delegate runtime check to the intake checker ---------------------- #
     def runtime_check(
         self,
         provenance: IngestProvenance,
         warehouse_conn: duckdb.DuckDBPyConnection,
     ) -> ContractCheckResult:
-        """Delegate to WP02's intake checker over the CAPTURED produce/persist evidence.
+        """Delegate to the intake checker over the CAPTURED produce/persist evidence.
 
         Intake ``runtime_valid`` has no canonical declared/emitted *metric* surface
         (those are observation-only); the truthful coherence is on the source
@@ -165,7 +164,7 @@ class IntakeStrategy:
             persist_error=persist_error,
         )
 
-    # --- T013: intake gap reconciler -------------------------------------- #
+    # --- intake gap reconciler -------------------------------------- #
     def gap_set(
         self,
         fixture_manifest: dict[str, Any],
@@ -182,7 +181,7 @@ class IntakeStrategy:
         fails ``honest_about_gaps``.
 
         Declared metadata is evidence on the *declared* side only; it never
-        witnesses that a column was actually loaded (FR-005). A column with no
+        witnesses that a column was actually loaded. A column with no
         canonical home (``canonical_home: null``, the intended gap) can only be
         accounted by being declared, so a parser that drops it silently fails here.
         """
@@ -205,10 +204,10 @@ class IntakeStrategy:
 def intake_scenario() -> Scenario:
     """The intake :class:`Scenario`, wired to the alien source + reference parser.
 
-    The bounded-abstraction surface (FR-003): the alien source artifact, its
-    grader-only manifest (C-005), the layer-1 known-good reference parser, and the
+    The bounded-abstraction surface: the alien source artifact, its
+    grader-only manifest, the layer-1 known-good reference parser, and the
     :class:`IntakeStrategy` supplying drawer specifics. The registry composes this
-    with the observation scenario so the registry lists ≥ 2 sources (SC-003).
+    with the observation scenario so the registry lists ≥ 2 sources.
     """
     return Scenario(
         name="intake_alien",

@@ -1,4 +1,4 @@
-"""Black-box tests for the improvement-proposal store surface (m4 WP1, FR-1/FR-2).
+"""Black-box tests for the improvement-proposal store surface.
 
 These exercise the **public writer + read API** of ``premura.session_log.store``
 and the read surface in ``premura.session_log.improvement_read`` for the
@@ -8,13 +8,13 @@ internal collaborators — the same discipline as ``test_session_log_store.py``.
 
 Fidelity coverage map (reviewers check each):
 
-* FR-1 — ``log_improvement`` schema + ``PROPOSAL_STATUSES`` +
+* ``log_improvement`` schema + ``PROPOSAL_STATUSES`` +
   ``record_improvement`` validation: ``test_record_improvement_round_trip``,
   ``test_proposal_status_vocab``, ``test_record_improvement_rejects_empty_fields``,
   ``test_record_improvement_requires_existing_session_and_judgment``.
-* FR-2 — read surfaces (frozen dataclass rows, deterministic order):
+* read surfaces (frozen dataclass rows, deterministic order):
   ``test_read_improvements_*``, ``test_read_judgments_*``.
-* NFR-1 — read surfaces open read-only: ``test_read_surfaces_open_read_only``.
+* read surfaces open read-only: ``test_read_surfaces_open_read_only``.
 """
 
 from __future__ import annotations
@@ -57,7 +57,7 @@ def _new_judgment(conn: duckdb.DuckDBPyConnection, session_id: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# FR-1 — record_improvement
+# record_improvement
 # ---------------------------------------------------------------------------
 
 
@@ -129,7 +129,7 @@ def test_record_improvement_allows_null_criterion(tmp_path: Path) -> None:
 
 
 def test_proposal_status_vocab(tmp_path: Path) -> None:
-    """FR-1: status is the fixed PROPOSAL_STATUSES vocabulary; others raise.
+    """Status is the fixed PROPOSAL_STATUSES vocabulary; others raise.
 
     Mirrors the existing store boundary checks (``result_status`` / ``run_kind`` /
     ``status``). The other two statuses exist now so a later lifecycle mission
@@ -169,7 +169,7 @@ def test_proposal_status_vocab(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize("blank_field", ["summary", "evidence", "area"])
 def test_record_improvement_rejects_empty_fields(tmp_path: Path, blank_field: str) -> None:
-    """FR-1: summary / evidence / area must be non-empty; a blank raises."""
+    """Summary / evidence / area must be non-empty; a blank raises."""
     conn = _open_initialized(tmp_path / "session_log.duckdb")
     sid = _new_session(conn)
     jid = _new_judgment(conn, sid)
@@ -190,7 +190,7 @@ def test_record_improvement_rejects_empty_fields(tmp_path: Path, blank_field: st
 
 
 def test_record_improvement_requires_existing_session(tmp_path: Path) -> None:
-    """FR-1: an unknown session id is rejected (referenced session must exist)."""
+    """An unknown session id is rejected (referenced session must exist)."""
     conn = _open_initialized(tmp_path / "session_log.duckdb")
     sid = _new_session(conn)
     jid = _new_judgment(conn, sid)
@@ -210,7 +210,7 @@ def test_record_improvement_requires_existing_session(tmp_path: Path) -> None:
 
 
 def test_record_improvement_requires_existing_judgment(tmp_path: Path) -> None:
-    """FR-1: an unknown judgment id is rejected (referenced judgment must exist)."""
+    """An unknown judgment id is rejected (referenced judgment must exist)."""
     conn = _open_initialized(tmp_path / "session_log.duckdb")
     sid = _new_session(conn)
     with pytest.raises(ValueError, match="judgment"):
@@ -229,12 +229,12 @@ def test_record_improvement_requires_existing_judgment(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# FR-2 — read surfaces
+# read surfaces
 # ---------------------------------------------------------------------------
 
 
 def test_read_judgments_returns_frozen_rows_in_order(tmp_path: Path) -> None:
-    """FR-2: read_judgments returns frozen dataclass rows for a session, ordered
+    """read_judgments returns frozen dataclass rows for a session, ordered
     deterministically by judged_at then judgment_id."""
     log_path = tmp_path / "session_log.duckdb"
     conn = _open_initialized(log_path)
@@ -265,7 +265,7 @@ def test_read_judgments_returns_frozen_rows_in_order(tmp_path: Path) -> None:
 
 
 def test_read_judgments_unknown_session_is_empty(tmp_path: Path) -> None:
-    """FR-2: a session with no judgments reads as an empty list, not an error."""
+    """A session with no judgments reads as an empty list, not an error."""
     log_path = tmp_path / "session_log.duckdb"
     conn = _open_initialized(log_path)
     _new_session(conn)
@@ -274,7 +274,7 @@ def test_read_judgments_unknown_session_is_empty(tmp_path: Path) -> None:
 
 
 def test_read_improvements_filters_by_session_and_status(tmp_path: Path) -> None:
-    """FR-2: read_improvements lists proposals, filterable by session_id/status,
+    """read_improvements lists proposals, filterable by session_id/status,
     frozen rows in deterministic order."""
     log_path = tmp_path / "session_log.duckdb"
     conn = _open_initialized(log_path)
@@ -339,7 +339,7 @@ def test_read_improvements_filters_by_session_and_status(tmp_path: Path) -> None
 
 
 def test_read_improvements_rejects_bad_status_filter(tmp_path: Path) -> None:
-    """FR-2: a status filter outside PROPOSAL_STATUSES raises rather than silently
+    """A status filter outside PROPOSAL_STATUSES raises rather than silently
     returning nothing."""
     log_path = tmp_path / "session_log.duckdb"
     conn = _open_initialized(log_path)
@@ -349,12 +349,12 @@ def test_read_improvements_rejects_bad_status_filter(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# NFR-1 — read surfaces open read-only
+# read surfaces open read-only
 # ---------------------------------------------------------------------------
 
 
 def test_read_surfaces_open_read_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """NFR-1: both read surfaces open the log STRICTLY read-only — they never
+    """Both read surfaces open the log STRICTLY read-only — they never
     acquire a writable handle (same discipline as ``dossier.build_dossier``).
 
     We spy on ``store.connect`` and assert every connection the read surfaces open

@@ -1,4 +1,4 @@
-"""m8 WP1 — the condition-paired-difference contract vocabulary (FR-1).
+"""m8 WP1 — the condition-paired-difference contract vocabulary.
 
 Shipping condition-label pairing requires a new reviewed analytical question
 type, a matching policy-layer question type, the closed analytical->policy map

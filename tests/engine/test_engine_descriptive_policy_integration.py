@@ -1,4 +1,4 @@
-"""WP05 — resting_hr_status policy-evaluator proof-integration tests.
+"""resting_hr_status policy-evaluator proof-integration tests.
 
 This is the FIRST behavior-touching slice of the evidence-admissibility
 mission. It proves one narrow thing: the existing ``resting_hr_status`` status
@@ -12,7 +12,7 @@ regression tests at the bottom pin that scope down.
 
 Fixture style is deliberately copied from
 ``tests/test_engine_descriptive_signals.py`` (temporary DuckDB warehouse, the
-WP02 signals registered into ``REGISTRY`` via a snapshot/restore fixture, rows
+ signals registered into ``REGISTRY`` via a snapshot/restore fixture, rows
 inserted through tiny helpers, assertions on the externally visible
 ``to_dict()`` envelope). That file is intentionally NOT edited here — this WP
 owns a separate test module to avoid ownership overlap.
@@ -32,7 +32,7 @@ from premura.engine._results import FreshnessState, StatusResult, TrendDirection
 
 @pytest.fixture()
 def registered(empty_warehouse: Any) -> Any:
-    """Warehouse with the WP02/WP03 descriptive signals registered in REGISTRY.
+    """Warehouse with the descriptive signals registered in REGISTRY.
 
     Snapshots and restores REGISTRY so registration does not leak across tests.
     Mirrors ``tests/test_engine_descriptive_signals.py``.
@@ -113,7 +113,7 @@ def _assert_no_clinical_language(caveats: list[str]) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T020 — stale current-status evidence flows through the policy layer
+# stale current-status evidence flows through the policy layer
 # --------------------------------------------------------------------------- #
 def test_resting_hr_status_uses_policy_for_stale_current_status_evidence(
     registered: Any,
@@ -152,7 +152,7 @@ def test_resting_hr_status_uses_policy_for_stale_current_status_evidence(
     assert out["freshness_state"] == FreshnessState.STALE.value
     assert out["value"] == 60.0
 
-    # The existing freshness-window caveat survives (T022).
+    # The existing freshness-window caveat survives.
     assert any("older" in c.lower() for c in out["caveats"]), (
         "the original freshness-window caveat must be preserved"
     )
@@ -171,7 +171,7 @@ def test_resting_hr_status_uses_policy_for_stale_current_status_evidence(
 
 
 # --------------------------------------------------------------------------- #
-# T021/T022 — shape preserved, edge cases, current path still works
+# / — shape preserved, edge cases, current path still works
 # --------------------------------------------------------------------------- #
 def test_resting_hr_status_shape_is_preserved(registered: Any) -> None:
     """``StatusResult.to_dict()`` keeps exactly its documented keys."""
@@ -260,7 +260,7 @@ def test_resting_hr_status_preserves_existing_caveat_and_adds_only_context(
 
 
 # --------------------------------------------------------------------------- #
-# T023 — regression: non-target signals are NOT migrated
+# regression: non-target signals are NOT migrated
 # --------------------------------------------------------------------------- #
 def test_trend_signals_not_migrated_by_proof_integration(registered: Any) -> None:
     """Trend signals still return ``TrendResult`` through their existing path."""

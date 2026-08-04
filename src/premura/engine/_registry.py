@@ -41,7 +41,7 @@ class SignalSpec:
 
     output: str | None = None
     """Canonical metric_id this signal produces, or None for transient outputs.
-    If set, MUST start with "derived:" per C-011. Example: "derived:ast_alt_ratio"."""
+    If set, MUST start with "derived:". Example: "derived:ast_alt_ratio"."""
 
     priority: str = "normal"
     """One of "high" / "normal" / "low". MCP surfaces missing-input gaps to the
@@ -166,7 +166,7 @@ def signal(
 
 
 # ---------------------------------------------------------------------------
-# Stage 2 resolver registry (WP01)
+# Stage 2 resolver registry
 # ---------------------------------------------------------------------------
 #
 # The resolver registry maps one semantic domain (e.g. ``"observation_history"``)

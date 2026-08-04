@@ -1,17 +1,17 @@
-"""Tests for the Stage 3 *paired* analytical input preparation layer (WP02).
+"""Tests for the Stage 3 *paired* analytical input preparation layer.
 
 These exercise the two-series preparation seam ``correlate`` needs before any
-coefficient can run (WP03): two already-admitted single-series
+coefficient can run: two already-admitted single-series
 :class:`AnalyticalInputSeries` values plus a pre-registered hypothesis become an
 ordered, overlap-narrowed :class:`PairedAnalyticalInput` — or a first-class
 :class:`RefusalOutcome` with **no** pairs. Pairing is by same local calendar day
 *after* applying the caller-declared integer-day lag; there is never a symmetric
 tolerance window and never a lag scan (ADR-0008).
 
-Everything is fixture-backed (hand-built ``PreparedPoint`` series via the WP02
+Everything is fixture-backed (hand-built ``PreparedPoint`` series via the
 single-series preparer); the layer reads no warehouse, so nothing here touches
 SQL, DuckDB, MCP, or the network. The tests deliberately do **not** depend on the
-eventual Spearman implementation — WP02 stops at a validated paired bundle.
+eventual Spearman implementation — stops at a validated paired bundle.
 """
 
 from __future__ import annotations
@@ -113,7 +113,7 @@ def _series(
     family: str,
     points: list[PreparedPoint],
 ) -> AnalyticalInputSeries:
-    """Prepare a usable single-series input through the WP02 preparer."""
+    """Prepare a usable single-series input through the preparer."""
     return prepare_input_series(
         metric,
         AnalyticalQuestionType.LAGGED_ASSOCIATION,
@@ -136,7 +136,7 @@ def _hypothesis(**overrides) -> PreRegisteredAssociationHypothesis:
 
 
 # ===========================================================================
-# T006 / T008: same-day pairing after caller-declared lag
+# same-day pairing after caller-declared lag
 # ===========================================================================
 
 
@@ -205,7 +205,7 @@ def test_lag_one_aligns_right_series_onto_left_day() -> None:
 
 
 # ===========================================================================
-# T007: hypothesis + paired-input shape validation
+# hypothesis + paired-input shape validation
 # ===========================================================================
 
 
@@ -291,7 +291,7 @@ def test_refused_paired_input_carries_no_pairs_or_sample_size() -> None:
 
 
 # ===========================================================================
-# T009: refusal behavior
+# refusal behavior
 # ===========================================================================
 
 
@@ -329,7 +329,7 @@ def test_missing_lag_justification_refuses() -> None:
 
 def test_refused_left_input_propagates_as_paired_refusal() -> None:
     # The left series is itself refused (no evidence). The paired preparer must
-    # delegate to that WP01-policy-derived refusal, not reimplement admissibility.
+    # delegate to that policy-derived refusal, not reimplement admissibility.
     left = prepare_input_series(
         LEFT_METRIC,
         AnalyticalQuestionType.LAGGED_ASSOCIATION,
@@ -338,14 +338,14 @@ def test_refused_left_input_propagates_as_paired_refusal() -> None:
         points=[],
         reference_time=REFERENCE,
     )
-    assert left.refusal is not None  # precondition: WP01 policy refused it
+    assert left.refusal is not None  # precondition: policy refused it
     right = _series(RIGHT_METRIC, RIGHT_FAMILY, _daily_points(25))
 
     paired = prepare_paired_input(left, right, _hypothesis())
     assert not paired.is_usable
     assert paired.refusal is not None
     # The refusal carries the underlying admissibility reason VERBATIM (delegated
-    # to the WP01-policy-derived single-series refusal, not a parallel
+    # to the policy-derived single-series refusal, not a parallel
     # reimplementation): an empty left series refuses with evidence_missing.
     assert paired.refusal.reason == left.refusal.reason
     assert paired.refusal.reason == InputRefusalReason.EVIDENCE_MISSING.value
@@ -440,7 +440,7 @@ def test_paired_points_for_computation_returns_pairs_for_usable_input() -> None:
 
 
 # ===========================================================================
-# T010: imputed-pair percentage + paired-source provenance
+# imputed-pair percentage + paired-source provenance
 # ===========================================================================
 
 

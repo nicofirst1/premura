@@ -1,8 +1,8 @@
 """Reference parser: the DISHONEST Fitbit-HR parser (must be graded FAIL).
 
 This is a test fixture, NOT a shipped production parser. It is the adversary the
-honesty rail must catch (NFR-006 / NFR-007): a parser whose own metadata "looks
-clean" yet silently drops a source field.
+honesty rail must catch: a parser whose own metadata "looks clean" yet silently
+drops a source field.
 
 It is identical to ``good_fitbit_hr`` (same ``bpm -> heart_rate`` mapping; loads
 fine; runtime-valid) EXCEPT that it silently drops EXACTLY ONE field,

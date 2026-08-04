@@ -8,12 +8,12 @@ harness can always present a genuinely unfamiliar source. Synthetic only:
 fabricated vendor names, invented values, canonical metrics drawn from the
 committed metric registry at generation time — never derived from a real export.
 
-Determinism (FR-1): every random choice flows from ``random.Random(spec.seed)``.
+Determinism: every random choice flows from ``random.Random(spec.seed)``.
 The same :class:`FixtureSpec` yields byte-identical CSV and manifest text on every
 run, on every machine. No model calls, no clock reads, no network, no reads of any
 operator data path.
 
-Three registries keep this a level above the concrete case (NFR-4 / guide,
+Three registries keep this a level above the concrete case (guide,
 don't enumerate); each carries its add rule in its own docstring:
 
 * **Drawer strategies** (:data:`_DRAWER_STRATEGIES`) — drawer-specific generation
@@ -32,7 +32,7 @@ don't enumerate); each carries its add rule in its own docstring:
 
 The canonical metrics a fixture maps come from the committed metric registry
 (``src/premura/dim_metric.yaml``) read **at generation time**, never a metric list
-hardcoded here (FR-3 / NFR-4). For the generated fixture to be a working harness
+hardcoded here. For the generated fixture to be a working harness
 challenge, each mapped column's canonical metric must be one the warehouse seeds
 from that same registry, so the grader's honesty rule can witness it as loaded.
 
@@ -73,7 +73,7 @@ _DEFAULT_ROWS = 8
 
 @dataclass(frozen=True)
 class FixtureSpec:
-    """The deterministic recipe for one synthetic fixture (FR-1).
+    """The deterministic recipe for one synthetic fixture.
 
     Attributes:
         seed: the ONLY source of randomness; same seed -> byte-identical output.
@@ -89,10 +89,10 @@ class FixtureSpec:
 
 @dataclass(frozen=True)
 class SourceField:
-    """One enumerated source column in the ground-truth manifest (FR-4).
+    """One enumerated source column in the ground-truth manifest.
 
     ``canonical_metric`` is ``None`` for structural (timestamp) and decoy (gap)
-    columns — the honesty ground truth the grader reconciles against (D6).
+    columns — the honesty ground truth the grader reconciles against.
     """
 
     name: str
@@ -101,19 +101,19 @@ class SourceField:
 
 @dataclass(frozen=True)
 class GeneratedFixture:
-    """A fabricated fixture pair, in memory, before it touches disk (FR-1).
+    """A fabricated fixture pair, in memory, before it touches disk.
 
     Attributes:
         spec: the spec it was generated from (carries the drawer + seed).
         source_name: the fabricated vendor/source name (never a real vendor).
         csv_text: the full CSV text (header + ``row_count`` data rows).
         manifest_text: the full manifest YAML text, carrying the GRADER-ONLY
-            warning header (FR-4).
+            warning header.
         source_fields: the enumerated columns + their canonical metric (or None).
         timestamp_encoding: the id of the chosen timestamp encoding (telemetry).
         timestamp_column: the header name of the structural timestamp column —
             the one column :func:`validate_fixture` decodes in
-            ``timestamp_encoding`` (FR-5). It is a null-metric column (a gap).
+            ``timestamp_encoding``. It is a null-metric column (a gap).
     """
 
     spec: FixtureSpec
@@ -141,7 +141,7 @@ class GeneratedFixture:
 
 
 # --------------------------------------------------------------------------- #
-# Naming-transform registry (FR-3 / NFR-4).
+# Naming-transform registry.
 # --------------------------------------------------------------------------- #
 # Vendor-weird column-name mutations. ADD A TRANSFORM: append a ``(id, fn)`` pair;
 # the chosen transform is selected by seed, never by a vendor ``if`` ladder. Each
@@ -180,7 +180,7 @@ _NAMING_TRANSFORMS: list[tuple[str, Callable[[str], str]]] = [
 
 
 # --------------------------------------------------------------------------- #
-# Timestamp-encoding registry (FR-3).
+# Timestamp-encoding registry.
 # --------------------------------------------------------------------------- #
 # The structural timestamp column's wire format. ADD AN ENCODING: append a
 # :class:`_TimestampEncoding` with a stable id, a ``render`` (datetime -> cell
@@ -222,7 +222,7 @@ _TIMESTAMP_ENCODINGS: list[_TimestampEncoding] = [
 
 
 # --------------------------------------------------------------------------- #
-# Metric registry (read at generation time — never hardcoded, FR-3 / NFR-4).
+# Metric registry (read at generation time — never hardcoded).
 # --------------------------------------------------------------------------- #
 
 
@@ -240,7 +240,7 @@ def _load_registry_metrics() -> list[_RegistryMetric]:
 
     Reads ``src/premura/dim_metric.yaml`` (the repo's real metric registry seed,
     which the warehouse itself seeds from) at generation time. The generator
-    therefore never hardcodes a metric list (FR-3 / NFR-4); a metric admitted to
+    therefore never hardcodes a metric list; a metric admitted to
     the registry becomes selectable here with no code edit. Only point-in-time
     numeric metrics (``instantaneous`` / ``aggregate``) are selectable, so a
     generated row is a plain per-sample observation the grader can witness as
@@ -266,12 +266,12 @@ def _load_registry_metrics() -> list[_RegistryMetric]:
 
 
 def registry_metric_ids() -> frozenset[str]:
-    """The set of canonical metric ids a generated fixture may map (FR-5)."""
+    """The set of canonical metric ids a generated fixture may map."""
     return frozenset(m.metric_id for m in _load_registry_metrics())
 
 
 # --------------------------------------------------------------------------- #
-# Drawer-strategy registry (FR-2 / NFR-4).
+# Drawer-strategy registry.
 # --------------------------------------------------------------------------- #
 
 
@@ -299,7 +299,7 @@ class _DrawerOutput:
 
 
 class DrawerStrategy:
-    """Drawer-specific generation behind the seam (FR-2).
+    """Drawer-specific generation behind the seam.
 
     A drawer strategy decides which column families a generated fixture carries,
     which canonical targets it maps, and how each cell value is shaped. The core
@@ -315,7 +315,7 @@ class DrawerStrategy:
 
 
 # A fabricated vendor-name vocabulary: invented tokens combined by seed into a
-# source name that is obviously NOT a real vendor (FR-3). Never a real brand.
+# source name that is obviously NOT a real vendor. Never a real brand.
 _FAKE_VENDOR_HEADS = ("zyx", "qel", "vorn", "plim", "kesh", "wob", "nyra", "drux")
 _FAKE_VENDOR_TAILS = ("band", "sense", "trak", "node", "wave", "pulse", "loop", "cast")
 _FAKE_GAP_TOKENS = (
@@ -349,7 +349,7 @@ _FAKE_MAPPED_TOKENS = (
 class _ObservationStrategy(DrawerStrategy):
     """The observation drawer's generator (the only one shipped tonight).
 
-    Produces, by construction (FR-3): a structural timestamp column in a
+    Produces, by construction: a structural timestamp column in a
     seed-chosen encoding; one or more mappable columns whose distinct canonical
     metrics are drawn from the registry seed (each at most once — the grader's
     distinct-metric rule); and at least one declared-gap decoy column with no
@@ -369,7 +369,7 @@ class _ObservationStrategy(DrawerStrategy):
             _GenColumn(name=ts_name, canonical_metric=None, cells=ts_cells)
         ]
 
-        # (b) one-or-more mappable columns, distinct canonical metrics (FR-3a/D6).
+        # (b) one-or-more mappable columns, distinct canonical metrics.
         #     The column NAME is derived from a fabricated vendor token (distinct per
         #     column, chosen by seed), never from the canonical metric id — so the
         #     header never leaks the answer. The canonical metric lives only in the
@@ -387,7 +387,7 @@ class _ObservationStrategy(DrawerStrategy):
                 )
             )
 
-        # (c) at least one declared-gap decoy column with no canonical home (FR-3b).
+        # (c) at least one declared-gap decoy column with no canonical home.
         n_gap = rng.randint(1, 2)
         gap_tokens = rng.sample(_FAKE_GAP_TOKENS, k=min(n_gap, len(_FAKE_GAP_TOKENS)))
         for token in gap_tokens:
@@ -400,7 +400,7 @@ class _ObservationStrategy(DrawerStrategy):
 
     @staticmethod
     def _value_cell(rng: random.Random, metric: _RegistryMetric) -> str:
-        """A plausible-but-invented numeric value for the metric's unit (FR-3)."""
+        """A plausible-but-invented numeric value for the metric's unit."""
         return f"{rng.uniform(1.0, 200.0):.1f}"
 
 
@@ -410,7 +410,7 @@ _DRAWER_STRATEGIES: dict[str, DrawerStrategy] = {
 
 
 class UnknownDrawerError(ValueError):
-    """Raised when a :class:`FixtureSpec` names a drawer with no strategy (FR-2)."""
+    """Raised when a :class:`FixtureSpec` names a drawer with no strategy."""
 
 
 def _resolve_strategy(drawer: str) -> DrawerStrategy:
@@ -428,7 +428,7 @@ def _resolve_strategy(drawer: str) -> DrawerStrategy:
 # --------------------------------------------------------------------------- #
 
 _MANIFEST_HEADER = """\
-# GRADER-ONLY — never expose to an operator (C-005).
+# GRADER-ONLY — never expose to an operator.
 #
 # Auto-generated synthetic vendor fixture manifest (premura.harness.fixture_gen).
 # This is the honesty-rail ground truth: the grader reconciles a parser's
@@ -438,7 +438,7 @@ _MANIFEST_HEADER = """\
 #
 # Values in the CSV are entirely invented; the source name is fabricated and is
 # NEVER a real vendor. Generated deterministically from a seed — never derived
-# from or seeded by any real export (NFR-1).
+# from or seeded by any real export.
 """
 
 
@@ -460,7 +460,7 @@ def _render_csv(columns: Sequence[_GenColumn], row_count: int) -> str:
 
 
 def _render_manifest(source_name: str, columns: Sequence[_GenColumn]) -> str:
-    """Render the grader-only manifest YAML matching the committed shape (FR-4)."""
+    """Render the grader-only manifest YAML matching the committed shape."""
     body = {
         "source": source_name,
         "csv": f"{source_name}.csv",
@@ -473,12 +473,12 @@ def _render_manifest(source_name: str, columns: Sequence[_GenColumn]) -> str:
 
 
 def generate_fixture(spec: FixtureSpec) -> GeneratedFixture:
-    """Generate (and self-validate) one synthetic fixture pair (FR-1).
+    """Generate (and self-validate) one synthetic fixture pair.
 
     Pure + offline: every choice flows from ``random.Random(spec.seed)``; same
     spec -> byte-identical ``csv_text`` and ``manifest_text``. Runs
     :func:`validate_fixture` before returning, so an invalid fixture can never
-    escape (FR-5).
+    escape.
     """
     if not (_MIN_ROWS <= spec.row_count <= _MAX_ROWS):
         raise ValueError(f"row_count {spec.row_count} out of bounds [{_MIN_ROWS}, {_MAX_ROWS}]")
@@ -513,10 +513,10 @@ _ENCODINGS_BY_ID: dict[str, _TimestampEncoding] = {e.id: e for e in _TIMESTAMP_E
 def validate_fixture(fixture: GeneratedFixture) -> None:
     """Enforce the ground-truth invariants; raise ``ValueError`` on the first miss.
 
-    The grader's honesty rail depends on these holding (FR-5). Checked, in order:
+    The grader's honesty rail depends on these holding. Checked, in order:
 
     1. Every CSV column appears **exactly once** in the manifest's source fields.
-    2. Non-null canonical metrics are **unique** (the D6 distinct-metric rule) and
+    2. Non-null canonical metrics are **unique** (the distinct-metric rule) and
        each **exists in the committed metric registry** seed (so the warehouse can
        witness it as loaded).
     3. There is **at least one mappable** column and **at least one null-metric**
@@ -586,25 +586,25 @@ def validate_fixture(fixture: GeneratedFixture) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Disk writer + scenario adapter (FR-6).
+# Disk writer + scenario adapter.
 # --------------------------------------------------------------------------- #
 
 #: The writer marks a generated-fixture output directory with this sentinel file
 #: so the harness can recognize a generated source as SYNTHETIC (scoreboard-
 #: persistable) by an EXPLICIT writer-controlled marker — never by loosening the
-#: committed-source rule for arbitrary or real operator paths (FR-6).
+#: committed-source rule for arbitrary or real operator paths.
 SYNTHETIC_MARKER_NAME = ".premura_synthetic_fixture"
 
 
 @dataclass(frozen=True)
 class WrittenFixture:
-    """A generated fixture pair on disk (FR-6).
+    """A generated fixture pair on disk.
 
     Attributes:
         fixture: the in-memory fixture that was written.
         csv_path: the written CSV file.
         manifest_path: the written grader-only manifest file.
-        marker_path: the writer-controlled synthetic marker (FR-6) — its presence
+        marker_path: the writer-controlled synthetic marker — its presence
             beside ``csv_path`` is what makes the run scoreboard-persistable.
     """
 
@@ -619,9 +619,9 @@ def write_fixture(
 ) -> WrittenFixture:
     """Write the CSV + manifest pair (plus the synthetic marker) under ``out_dir``.
 
-    Refuses to overwrite an existing CSV or manifest unless ``overwrite=True``
-    (FR-6). Output lands ONLY where the caller points ``out_dir`` — never silently
-    into ``tests/fixtures/`` (NFR-3). Re-validates before writing so a hand-built
+    Refuses to overwrite an existing CSV or manifest unless ``overwrite=True``.
+    Output lands ONLY where the caller points ``out_dir`` — never silently
+    into ``tests/fixtures/``. Re-validates before writing so a hand-built
     invalid fixture can never reach disk.
     """
     validate_fixture(fixture)
@@ -639,7 +639,7 @@ def write_fixture(
 
     csv_path.write_text(fixture.csv_text, encoding="utf-8")
     manifest_path.write_text(fixture.manifest_text, encoding="utf-8")
-    # The marker is data-free: its mere presence is the synthetic witness (FR-6).
+    # The marker is data-free: its mere presence is the synthetic witness.
     marker_path.write_text(
         "# Synthetic generated-fixture marker (premura.harness.fixture_gen).\n"
         "# Presence of this file marks the sibling CSV as a generated synthetic\n"
@@ -669,7 +669,7 @@ def scenario_for(written: WrittenFixture) -> Scenario:
     Yields an observation-drawer scenario wired to the written CSV + manifest pair
     and the shared :class:`ObservationStrategy` — the SAME strategy that grades the
     committed observation fixture, so the generated source is graded by unchanged
-    code (FR-6 / NFR-5). The scenario name is derived from the synthetic source
+    code. The scenario name is derived from the synthetic source
     name so two generated scenarios are distinguishable.
 
     ``reference_parser`` is the :data:`_NO_REFERENCE_PARSER` sentinel: a generated
@@ -686,7 +686,7 @@ def scenario_for(written: WrittenFixture) -> Scenario:
 
 
 def is_generated_synthetic_source(source: Path) -> bool:
-    """True iff ``source`` sits beside a writer-controlled synthetic marker (FR-6).
+    """True iff ``source`` sits beside a writer-controlled synthetic marker.
 
     The explicit, writer-controlled synthetic witness: a generated fixture is
     synthetic because :func:`write_fixture` dropped :data:`SYNTHETIC_MARKER_NAME`
@@ -701,7 +701,7 @@ def is_generated_synthetic_source(source: Path) -> bool:
 
 
 # --------------------------------------------------------------------------- #
-# CLI entry (FR-7). Mirrors live_trial_ollama._main(): honest exit codes, never
+# CLI entry. Mirrors live_trial_ollama._main(): honest exit codes, never
 # raises into a test.
 # --------------------------------------------------------------------------- #
 
@@ -743,10 +743,10 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 
 
 def _main(argv: Sequence[str] | None = None) -> int:
-    """CLI: generate -> validate -> write; print paths + a one-line summary (FR-7).
+    """CLI: generate -> validate -> write; print paths + a one-line summary.
 
     Returns 0 on success, nonzero on any failure (unknown drawer, overwrite
-    refusal, validation miss). Never raises into a caller (NFR-1), mirroring
+    refusal, validation miss). Never raises into a caller, mirroring
     ``live_trial_ollama._main``.
     """
     args = _build_arg_parser().parse_args(argv)

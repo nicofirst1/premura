@@ -1,37 +1,37 @@
-"""WP05 — end-to-end fixtures for every spec-named tool-loop edge case (D7).
+"""End-to-end fixtures for every spec-named tool-loop edge case.
 
 The mission charter's whole-story fidelity gate (drift dimension D7) requires an
 end-to-end fixture per spec-enumerated edge case: an edge the spec names but no
 e2e fixture exercises is a coverage defect. Each test here drives the PUBLIC
-tier entry point with a scripted fake chat backend (the WP04 injection seam), so
+tier entry point with a scripted fake chat backend (the injection seam), so
 the whole loop — sandbox, tools, gate, double grading, persistence decision —
 runs in the DEFAULT suite with no model server.
 
 Coverage map (spec.md §"Edge cases" + acceptance scenarios 2–4 and 6;
 contract §4's outcome table):
 
-* **Regression across turns** (edge case 1; FR-006): first parser passes, final
+* **Regression across turns** (edge case 1): first parser passes, final
   fails — both verdicts recorded and visible, neither hidden nor best-of'd.
-* **Tool misuse / manifest refusal** (edge case 2; FR-004/C-005): a tool call
+* **Tool misuse / manifest refusal** (edge case 2): a tool call
   for the fixture manifest is refused by construction, the refusal is that
   call's fed-back result, and the answer key appears NOWHERE in the transcript.
 * **Malformed tool call** (edge case 3): unknown names and unparseable
   arguments each consume a turn with a corrective message; never a crash.
-* **No parser ever produced** (edge case 4 / scenario 6; SC-005): the trial
+* **No parser ever produced** (edge case 4 / scenario 6): the trial
   still ends in a COMPLETE graded FAIL record, persisted for a synthetic source.
-* **Intake drawer** (scenario 2; FR-008): the IDENTICAL entry point runs the
+* **Intake drawer** (scenario 2): the IDENTICAL entry point runs the
   registered intake scenario e2e — no drawer-specific loop variant.
-* **Model unavailable / tool calls unsupported** (scenario 4; NFR-006): explicit
+* **Model unavailable / tool calls unsupported** (scenario 4): explicit
   outcomes, nothing persisted, no sandbox left behind.
-* **Real-source no-persist** (scenario 3; NFR-002/SC-003): a non-synthetic
+* **Real-source no-persist** (scenario 3): a non-synthetic
   source persists zero artifacts, ``keep_sandboxes`` included.
-* **Default-collection assertion** (NFR-003/SC-004): the gated real-model
+* **Default-collection assertion**: the gated real-model
   module is excluded from default collection — pinned by an actual subprocess
   collection run, not by reading config text.
 
 Note on the import style: the tool-loop tier module is loaded via
 :func:`importlib.import_module` with string concatenation rather than literal
-``from ... import`` lines. The committed NFR-005 default-gate guard
+``from ... import`` lines. The committed default-gate guard
 (``test_live_trial_seam.py``) text-scans every OTHER test module for the gating
 harness import/call substrings; this DEFAULT-collected module deliberately
 avoids those literals so the guard stays a true witness while these tests still
@@ -54,14 +54,14 @@ import pytest
 from premura.harness import tool_loop_contract as tlc
 from premura.harness.scenario_registry import all_scenarios
 
-# The WP04 fake chat backend is the documented WP05 reuse seam (its docstring
+# The fake chat backend is the documented reuse seam (its docstring
 # names these edge fixtures); the smaller private helpers are rebuilt locally
-# rather than imported so this module never reaches into WP04's private names.
+# rather than imported so this module never reaches into the fake backend's private names.
 from tests import FIXTURES_DIR, REPO_ROOT
 from tests.live_trial.test_live_trial_tool_loop import FakeChatBackend
 
 # Loaded dynamically (see module docstring): keeps the gating-harness import/call
-# substrings out of this file's text for the committed NFR-005 default-gate guard.
+# substrings out of this file's text for the committed default-gate guard.
 _TOOL_LOOP_MODULE_NAME = "premura.harness." + "live_trial_" + "tool_loop"
 ltl = importlib.import_module(_TOOL_LOOP_MODULE_NAME)
 scoreboard_mod = importlib.import_module("premura.harness." + "scoreboard")
@@ -89,7 +89,7 @@ if _missing:
 
 
 # --------------------------------------------------------------------------- #
-# Script helpers (same shapes as the WP04 suite).
+# Script helpers (same shapes as the suite).
 # --------------------------------------------------------------------------- #
 
 
@@ -214,7 +214,7 @@ def persistence_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[
 
 
 # --------------------------------------------------------------------------- #
-# T016.1 — Regression across turns (spec edge case 1; FR-006).
+# Regression across turns (spec edge case 1).
 # --------------------------------------------------------------------------- #
 
 
@@ -271,7 +271,7 @@ def test_regression_across_turns_reports_both_verdicts(
 
 
 # --------------------------------------------------------------------------- #
-# T016.2 — Tool misuse / manifest refusal e2e (spec edge case 2; FR-004 / C-005).
+# Tool misuse / manifest refusal e2e (spec edge case 2).
 # --------------------------------------------------------------------------- #
 
 
@@ -284,8 +284,8 @@ def test_manifest_misuse_is_refused_and_answer_key_never_enters_transcript(
     The script requests the fixture manifest twice — once by repo-relative path,
     once by absolute-path escape. Both must come back as refusal STRINGS in that
     turn's tool messages (fed back so the model can self-correct), the manifest's
-    ground-truth content must appear NOWHERE in any captured request (C-005
-    witnessed end-to-end across the whole transcript, not just at the WP03 unit
+    ground-truth content must appear NOWHERE in any captured request (
+    witnessed end-to-end across the whole transcript, not just at the unit
     level), and the trial still completes graded.
     """
     monkeypatch.setenv("LIVE_TRIAL_MAX_TURNS", "2")
@@ -329,7 +329,7 @@ def test_manifest_misuse_is_refused_and_answer_key_never_enters_transcript(
 
 
 # --------------------------------------------------------------------------- #
-# T016.3 — Malformed tool calls (spec edge case 3): turns consumed, never a crash.
+# Malformed tool calls (spec edge case 3): turns consumed, never a crash.
 # --------------------------------------------------------------------------- #
 
 
@@ -388,7 +388,7 @@ def test_unknown_and_unparseable_tool_calls_each_consume_a_turn_without_crash(
 
 
 # --------------------------------------------------------------------------- #
-# T016.4 — No parser ever produced (spec edge case 4 / scenario 6; SC-005).
+# No parser ever produced (spec edge case 4 / scenario 6).
 # --------------------------------------------------------------------------- #
 
 
@@ -396,7 +396,7 @@ def test_no_parser_ever_produced_ends_in_complete_persisted_fail_record(
     persistence_paths: tuple[Path, Path],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Spec scenario 6 / SC-005: only reads, never a write_parser → graded FAIL.
+    """Spec scenario 6: only reads, never a write_parser → graded FAIL.
 
     This is the defect class that crashed a prior mission's integrated run (a
     spec-named edge nobody drove e2e): the operator browses context and gives up
@@ -443,7 +443,7 @@ def test_no_parser_ever_produced_ends_in_complete_persisted_fail_record(
 
 
 # --------------------------------------------------------------------------- #
-# Scenario 2 (FR-008) — the intake drawer rides the IDENTICAL loop, e2e.
+# Scenario 2 — the intake drawer rides the IDENTICAL loop, e2e.
 # --------------------------------------------------------------------------- #
 
 
@@ -500,7 +500,7 @@ def test_intake_drawer_runs_through_identical_entry_point_e2e(
 
 
 # --------------------------------------------------------------------------- #
-# T017.1 — Model unavailable on the FIRST call (scenario 4; NFR-006).
+# Model unavailable on the FIRST call (scenario 4).
 # --------------------------------------------------------------------------- #
 
 
@@ -532,7 +532,7 @@ def test_model_unavailable_first_call_returns_outcome_and_persists_nothing(
 
 
 # --------------------------------------------------------------------------- #
-# T017.2 — Tool calls unsupported MID-conversation (contract §4; NFR-006).
+# Tool calls unsupported MID-conversation (contract §4).
 # --------------------------------------------------------------------------- #
 
 
@@ -584,7 +584,7 @@ def test_tool_calls_unsupported_mid_conversation_leaves_no_sandbox_behind(
 
 
 # --------------------------------------------------------------------------- #
-# T017.3 — Real-source no-persist, keep_sandboxes included (scenario 3; SC-003).
+# Real-source no-persist, keep_sandboxes included (scenario 3).
 # --------------------------------------------------------------------------- #
 
 
@@ -593,7 +593,7 @@ def test_real_source_trial_persists_nothing_even_with_keep_sandboxes(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """SC-003 / NFR-002: a non-synthetic source leaves ZERO artifacts, flags included.
+    """A non-synthetic source leaves ZERO artifacts, flags included.
 
     A temp copy of the synthetic CSV at a non-registered path classifies as REAL
     (that is the point — presence vs absence of the registered path is the whole
@@ -640,7 +640,7 @@ def test_real_source_trial_persists_nothing_even_with_keep_sandboxes(
     assert record.tier == "tool_loop"
     _assert_well_formed(record.final_verdict)
 
-    # ... but NOTHING persisted (SC-003): no run dir, no scoreboard, no flag honor.
+    # ... but NOTHING persisted: no run dir, no scoreboard, no flag honor.
     assert outcome.persisted_run_dir is None
     assert _run_dirs(runs_dir) == []
     assert not scoreboard_path.exists()
@@ -656,12 +656,12 @@ def test_real_source_trial_persists_nothing_even_with_keep_sandboxes(
 
 
 # --------------------------------------------------------------------------- #
-# T017.4 — SC-004 evidence: the real-model module is excluded by default.
+# Evidence: the real-model module is excluded by default.
 # --------------------------------------------------------------------------- #
 
 
 def test_real_model_module_is_not_collected_by_the_default_suite() -> None:
-    """SC-004 / NFR-003: default collection deselects the gated real-model module.
+    """Default collection deselects the gated real-model module.
 
     Boundary-crossing form: an actual subprocess pytest collection run with the
     repo's default addopts — pinning the BEHAVIOR (the marker exclusion works),

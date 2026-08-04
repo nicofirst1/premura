@@ -1,20 +1,20 @@
-"""WP07 — live-trial seam (FR-030, FR-031; OWNS NFR-005).
+"""Live-trial seam.
 
 Black-box tests over the live-trial seam. A FAKE operator
 (:class:`~premura.harness.live_trial.ReferenceParserOperator`) edits the sandbox
 to install a committed reference parser — exactly the edit the deferred real
 cheap-model operator would make — over the SYNTHETIC fixture (never the real
-dump, C-003). The harness reuses the SAME lower machinery as the repeatable check
-(WP03 sandbox + runner, WP01 store as the sole log writer, WP05 grader) and is
+dump). The harness reuses the SAME lower machinery as the repeatable check
+( sandbox + runner, store as the sole log writer, grader) and is
 still the sole log writer; the only difference is the operator edit.
 
 Decisive artifacts:
 
-* ``test_seam_drives_to_verdict_with_fake_operator`` (FR-030/FR-031) — the seam
+* ``test_seam_drives_to_verdict_with_fake_operator`` — the seam
   drives end-to-end to a grader verdict; the harness-written session records
   ``run_kind="live_trial"`` with the fake ``operator_model`` / ``driver_model``,
   and the harness wrote the named ``tool_call`` steps.
-* ``test_live_trial_not_in_default_gate`` (NFR-005) — the live trial is in NO
+* ``test_live_trial_not_in_default_gate`` — the live trial is in NO
   default gate: ``run_live_trial`` is referenced ONLY by this seam test, no
   committed test reads the real ``source_dir``, and with the default dump absent
   the default suite is unaffected (no live trial runs at import/collection).
@@ -52,7 +52,7 @@ RAISING_PARSER = FIXTURE_DIR / "parsers" / "raising_fitbit_hr.py"
 SYNTHETIC_CSV = FIXTURE_DIR / "fitbit_heart_rate_synthetic.csv"
 VERDICT_SCHEMA = CONTRACTS_DIR / "grader-verdict.schema.json"
 
-# These reference fixtures are committed with the mission (WP04); their absence is
+# These reference fixtures are committed with the mission; their absence is
 # a HARD failure, never a skip — a vanished committed fixture must block the gate,
 # not pass green.
 _missing = [p.name for p in (GOOD_PARSER, SYNTHETIC_CSV) if not p.exists()]
@@ -104,12 +104,12 @@ def _read_live_trial_attempts(session_log_path: Path) -> list[tuple[int, bool, s
 
 
 # --------------------------------------------------------------------------- #
-# T027 — the fake-operator seam drives end-to-end to a verdict (FR-030/FR-031).
+# the fake-operator seam drives end-to-end to a verdict.
 # --------------------------------------------------------------------------- #
 
 
 def test_seam_drives_to_verdict_with_fake_operator() -> None:
-    """Fake operator edits the sandbox → seam reaches a PASS verdict (FR-030).
+    """Fake operator edits the sandbox → seam reaches a PASS verdict.
 
     Uses the synthetic fixture (NOT the real dump). The returned verdict is the
     SAME grader artifact the repeatable check produces, validated against the
@@ -136,10 +136,10 @@ def test_seam_drives_to_verdict_with_fake_operator() -> None:
 
 
 def test_session_records_live_trial_identity() -> None:
-    """FR-031: the harness records run_kind=live_trial + the fake model ids.
+    """The harness records run_kind=live_trial + the fake model ids.
 
     ``run_live_trial_with_log`` keeps the sandbox so we can read the
-    harness-written session row, then tears it down (NFR-004).
+    harness-written session row, then tears it down.
     """
     operator = ReferenceParserOperator(parser_src=GOOD_PARSER)
     driver = ScriptedDriver()
@@ -170,7 +170,7 @@ def test_session_records_live_trial_identity() -> None:
 
 
 def test_seam_reuses_harness_machinery_operator_edits_sandbox() -> None:
-    """The seam reuses WP06's machinery: operator edits, harness is sole log writer.
+    """The seam reuses the repeatable check's machinery: operator edits, harness is sole log writer.
 
     The operator EDITS the sandbox tree (installs a parser); the HARNESS wrote the
     named ``agent_turn`` + ``tool_call`` steps (the operator never touched the log).
@@ -201,7 +201,7 @@ def test_seam_reuses_harness_machinery_operator_edits_sandbox() -> None:
         log_files = [p for p in data_dir.iterdir() if p.name == log_path.name]
         assert log_files == [log_path]
 
-        # The ingest_run step has the grader-fed provenance row (FR-065): contract_pass
+        # The ingest_run step has the grader-fed provenance row: contract_pass
         # equals the verdict's runtime_valid — proving the same grader machinery.
         conn = duckdb.connect(str(log_path), read_only=True)
         try:
@@ -224,12 +224,12 @@ def test_seam_reuses_harness_machinery_operator_edits_sandbox() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# DRIVE-1 / FR-080 — a raising operator parser yields a CAPTURED, GRADED FAIL.
+# DRIVE-1 / — a raising operator parser yields a CAPTURED, GRADED FAIL.
 # --------------------------------------------------------------------------- #
 
 
 def test_raising_operator_yields_captured_failed_run() -> None:
-    """Operator installs a parser that raises → captured, graded FAIL (FR-080).
+    """Operator installs a parser that raises → captured, graded FAIL.
 
     Same edge case as the repeatable check, exercised through the live-trial seam
     (run_kind=live_trial): the operator's parser raises before any warehouse file is
@@ -284,12 +284,12 @@ def test_raising_operator_yields_captured_failed_run() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T028 — NFR-005: the live trial is wired into NO default gate / never blocks.
+# the live trial is wired into NO default gate / never blocks.
 # --------------------------------------------------------------------------- #
 
 
 def test_live_trial_not_in_default_gate() -> None:
-    """NFR-005: the live trial is in NO default gate and can never block a change.
+    """The live trial is in NO default gate and can never block a change.
 
     Made checkable three ways:
 
@@ -297,7 +297,7 @@ def test_live_trial_not_in_default_gate() -> None:
        seam test module — no other default test invokes it (so the only exercise is
        over the synthetic fixture, never as a gating step elsewhere).
     2. NO committed test reads the real ``source_dir`` (default
-       ``~/Downloads/MyFitbitData``) — the real dump is local-only (C-003).
+       ``~/Downloads/MyFitbitData``) — the real dump is local-only.
     3. With the configured real dump absent, importing/collecting the default suite
        is unaffected: nothing runs a live trial at import/collection time, so a
        missing dump cannot fail the gate.
@@ -308,7 +308,7 @@ def test_live_trial_not_in_default_gate() -> None:
     # (1) The live-trial HARNESS (the run_live_trial function / the live_trial module)
     #     is referenced by NO default test module except this seam test. We match the
     #     harness call/import, NOT the bare "live_trial" run_kind string literal — that
-    #     vocabulary value legitimately appears in the WP01 store tests and is not the
+    # vocabulary value legitimately appears in the store tests and is not the
     #     gating harness path.
     harness_markers = ("run_live_trial", "harness.live_trial", "harness import live_trial")
     offenders: list[str] = []
@@ -329,9 +329,7 @@ def test_live_trial_not_in_default_gate() -> None:
             continue
         text = test_file.read_text(encoding="utf-8")
         for marker in real_dump_markers:
-            assert marker not in text, (
-                f"{test_file.name} references the real dump path {marker!r} (C-003 / NFR-005)"
-            )
+            assert marker not in text, f"{test_file.name} references the real dump path {marker!r}"
 
     # (3) With the configured real dump absent, the default suite is unaffected: the
     #     module imported and collected without running any live trial, and the
@@ -343,7 +341,7 @@ def test_live_trial_not_in_default_gate() -> None:
 
 
 def test_real_model_wiring_is_closed_followup() -> None:
-    """FR-013: the named follow-up is closed; the seam exports working factories.
+    """The named follow-up is closed; the seam exports working factories.
 
     Bare calls no longer behave like placeholder probes. They return real operator /
     driver objects without reaching a model server during construction.
@@ -386,13 +384,13 @@ def test_live_trial_attempt_log_starts_empty_for_fake_operator() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Conversation-turn capture (m2 FR-2 / FR-5) — the transcript seam + harness
+# Conversation-turn capture (m2) — the transcript seam + harness
 # persistence. An operator that exposes ``transcript()`` after ``operate()`` gets
 # its conversation persisted as ordered ``log_turn`` rows by the harness (the SOLE
-# log writer, FR-021 / NFR-1); the capability is detected STRUCTURALLY (no registry
+# log writer); the capability is detected STRUCTURALLY (no registry
 # of tiers). Operators without it behave exactly as before. Capture failure on an
 # otherwise-successful run surfaces as an ``error``-status step, never an exception
-# that flips the verdict. Synthetic fixtures only (C-003).
+# that flips the verdict. Synthetic fixtures only.
 # --------------------------------------------------------------------------- #
 
 _PARSER_DEST_RELPATH = "src/premura/parsers/_live_trial_parser.py"
@@ -463,10 +461,10 @@ def _read_turns(session_log_path: Path) -> list[tuple[str | None, int, str, str,
 
 
 def test_transcript_operator_persists_turns_in_order() -> None:
-    """FR-5: the harness persists the operator's transcript as ordered log_turn rows.
+    """The harness persists the operator's transcript as ordered log_turn rows.
 
     The turns replay in conversation order, carry the operator's optional
-    telemetry, and link to the run's root ``agent_turn`` step (FR-1's step_id link).
+    telemetry, and link to the run's root ``agent_turn`` step ('s step_id link).
     """
     operator = _TranscriptOperator(parser_src=GOOD_PARSER)
     result = live_trial.run_live_trial_with_log(
@@ -496,7 +494,7 @@ def test_transcript_operator_persists_turns_in_order() -> None:
         assert turns[1][4] == "write_parser"
         assert turns[2][4] == "write_parser"
 
-        # Every turn links to the single root agent_turn step (FR-1 step_id link).
+        # Every turn links to the single root agent_turn step ( step_id link).
         conn = duckdb.connect(str(log_path), read_only=True)
         try:
             root = conn.execute("SELECT step_id FROM log_step WHERE kind = 'agent_turn'").fetchone()
@@ -511,7 +509,7 @@ def test_transcript_operator_persists_turns_in_order() -> None:
 
 
 def test_no_capability_operator_leaves_zero_turns() -> None:
-    """FR-2: a transcript-less operator behaves exactly as before (no log_turn rows)."""
+    """A transcript-less operator behaves exactly as before (no log_turn rows)."""
     operator = ReferenceParserOperator(parser_src=GOOD_PARSER)
     result = live_trial.run_live_trial_with_log(
         LiveTrialConfig(),
@@ -536,7 +534,7 @@ def test_no_capability_operator_leaves_zero_turns() -> None:
 
 
 def test_capture_failure_does_not_flip_verdict() -> None:
-    """FR-5: a raising transcript() yields a recorded error step, not an exception.
+    """A raising transcript yields a recorded error step, not an exception.
 
     The run still returns its PASS verdict and a finished session; the capture
     failure surfaces as an ``error``-status step, never an aborted run.

@@ -6,10 +6,10 @@ the descriptive signals (``resting_hr_status`` / ``resting_hr_trend`` /
 ``steps_trend`` / ``weight_trend``) all share:
 
 * find the *latest usable value* and judge its freshness against the metric's
-  ``validity_window`` (T006 — status answers);
+  ``validity_window`` (status answers);
 * extract an *ordered window* of points for trends, distinguishing observed
   points from carried-forward (imputed) ones, but only where the metric's
-  ``missing_data_policy`` actually allows carry-forward (T006 — trend answers).
+  ``missing_data_policy`` actually allows carry-forward (trend answers).
 
 Design rules honored here:
 

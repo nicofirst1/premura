@@ -1,8 +1,8 @@
-"""Lightweight Stage 2 policy registry (WP03).
+"""Lightweight Stage 2 policy registry.
 
 A registry is a deterministic, fail-loud lookup from metric family to its
 :class:`MetricFamilyPolicy` declaration. It is intentionally small: it does not
-evaluate evidence (the WP02 evaluator owns all branching) and it does not read
+evaluate evidence (the evaluator owns all branching) and it does not read
 the warehouse or the network.
 
 Two mistakes a future agent is most likely to make are caught at registration

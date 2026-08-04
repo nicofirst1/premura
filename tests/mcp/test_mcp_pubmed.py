@@ -1,7 +1,7 @@
-"""WP02 — Premura-owned PubMed grounding provider contract tests.
+"""Premura-owned PubMed grounding provider contract tests.
 
 These lock the Stage 3 PubMed grounding behavior *before* any MCP tool
-registration (that is WP03's job). They drive the public surface of
+registration. They drive the public surface of
 :mod:`premura.mcp.pubmed` — ``pubmed_search`` / ``pubmed_fetch`` — and assert the
 contract output fields, especially ``citation_status``.
 
@@ -311,7 +311,7 @@ def test_fetch_success_returns_citeable_record_with_provenance() -> None:
 
 
 def test_fetch_includes_abstract_when_available() -> None:
-    # FR-004 / Scenario 2: a fetched record includes abstract text when PubMed has
+    # A fetched record includes abstract text when PubMed has
     # one. Structured metadata comes from ESummary; the abstract from EFetch.
     transport = FakeTransport(esummary=_ESUMMARY_FULL, efetch=_EFETCH_WITH_ABSTRACT)
     result = pubmed.pubmed_fetch("40000001", transport=transport)

@@ -68,7 +68,7 @@ def _available_call(warehouse: Path, session_id: str, metric_id: str = "resting_
     return _record(warehouse, session_id, "change_point", {"metric_id": metric_id}).call_id
 
 
-# ----- FR-1: the marker extractor --------------------------------------------- #
+# ----- the marker extractor --------------------------------------------------- #
 
 
 def test_marker_extractor_covers_the_documented_form() -> None:
@@ -94,7 +94,7 @@ def test_marker_extractor_fails_closed_and_ignores_non_call_tokens() -> None:
     }
 
 
-# ----- FR-2: the per-marker trace query --------------------------------------- #
+# ----- the per-marker trace query ----------------------------------------------#
 
 
 def test_bound_claim_calls_binds_only_in_session_available_calls(tmp_path: Path) -> None:
@@ -148,7 +148,7 @@ def test_bound_claim_calls_session_shapes(tmp_path: Path) -> None:
     assert no_refs == set()
 
 
-# ----- FR-3 + FR-4: binding through the audit gate ---------------------------- #
+# ----- binding through the audit gate ------------------------------------------#
 
 
 def _traced_session(warehouse: Path) -> str:

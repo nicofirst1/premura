@@ -1,4 +1,4 @@
-"""Kept run record + append-only capability-floor scoreboard (FR-006/007/011/012).
+"""Kept run record + append-only capability-floor scoreboard.
 
 The durable, **local-only** outputs of a live trial. Two artifacts:
 
@@ -8,14 +8,14 @@ The durable, **local-only** outputs of a live trial. Two artifacts:
 * an **append-only capability-floor scoreboard** — one JSON line per run in
   ``data/live_trials/scoreboard.jsonl`` recording, per operator model tier, the
   **first-attempt** and **final** pass verdicts so the capability floor (issue
-  #10) can be read and watched climb over time (FR-011/FR-014).
+  #10) can be read and watched climb over time.
 
 Two hard boundaries this module enforces:
 
-* **Real-data no-persist (FR-012 / NFR-002 / C-001)** — a run pointed at real
+* **Real-data no-persist** — a run pointed at real
   operator data persists **nothing**. :func:`persist_run` returns ``None`` and
   writes zero files when ``is_synthetic`` is false. No PHI ever lands on disk.
-* **Append-only integrity (NFR-005)** — :func:`append_scoreboard` only ever
+* **Append-only integrity** — :func:`append_scoreboard` only ever
   appends one parseable JSON line; it never rewrites prior lines, so a crash
   mid-run cannot corrupt earlier history. A malformed line is skipped on read
   with a warning, never dropping the rest or raising.
@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 # scoreboard.py -> harness -> premura -> src -> <repo-root>.
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
-#: Default directory for all kept live-trial artifacts (git-ignored, C-001).
+#: Default directory for all kept live-trial artifacts (git-ignored).
 DATA_DIR = _REPO_ROOT / "data" / "live_trials"
 
 #: Default append-only scoreboard path.
@@ -58,14 +58,14 @@ def _model_slug(model: str) -> str:
 
 @dataclass(slots=True)
 class LiveTrialRunRecord:
-    """The per-run kept record (FR-006/FR-014).
+    """The per-run kept record.
 
     Persisted (synthetic runs only) alongside the harness-written
     ``session_log.duckdb`` and the final ``verdict.json`` in the run dir. The
     verdicts are the slice-one grader :data:`Verdict` dicts; ``run_kind`` is the
     slice-one schema tag.
 
-    ``tier`` is the comparison axis FR-007 introduces: ``"one_shot"`` is the
+    ``tier`` is the comparison axis this record introduces: ``"one_shot"`` is the
     constrained floor probe, ``"tool_loop"`` the multiturn tool tier. ``run_kind``
     stays ``"live_trial"`` for both because both ARE live trials; ``tier`` is the
     open string axis they are compared on (it is not a closed set — do not add a
@@ -83,12 +83,12 @@ class LiveTrialRunRecord:
 
 @dataclass(slots=True)
 class ScoreboardEntry:
-    """One append-only scoreboard line (FR-007/FR-011, NFR-005).
+    """One append-only scoreboard line.
 
     ``first_attempt_pass`` / ``final_pass`` are the top-level ``verdict["passed"]``
     of attempt 1 (un-nagged) and the final attempt respectively.
 
-    ``tier`` is the comparison axis FR-007 introduces (``"one_shot"`` floor vs
+    ``tier`` is the comparison axis this entry introduces (``"one_shot"`` floor vs
     ``"tool_loop"``). It is an open string axis; a line written without it parses
     back as ``"one_shot"`` so every pre-existing scoreboard line stays valid and
     the file is never rewritten (contract §5).
@@ -145,7 +145,7 @@ def persist_run(
 ) -> Path | None:
     """Keep the per-run artifacts — ONLY for a synthetic-fixture run.
 
-    Real-data guard (FR-012 / NFR-002 / C-001): when ``is_synthetic`` is false this
+    Real-data guard: when ``is_synthetic`` is false this
     writes **nothing** — no directory, no copy, no verdict — and returns ``None``.
     A real-data run leaves zero new files under the repo.
 
@@ -177,7 +177,7 @@ def append_scoreboard(
     *,
     path: Path = SCOREBOARD_PATH,
 ) -> None:
-    """Append exactly one scoreboard line (NFR-005).
+    """Append exactly one scoreboard line.
 
     Opens in append mode and writes ``entry.to_json_line() + "\\n"`` — never
     truncating or rewriting prior lines, so a crash mid-run cannot corrupt earlier
@@ -189,7 +189,7 @@ def append_scoreboard(
 
 
 def read_scoreboard(*, path: Path = SCOREBOARD_PATH) -> list[ScoreboardEntry]:
-    """Read the scoreboard in order, tolerating malformed lines (NFR-005).
+    """Read the scoreboard in order, tolerating malformed lines.
 
     Parses line by line; a malformed (unparseable or incomplete) line is skipped
     with a ``logging.warning`` and never drops the rest or raises. Returns the
@@ -220,11 +220,11 @@ def read_scoreboard(*, path: Path = SCOREBOARD_PATH) -> list[ScoreboardEntry]:
 def current_floor(
     entries: list[ScoreboardEntry],
 ) -> dict[tuple[str, str], dict[str, Any]]:
-    """Compute the capability floor per ``(operator_model, tier)`` (FR-011/FR-007).
+    """Compute the capability floor per ``(operator_model, tier)``.
 
     Groups by the ``(operator_model, tier)`` pair so the constrained one-shot
     floor and the tool-loop tier for the same model are reported side by side and
-    never overwrite each other (SC-002). The tier is whatever the entry carries —
+    never overwrite each other. The tier is whatever the entry carries —
     legacy (tier-less) rows arrive as ``"one_shot"`` from
     :meth:`ScoreboardEntry.from_json`; the grouping rule does not enumerate a
     fixed tier set. Reports per group::
@@ -234,7 +234,7 @@ def current_floor(
 
     ``reaches_final_pass`` is true iff at least one run for that group reached a
     passing final verdict. The first-attempt vs final counts expose how the
-    retry loop lifts a group over its un-nagged starting point (FR-014).
+    retry loop lifts a group over its un-nagged starting point.
     """
     floor: dict[tuple[str, str], dict[str, Any]] = {}
     for entry in entries:

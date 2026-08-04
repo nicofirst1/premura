@@ -1,4 +1,4 @@
-"""WP03 comparative Stage 2 signal tests.
+"""Comparative Stage 2 signal tests.
 
 Behavior is driven through the public engine surface: signals are registered via
 ``comparative_signals.register_builtin_signals()`` (the built-in registration
@@ -29,7 +29,7 @@ from premura.engine._results import ComparisonState, FreshnessState
 
 @pytest.fixture()
 def registered(empty_warehouse):
-    """Warehouse with the WP03 comparative signals registered in REGISTRY.
+    """Warehouse with the comparative signals registered in REGISTRY.
 
     Snapshots and restores REGISTRY so registration does not leak across tests.
     """
@@ -83,7 +83,7 @@ def test_signals_resolve_through_compute(registered) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T013 — sleep_deep_pct_baseline: successful own-baseline comparison
+# sleep_deep_pct_baseline: successful own-baseline comparison
 # --------------------------------------------------------------------------- #
 def test_sleep_deep_pct_baseline_below_own_normal(registered) -> None:
     conn = registered
@@ -158,7 +158,7 @@ def test_sleep_deep_pct_baseline_within_own_normal(registered) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T013 — sleep_deep_pct_baseline: insufficient data for a baseline
+# sleep_deep_pct_baseline: insufficient data for a baseline
 # --------------------------------------------------------------------------- #
 def test_sleep_deep_pct_baseline_insufficient_prior_nights(registered) -> None:
     conn = registered
@@ -206,7 +206,7 @@ def test_sleep_deep_pct_baseline_no_value(registered) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T015 — hrv_change_around_date: successful before/after comparison
+# hrv_change_around_date: successful before/after comparison
 # --------------------------------------------------------------------------- #
 def test_hrv_change_around_date_sufficient(registered) -> None:
     conn = registered
@@ -256,7 +256,7 @@ def test_hrv_change_around_date_sufficient(registered) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T015 — hrv_change_around_date: insufficient windows around anchor
+# hrv_change_around_date: insufficient windows around anchor
 # --------------------------------------------------------------------------- #
 def test_hrv_change_around_date_insufficient(registered) -> None:
     conn = registered

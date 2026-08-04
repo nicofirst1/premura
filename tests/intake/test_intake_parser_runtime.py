@@ -1,4 +1,4 @@
-"""Runtime dispatch tests for the parser intake path (WP01 / FR-007).
+"""Runtime dispatch tests for the parser intake path.
 
 Stance: black-box. We assert via the parser output, the public dispatch helper
 ``normalize_parse_output``, and warehouse rows — never by patching

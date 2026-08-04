@@ -1,8 +1,8 @@
-"""WP05/T018 — gated real-model proof of the tool-loop tier (NFR-003, R1 evidence).
+"""Gated real-model proof of the tool-loop tier (R1 evidence).
 
-Marked ``live_trial`` so the default suite never collects it (NFR-003 / C-004 —
+Marked ``live_trial`` so the default suite never collects it (
 never blocks CI; the companion edges module pins that exclusion by an actual
-subprocess collection run, SC-004). Run it deliberately, locally, against a
+subprocess collection run). Run it deliberately, locally, against a
 running Ollama with a TOOL-CAPABLE model pulled::
 
     uv run pytest -q -m live_trial tests/live_trial/test_live_trial_tool_loop_real.py -s
@@ -12,7 +12,7 @@ model may legitimately FAIL the trial — that is a capability-floor finding the
 tier exists to record, not a test failure. What IS asserted:
 
 * every started trial ends in exactly ONE of the three contract §4 outcome
-  states (NFR-006);
+  states;
 * a complete record carries both independent verdicts, ``tier="tool_loop"``,
   ``attempts_used >= 1``, and appends exactly one tier-tagged scoreboard line
   (redirected at a temp path — the real ``data/`` is never touched);
@@ -21,12 +21,12 @@ tier exists to record, not a test failure. What IS asserted:
   persists nothing — a tool-incapable model is a LEGITIMATE outcome, reported
   and passed with an explanatory message.
 
-The intake scenario gets the same treatment (FR-008 symmetry): selected from
+The intake scenario gets the same treatment (symmetry): selected from
 the registry, run through the identical entry point.
 
 Note on the import style: the harness modules are loaded via
 :func:`importlib.import_module` with string concatenation rather than literal
-``from ... import`` lines. The committed NFR-005 default-gate guard
+``from ... import`` lines. The committed default-gate guard
 (``test_live_trial_seam.py``) text-scans every OTHER test module for the gating
 harness import/call substrings; this marker-excluded module avoids those
 literals so the guard stays a true witness.
@@ -45,7 +45,7 @@ from premura.harness.scenario_registry import all_scenarios
 pytestmark = pytest.mark.live_trial
 
 # Loaded dynamically (see module docstring): keeps the gating-harness import/call
-# substrings out of this file's text for the committed NFR-005 default-gate guard.
+# substrings out of this file's text for the committed default-gate guard.
 _TOOL_LOOP_MODULE_NAME = "premura.harness." + "live_trial_" + "tool_loop"
 ltl = importlib.import_module(_TOOL_LOOP_MODULE_NAME)
 lto = importlib.import_module("premura.harness." + "live_trial_" + "ollama")
@@ -179,7 +179,7 @@ def test_real_model_tool_loop_observation_is_honest(
 def test_real_model_tool_loop_intake_is_honest(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """FR-008 symmetry: the registered intake scenario, same entry, same posture.
+    """Symmetry: the registered intake scenario, same entry, same posture.
 
     The scenario is selected FROM the registry (no intake-specific loop variant
     exists to call); the identical harness-honesty assertions apply.

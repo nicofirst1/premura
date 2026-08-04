@@ -1,13 +1,13 @@
-"""Tests for the ``paired_t_test`` analytical tool (WP04).
+"""Tests for the ``paired_t_test`` analytical tool.
 
-These exercise ``paired_t_test`` *behind* the WP02 analytical contract and
-*through* the WP03 before/after paired-input seam, mirroring the proof-tool and
+These exercise ``paired_t_test`` *behind* the analytical contract and
+*through* the before/after paired-input seam, mirroring the proof-tool and
 ``rolling_mean`` tests:
 
 * The tool registers against the shared contract registry (importing the module
-  runs the decorator), so WP05's default surface can later discover and dispatch
+  runs the decorator), so the default surface can later discover and dispatch
   it with no per-tool branch. This WP does **not** require default publication.
-* It consumes the WP03 ``BeforeAfterPairedInput`` seam — it never re-derives the
+* It consumes the ``BeforeAfterPairedInput`` seam — it never re-derives the
   matched pairs. A refused paired input is surfaced as a refusal envelope rather
   than computed over.
 * Available runs produce deterministic, byte-stable, metadata-bearing envelopes
@@ -21,8 +21,8 @@ These exercise ``paired_t_test`` *behind* the WP02 analytical contract and
   hypothesis-test-pass language, nor any causal, diagnostic, treatment, dosing,
   emergency, or population-norm claim in any estimate, caveat, or message.
 
-Everything is fixture-backed (hand-built ``PreparedPoint`` series via the WP02
-single-series preparer, prepared into pairs via the WP03 seam); the tool reads
+Everything is fixture-backed (hand-built ``PreparedPoint`` series via the
+single-series preparer, prepared into pairs via the seam); the tool reads
 no warehouse, so nothing here touches SQL, DuckDB, MCP, the network, or a clock.
 """
 
@@ -89,7 +89,7 @@ ANCHOR = date(2026, 5, 14)
 
 
 # ---------------------------------------------------------------------------
-# Fixture-backed evidence helpers (mirror the WP03 paired-input test style)
+# Fixture-backed evidence helpers (mirror the paired-input test style)
 # ---------------------------------------------------------------------------
 
 
@@ -175,14 +175,14 @@ def _paired_series(
 ) -> AnalyticalInputSeries:
     """Build a series with explicit before/after day values around the anchor.
 
-    ``before_values`` run from farthest-before to D-1 (last is nearest anchor);
+    ``before_values`` run from farthest-before to one day before anchor (last is nearest anchor);
     ``after_values`` run D+1 outward (first is nearest anchor). The anchor day is
     never populated.
     """
     points: list[PreparedPoint] = []
     nb = len(before_values)
     for i, value in enumerate(before_values):
-        # i=0 is farthest before; the last entry is D-1.
+        # i=0 is farthest before; the last entry is one day before anchor.
         day = ANCHOR - timedelta(days=(nb - i))
         points.append(_point(day, value, imputed=day in imputed_days))
     for i, value in enumerate(after_values):
@@ -201,7 +201,7 @@ def _prepared(
     direction: BeforeAfterDirection = BeforeAfterDirection.INCREASE,
     freshness_status: str = "fresh",
 ) -> BeforeAfterPairedInput:
-    """Prepare a usable/refused paired input through the WP03 seam."""
+    """Prepare a usable/refused paired input through the seam."""
     series = _paired_series(
         before_values=before_values,
         after_values=after_values,
@@ -607,7 +607,7 @@ def test_shared_module_has_no_network_imports(tool_case) -> None:
 
 
 # ===========================================================================
-# T016/T018 — registration / contract wiring (integration check)
+# / — registration / contract wiring (integration check)
 # ===========================================================================
 
 
@@ -622,7 +622,7 @@ def test_paired_t_test_registers_against_the_contract() -> None:
 
 
 # ===========================================================================
-# T016 — available envelope completeness (FR-006, NFR-003)
+# available envelope completeness
 # ===========================================================================
 
 
@@ -690,7 +690,7 @@ def test_mean_difference_is_after_minus_before() -> None:
 
 
 # ===========================================================================
-# T019 — direction agreement metadata (no causation / significance claim)
+# direction agreement metadata (no causation / significance claim)
 # ===========================================================================
 
 
@@ -717,7 +717,7 @@ def test_observed_direction_matches_declared_decrease() -> None:
 
 
 # ===========================================================================
-# T017 / FR-007 / NFR-004 — >= 6 distinct refusal classes, no estimate
+# / / — >= 6 distinct refusal classes, no estimate
 # ===========================================================================
 
 
@@ -785,7 +785,7 @@ def test_refusal_7_stale_evidence_propagates_from_seam() -> None:
 
 
 def test_refusal_8_scan_request_is_rejected_before_computation() -> None:
-    # FR-014 / C-004: any extra argument is an attempt to scan anchors/windows;
+    # any extra argument is an attempt to scan anchors/windows;
     # the seam refuses before pairing, and that refusal surfaces with no estimate.
     series = _paired_series(
         before_values=[50.0, 51.0, 52.0, 53.0, 54.0, 55.0, 56.0, 57.0],
@@ -832,7 +832,7 @@ def test_at_least_six_distinct_refusal_reasons() -> None:
 
 
 # ===========================================================================
-# T020 — no-hidden-search: the uncertainty payload is dispersion-only
+# no-hidden-search: the uncertainty payload is dispersion-only
 # ===========================================================================
 
 
@@ -849,7 +849,7 @@ def test_uncertainty_payload_is_dispersion_only() -> None:
 
 
 # ===========================================================================
-# T019 — confound metadata
+# confound metadata
 # ===========================================================================
 
 
@@ -873,12 +873,12 @@ def test_flags_high_imputation() -> None:
 
 
 # ===========================================================================
-# T018 / T020 — definition-of-done: consumes WP03 seam
+# / — definition-of-done: consumes seam
 # ===========================================================================
 
 
 def test_paired_t_test_consumes_the_wp03_seam() -> None:
-    # The tool must read pairs through the WP03 seam, not re-derive them. The
+    # The tool must read pairs through the seam, not re-derive them. The
     # module source references the seam helpers by name.
     import premura.engine.paired_t_test as ptt
 

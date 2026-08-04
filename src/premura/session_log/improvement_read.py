@@ -1,9 +1,9 @@
-"""Read-only judgment + improvement-proposal surfaces (improvement-hook m4 FR-2).
+"""Read-only judgment + improvement-proposal surfaces.
 
 The improvement hook (and any agent that wants to act on its output) must read
 ``log_judgment`` rows to derive proposals and read ``log_improvement`` rows to
 list them — but they must NEVER reach into the session-log tables ad hoc and must
-NEVER write the log: the harness is the sole writer (FR-021 / NFR-1). This module
+NEVER write the log: the harness is the sole writer. This module
 is the agent-facing read surface that satisfies both, with the SAME discipline as
 :func:`premura.session_log.dossier.build_dossier`: it opens the log STRICTLY
 READ-ONLY (:func:`store.connect(..., read_only=True)`) and returns frozen
@@ -13,7 +13,7 @@ dataclass rows in a deterministic order.
 * :func:`read_improvements` — the proposals, filterable by session and/or status;
   an agent lists open proposals through this, never via raw SQL.
 
-No code path here syncs or exports any row or PHI (NFR-002): it is a local,
+No code path here syncs or exports any row or PHI: it is a local,
 in-process read of the local session-log file.
 """
 
@@ -65,7 +65,7 @@ class ImprovementRow:
 
 
 def read_judgments(log_path: Path, *, session_id: str) -> list[JudgmentRow]:
-    """Read one session's judgments, read-only, in deterministic order (FR-2).
+    """Read one session's judgments, read-only, in deterministic order.
 
     Opens ``log_path`` STRICTLY READ-ONLY and returns the session's
     ``log_judgment`` rows ordered by ``judged_at`` then ``judgment_id`` (so the
@@ -106,7 +106,7 @@ def read_judgments(log_path: Path, *, session_id: str) -> list[JudgmentRow]:
 def read_improvements(
     log_path: Path, *, session_id: str | None = None, status: str | None = None
 ) -> list[ImprovementRow]:
-    """Read improvement proposals, read-only, filterable + deterministic (FR-2).
+    """Read improvement proposals, read-only, filterable + deterministic.
 
     Opens ``log_path`` STRICTLY READ-ONLY and returns ``log_improvement`` rows,
     optionally filtered by ``session_id`` and/or ``status``, ordered by

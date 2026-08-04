@@ -1,21 +1,21 @@
-"""WP06 — repeatable check end-to-end (FR-004, FR-030; OWNS NFR-001/NFR-002).
+"""Repeatable check end-to-end.
 
 Black-box tests over the verdict :func:`run_repeatable_check` returns and the rows
 the harness wrote into the session-log DB. The fake scripted agent (no model)
-installs a committed reference parser, runs the WP03 subprocess ingest, the
-harness records the named ``tool_call`` steps it is the SOLE writer of, the WP05
-grader recomputes the verdict, and the sandbox is torn down (NFR-004).
+installs a committed reference parser, runs the subprocess ingest, the
+harness records the named ``tool_call`` steps it is the SOLE writer of, the
+grader recomputes the verdict, and the sandbox is torn down.
 
 Decisive artifacts:
 
-* ``test_verdict_stable_across_runs`` (NFR-001) — two full runs from scratch
-  serialize to a byte-identical verdict. This is the measurable NFR-001 evidence
+* ``test_verdict_stable_across_runs`` — two full runs from scratch
+  serialize to a byte-identical verdict. This is the measurable evidence
   named in plan.md.
 * ``test_dishonest_path_fails_end_to_end`` — the dishonest parser's self-report is
   clean, yet the verdict FAILs honesty on ``altitude_m``.
 
-The whole suite runs OFFLINE from the committed fixture only (NFR-002): no private
-dump path, no network. The live trial against the real dump is WP07, not here.
+The whole suite runs OFFLINE from the committed fixture only: no private
+dump path, no network. The live trial against the real dump is, not here.
 """
 
 from __future__ import annotations
@@ -37,7 +37,7 @@ RAISING_PARSER = FIXTURE_DIR / "parsers" / "raising_fitbit_hr.py"
 SYNTHETIC_CSV = FIXTURE_DIR / "fitbit_heart_rate_synthetic.csv"
 VERDICT_SCHEMA = CONTRACTS_DIR / "grader-verdict.schema.json"
 
-# These reference fixtures are committed with the mission (WP04); their absence is
+# These reference fixtures are committed with the mission; their absence is
 # a HARD failure, never a skip — a vanished committed fixture must block the gate,
 # not pass green.
 _missing = [p.name for p in (GOOD_PARSER, DISHONEST_PARSER, SYNTHETIC_CSV) if not p.exists()]
@@ -63,7 +63,7 @@ def _read_steps(session_log_path: Path) -> list[tuple[str, str, str, str]]:
 
 
 # --------------------------------------------------------------------------- #
-# T024 — end-to-end PASS + FAIL from the real repo root.
+# end-to-end PASS + FAIL from the real repo root.
 # --------------------------------------------------------------------------- #
 
 
@@ -95,12 +95,12 @@ def test_dishonest_path_fails_end_to_end() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# DRIVE-1 / FR-080 — a raising parser yields a CAPTURED, GRADED FAIL, not a crash.
+# DRIVE-1 / — a raising parser yields a CAPTURED, GRADED FAIL, not a crash.
 # --------------------------------------------------------------------------- #
 
 
 def test_raising_parser_yields_captured_failed_run() -> None:
-    """Parser raises before any batch → captured, graded FAIL (spec edge / FR-080).
+    """Parser raises before any batch → captured, graded FAIL (spec edge).
 
     The parser raises before the runner reaches ``duck.initialize(warehouse)``, so
     NO warehouse file is created. The harness must NOT crash on the missing
@@ -156,7 +156,7 @@ def test_raising_parser_yields_captured_failed_run() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T024 — the harness recorded the named tool_call steps (FR-004) + provenance.
+# the harness recorded the named tool_call steps + provenance.
 # --------------------------------------------------------------------------- #
 
 
@@ -175,12 +175,12 @@ def test_log_records_named_steps() -> None:
         kinds = [k for (k, _t, _n, _s) in steps]
         assert kinds.count("agent_turn") == 1
 
-        # The FR-004 named tool_call steps are present, by named-tool convention.
+        # The named tool_call steps are present, by named-tool convention.
         tool_names = {t for (k, t, _n, _s) in steps if k == "tool_call"}
         assert {"edit_file", "parser_contract_check", "ingest_run"} <= tool_names
 
         # The ingest_run step succeeded and has a linked provenance row whose
-        # contract_pass is the GRADER's recomputed runtime_valid (FR-065).
+        # contract_pass is the GRADER's recomputed runtime_valid.
         conn = duckdb.connect(str(log_path), read_only=True)
         try:
             ingest_step = conn.execute(
@@ -202,21 +202,21 @@ def test_log_records_named_steps() -> None:
         finally:
             conn.close()
     finally:
-        # Inspection done — remove the kept sandbox tree (NFR-004).
+        # Inspection done — remove the kept sandbox tree.
         import shutil
 
         shutil.rmtree(log_path.parent.parent, ignore_errors=True)
 
 
 # --------------------------------------------------------------------------- #
-# Sole-writer (FR-021): only the harness wrote the log; the runner wrote none.
+# Sole-writer: only the harness wrote the log; the runner wrote none.
 # --------------------------------------------------------------------------- #
 
 
 def test_harness_is_sole_log_writer() -> None:
     """Only the harness wrote the session log; the runner produced no log file.
 
-    The runner writes the warehouse but never the session log (FR-021). After a
+    The runner writes the warehouse but never the session log. After a
     run, the ONLY session-log file is the one the harness wrote, and it holds the
     harness's steps. We assert the harness's log has the steps and the runner left
     no separate log artifact in the sandbox.
@@ -241,21 +241,21 @@ def test_harness_is_sole_log_writer() -> None:
 
 
 def test_repeatable_check_source_has_no_network_client() -> None:
-    """Static guard: the module imports no HTTP/network client (NFR-002 offline)."""
+    """Static guard: the module imports no HTTP/network client (offline)."""
     src = Path(repeatable_check.__file__).read_text(encoding="utf-8")
     for forbidden in ("import requests", "import httpx", "import urllib.request", "import socket"):
         assert forbidden not in src
 
 
 # --------------------------------------------------------------------------- #
-# T025 — determinism (NFR-001) + offline (NFR-002).
+# determinism + offline.
 # --------------------------------------------------------------------------- #
 
 
 def test_verdict_stable_across_runs() -> None:
-    """NFR-001: two full repeatable checks from scratch → byte-identical verdict.
+    """Two full repeatable checks from scratch → byte-identical verdict.
 
-    This is the measurable NFR-001 evidence artifact named in plan.md. Each run
+    This is the measurable evidence artifact named in plan.md. Each run
     builds a fresh sandbox (different ids/timestamps upstream); none of that may
     leak into the verdict.
     """
@@ -279,7 +279,7 @@ def test_verdict_stable_across_runs() -> None:
 
 
 def test_runs_offline_from_clean_inputs() -> None:
-    """NFR-002: the check runs to a verdict from the repo + committed fixtures only.
+    """The check runs to a verdict from the repo + committed fixtures only.
 
     No private dump path is referenced and no network is hit (the flow performs no
     HTTP — see ``test_repeatable_check_source_has_no_network_client``). Reaching a

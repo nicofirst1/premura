@@ -1,4 +1,4 @@
-"""Stage 3 — the ``rolling_mean`` analytical tool (WP02), behind the WP02 contract.
+"""Stage 3 — the ``rolling_mean`` analytical tool, behind the analytical contract.
 
 ``rolling_mean`` reports a **declared moving-window summary** over one admitted
 ordered series: a trailing window of caller-declared length is slid across the
@@ -8,21 +8,21 @@ trailing window, carrying that window's coverage and imputation count. It is a
 trailing window" applied to any admitted ordered series — not a metric-specific
 tool. The metric, the window, and the coverage floor are all caller-declared
 before computation; the tool never scans windows to pick the strongest-looking
-one (FR-014 / C-004).
+one.
 
-It is a **registration against the WP02 contract**, not a new dispatcher branch:
-importing this module runs the
+It is a **registration against the analytical contract**, not a new dispatcher
+branch: importing this module runs the
 :func:`~premura.engine.analytical_contract.analytical_tool` decorator, which adds
-the tool to the shared ``REGISTRY``. WP05's default public surface appends this
-module to its static built-in list and can then discover/dispatch it through
+the tool to the shared ``REGISTRY``. The default public analytical surface appends
+this module to its static built-in list and can then discover/dispatch it through
 :func:`~premura.engine.analytical_contract.dispatch` with no per-tool code. This
-WP does **not** publish the tool through the default loader or MCP.
+tool is **not** published through the default loader or MCP.
 
 Distinct from ``smoothed_average``: that tool answers "what is the current
 smoothed level" with one trailing average and the same per-point shape, but its
 reviewed question type is ``smoothed_pattern``. ``rolling_mean`` answers "how has
 the level *moved* over time" under the reviewed ``moving_window_pattern``
-question type (WP01 vocabulary), whose admissibility policy declares its own
+question type, whose admissibility policy declares its own
 moving-window coverage sufficiency. The two are deliberately separate reviewed
 question types, not a shared one.
 
@@ -182,9 +182,8 @@ def rolling_mean(
 
     The supported surface is exactly ``(series, window=..., min_coverage=...)``.
     Any extra positional or keyword argument is a request to scan/select a window
-    (or some other unsupported behaviour) and is refused **before** computation
-    (FR-014 / C-004): the caller must submit one declared window, not a request to
-    find the best one.
+    (or some other unsupported behaviour) and is refused **before** computation:
+    the caller must submit one declared window, not a request to find the best one.
 
     Refuses (no estimate) when: the input series is refused/inadmissible; ``window``
     is below the supported minimum, zero, negative, or beyond the supported
@@ -195,7 +194,7 @@ def rolling_mean(
     # --- Forbidden-request gate: refuse BEFORE any computation. ---------------
     # The supported surface is exactly (series, window, min_coverage). Any extra
     # positional or keyword argument is an attempt to scan/select a window or
-    # otherwise widen the tool past its one declared hypothesis (FR-014 / C-004).
+    # otherwise widen the tool past its one declared hypothesis.
     if args or kwargs:
         offending = [f"positional[{i}]" for i in range(len(args))] + sorted(kwargs)
         return _refusal_envelope(

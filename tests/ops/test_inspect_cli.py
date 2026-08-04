@@ -67,7 +67,7 @@ def test_inspect_unmatched_path_exits_zero(tmp_path: Path) -> None:
 
 
 def test_inspect_parser_without_capability_reports_honestly(tmp_path: Path) -> None:
-    """E1.3 / FR-1.3 — a parser matched but lacking preview_routing is reported
+    """E1.3 — a parser matched but lacking preview_routing is reported
     honestly: exit 0, names the parser, states it does not support preview, and
     names the rule for adding it (expose the capability)."""
     # A .db file routes to the Health Connect parser, which does not implement
@@ -82,7 +82,7 @@ def test_inspect_parser_without_capability_reports_honestly(tmp_path: Path) -> N
 
 
 def test_inspect_never_creates_warehouse(tmp_path: Path, monkeypatch) -> None:
-    """FR-1.5 — inspect writes nothing: no warehouse file appears under data/."""
+    """inspect writes nothing: no warehouse file appears under data/."""
     from premura.config import settings
 
     data_dir = tmp_path / "data"

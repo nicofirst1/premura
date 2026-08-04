@@ -1,20 +1,19 @@
-"""Skeleton smoke tests for the v2 architectural skeleton mission.
+"""Skeleton smoke tests for the v2 architectural skeleton.
 
-This file is the executable acceptance contract for the WP01-WP05 surfaces
-shipped by mission ``v2-architectural-skeleton-01KS4SHA``. Each test maps to
-one or more FRs (FR-001 through FR-017) and verifies the contract holds today.
+This file is the executable acceptance contract for the Stage 2/3/4 boundary
+modules, parser contract, skill packaging, and ontology surfaces. Each test
+maps to one or more requirements and verifies the contract holds today.
 
-Layout (mirrors the FR ordering in spec.md §3):
+Layout:
 
-* T021 — Import + stub-behavior tests for the Stage 2/3/4 boundary modules and
-  the parser-contract additions: FR-001..FR-008.
-* T022 — Skill packaging + idempotency tests: FR-011..FR-012.
-* T023 — Ontology migration + seed tests: FR-015..FR-017.
-* T024 — Cross-cutting structure: FR-009 (CONTRACT.md tokens) and FR-013
-  (CLI verb registration).
+* Import + stub-behavior tests for the Stage 2/3/4 boundary modules and
+  the parser-contract additions.
+* Skill packaging + idempotency tests.
+* Ontology migration + seed tests.
+* Cross-cutting structure: CONTRACT.md tokens and CLI verb registration.
 
-FR-010, FR-014, and FR-018 are intentionally covered elsewhere (cross-repo doc
-grep / bootstrap shell-script grep) per the WP06 ``Required structure`` note.
+Some requirements are intentionally covered elsewhere (cross-repo doc
+grep / bootstrap shell-script grep) per the ``Required structure`` note.
 """
 
 from __future__ import annotations
@@ -35,12 +34,12 @@ import yaml
 from tests import FIXTURES_DIR
 
 # ---------------------------------------------------------------------------
-# T021 — Import + stub-behavior tests (FR-001..FR-008)
+# Import + stub-behavior tests
 # ---------------------------------------------------------------------------
 
 
 def test_engine_package_docstring_names_stage_2() -> None:
-    """FR-001: ``premura.engine`` docstring identifies Stage 2 — Signal engine."""
+    """``premura.engine`` docstring identifies Stage 2 — Signal engine."""
     from premura import engine
 
     assert engine.__doc__ is not None
@@ -49,7 +48,7 @@ def test_engine_package_docstring_names_stage_2() -> None:
 
 
 def test_engine_registry_exports_open_boundary() -> None:
-    """FR-002 / NFR-008: ``signal``, ``SignalSpec``, ``REGISTRY`` import cleanly.
+    """``signal``, ``SignalSpec``, ``REGISTRY`` import cleanly.
 
     Importing the boundary must succeed without pulling any signal-function
     implementation. The registry begins empty.
@@ -58,7 +57,7 @@ def test_engine_registry_exports_open_boundary() -> None:
 
     # Pure-skeleton state: no implementation modules registered.
     assert isinstance(REGISTRY, dict)
-    # SignalSpec is a dataclass with the fields documented in FR-002.
+    # SignalSpec is a dataclass with the fields documented for the signal registry.
     fields = {f for f in SignalSpec.__dataclass_fields__}
     assert {
         "name",
@@ -75,7 +74,7 @@ def test_engine_registry_exports_open_boundary() -> None:
 
 
 def test_signal_decorator_registers_spec() -> None:
-    """FR-002: decorating a function populates ``REGISTRY[name]`` correctly."""
+    """Decorating a function populates ``REGISTRY[name]`` correctly."""
     from premura.engine import REGISTRY, SignalSpec, signal
 
     name = "_skeleton_smoke_signal"
@@ -121,7 +120,7 @@ def test_engine_registry_stays_lazy_until_runtime_helpers_load_builtins() -> Non
 
 
 def test_mcp_module_docstring_and_layering_rule() -> None:
-    """FR-004: ``premura.mcp`` names Stage 3 and includes the no-direct-warehouse-read rule."""
+    """``premura.mcp`` names Stage 3 and includes the no-direct-warehouse-read rule."""
     from premura import mcp
 
     assert mcp.__doc__ is not None
@@ -131,7 +130,7 @@ def test_mcp_module_docstring_and_layering_rule() -> None:
 
 
 def test_mcp_register_tools_stub_raises() -> None:
-    """FR-004: ``mcp.register_tools`` is a stub that raises NotImplementedError."""
+    """``mcp.register_tools`` is a stub that raises NotImplementedError."""
     from premura.mcp import register_tools
 
     with pytest.raises(NotImplementedError):
@@ -139,7 +138,7 @@ def test_mcp_register_tools_stub_raises() -> None:
 
 
 def test_ui_module_docstring_and_layering_rule() -> None:
-    """FR-005: ``premura.ui`` names Stage 4 and forbids direct warehouse / engine access."""
+    """``premura.ui`` names Stage 4 and forbids direct warehouse / engine access."""
     from premura import ui
 
     assert ui.__doc__ is not None
@@ -149,7 +148,7 @@ def test_ui_module_docstring_and_layering_rule() -> None:
 
 
 def test_ui_start_interview_stub_raises() -> None:
-    """FR-005: ``ui.start_interview`` is a stub that raises NotImplementedError."""
+    """``ui.start_interview`` is a stub that raises NotImplementedError."""
     from premura.ui import start_interview
 
     with pytest.raises(NotImplementedError):
@@ -157,7 +156,7 @@ def test_ui_start_interview_stub_raises() -> None:
 
 
 def test_parsers_lang_module_docstring_is_local_only() -> None:
-    """FR-006: ``parsers._lang`` documents the local-only constraint."""
+    """``parsers._lang`` documents the local-only constraint."""
     from premura.parsers import _lang
 
     assert _lang.__doc__ is not None
@@ -165,7 +164,7 @@ def test_parsers_lang_module_docstring_is_local_only() -> None:
 
 
 def test_parsers_lang_detect_language_stub_raises() -> None:
-    """FR-006: ``_lang.detect_language`` is a stub that raises NotImplementedError."""
+    """``_lang.detect_language`` is a stub that raises NotImplementedError."""
     from premura.parsers._lang import detect_language
 
     with pytest.raises(NotImplementedError):
@@ -173,14 +172,14 @@ def test_parsers_lang_detect_language_stub_raises() -> None:
 
 
 def test_parsers_lookup_suggest_metric_resolves_existing_aliases() -> None:
-    """FR-007: ``parsers.lookup.suggest_metric`` resolves existing ontology aliases."""
+    """``parsers.lookup.suggest_metric`` resolves existing ontology aliases."""
     from premura.parsers.lookup import suggest_metric
 
     assert suggest_metric("Resting Heart Rate") == "resting_hr"
 
 
 def test_plugin_parser_contract_symbols_import() -> None:
-    """FR-008: ``PluginParser`` and ``IngestBatch`` import from parsers.base."""
+    """``PluginParser`` and ``IngestBatch`` import from parsers.base."""
     from premura.parsers.base import IngestBatch, PluginParser
 
     fields = set(IngestBatch.__dataclass_fields__)
@@ -204,7 +203,7 @@ def test_plugin_parser_contract_symbols_import() -> None:
 
 
 def test_plugin_parser_is_structural_subtype_of_parser() -> None:
-    """FR-008: ``PluginParser`` is a structural extension of ``Parser``.
+    """``PluginParser`` is a structural extension of ``Parser``.
 
     A class with the shared ``Parser`` shape plus the plugin extras must satisfy
     ``PluginParser`` via duck typing. We cannot use ``isinstance`` because
@@ -239,7 +238,7 @@ def test_plugin_parser_is_structural_subtype_of_parser() -> None:
         assert hasattr(inst, attr), f"sample plugin parser missing {attr}"
     result = inst.parse(Path("/dev/null"))
     assert isinstance(result, IngestBatch)
-    assert result.confidence == 1.0  # default per FR-008
+    assert result.confidence == 1.0  # default confidence
     from premura.parsers.base import Interval, Measurement, Parser
 
     assert Parser is not PluginParser
@@ -247,12 +246,12 @@ def test_plugin_parser_is_structural_subtype_of_parser() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T022 — Skill packaging + idempotency tests (FR-011..FR-012)
+# Skill packaging + idempotency tests
 # ---------------------------------------------------------------------------
 
 
 def test_skill_manifest_ships_as_package_data() -> None:
-    """FR-011 / NFR-006: ``SKILL.md`` is resolvable via ``importlib.resources``."""
+    """``SKILL.md`` is resolvable via ``importlib.resources``."""
     manifest = files("premura").joinpath("skills/parser-generator/SKILL.md")
     assert manifest.is_file(), "SKILL.md missing from package data"
     body = manifest.read_text(encoding="utf-8")
@@ -265,7 +264,7 @@ def test_skill_manifest_ships_as_package_data() -> None:
 
 
 def test_install_skills_writes_then_idempotent(tmp_path: Path) -> None:
-    """FR-012: first call writes ``SKILL.md``; second call returns ``[]`` (no-op)."""
+    """First call writes ``SKILL.md``; second call returns ``[]`` (no-op)."""
     from premura.skills import install_skills
 
     written = install_skills(tmp_path)
@@ -280,7 +279,7 @@ def test_install_skills_writes_then_idempotent(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# T023 — Ontology migration + seed tests (FR-015..FR-017)
+# Ontology migration + seed tests
 # ---------------------------------------------------------------------------
 
 
@@ -306,14 +305,14 @@ def _dim_metric_columns(conn) -> set[str]:
 
 
 def test_migration_002_adds_six_new_columns(empty_warehouse) -> None:
-    """FR-015 / NFR-004: migration 002 adds the six ontology columns."""
+    """Migration 002 adds the six ontology columns."""
     cols = _dim_metric_columns(empty_warehouse)
     missing = _NEW_ONTOLOGY_COLUMNS - cols
     assert not missing, f"dim_metric missing ontology columns: {missing}"
 
 
 def test_migrations_are_idempotent(empty_warehouse) -> None:
-    """NFR-004: re-running migrations does not error and does not duplicate columns."""
+    """Re-running migrations does not error and does not duplicate columns."""
     from premura.store import duck
 
     before = _dim_metric_columns(empty_warehouse)
@@ -325,7 +324,7 @@ def test_migrations_are_idempotent(empty_warehouse) -> None:
 def test_seed_handles_rows_with_and_without_new_keys(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """FR-016: ``seed_dim_metric()`` reads new ontology keys + serializes aliases.
+    """``seed_dim_metric()`` reads new ontology keys + serializes aliases.
 
     Exercises the production path in ``src/premura/store/duck.py:seed_dim_metric``
     by feeding it a fixture ``dim_metric.yaml`` (under ``tests/fixtures/``) with:
@@ -344,7 +343,7 @@ def test_seed_handles_rows_with_and_without_new_keys(
     from premura.store import duck
 
     fixture_path = FIXTURES_DIR / "dim_metric_seed.yaml"
-    assert fixture_path.is_file(), "FR-016 fixture missing"
+    assert fixture_path.is_file(), "seed fixture missing"
     fixture_text = fixture_path.read_text(encoding="utf-8")
 
     # Redirect ``resources.files("premura").joinpath("dim_metric.yaml").read_text``
@@ -378,7 +377,7 @@ def test_seed_handles_rows_with_and_without_new_keys(
     conn = duckdb.connect(str(db))
     try:
         duck.run_migrations(conn)
-        # === PRODUCTION CALL — this is the heart of the FR-016 assertion. ===
+        # === PRODUCTION CALL — this is the heart of the seeding assertion. ===
         row_count = duck.seed_dim_metric(conn)
         assert row_count == 3, f"fixture should have seeded 3 rows, got {row_count}"
 
@@ -447,20 +446,20 @@ def _load_dim_metric_yaml() -> list[dict]:
 
 
 def test_dim_metric_yaml_has_at_least_140_rows() -> None:
-    """FR-017: the ontology grew to ≥140 rows."""
+    """The ontology grew to ≥140 rows."""
     rows = _load_dim_metric_yaml()
     assert len(rows) >= 140, f"expected ≥140 rows, got {len(rows)}"
 
 
 def test_dim_metric_yaml_every_row_has_category() -> None:
-    """FR-017: every row carries a non-empty ``category``."""
+    """Every row carries a non-empty ``category``."""
     rows = _load_dim_metric_yaml()
     missing = [r["metric_id"] for r in rows if not r.get("category")]
     assert not missing, f"rows missing category: {missing[:5]}"
 
 
 def test_dim_metric_yaml_lab_rows_have_loinc() -> None:
-    """FR-017: every ``lab:*`` row has a ``loinc`` value (real code or "[unmapped]")."""
+    """Every ``lab:*`` row has a ``loinc`` value (real code or "[unmapped]")."""
     rows = _load_dim_metric_yaml()
     lab_rows = [r for r in rows if r["metric_id"].startswith("lab:")]
     assert lab_rows, "expected at least one lab:* row in ontology"
@@ -469,12 +468,12 @@ def test_dim_metric_yaml_lab_rows_have_loinc() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T024 — Cross-cutting structure (FR-009 contract tokens, FR-013 CLI verb)
+# Cross-cutting structure (contract tokens, CLI verb)
 # ---------------------------------------------------------------------------
 
 
 def test_parser_contract_md_documents_standards_first_ladder() -> None:
-    """FR-009: CONTRACT.md mentions LOINC, IEEE 1752.1, and the reserved ``derived:`` namespace."""
+    """CONTRACT.md mentions LOINC, IEEE 1752.1, and the reserved ``derived:`` namespace."""
     contract = files("premura.parsers").joinpath("CONTRACT.md")
     assert contract.is_file(), "parsers/CONTRACT.md missing"
     text = contract.read_text(encoding="utf-8")
@@ -483,14 +482,14 @@ def test_parser_contract_md_documents_standards_first_ladder() -> None:
 
 
 def test_cli_registers_install_skills_verb() -> None:
-    """FR-013: ``premura install-skills`` is registered on the Typer app."""
+    """``premura install-skills`` is registered on the Typer app."""
     cli = importlib.import_module("premura.cli")
     commands = {cmd.name for cmd in cli.app.registered_commands}
     assert "install-skills" in commands, f"expected install-skills verb, got {sorted(commands)}"
 
 
 def test_premura_console_script_is_wired_and_invokable(tmp_path: Path) -> None:
-    """FR-013: the ``premura`` console script is wired via ``[project.scripts]``
+    """The ``premura`` console script is wired via ``[project.scripts]``
     in ``pyproject.toml`` and ``premura install-skills`` is actually invokable
     end-to-end (not just registered on the Typer app object).
 

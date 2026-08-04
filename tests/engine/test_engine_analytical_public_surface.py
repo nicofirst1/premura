@@ -1,8 +1,8 @@
-"""Public-surface tests for the Stage 3 analytical facade (WP05).
+"""Public-surface tests for the Stage 3 analytical facade.
 
 These tests lock the *MCP-facing* surface of the analytical layer through public
 ``premura.engine`` imports only — the same discipline as
-``tests/test_engine_policy_public_surface.py``. MCP/WP06 must be able to load
+``tests/test_engine_policy_public_surface.py``. MCP/ must be able to load
 the built-in tools, list them, invoke one by name, and read the serialized
 result envelope without ever importing a private contract helper or poking the
 registry dict directly.
@@ -70,7 +70,7 @@ BUILTIN_TOOL_NAMES = frozenset({CHANGE_POINT, SMOOTHED_AVERAGE})
 
 
 # ---------------------------------------------------------------------------
-# Fixture-backed evidence helpers (mirrors the WP03/WP04 test scaffolding)
+# Fixture-backed evidence helpers (mirrors the / test scaffolding)
 # ---------------------------------------------------------------------------
 
 
@@ -332,7 +332,7 @@ def test_refused_input_returns_refusal_envelope_not_error() -> None:
 def test_invoke_has_no_per_tool_dispatch_branch() -> None:
     """The facade's invoke path delegates to the shared contract dispatch.
 
-    Doctrine (WP05 T020): adding a tool is registration against the contract +
+    Doctrine: adding a tool is registration against the contract +
     a static built-in module entry — never a new ``if tool == ...`` branch.
     We pin this two ways:
 

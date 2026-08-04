@@ -467,7 +467,7 @@ class RoutingPreview:
     ``None`` handler means the parser would route the member to nothing
     (``unhandled``). Building a preview MUST NOT read file contents, open a
     warehouse connection, or mutate anything: it is the read-only twin of
-    ingest discovery (m7 WP1 / FR-1.1).
+    ingest discovery.
     """
 
     entries: list[tuple[str, str | None]] = field(default_factory=list)

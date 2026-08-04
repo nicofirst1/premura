@@ -1,6 +1,6 @@
 # Contract — intake `runtime_valid` (the bounded runtime subset)
 
-> Satisfies FR-010 / SC-008. `runtime_valid` is a **bounded runtime-checkable subset**, explicitly **NOT** the full parser-review contract (`src/premura/parsers/CONTRACT.md`).
+> `runtime_valid` is a **bounded runtime-checkable subset**, explicitly **NOT** the full parser-review contract (`src/premura/parsers/CONTRACT.md`).
 
 ## Observation form (UNCHANGED — `check_runtime_contract`, verbatim)
 
@@ -21,9 +21,9 @@ The analogue, defined against `IntakeBatch` (which has **no** metric_id / `dim_m
 
 `runtime_valid = (no violations)`; `violations` is a sorted list of `"<clause>: <detail>"` strings (same shape as the observation result, feeding the unchanged verdict schema).
 
-### Evidence inputs (the producer/consumer seam — both in WP02)
+### Evidence inputs (the producer/consumer seam)
 
-The checker is the **consumer**; the in-sandbox runner is the **producer**, and both live in WP02 so there is no cross-WP gap. The runner emits its outcome in the **existing** envelope fields — `status` (`"ok"`/`"error"`) and a **stage-tagged `error`** string — so **no new envelope key** is added and the frozen `ingest-outcome-envelope.schema.json` (`additionalProperties:false`) is unchanged:
+The checker is the **consumer**; the in-sandbox runner is the **producer**, and both live together so there is no cross-package gap. The runner emits its outcome in the **existing** envelope fields — `status` (`"ok"`/`"error"`) and a **stage-tagged `error`** string — so **no new envelope key** is added and the frozen `ingest-outcome-envelope.schema.json` (`additionalProperties:false`) is unchanged:
 
 | Clause                      | Witnessed by                                                                                                    |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------- |
@@ -31,7 +31,7 @@ The checker is the **consumer**; the in-sandbox runner is the **producer**, and 
 | `batch_validates`           | `error` whose stage ≠ `validate` (the runner now calls `IntakeBatch.validate()` explicitly — today it does not) |
 | `persisted_without_raising` | `error` whose stage ≠ `persist`                                                                                 |
 
-Error stages are `"parse: …"` / `"validate: …"` / `"persist: …"`. The runner is harness code witnessing the operator's batch — not a parser self-report. WP06 (provenance) and WP07 (probe) only carry `status`/`error` through; they do not define this seam.
+Error stages are `"parse: …"` / `"validate: …"` / `"persist: …"`. The runner is harness code witnessing the operator's batch — not a parser self-report. Provenance and probe consumers only carry `status`/`error` through; they do not define this seam.
 
 ### Where intake declared/emitted lives (the named evidence surface)
 
@@ -44,6 +44,6 @@ The intake evidence seam for `runtime_valid` is therefore **`source_descriptors`
 
 ## Invariants
 
-- The clause **names and count** in this contract MUST match the implementation; a test asserts this so the spec cannot drift from the checker (FR-010).
+- The clause **names and count** in this contract MUST match the implementation; a test asserts this so the spec cannot drift from the checker.
 - `runtime_valid` MUST NOT be widened to any clause from the full parser-review contract.
-- The grader's persisted `contract_pass` is this recomputed `runtime_valid`, never an operator/runner self-report (FR-005).
+- The grader's persisted `contract_pass` is this recomputed `runtime_valid`, never an operator/runner self-report.

@@ -1,7 +1,7 @@
-"""The ``Scenario`` abstraction + injected ``DrawerGradingStrategy`` (FR-001).
+"""The ``Scenario`` abstraction + injected ``DrawerGradingStrategy``.
 
 A new acceptance source is added by **registering a scenario**, with **no change
-to the shared grading logic** (NFR-005). A :class:`Scenario` is a frozen value
+to the shared grading logic**. A :class:`Scenario` is a frozen value
 object that names a synthetic source artifact, its grader-only ground-truth
 manifest, the known-good reference parser, and the
 :class:`DrawerGradingStrategy` that supplies all drawer-specific grading.
@@ -10,8 +10,8 @@ The strategy is the seam the generic :func:`premura.harness.grader.grade` body
 calls into. It exposes exactly three responsibilities (one per grader rule):
 
 * ``boundary_truth(conn)`` -> :class:`BoundaryTruth` — the loaded row count and
-  the set of metric keys that actually landed in the drawer's warehouse tables
-  (FR-006). Warehouse-recomputed boundary truth, never the parser's self-report.
+  the set of metric keys that actually landed in the drawer's warehouse tables.
+  Warehouse-recomputed boundary truth, never the parser's self-report.
 * ``runtime_check(provenance, conn)`` -> ``ContractCheckResult`` — the drawer's
   bounded runtime-contract clause set over the captured declared/emitted sets.
 * ``gap_set(manifest, provenance, boundary_truth)`` -> ``list[str]`` — the
@@ -20,7 +20,7 @@ calls into. It exposes exactly three responsibilities (one per grader rule):
 
 This module is intentionally import-light (no Ollama, no network): it is imported
 by the grader. The only scenario registered here is the observation one; the
-registry that lists ≥ 2 scenarios is WP04's ``scenario_registry.py``.
+registry that lists ≥ 2 scenarios is ``scenario_registry.py``.
 """
 
 from __future__ import annotations
@@ -62,7 +62,7 @@ class IngestProvenance(Protocol):
     """The captured ingest evidence a strategy reconciles — passed in, never trusted.
 
     Structural so either a live object or a small test/harness helper assembled
-    from the WP03 ingest-outcome envelope satisfies it. Every field is *captured
+    from the ingest-outcome envelope satisfies it. Every field is *captured
     measured evidence* or a *parser claim*; none is a precomputed rule verdict.
     """
 
@@ -76,11 +76,11 @@ class IngestProvenance(Protocol):
 
 @dataclass(frozen=True)
 class BoundaryTruth:
-    """Warehouse-recomputed boundary truth for one graded run (FR-006).
+    """Warehouse-recomputed boundary truth for one graded run.
 
     Recomputed from the drawer's warehouse tables, NOT from the parser's
     ``emitted_metric_ids`` claim — so a parser lying about emission cannot fake a
-    field being honestly loaded (NFR-006). A row landing in the *wrong* drawer's
+    field being honestly loaded. A row landing in the *wrong* drawer's
     tables is absent here and so cannot witness a loaded field.
 
     Attributes:
@@ -94,7 +94,7 @@ class BoundaryTruth:
 
 
 class DrawerGradingStrategy(Protocol):
-    """Drawer-specific grading behind the generic grader (NFR-005).
+    """Drawer-specific grading behind the generic grader.
 
     The three methods are the only places a drawer's table names / clause set /
     manifest-reconciliation rule appear. The shared :func:`grade` body names none
@@ -125,24 +125,23 @@ class DrawerGradingStrategy(Protocol):
 
 @dataclass(frozen=True)
 class Scenario:
-    """A registered acceptance source — the bounded abstraction (FR-001).
+    """A registered acceptance source — the bounded abstraction.
 
     Adding a source is registering one of these; the shared grade path is never
     edited (see ``contracts/scenario-contract.md``). ``manifest_path`` is
-    grader-only ground truth and MUST NOT appear on any operator-visible path
-    (C-005).
+    grader-only ground truth and MUST NOT appear on any operator-visible path.
 
     Attributes:
         name: unique within the registry.
-        source_path: a synthetic, obviously-fake source artifact (no PHI, NFR-004).
-        manifest_path: grader-only ground-truth field manifest (C-005).
+        source_path: a synthetic, obviously-fake source artifact (no PHI).
+        manifest_path: grader-only ground-truth field manifest.
         reference_parser: the layer-1 known-good parser import target.
         strategy: the :class:`DrawerGradingStrategy` supplying drawer specifics.
         grade_fn: the scenario's own grading entry point, or ``None`` to use the
             shared :func:`premura.harness.grader.grade` (the default for every
             scenario except one with genuinely different verdict polarity).
             Dispatch is ``scenario.grade_fn or grade`` - never a name match on
-            ``scenario.name`` (guide-don't-enumerate; NFR-005).
+            ``scenario.name`` (guide-don't-enumerate).
     """
 
     name: str
@@ -154,7 +153,7 @@ class Scenario:
 
 
 # --------------------------------------------------------------------------- #
-# Observation strategy — today's grader logic, moved verbatim (C-004).
+# Observation strategy — today's grader logic, moved verbatim.
 # --------------------------------------------------------------------------- #
 
 
@@ -174,7 +173,7 @@ def _declared_field_names(provenance: IngestProvenance) -> set[str]:
 
 @dataclass(frozen=True)
 class ObservationStrategy:
-    """The observation drawer's grading — today's ``grader`` logic, unchanged (C-004).
+    """The observation drawer's grading — today's ``grader`` logic, unchanged.
 
     Wraps the verbatim ``_grade_loaded`` fact-table count, the
     ``check_runtime_contract`` delegation, and the manifest honesty reconcile so
@@ -187,7 +186,7 @@ class ObservationStrategy:
         """Total fact rows + distinct ``metric_id``s present in the warehouse.
 
         Boundary truth derived from the warehouse itself, NOT from the parser's
-        ``emitted_metric_ids`` claim (NFR-006).
+        ``emitted_metric_ids`` claim.
         """
         total = 0
         present: set[str] = set()
@@ -205,7 +204,7 @@ class ObservationStrategy:
         provenance: IngestProvenance,
         warehouse_conn: duckdb.DuckDBPyConnection,
     ) -> ContractCheckResult:
-        """Delegate to WP02's checker over the CAPTURED sets (never a stored flag)."""
+        """Delegate to the runtime contract checker over the CAPTURED sets (never a stored flag)."""
         return check_runtime_contract(
             declared_metrics=list(provenance.declared_metrics),
             emitted_metric_ids=list(provenance.emitted_metric_ids),
@@ -224,7 +223,7 @@ class ObservationStrategy:
         For every source field in the manifest: it is *handled* iff its canonical
         metric is present in the warehouse (boundary truth) OR the field is
         declared by the parser. Any field that is neither is a silent drop. The
-        distinct-metric constraint (D6 / R3) makes "metric present" an
+        distinct-metric constraint (R3) makes "metric present" an
         unambiguous witness for the one field that maps to it.
         """
         metrics_present = boundary_truth.present_keys
@@ -246,8 +245,8 @@ class ObservationStrategy:
 def observation_scenario() -> Scenario:
     """The observation :class:`Scenario`, wired to today's grading + committed fixture.
 
-    The only scenario this module registers. WP04's registry composes this with
-    the new intake scenario so the registry lists ≥ 2 sources (SC-003).
+    The only scenario this module registers. The registry composes this with
+    the new intake scenario so the registry lists ≥ 2 sources.
     """
     return Scenario(
         name="observation",

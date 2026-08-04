@@ -1,7 +1,7 @@
-"""Model-level tests for the Stage 2 policy declaration contract (WP01).
+"""Model-level tests for the Stage 2 policy declaration contract.
 
 These exercise construction-time validation only. There is no evaluator,
-registry, or warehouse behavior in WP01, so nothing here touches SQL, the
+registry, or warehouse behavior in, so nothing here touches SQL, the
 network, or PubMed. Everything is imported through the package surface
 ``premura.engine.policies`` (not private module paths).
 

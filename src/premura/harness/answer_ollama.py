@@ -81,7 +81,7 @@ class _RawTurn:
 
 @dataclass(slots=True)
 class OllamaAnswerOperator:
-    """Real-model operator for the analyze-and-answer task (FR-4, issue #54).
+    """Real-model operator for the analyze-and-answer task (issue #54).
 
     Implements the :class:`~premura.harness.answer_task.AnswerOperator`
     protocol. ``answer`` calls the spec's declared analytical tool through the

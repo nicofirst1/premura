@@ -1,6 +1,6 @@
-"""WP3 — rubric/playbook extension proof for the analyze-and-answer slice (FR-6).
+"""WP3 — rubric/playbook extension proof for the analyze-and-answer slice.
 
-FR-6 requires extending the judge rubric with analytical-honesty coverage and the
+ requires extending the judge rubric with analytical-honesty coverage and the
 improvement playbook with the matching area *by their own add rules*, such that it
 needs **no engine, judge, or scan code edits**. These tests are that proof: the
 existing rubric/playbook parsers (``judge.load_rubric`` / ``improvement.load_playbook``)
@@ -36,7 +36,7 @@ def test_analytical_criterion_uses_a_closed_category() -> None:
 
 
 def test_analytical_criterion_category_already_has_a_playbook_area() -> None:
-    # FR-6's no-code-edit proof: because the criterion uses a category that already
+    # No-code-edit proof: because the criterion uses a category that already
     # has an area, adding it requires NO playbook area edit and NO code change — the
     # store records whatever criterion id / area id the documents define.
     rubric = load_rubric()

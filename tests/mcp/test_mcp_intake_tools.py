@@ -1,7 +1,7 @@
-"""WP05 — default-surface MCP intake tool tests.
+"""Default-surface MCP intake tool tests.
 
-These lock the two thin intake tools that expose WP04's parameterized intake
-signals on the DEFAULT agent-safe MCP surface (FR-006):
+These lock the two thin intake tools that expose the parameterized intake
+signals on the DEFAULT agent-safe MCP surface:
 
 * ``supplement_intake_adherence`` — coverage "K of N days" for a caller-declared
   matcher + bounded window (status/coverage family).
@@ -10,10 +10,10 @@ signals on the DEFAULT agent-safe MCP surface (FR-006):
 
 What is locked here:
 
-* FR-006 (T025): BOTH tools are PUBLISHED on the default surface (an exact +2
+* BOTH tools are PUBLISHED on the default surface (an exact +2
   count delta against the prior surface, asserted via ``build_server`` /
   ``list_tools``), and on the operator surface that inherits the default set.
-* The wrappers are THIN: they delegate to the WP04 signal through the engine
+* The wrappers are THIN: they delegate to the signal through the engine
   ``compute(..., params=...)`` seam, so each tool surfaces the engine's own
   result (matcher/quantity-key echoed back, day_basis from the resolver) — the
   wrapper computes no coverage/direction of its own.
@@ -21,7 +21,7 @@ What is locked here:
   ``insufficient_data``) stay STRUCTURALLY DISTINCT through the tool layer, not
   collapsed into one generic string error; missing/stale carry the structured
   ``missing_input`` report.
-* NFR-001: no diagnosis/recommendation/causal/significance language at the
+* No diagnosis/recommendation/causal/significance language at the
   surface, across both tools and all states.
 
 Intake rows are seeded directly via ``persist_intake_batch`` (the already-shipped
@@ -55,11 +55,11 @@ from premura.store.profile_intake import persist_intake_batch
 _SOURCE_ID = "intake:test"
 _SOURCE_KIND = "reference_intake"
 
-# The two intake tools WP05 adds to the default surface (FR-006).
+# The two intake tools added to the default surface.
 _INTAKE_TOOLS = {"supplement_intake_adherence", "nutrition_intake_trend"}
 
 # Banned non-diagnostic language checked across every serialized payload string
-# (NFR-001 at the surface). Mirrors the engine-level signal test's ban list.
+# at the surface. Mirrors the engine-level signal test's ban list.
 _BANNED_SUBSTRINGS = (
     "should",
     "p-value",
@@ -207,12 +207,12 @@ def _assert_non_diagnostic(payload: dict[str, Any]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# T025 — publication on the default surface (FR-006), exact +2 count delta
+# Publication on the default surface, exact +2 count delta
 # ---------------------------------------------------------------------------
 
 
 def test_both_intake_tools_published_on_default_surface() -> None:
-    """FR-006: both intake tools are PUBLISHED (not just defined) on the default surface."""
+    """Both intake tools are PUBLISHED (not just defined) on the default surface."""
 
     async def run() -> None:
         names = {tool.name for tool in await build_server().list_tools()}
@@ -222,7 +222,7 @@ def test_both_intake_tools_published_on_default_surface() -> None:
 
 
 def test_intake_tools_add_exactly_two_to_default_surface() -> None:
-    """The two intake tools are an exact +2 delta over the rest of the surface (FR-006)."""
+    """The two intake tools are an exact +2 delta over the rest of the surface."""
 
     async def run() -> None:
         names = {tool.name for tool in await build_server().list_tools()}
@@ -294,7 +294,7 @@ def test_intake_tools_callable_through_published_surface(
 
 
 # ---------------------------------------------------------------------------
-# T023 — supplement_intake_adherence wrapper: one successful call + states
+# supplement_intake_adherence wrapper: one successful call + states
 # ---------------------------------------------------------------------------
 
 
@@ -421,7 +421,7 @@ def test_supplement_tool_states_are_structurally_distinct(
 
 
 # ---------------------------------------------------------------------------
-# T024 — nutrition_intake_trend wrapper: one successful call + states
+# nutrition_intake_trend wrapper: one successful call + states
 # ---------------------------------------------------------------------------
 
 

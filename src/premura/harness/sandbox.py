@@ -1,10 +1,10 @@
-"""Throwaway sandbox for parser-build ingest isolation (FR-020).
+"""Throwaway sandbox for parser-build ingest isolation.
 
 A :class:`Sandbox` is a temp copy of the **tracked** repo tree (from
 ``git ls-files``, never a blind recursive copy) with the warehouse and the
 session-log paths redirected into the temp dir. It lets an agent edit parser
 files and run a real ingest without ever touching the real repo or the real
-warehouse; teardown removes everything so no extracted data persists (NFR-004).
+warehouse; teardown removes everything so no extracted data persists.
 
 The runner that consumes a sandbox lives in
 :mod:`premura.harness.ingest_runner`; this module only builds and disposes the
@@ -33,7 +33,7 @@ from ulid import ULID
 
 # Tracked paths whose top-level segment matches one of these are never copied
 # into the sandbox: they are either huge, derived, or noise that breaks
-# reproducibility from a clean clone (R2 / NFR-002). ``.git`` and ``.venv``
+# reproducibility from a clean clone (R2). ``.git`` and ``.venv``
 # never appear in ``git ls-files``; ``kitty-specs`` / ``.worktrees`` / ``data``
 # can, so they are filtered explicitly.
 EXCLUDED_TOP_LEVEL: frozenset[str] = frozenset(
@@ -62,8 +62,8 @@ def _tracked_files(repo_root: Path) -> list[str]:
     """Return the working-tree paths to copy (relative, POSIX).
 
     Tracked files only (``git ls-files``) so the sandbox input is deterministic
-    from a clean checkout (R2 / NFR-002) and never scoops up arbitrary
-    untracked scratch from the parent working tree (NFR-004 containment). The
+    from a clean checkout (R2) and never scoops up arbitrary
+    untracked scratch from the parent working tree (containment). The
     explicit :data:`EXCLUDED_TOP_LEVEL` filter then drops the huge/derived trees
     (``data``, ``kitty-specs``, ``.worktrees``, …) that git may still track in a
     given checkout. Reference parsers and agent edits arrive *into* the sandbox
@@ -100,7 +100,7 @@ class Sandbox:
     premura_version: str
 
     def teardown(self) -> None:
-        """Recursively remove the entire sandbox tree (NFR-004 PHI containment)."""
+        """Recursively remove the entire sandbox tree (PHI containment)."""
         shutil.rmtree(self.root, ignore_errors=True)
 
     def __enter__(self) -> Sandbox:

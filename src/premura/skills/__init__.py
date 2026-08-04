@@ -7,8 +7,7 @@ resources) — alongside the runtime code. The single helper exposed here,
 editable installs, wheels, and zipapps.
 
 The helper is intentionally small: no external dependencies, no symlink magic,
-deterministic sha256-based idempotency. See FR-011..FR-014 in the v2 skeleton
-spec for the contract this module implements.
+deterministic sha256-based idempotency.
 """
 
 from __future__ import annotations

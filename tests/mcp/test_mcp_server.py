@@ -95,7 +95,7 @@ def test_list_metrics_reports_seeded_metrics(tmp_path: Path) -> None:
     rows = list_metrics(warehouse_path=_initialized_warehouse(tmp_path), limit=5)
 
     assert len(rows) == 5
-    # WP02: new catalog payload carries validity fields, not raw row-counts.
+    # Catalog payload carries validity fields, not raw row-counts.
     required_fields = {
         "metric_id",
         "validity_status",
@@ -110,7 +110,7 @@ def test_list_metrics_reports_seeded_metrics(tmp_path: Path) -> None:
 
 
 def test_metric_summary_reports_validity_fields(tmp_path: Path) -> None:
-    """WP02: metric_summary returns validity/imputation envelope, not all-time extrema."""
+    """metric_summary returns validity/imputation envelope, not all-time extrema."""
     from premura.mcp.server import metric_summary
 
     db_path = tmp_path / "summary.duckdb"
@@ -132,7 +132,7 @@ def test_metric_summary_reports_validity_fields(tmp_path: Path) -> None:
     summary = metric_summary("weight", warehouse_path=db_path)
 
     assert summary["metric_id"] == "weight"
-    # WP02: new explicit validity/imputation fields, not raw counts or all-time extrema.
+    # New explicit validity/imputation fields, not raw counts or all-time extrema.
     assert "validity_status" in summary
     assert "sample_size" in summary
     assert "imputed_proportion" in summary
@@ -144,7 +144,7 @@ def test_metric_summary_reports_validity_fields(tmp_path: Path) -> None:
 
 
 def test_metric_summary_returns_unavailable_for_missing_metric(tmp_path: Path) -> None:
-    """WP02: unknown metric yields unavailable entry, not None."""
+    """Unknown metric yields unavailable entry, not None."""
     from premura.mcp.server import metric_summary
 
     summary = metric_summary("missing_metric", warehouse_path=_initialized_warehouse(tmp_path))
@@ -172,19 +172,13 @@ def test_metric_summary_rejects_blank_metric_id(tmp_path: Path) -> None:
         metric_summary("   ", warehouse_path=_initialized_warehouse(tmp_path))
 
 
-# WP03: default surface omits query_warehouse; the agent-safe tools = the six
-# Stage 2 signals + two catalog tools + the two bounded profile-capture tools.
-# WP06: the two Stage 3 analytical tools (change_point / smoothed_average) join
-# the same default surface.
-# WP04 (correlate mission): the pre-registered lagged-association tool
-# ``correlate`` joins the same default surface (twelve -> thirteen tools).
-# session-research-trace WP03: the three trace tools join the same default
-# surface (the trace IS the supported agent workflow), thirteen -> sixteen.
-# WP05 (finish-analytical-tool-set): rolling_mean + paired_t_test join the same
-# default surface (sixteen -> eighteen).
-# WP03 (pubmed-grounding-tools): the two PubMed grounding tools (pubmed_search +
-# pubmed_fetch) join the same default surface (eighteen -> twenty). They are the
-# ONLY PubMed tools on the surface — no full-text/MeSH/Europe-PMC/Unpaywall/
+# Default surface omits query_warehouse; the agent-safe tools = the six
+# Stage 2 signals + two catalog tools + the two bounded profile-capture tools,
+# the Stage 3 analytical tools (change_point / smoothed_average), the
+# pre-registered lagged-association tool ``correlate``, the three trace tools
+# (the trace IS the supported agent workflow), rolling_mean + paired_t_test,
+# and the two PubMed grounding tools (pubmed_search + pubmed_fetch). They are
+# the ONLY PubMed tools on the surface — no full-text/MeSH/Europe-PMC/Unpaywall/
 # related-article/deep-analysis tools are exposed (see the narrow-surface test).
 # operating-roles slice 1/2 added the four runtime-orchestrator tools
 # (operating_roles / orchestrator_handoff / answer_audit / present_answer),
@@ -234,7 +228,7 @@ _DEFAULT_TOOLS = sorted(
     ]
 )
 
-# WP03: operator surface = default tools + query_warehouse (exactly one extra).
+# Operator surface = default tools + query_warehouse (exactly one extra).
 _OPERATOR_TOOLS = sorted(_DEFAULT_TOOLS + ["query_warehouse"])
 
 
@@ -250,7 +244,7 @@ def test_build_server_registers_expected_tools() -> None:
 
 
 def test_default_surface_exposes_exactly_two_pubmed_tools() -> None:
-    """WP03: the default surface exposes exactly pubmed_search and pubmed_fetch."""
+    """The default surface exposes exactly pubmed_search and pubmed_fetch."""
     from premura.mcp.entrypoint import build_server
 
     async def run() -> None:
@@ -265,7 +259,7 @@ def test_default_surface_exposes_exactly_two_pubmed_tools() -> None:
 
 
 def test_default_surface_excludes_broad_pubmed_tools() -> None:
-    """WP03: guard against accidentally exposing a broad third-party PubMed surface.
+    """Guard against accidentally exposing a broad third-party PubMed surface.
 
     Only the two contracted grounding tools may appear. Out-of-scope capabilities
     (full-text fetch, deep paper analysis, MeSH lookup, Europe PMC search,
@@ -375,7 +369,7 @@ def test_stdio_mcp_server_exposes_tools(tmp_path: Path) -> None:
             async with ClientSession(read_stream, write_stream) as session:
                 await session.initialize()
                 tools = await session.list_tools()
-                # WP03: default surface no longer includes query_warehouse.
+                # Default surface no longer includes query_warehouse.
                 assert sorted(tool.name for tool in tools.tools) == _DEFAULT_TOOLS
 
                 metrics = await session.call_tool("list_metrics", {"limit": 2})
@@ -386,7 +380,7 @@ def test_stdio_mcp_server_exposes_tools(tmp_path: Path) -> None:
                 summary = await session.call_tool("metric_summary", {"metric_id": "weight"})
                 assert summary.isError is False
                 assert summary.structuredContent is not None
-                # WP02: new payload carries validity fields, not raw measurement_count.
+                # New payload carries validity fields, not raw measurement_count.
                 assert summary.structuredContent["summary"]["validity_status"] in (
                     "current",
                     "stale",

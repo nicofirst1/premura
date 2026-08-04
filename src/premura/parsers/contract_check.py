@@ -1,7 +1,7 @@
-"""Runtime contract checker (FR-050 / FR-061 / FR-063).
+"""Runtime contract checker.
 
 The minimal runtime-valid checker that does not exist elsewhere: a **pure
-function over captured evidence** so the grader (WP05) can *recompute* the
+function over captured evidence** so the grader can *recompute* the
 runtime-valid subset of ``parsers/CONTRACT.md`` and never *trust* a precomputed
 flag.
 

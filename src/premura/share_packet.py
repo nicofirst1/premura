@@ -26,7 +26,7 @@ free-text fields instead and only ever surfaces closed-vocabulary bookkeeping
 (``kind``, ``status``, counts) plus fabricated illustrative content.
 
 Fabricated content (structural's small illustrations, synthetic_example's one
-full record) reuses the harness fixture generator's seams (FR-3): a
+full record) reuses the harness fixture generator's seams: a
 seed-driven ``random.Random`` and canonical metric ids read from the committed
 ``dim_metric.yaml`` registry at call time (:func:`premura.harness.fixture_gen.
 registry_metric_ids`) — never a hand-maintained metric list here. The seed
@@ -49,7 +49,7 @@ from .ui import improvement_kinds
 #: The draft's three sharing levels, adopted unchanged.
 SHARE_PACKET_LEVELS: frozenset[str] = frozenset({"minimal", "structural", "synthetic_example"})
 
-#: The FR-4 two-acts-split seam: every packet carries this notice verbatim so
+#: The two-acts-split seam: every packet carries this notice verbatim so
 #: it is legible wherever the packet is read that producing it is not posting
 #: it. Posting (an actual GitHub write) is a separate, explicitly
 #: human-approved act this module contains no code path for.

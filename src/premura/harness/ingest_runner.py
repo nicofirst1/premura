@@ -10,8 +10,8 @@ Contract: the stdout JSON conforms EXACTLY to
 ``contracts/ingest-outcome-envelope.schema.json`` (``additionalProperties:false``)
 — raw measured evidence, no verdict.
 
-**Single-writer rule (FR-021):** this runner NEVER opens or writes the session
-log. It only *returns* its outcome via stdout; the parent harness (WP06/WP07) is
+**Single-writer rule:** this runner NEVER opens or writes the session
+log. It only *returns* its outcome via stdout; the parent harness is
 the sole session-log writer. Nothing in this module imports the session-log
 store.
 """
@@ -105,7 +105,7 @@ def run(*, source: Path, parser_spec: str, warehouse: Path) -> dict[str, Any]:
 
         # A parser may return a bare IngestBatch (observation-only, today's
         # parsers) or a ParseOutput carrying observation and/or intake; the
-        # single dispatch helper routes each to its seam (FR-007).
+        # single dispatch helper routes each to its seam.
         #
         # parse stage — a raise here (parser.parse or normalize dispatch) is the
         # `parse:` intake stage; tag it so the grader knows the shape was wrong.

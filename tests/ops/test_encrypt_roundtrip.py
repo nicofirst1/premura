@@ -1,4 +1,4 @@
-"""FR-6 regression: encrypt → decrypt round-trip with a per-test age keypair."""
+"""Regression: encrypt → decrypt round-trip with a per-test age keypair."""
 
 from __future__ import annotations
 

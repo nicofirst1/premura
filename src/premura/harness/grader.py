@@ -1,41 +1,40 @@
-"""Deterministic three-rule grader — the heart of the honesty rail (FR-060..065).
+"""Deterministic three-rule grader — the heart of the honesty rail.
 
 ``grade(...)`` reads three sources of ground truth and **recomputes** a verdict;
-it never trusts a parser/runner self-report for a fact it can derive itself
-(FR-061 / NFR-006):
+it never trusts a parser/runner self-report for a fact it can derive itself:
 
 * the **sandbox warehouse** (boundary truth) — actual loaded row counts and which
   keys actually landed in the drawer's ``hp.fact_*`` tables;
-* the **committed fixture manifest** (``fixture_fields.yaml``, ground truth, D6) —
+* the **committed fixture manifest** (``fixture_fields.yaml``, ground truth) —
   the complete enumeration of source fields and their distinct canonical metric;
-* the **captured ingest provenance** (WP01 store / WP03 envelope) — the captured
+* the **captured ingest provenance** (session-log store / ingest envelope) — the captured
   ``declared_metrics`` / ``emitted_metric_ids`` sets and the parser's *claims*
   (``unmapped_metrics`` / ``skipped_rows``), plus the loader-measured
   ``rows_inserted`` and the ``ingest_run`` step status.
 
 The three rules:
 
-1. ``loaded`` (FR-062) — a positive warehouse row count (boundary truth from the
+1. ``loaded`` — a positive warehouse row count (boundary truth from the
    scenario's strategy) that is consistent with the logged ``rows_inserted``.
-2. ``runtime_valid`` (FR-063) — the strategy's runtime-contract check over the
+2. ``runtime_valid`` — the strategy's runtime-contract check over the
    CAPTURED sets + the sandbox warehouse; never a stored ``contract_pass`` flag.
-3. ``honest_about_gaps`` (FR-064 / D6) — the strategy reconciles every manifest
+3. ``honest_about_gaps`` — the strategy reconciles every manifest
    source field against (a) its distinct canonical metric being **present in the
    warehouse** or (b) the field being **declared** in the parser's
    ``unmapped_metrics`` / ``skipped_rows``. A field that is neither is a *silent
    drop* and fails honesty.
 
 All three rules are computed via an injected
-:class:`premura.harness.scenario.DrawerGradingStrategy` (FR-001 / NFR-005): the
+:class:`premura.harness.scenario.DrawerGradingStrategy`: the
 shared ``grade()`` body names **no** drawer, table, or scenario. The observation
 strategy is the default, so existing call sites keep observation behavior
-**byte-for-byte** (C-004).
+**byte-for-byte**.
 
 The returned verdict conforms EXACTLY to ``contracts/grader-verdict.schema.json``
 (``additionalProperties: false`` everywhere, all arrays sorted, **no ids/
-timestamps**), so two runs over the same evidence produce a byte-identical verdict
-(D5 / NFR-001). The grader is the **sole** producer of ``contract_pass`` (FR-065):
-the caller (WP06/WP07) persists ``verdict["rules"]["runtime_valid"]["passed"]`` via
+timestamps**), so two runs over the same evidence produce a byte-identical verdict.
+The grader is the **sole** producer of ``contract_pass``:
+the caller persists ``verdict["rules"]["runtime_valid"]["passed"]`` via
 ``record_ingest_provenance(contract_pass=...)``.
 """
 
@@ -59,7 +58,7 @@ def _default_load_axis(
     logged_rows_inserted: int,
     provenance: IngestProvenance,  # noqa: ARG001 - default axis ignores provenance
 ) -> dict[str, Any]:
-    """The default ``loaded`` rule: honest ⇒ rows landed (FR-062).
+    """The default ``loaded`` rule: honest ⇒ rows landed.
 
     ``passed`` iff a positive warehouse row count consistent with the logged
     ``rows_inserted``. This is the observation/intake polarity. A scenario whose
@@ -98,12 +97,12 @@ def grade(
     fixture_manifest: dict[str, Any],
     strategy: DrawerGradingStrategy | None = None,
 ) -> dict[str, Any]:
-    """Recompute the three-rule verdict from ground truth (FR-060..064).
+    """Recompute the three-rule verdict from ground truth.
 
     The body is drawer-generic: every drawer-specific fact (which warehouse
     tables hold boundary truth, which runtime-contract clauses apply, how the
     manifest reconciles to the gap set) comes from ``strategy``. The body names
-    no drawer, table, or scenario (NFR-005).
+    no drawer, table, or scenario.
 
     Args:
         provenance: the CAPTURED ingest evidence (declared/emitted sets, parser
@@ -113,18 +112,18 @@ def grade(
             ``loaded`` count, the ``dim_metric`` existence clause, and the
             "metric present" honesty witness. Read-only is sufficient.
         fixture_manifest: the parsed committed manifest (``fixture_fields.yaml``),
-            the honesty ground truth (D6).
+            the honesty ground truth.
         strategy: the scenario's :class:`DrawerGradingStrategy`. Defaults to the
             observation strategy so existing call sites keep observation behavior
-            byte-for-byte (C-004).
+            byte-for-byte.
 
     Returns:
         A plain dict conforming to ``contracts/grader-verdict.schema.json``:
         ``{"passed": bool, "rules": {"loaded": ..., "runtime_valid": ...,
         "honest_about_gaps": ...}}``. All arrays sorted; **no ids, no timestamps** —
-        so two runs over the same evidence serialize byte-identically (D5/NFR-001).
+        so two runs over the same evidence serialize byte-identically.
         ``rules.runtime_valid.passed`` is the grader's recomputed runtime-subset
-        result that the caller persists as ``contract_pass`` (FR-065); the grader is
+        result that the caller persists as ``contract_pass``; the grader is
         its sole producer.
     """
     if strategy is None:
@@ -170,7 +169,7 @@ def grade_garbage_refusal(
     registered scenario (whose honest outcome is a positive row count). Sharing
     that inversion through a second grading entry point - rather than a
     conditional inside :func:`grade`'s body - keeps the shared path scenario-
-    agnostic (NFR-005) while still letting the caller reach a genuinely different
+    agnostic while still letting the caller reach a genuinely different
     verdict rule for the one scenario that needs it.
 
     Returns the same verdict shape as :func:`grade` (``contracts/grader-verdict.schema.json``).

@@ -1,29 +1,29 @@
-"""WP05 — end-to-end acceptance fixtures for the spec-named edge cases (D7).
+"""End-to-end acceptance fixtures for the spec-named edge cases.
 
 Each spec-named edge case gets ONE owning end-to-end fixture that drives the real
 cheap-model run entry point with a deterministic **injected fake operator** — so
 all three run in the DEFAULT suite (no ``live_trial`` marker, no model server).
-This closes the D7 coverage gap that lived *between* WP02's unit test of the
-synthetic-only persist guard and WP03's happy path: the edge cases were covered
+This closes the coverage gap that lived *between* the unit test of the
+synthetic-only persist guard and the happy path: the edge cases were covered
 only in isolation or in prose, never exercised through the run entry point itself.
 
 The three spec edge cases owned here (spec.md "Edge cases", ~lines 70-78):
 
-* **Real-data no-persist** (FR-012 / NFR-002 / C-001) — a run over a source that
+* **Real-data no-persist** — a run over a source that
   classifies as NON-synthetic persists NOTHING: no kept run dir, no scoreboard
   line. We simulate "real data" with a temp CSV that merely classifies as
-  non-synthetic — never the real dump path (C-001 / C-003).
-* **Operator never succeeds within the cap** (FR-002) — the operator exhausts
+  non-synthetic — never the real dump path.
+* **Operator never succeeds within the cap** — the operator exhausts
   ``max_tries`` without passing; the run completes normally and records a
   legitimate capability-floor FAIL. Cap exhaustion is NOT an exception.
-* **Model server unavailable** (NFR-001) — with the model endpoint forced
+* **Model server unavailable** — with the model endpoint forced
   unreachable and the DEFAULT operator, the run returns the defined
   ``model_unavailable`` outcome (a returnable sentinel) and persists nothing —
   it does NOT hang and does NOT raise into the suite.
 
 Note on the import style: the cheap-model harness + sandbox modules are loaded via
 :func:`importlib.import_module` with string concatenation rather than literal
-``from ... import`` lines. The committed NFR-005 default-gate guard
+``from ... import`` lines. The committed default-gate guard
 (``test_live_trial_seam.py``) text-scans every OTHER test module for the harness
 import/call substrings (and the real-dump path) to prove the gating harness is
 referenced only from the seam test; this DEFAULT-collected module deliberately
@@ -45,7 +45,7 @@ if TYPE_CHECKING:
     from premura.harness.sandbox import Sandbox
 
 # Loaded dynamically (see module docstring): keeps the harness import/call
-# substrings out of this file's text so the committed NFR-005 default-gate guard
+# substrings out of this file's text so the committed default-gate guard
 # stays an accurate witness, while these tests still run in the DEFAULT gate
 # (no marker) because the injected fake operator needs no model server.
 _OLLAMA_MODULE_NAME = "premura.harness." + "live_trial_" + "ollama"
@@ -57,7 +57,7 @@ scoreboard_mod = importlib.import_module(_SCOREBOARD_MODULE_NAME)
 # call substring never appears in this module's text (default-gate guard).
 _run_entry = getattr(lto, "run_" + "live_trial_ollama")
 
-# The committed reference parser sources WP07 ships (a known-good HONEST parser
+# The committed reference parser sources ships (a known-good HONEST parser
 # and an adversary that raises). The fake operators install these as the
 # operator's authored parser — exactly the edit the real cheap-model operator
 # makes — so no model server is needed.
@@ -99,7 +99,7 @@ class _InjectedFakeOperator:
 
     Satisfies the slice-one ``Operator`` protocol AND the extra surface the run
     entry point reads back (``tries_used`` / ``attempts`` / ``first_attempt_code``),
-    so it drops straight into the WP03 ``operator=`` injection seam and lets the
+    so it drops straight into the ``operator=`` injection seam and lets the
     end-to-end run drive through the unchanged lower machinery WITHOUT a server.
 
     ``parser_src`` chooses the outcome deterministically: the HONEST reference
@@ -115,7 +115,7 @@ class _InjectedFakeOperator:
         self.model_id = model
         self.tries_used = tries_used
         # Attempt-1 code is the same installed parser (un-nagged); the run entry
-        # point re-grades it independently through the same machinery (FR-014).
+        # point re-grades it independently through the same machinery.
         self.attempts: list[Any] = []
 
     @property
@@ -166,18 +166,18 @@ def _run_dirs(runs_dir: Path) -> list[Path]:
 
 
 # --------------------------------------------------------------------------- #
-# T020 — Real-data no-persist (end-to-end): a non-synthetic source persists NOTHING.
+# Real-data no-persist (end-to-end): a non-synthetic source persists NOTHING.
 # --------------------------------------------------------------------------- #
 
 
 def test_real_data_run_persists_nothing_end_to_end(
     tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """FR-012 / NFR-002: a run over a NON-synthetic source keeps no run dir, no line.
+    """A run over a NON-synthetic source keeps no run dir, no line.
 
     Drives the full run entry point with a SUCCEEDING injected fake operator over a
     temp CSV that classifies as non-synthetic (``is_synthetic_source`` is False) —
-    simulating real operator data WITHOUT touching the real dump (C-001 / C-003).
+    simulating real operator data WITHOUT touching the real dump.
     The run completes with a verdict, yet the synthetic-only persist guard means
     the run entry point keeps ZERO run dirs and appends ZERO scoreboard lines.
     """
@@ -209,14 +209,14 @@ def test_real_data_run_persists_nothing_end_to_end(
 
 
 # --------------------------------------------------------------------------- #
-# T021 — Operator never succeeds within the cap (end-to-end): a recorded FAIL.
+# Operator never succeeds within the cap (end-to-end): a recorded FAIL.
 # --------------------------------------------------------------------------- #
 
 
 def test_cap_exhaustion_records_fail_not_crash_end_to_end(
     tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """FR-002: cap exhaustion yields a recorded three-rule FAIL, never an exception.
+    """Cap exhaustion yields a recorded three-rule FAIL, never an exception.
 
     Drives the run entry point with an injected fake operator that ALWAYS fails
     (installs a parser whose ``parse()`` raises) and reports ``tries_used`` equal
@@ -256,14 +256,14 @@ def test_cap_exhaustion_records_fail_not_crash_end_to_end(
 
 
 # --------------------------------------------------------------------------- #
-# T022 — Model server unavailable (the outcome itself): the returnable sentinel.
+# Model server unavailable (the outcome itself): the returnable sentinel.
 # --------------------------------------------------------------------------- #
 
 
 def test_model_unavailable_returns_sentinel_not_crash(
     tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """NFR-001: an unreachable model server yields the defined outcome, never a crash.
+    """An unreachable model server yields the defined outcome, never a crash.
 
     Forces unavailability deterministically (the availability probe returns False,
     and the raw client call raises ``OllamaUnavailableError``) and uses the DEFAULT
@@ -278,7 +278,7 @@ def test_model_unavailable_returns_sentinel_not_crash(
     monkeypatch.setattr(lto, "ollama_available", lambda: False)
 
     def _raise_unavailable(*_args: Any, **_kwargs: Any) -> str:
-        raise lto.OllamaUnavailableError("forced unavailable for the WP05 edge case")
+        raise lto.OllamaUnavailableError("forced unavailable for the edge case")
 
     monkeypatch.setattr(lto, "_ollama", _raise_unavailable)
 
@@ -298,7 +298,7 @@ def test_model_unavailable_returns_sentinel_not_crash(
 
 
 def test_nonlocal_ollama_url_is_rejected() -> None:
-    """C-003: the live-trial model backend stays local-only even via env/config."""
+    """The live-trial model backend stays local-only even via env/config."""
     with pytest.raises(lto.OllamaUnavailableError, match="local-only"):
         lto._validated_ollama_url("http://example.com/api/generate")
 
@@ -311,7 +311,7 @@ def test_nonlocal_ollama_url_is_rejected() -> None:
 def test_keep_sandboxes_does_not_retain_real_data_sandbox(
     tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """FR-004 / NFR-002: keep_sandboxes is honored ONLY for a synthetic source.
+    """Keep_sandboxes is honored ONLY for a synthetic source.
 
     A kept sandbox holds the parsed source, so retaining one for a NON-synthetic
     source would leave the operator's real local data on disk after the run — the
@@ -352,7 +352,7 @@ def test_keep_sandboxes_does_not_retain_real_data_sandbox(
 def test_keep_sandboxes_retains_synthetic_sandbox(
     tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """FR-004: the inspection knob actually works for the SYNTHETIC fixture.
+    """The inspection knob actually works for the SYNTHETIC fixture.
 
     Positive control for the guard above: with a synthetic source and
     ``keep_sandboxes=True`` the kept-sandbox trees survive on the returned outcome
@@ -381,7 +381,7 @@ def test_keep_sandboxes_retains_synthetic_sandbox(
 def test_malformed_local_response_is_unavailable_not_crash(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """NFR-001: a non-JSON local response yields ``ollama_available() is False``.
+    """A non-JSON local response yields ``ollama_available is False``.
 
     The availability probe narrows its ``except`` to ``OllamaUnavailableError``, so
     the raw client must wrap a garbled (non-JSON) local response as that sentinel
@@ -403,7 +403,7 @@ def test_malformed_local_response_is_unavailable_not_crash(
 
 
 # --------------------------------------------------------------------------- #
-# WP3 — opt-in post-run judge step (judge-ai m3 FR-5). Default OFF; failure of
+# WP3 — opt-in post-run judge step (judge-ai m3 ). Default OFF; failure of
 # any kind must never flip the trial verdict or raise out of the harness.
 # --------------------------------------------------------------------------- #
 
@@ -426,7 +426,7 @@ def _count_judgments(session_log_path: Path, session_id: str) -> int:
 def test_judge_off_by_default_leaves_zero_judgments(
     tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """FR-5: the post-run judge step is OFF by default — a run with the flag unset
+    """The post-run judge step is OFF by default — a run with the flag unset
     leaves ZERO log_judgment rows and an unchanged verdict."""
     runs_dir = Path(tmp_path) / "runs"  # type: ignore[arg-type]
     scoreboard_path = runs_dir / "scoreboard.jsonl"
@@ -449,7 +449,7 @@ def test_judge_off_by_default_leaves_zero_judgments(
 def test_judge_on_records_one_judgment_and_keeps_verdict(
     tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """FR-5: with the opt-in flag ON and a scripted transport, the run records
+    """With the opt-in flag ON and a scripted transport, the run records
     exactly one log_judgment row over the just-recorded session WITHOUT changing
     the trial verdict."""
     runs_dir = Path(tmp_path) / "runs"  # type: ignore[arg-type]
@@ -489,7 +489,7 @@ def test_judge_on_records_one_judgment_and_keeps_verdict(
 def test_judge_failure_never_flips_verdict_or_raises(
     tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """FR-5 (regression): a judge transport that RAISES an unexpected error must
+    """(regression): a judge transport that RAISES an unexpected error must
     not raise out of the harness and must not change the trial verdict. The run
     completes normally; an honest judgment row (or none) is the only effect."""
     runs_dir = Path(tmp_path) / "runs"  # type: ignore[arg-type]
@@ -520,7 +520,7 @@ def test_judge_failure_never_flips_verdict_or_raises(
 
 
 # --------------------------------------------------------------------------- #
-# WP3 — opt-in post-run improvement hook (improvement-hook m4 FR-6). Default OFF;
+# WP3 — opt-in post-run improvement hook (improvement-hook m4 ). Default OFF;
 # guarded like the judge; improve_run without judge_run is a loud ValueError.
 # --------------------------------------------------------------------------- #
 
@@ -554,7 +554,7 @@ def _weak_verdict_transport(criterion_ids: tuple[str, ...]) -> object:
 def test_improve_off_by_default_leaves_zero_proposals(
     tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """FR-6: the post-run improvement step is OFF by default — a run with both
+    """The post-run improvement step is OFF by default — a run with both
     flags unset leaves ZERO log_improvement rows and an unchanged verdict."""
     runs_dir = Path(tmp_path) / "runs"  # type: ignore[arg-type]
     scoreboard_path = runs_dir / "scoreboard.jsonl"
@@ -578,7 +578,7 @@ def test_improve_off_by_default_leaves_zero_proposals(
 def test_improve_without_judge_is_a_loud_value_error(
     tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """FR-6: improve_run without judge_run is a loud ValueError at entry — the hook
+    """Improve_run without judge_run is a loud ValueError at entry — the hook
     has nothing to consume, so it fails fast rather than silently doing nothing."""
     runs_dir = Path(tmp_path) / "runs"  # type: ignore[arg-type]
     scoreboard_path = runs_dir / "scoreboard.jsonl"
@@ -596,7 +596,7 @@ def test_improve_without_judge_is_a_loud_value_error(
 def test_improve_on_records_proposals_and_keeps_verdict(
     tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """FR-6: with judge_run + improve_run both ON and a scripted weak-banding judge,
+    """With judge_run + improve_run both ON and a scripted weak-banding judge,
     the run records open improvement proposals over the just-recorded session
     WITHOUT changing the trial verdict, and the proposals read back open."""
     runs_dir = Path(tmp_path) / "runs"  # type: ignore[arg-type]
@@ -635,7 +635,7 @@ def test_improve_on_records_proposals_and_keeps_verdict(
 def test_improve_failure_never_flips_verdict_or_raises(
     tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """FR-6 (regression): a bug in the improvement scan must not raise out of the
+    """(regression): a bug in the improvement scan must not raise out of the
     harness and must not change the trial verdict. The run completes normally."""
     runs_dir = Path(tmp_path) / "runs"  # type: ignore[arg-type]
     scoreboard_path = runs_dir / "scoreboard.jsonl"

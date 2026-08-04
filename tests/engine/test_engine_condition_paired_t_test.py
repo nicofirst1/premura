@@ -258,7 +258,7 @@ def test_tool_registers_against_the_contract() -> None:
 
 
 # ===========================================================================
-# Available envelope completeness (FR-3)
+# Available envelope completeness
 # ===========================================================================
 
 
@@ -578,7 +578,7 @@ def test_flags_life_event_sensitive() -> None:
 
 
 # ===========================================================================
-# NFR-2 — engine isolation (condition-specific: consumes the condition seam)
+# engine isolation (condition-specific: consumes the condition seam)
 # ===========================================================================
 
 
@@ -591,7 +591,7 @@ def test_tool_consumes_the_condition_seam() -> None:
 
 
 # ===========================================================================
-# NFR-4 — paired_t_test public behavior byte-for-byte unchanged
+# paired_t_test public behavior byte-for-byte unchanged
 # ===========================================================================
 
 

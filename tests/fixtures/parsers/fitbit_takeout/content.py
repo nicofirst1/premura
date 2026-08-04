@@ -194,7 +194,7 @@ def member_names() -> list[str]:
 
     Lives here rather than in the test module so the test file never has to name
     the real dump-root token, which a cross-test invariant forbids in
-    ``test_*.py`` (see ``test_live_trial_seam`` C-003 / NFR-005).
+    ``test_*.py`` (see ``test_live_trial_seam``).
     """
     return [f"{ROOT}/{USER}/{rel}" for rel in MEMBERS]
 

@@ -1,4 +1,4 @@
-"""WP01 — manifest-blind self-reconciliation gate (FR-003 / C-005).
+"""Manifest-blind self-reconciliation gate.
 
 Default-collected (no model server). Proves the gate:
 
@@ -50,7 +50,7 @@ def _batch(*, unmapped: list[str], skipped: list[str] | None = None) -> IngestBa
 
 
 # --------------------------------------------------------------------------- #
-# T003.1 — honest parser passes; ground set comes from the file header.
+# Honest parser passes; ground set comes from the file header.
 # --------------------------------------------------------------------------- #
 
 
@@ -68,7 +68,7 @@ def test_honest_parser_passes() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T003.2 — silent drop fails: a column neither mapped nor declared is caught.
+# Silent drop fails: a column neither mapped nor declared is caught.
 # --------------------------------------------------------------------------- #
 
 
@@ -83,7 +83,7 @@ def test_silent_drop_fails() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T003.3 — loophole closed: the ground set is the FILE header, not the columns
+# Loophole closed: the ground set is the FILE header, not the columns
 # the parser read. A parser that simply ignores `confidence` (never maps it,
 # never declares it) must fail even though its own batch looks clean.
 # --------------------------------------------------------------------------- #
@@ -124,7 +124,7 @@ def test_empty_or_headerless_file_is_not_a_silent_pass(tmp_path: Path) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T003.4 — grader equivalence on the committed fixture.
+# Grader equivalence on the committed fixture.
 #
 # The gate reads the header; the grader reads the manifest + warehouse. For the
 # honest batch both must agree. We build the minimal warehouse view the grader's

@@ -5,16 +5,16 @@ Resolves a declared ``supplement_intake`` dependency against the dedicated
 ``004_profile_intake.sql``). Domain meaning: a supplement intake is a
 *supplement-taking occurrence* naming a product and/or ingredient — never a body
 observation. This resolver reads the supplement intake tables only; it never
-falls back to ``hp.fact_measurement`` or any other domain (NFR-003).
+falls back to ``hp.fact_measurement`` or any other domain.
 
 Like the nutrition resolver, this one stays **generic**: it turns a
 caller-declared supplement *matcher* + window into a domain-level payload
 (distinct logged days + coverage + freshness basis). It does **not** compute an
 adherence verdict ("K of N days is good/bad") — that is the supplement-adherence
-signal's job (WP04). Resolvers supply declared inputs; signals own the answer.
+signal's job. Resolvers supply declared inputs; signals own the answer.
 
-Matcher semantics — pinned here once (C-007 "guide, don't enumerate"). WP04,
-WP05, and WP06 reference this single definition and never re-invent it:
+Matcher semantics — pinned here once ("guide, don't enumerate"). Every
+downstream layer references this single definition and never re-invents it:
 
 * **No hardcoded supplement list.** The caller declares the matcher; the
   resolver never enumerates known supplements.
@@ -30,7 +30,7 @@ WP05, and WP06 reference this single definition and never re-invent it:
   the item to count. This lets a caller narrow ("vitamin d3") without enumerating
   brand names.
 
-Day basis (NFR-006): every event carries a naive-UTC ``ts_utc`` and an optional
+Day basis: every event carries a naive-UTC ``ts_utc`` and an optional
 ``local_tz``. When ``local_tz`` is present and parseable, each event is bucketed
 by its **local calendar day** via the shared
 :func:`premura.engine._localtime.local_calendar_day` converter; otherwise the
@@ -119,7 +119,7 @@ def matches_supplement(
     this module's docstring: case-insensitive substring, product label then
     ingredient label, multiple whitespace-separated tokens combined as AND.
 
-    Exposed (not underscore-prefixed) so WP04/WP05/WP06 reuse this exact rule
+    Exposed (not underscore-prefixed) so downstream layers reuse this exact rule
     rather than re-deriving it.
     """
     tokens = matcher.casefold().split()
@@ -144,7 +144,7 @@ def resolve_supplement_intake(
 
     * No matching supplement event in the window → ``usable=False,
       absence_reason="missing"``. **No fallback** into any other domain is
-      attempted (NFR-003).
+      attempted.
     * Otherwise → ``usable=True`` with the generic logged-days payload
       (``matcher``, ``window_days``, ``logged_days``, ``logged_day_count``,
       ``window_day_count``, ``latest_logged_at``, ``freshness_state``,

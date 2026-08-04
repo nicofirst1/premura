@@ -1,6 +1,6 @@
-"""WP05 — default MCP surface for the finished analytical tool set.
+"""Default MCP surface for the finished analytical tool set.
 
-These lock FR-010 / C-005 at the MCP boundary for the two newly published
+These lock the contract at the MCP boundary for the two newly published
 tools (``rolling_mean`` and ``paired_t_test``):
 
 * the DEFAULT agent-safe surface (and the operator surface, which inherits the
@@ -54,9 +54,9 @@ def _ensure_live_analytical_registry() -> None:
         build_operator_server = entrypoint.build_operator_server
 
 
-# WP05 adds rolling_mean + paired_t_test to the prior sixteen default tools;
+# rolling_mean + paired_t_test are added to the prior sixteen default tools;
 # pubmed-grounding-tools later adds pubmed_search + pubmed_fetch (-> 20).
-# usable-intake-dimensions WP05 adds the two intake signal tools
+# usable-intake-dimensions adds the two intake signal tools
 # (supplement_intake_adherence + nutrition_intake_trend) -> 22.
 # m8 adds condition_paired_t_test (the condition-label pairing extension) -> 23.
 # operating-roles slice 3 adds the private local improvement-queue tools
@@ -419,7 +419,7 @@ def test_paired_t_test_rejects_bad_anchor_date(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# 4. Static guard: neither wrapper performs statistics in the MCP layer (C-005).
+# 4. Static guard: neither wrapper performs statistics in the MCP layer.
 # ---------------------------------------------------------------------------
 
 

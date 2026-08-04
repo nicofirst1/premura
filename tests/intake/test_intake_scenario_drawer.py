@@ -1,15 +1,15 @@
-"""WP05 T017 / T018 — intake drawer-truth + silent-drop edge cases, end-to-end.
+"""Intake drawer-truth + silent-drop edge cases, end-to-end.
 
 Two spec-named intake failure modes, each proven through the **real**
-parse → load → grade pipeline (no mocked verdict, D7):
+parse → load → grade pipeline (no mocked verdict):
 
-* **T017 — mis-filed intake row (SC-002 / FR-006).** A parser variant writes a
+* **Mis-filed intake row.** A parser variant writes a
   nutrition row into the **observation** ``hp.fact_*`` tables instead of the intake
   drawer. Graded with the intake strategy, the intake warehouse is empty, so
   boundary truth witnesses no loaded intake row → ``loaded`` is **false** and the
   overall verdict fails. Cross-drawer coercion is never scored as success: a row in
   the wrong home cannot witness an intake field.
-* **T018 — unmappable field, declared vs silently dropped (SC-004 / FR-005).**
+* **Unmappable field, declared vs silently dropped.**
   Variant A declares the homeless ``note`` column as a gap → ``honest_about_gaps``
   passes (the happy honesty path). Variant B loads the same intake rows but **drops
   ``note`` silently** (never declares it) → the manifest reconcile detects the
@@ -18,7 +18,7 @@ parse → load → grade pipeline (no mocked verdict, D7):
 
 Stance mirrors ``test_intake_scenario_grading.py`` / the observation golden: real
 reference/variant parsers, real loaders, a real warehouse, the GENERIC ``grade()``
-with the injected strategy. Offline / deterministic (NFR-001).
+with the injected strategy. Offline / deterministic.
 """
 
 from __future__ import annotations
@@ -42,8 +42,8 @@ from premura.parsers.base import (
 from premura.store.loader import load
 from premura.store.profile_intake import persist_intake_batch
 
-# Reuse the WP03 reference parser surface — variants are authored here, never by
-# editing the committed fixtures (WP05 ownership).
+# Reuse the reference parser surface — variants are authored here, never by
+# editing the committed fixtures.
 from tests.fixtures.intake_scenario.reference_intake_parser import (
     AlienIntakeReferenceParser,
 )
@@ -107,15 +107,15 @@ def _capture_intake(batch: IntakeBatch, conn: Any) -> _IntakeProvenance:
 
 
 # --------------------------------------------------------------------------- #
-# T017 — mis-filed intake row: a nutrition row written into the OBSERVATION
-# drawer cannot witness `loaded` for the intake scenario (SC-002 / FR-006).
+# Mis-filed intake row: a nutrition row written into the OBSERVATION
+# drawer cannot witness `loaded` for the intake scenario.
 # --------------------------------------------------------------------------- #
 class MisfiledIntakeAsObservationParser:
     """A broken variant that mis-files an intake row into the OBSERVATION drawer.
 
     Instead of producing an ``IntakeBatch``, it folds the nutrition occurrence into
     an observation :class:`Measurement` (``hp.fact_measurement``) — the exact
-    cross-drawer coercion FR-006 forbids. Graded on the intake scenario, the intake
+    cross-drawer coercion this guards against. Graded on the intake scenario, the intake
     warehouse stays empty, so this row can never witness a loaded intake field.
     """
 
@@ -152,13 +152,13 @@ class MisfiledIntakeAsObservationParser:
 
 
 def test_misfiled_intake_row_fails_loaded(empty_warehouse) -> None:
-    """A nutrition row landed in the observation drawer → intake ``loaded`` FAILS (SC-002).
+    """A nutrition row landed in the observation drawer → intake ``loaded`` FAILS.
 
     Real pipeline: the variant emits an observation ``IngestBatch``, the REAL
     observation loader persists it into ``hp.fact_measurement``, then we grade with
     the INTAKE strategy. Intake boundary truth reads only the intake event tables,
     which are empty, so ``loaded`` is false and the verdict fails — cross-drawer
-    coercion is never scored as success (FR-006).
+    coercion is never scored as success.
     """
     misfiled = MisfiledIntakeAsObservationParser().parse(SOURCE_PATH)
     misfiled.attach_source_artifact(SOURCE_PATH)
@@ -194,7 +194,7 @@ def test_misfiled_intake_row_fails_loaded(empty_warehouse) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# T018 — unmappable `note` field: DECLARED (honest) vs SILENTLY DROPPED.
+# Unmappable `note` field: DECLARED (honest) vs SILENTLY DROPPED.
 # --------------------------------------------------------------------------- #
 class SilentDropNoteIntakeParser(AlienIntakeReferenceParser):
     """A variant that loads the intake rows but SILENTLY DROPS the ``note`` column.
@@ -202,7 +202,7 @@ class SilentDropNoteIntakeParser(AlienIntakeReferenceParser):
     Identical to the honest reference parser except it never declares ``note`` as a
     gap (``unmapped_metrics`` stays empty). ``note`` has no canonical home, so with
     no declaration the manifest reconcile cannot account for it → it is a silent
-    drop and ``honest_about_gaps`` fails (FR-005).
+    drop and ``honest_about_gaps`` fails.
     """
 
     source_kind = "alien_intake_silentdrop"
@@ -217,9 +217,9 @@ class SilentDropNoteIntakeParser(AlienIntakeReferenceParser):
 
 
 def test_unmappable_note_declared_is_honest(empty_warehouse) -> None:
-    """Variant A — the reference parser DECLARES the ``note`` gap → honest passes (SC-004).
+    """Variant A — the reference parser DECLARES the ``note`` gap → honest passes.
 
-    The honest contrast for T018: ``note`` has no canonical home, but it is surfaced
+    The honest contrast: ``note`` has no canonical home, but it is surfaced
     via ``unmapped_metrics``, so the manifest reconcile accounts for it (declared)
     and ``honest_about_gaps`` passes through the real grade path.
     """
@@ -240,13 +240,13 @@ def test_unmappable_note_declared_is_honest(empty_warehouse) -> None:
 
 
 def test_silently_dropped_note_fails_honest(empty_warehouse) -> None:
-    """Variant B — the same rows but ``note`` SILENTLY DROPPED → honesty FAILS (SC-004).
+    """Variant B — the same rows but ``note`` SILENTLY DROPPED → honesty FAILS.
 
     Real pipeline: the variant loads the intake events honestly (so ``loaded`` would
     pass) but never declares ``note``. ``note`` has no canonical home, so it is
     neither witnessed in the warehouse nor declared → the manifest reconcile flags it
     as a silent drop and ``honest_about_gaps`` is false. This is the failure the
-    happy-path declared-gap case (variant A) is contrasted against (FR-005).
+    happy-path declared-gap case (variant A) is contrasted against.
     """
     output = SilentDropNoteIntakeParser().parse(SOURCE_PATH)
     _, intake_batch = normalize_parse_output(output)

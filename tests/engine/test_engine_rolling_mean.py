@@ -1,10 +1,10 @@
-"""Tests for the ``rolling_mean`` analytical tool (WP02).
+"""Tests for the ``rolling_mean`` analytical tool.
 
-These exercise ``rolling_mean`` *behind* the WP02 analytical contract and
-*through* the WP03 admissible-input layer, mirroring the proof-tool tests:
+These exercise ``rolling_mean`` *behind* the analytical contract and
+*through* the admissible-input layer, mirroring the proof-tool tests:
 
 * The tool registers against the shared contract registry (importing the module
-  runs the decorator), so WP05's default surface can later discover and dispatch
+  runs the decorator), so the default surface can later discover and dispatch
   it with no per-tool branch. This WP does **not** require default publication.
 * It consumes a prepared :class:`AnalyticalInputSeries`; a refused series is
   surfaced as a refusal envelope rather than computed over.
@@ -193,7 +193,7 @@ def _all_text(envelope_dict: dict) -> str:
 
 
 # ---------------------------------------------------------------------------
-# T006/T008 — registration / contract wiring (integration check)
+# / — registration / contract wiring (integration check)
 # ---------------------------------------------------------------------------
 
 
@@ -221,7 +221,7 @@ def test_rolling_mean_invokes_through_shared_dispatch() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T006 — available envelope shape (FR-002, NFR-003)
+# available envelope shape
 # ---------------------------------------------------------------------------
 
 
@@ -307,7 +307,7 @@ def test_rolling_mean_imputation_visible_in_estimate() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T010 / NFR-001 — determinism
+# / — determinism
 # ---------------------------------------------------------------------------
 
 
@@ -327,7 +327,7 @@ def test_rolling_mean_default_window_applies_when_none_declared() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T007 / FR-003 / NFR-004 — at least 6 distinct refusal classes, no estimate
+# / / — at least 6 distinct refusal classes, no estimate
 # ---------------------------------------------------------------------------
 
 
@@ -384,7 +384,7 @@ def test_refusal_7_no_window_reaches_required_coverage() -> None:
 
 
 def test_refusal_8_auto_window_scan_is_rejected_before_computation() -> None:
-    # FR-014 / C-004: the tool must require one declared hypothesis. Any request
+    # the tool must require one declared hypothesis. Any request
     # that scans alternatives to pick the strongest window is refused with no
     # estimate, before any arithmetic.
     series = _series_from_values([float(v) for v in range(12)])
@@ -412,7 +412,7 @@ def test_six_distinct_refusal_reasons_exist() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T009 — caveats / confounds and forbidden-language assertions
+# caveats / confounds and forbidden-language assertions
 # ---------------------------------------------------------------------------
 
 
@@ -468,7 +468,7 @@ def test_rolling_mean_refusal_text_avoids_forbidden_language() -> None:
 
 
 def test_rolling_mean_caveats_within_length_budget() -> None:
-    # NFR-005: every built-in caveat / refusal message is <= 320 chars.
+    # every built-in caveat / refusal message is <= 320 chars.
     series = _series_from_values([float(v) for v in range(12)], imputed_idx=(0, 1))
     env = rolling_mean(series, window=3)
     for caveat in env.caveats:
@@ -479,7 +479,7 @@ def test_rolling_mean_caveats_within_length_budget() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T010 — no MCP / trace / network coupling, deterministic import
+# no MCP / trace / network coupling, deterministic import
 # ---------------------------------------------------------------------------
 
 

@@ -1,9 +1,9 @@
-"""Built-in Stage 2 evidence-admissibility *defaults* (WP03).
+"""Built-in Stage 2 evidence-admissibility *defaults*.
 
 These are Premura's local **admissibility defaults**, not clinical authority.
 They decide which personal-health evidence is honest to use for which question
 shape — they are not diagnostic rules, treatment guidance, or population norms.
-The evaluator (WP02) owns all branching; everything here is declarative
+The evaluator owns all branching; everything here is declarative
 parameters only (closed enum values, durations, counts, required provenance,
 and plain-English caveat/rationale strings).
 
@@ -63,7 +63,7 @@ _LAGGED_ASSOCIATION_MIN_PAIRED = 20
 # the default refuses. It is deliberately a single shared, family-based value —
 # not a per-metric grid — so the rule stays reviewable. The stricter method-level
 # refusals (e.g. constant paired differences, exact pair-count edge cases) are
-# the paired_t_test tool's job at compute time (WP04), not a density parameter.
+# the paired_t_test tool's job at compute time, not a density parameter.
 _PAIRED_DIFFERENCE_MIN_PAIRS = 8
 
 
@@ -76,7 +76,7 @@ def _paired_difference_rule(*, caveats: tuple[str, ...]) -> QuestionRule:
     recent-run admissibility/freshness posture (a before/after comparison is
     still over a recent daily window) but declares its OWN paired-sample
     sufficiency. Declarative parameters only: the evaluator owns all branching,
-    and method-specific paired refusals belong to the tool layer (WP04).
+    and method-specific paired refusals belong to the tool layer.
     """
     return QuestionRule(
         admissibility=Admissibility.ADMISSIBLE,
@@ -318,7 +318,7 @@ def _serial_average_short_run(
             QuestionType.LEVEL_SHIFT_DETECTION: recent_run_rule,
             QuestionType.SMOOTHED_PATTERN: recent_run_rule,
             # rolling_mean reuses the recent-run admissible substrate; its own
-            # per-point coverage sufficiency is enforced at the tool layer (WP02).
+            # per-point coverage sufficiency is enforced at the tool layer.
             QuestionType.MOVING_WINDOW_PATTERN: recent_run_rule,
             QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=serial_caveat),
             QuestionType.PAIRED_DIFFERENCE: _paired_difference_rule(caveats=serial_caveat),
@@ -398,7 +398,7 @@ def _rolling_recent_pattern(
             QuestionType.LEVEL_SHIFT_DETECTION: recent_pattern_rule,
             QuestionType.SMOOTHED_PATTERN: recent_pattern_rule,
             # rolling_mean reuses the recent-pattern admissible substrate; its
-            # per-point coverage sufficiency is enforced at the tool layer (WP02).
+            # per-point coverage sufficiency is enforced at the tool layer.
             QuestionType.MOVING_WINDOW_PATTERN: recent_pattern_rule,
             QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=coverage_caveat),
             QuestionType.PAIRED_DIFFERENCE: _paired_difference_rule(caveats=coverage_caveat),
@@ -533,7 +533,7 @@ def _baseline_relative(
             QuestionType.LEVEL_SHIFT_DETECTION: relative_rule,
             QuestionType.SMOOTHED_PATTERN: relative_rule,
             # rolling_mean reuses the baseline-relative substrate; its per-point
-            # coverage sufficiency is enforced at the tool layer (WP02).
+            # coverage sufficiency is enforced at the tool layer.
             QuestionType.MOVING_WINDOW_PATTERN: relative_rule,
             # Standing caveats (baseline-relative weakness) attach via the
             # evaluator; the lagged/paired rules add their own paired-sample
@@ -612,7 +612,7 @@ def _slow_trajectory_method_sensitive(
             QuestionType.LEVEL_SHIFT_DETECTION: trajectory_rule,
             QuestionType.SMOOTHED_PATTERN: trajectory_rule,
             # rolling_mean reuses the slow-trajectory substrate; its per-point
-            # coverage sufficiency is enforced at the tool layer (WP02).
+            # coverage sufficiency is enforced at the tool layer.
             QuestionType.MOVING_WINDOW_PATTERN: trajectory_rule,
             # Method-sensitivity standing caveats attach via the evaluator; the
             # lagged/paired rules add their own paired-sample floor and the
@@ -695,7 +695,7 @@ def _sparse_lab_analyte_specific(
             QuestionType.LEVEL_SHIFT_DETECTION: repeats_required_rule,
             QuestionType.SMOOTHED_PATTERN: repeats_required_rule,
             # rolling_mean reuses the repeats-required substrate; its per-point
-            # coverage sufficiency is enforced at the tool layer (WP02).
+            # coverage sufficiency is enforced at the tool layer.
             QuestionType.MOVING_WINDOW_PATTERN: repeats_required_rule,
             QuestionType.LAGGED_ASSOCIATION: _lagged_association_rule(caveats=analyte_caveat),
             QuestionType.PAIRED_DIFFERENCE: _paired_difference_rule(caveats=analyte_caveat),

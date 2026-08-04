@@ -1,10 +1,10 @@
-"""Tests for the Stage 3 analytical *input preparation* layer (WP03).
+"""Tests for the Stage 3 analytical *input preparation* layer.
 
 These exercise the engine-owned seam between the Stage 2 admissibility
 evaluator and the future proof tools: usable evidence becomes an ordered,
 overlap-annotated input series; missing / stale / inadmissible / insufficient /
 out-of-bounds evidence is refused *before* any computation, with distinct
-machine-readable reasons reused from the WP02 contract's ``RefusalOutcome``.
+machine-readable reasons reused from the contract's ``RefusalOutcome``.
 
 The evidence here is fixture-backed (hand-built ``EvidenceCandidate`` +
 ``MetricFamilyPolicy`` declarations and explicit ``PreparedPoint`` series); the
@@ -116,7 +116,7 @@ def _points(
 
 
 # ---------------------------------------------------------------------------
-# T012: ordered series preparation for usable evidence
+# ordered series preparation for usable evidence
 # ---------------------------------------------------------------------------
 
 
@@ -172,7 +172,7 @@ def test_imputation_percentage_reflects_imputed_points() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T012: overlap metadata for a single-series request
+# overlap metadata for a single-series request
 # ---------------------------------------------------------------------------
 
 
@@ -198,7 +198,7 @@ def test_single_series_overlap_equals_usable_window() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T012: every distinct pre-computation refusal reason, one case each
+# every distinct pre-computation refusal reason, one case each
 # ---------------------------------------------------------------------------
 
 
@@ -354,7 +354,7 @@ def test_recent_trend_rule_does_not_serve_analytical_questions() -> None:
 
 
 # ---------------------------------------------------------------------------
-# T012: no computation for refused input (observable via public behavior)
+# no computation for refused input (observable via public behavior)
 # ---------------------------------------------------------------------------
 
 

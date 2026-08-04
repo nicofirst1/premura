@@ -1,4 +1,4 @@
-"""Contract tests for the tool-loop tier's deterministic surface (WP03).
+"""Contract tests for the tool-loop tier's deterministic surface.
 
 These tests derive from ``contracts/tool-loop-tier.md`` §§1–2 and §6 and pin the
 behavior BEFORE the module exists (DIRECTIVE_034). They are pure default-suite
@@ -7,9 +7,9 @@ its injectable transport seam (DIRECTIVE_036).
 
 Coverage map:
   * URL guard + tools-unsupported mapping + num_ctx pinning  -> the chat client.
-  * Registry bounds (C-005): allowlist-only reads, whole-file (FR-002),
+  * Registry bounds: allowlist-only reads, whole-file,
     manifest/absolute/traversal refusal, write_parser destination/overwrite.
-  * Brief invariants (FR-001/FR-002/SC-006) per drawer probe + loud budget check.
+  * Brief invariants per drawer probe + loud budget check.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ from tests import REPO_ROOT
 
 # OllamaUnavailableError + the drawer-probe resolver are re-exported by the
 # contract module, so this default-suite test never spells the live-trial harness
-# import path (the NFR-005 default-gate guard matches that substring).
+# import path (the default-gate guard matches that substring).
 OllamaUnavailableError = tlc.OllamaUnavailableError
 _resolve_drawer_probe = tlc.resolve_drawer_probe
 
@@ -174,7 +174,7 @@ def test_chat_url_derives_chat_path() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# 4. Registry bounds — the C-005 tests (most important in this WP).
+# 4. Registry bounds — the tests (most important in this WP).
 # --------------------------------------------------------------------------- #
 
 
@@ -189,7 +189,7 @@ def trial_context(tmp_path: Path):
 
 def test_read_context_returns_whole_allowlisted_file(trial_context, tmp_path: Path) -> None:
     # Write a multi-thousand-line file at an allowlisted location and assert the
-    # WHOLE content comes back (FR-002 no-truncation witness).
+    # WHOLE content comes back ( no-truncation witness).
     big = trial_context.source
     lines = "\n".join(f"row,{i}" for i in range(5000)) + "\n"
     big.write_text(lines, encoding="utf-8")
@@ -296,7 +296,7 @@ def test_registry_exposes_three_tools(trial_context) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# 5. Brief invariants (FR-001/FR-002/SC-006), per drawer probe.
+# 5. Brief invariants, per drawer probe.
 # --------------------------------------------------------------------------- #
 
 _DRAWER_API_NAMES = {

@@ -1,9 +1,9 @@
-"""Persistence-layer tests for WP02 (store/profile_intake.py).
+"""Persistence-layer tests for store/profile_intake.py.
 
 Stance: drive everything through the public store entry points
 (``record_profile_context`` / ``persist_intake_batch`` and the read-back
-helpers), never by hand-writing rows. The assertions lock the behaviors the WP
-owns:
+helpers), never by hand-writing rows. The assertions lock the behaviors this
+module owns:
 
 * bounded profile field acceptance (birth_date / sex / standing_height_cm) and
   rejection of unsupported / derived keys such as ``age``,

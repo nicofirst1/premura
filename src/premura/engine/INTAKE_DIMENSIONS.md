@@ -24,10 +24,10 @@ The `@resolver(domain=...)` decorator and `resolve_dependency(...)` both validat
 
 Write one module under `src/premura/engine/views/<domain>.py` exposing a function decorated with `@resolver(domain="<domain>")` (`premura.engine._registry.resolver`). The function has the resolver signature `(*, request, conn) -> ResolvedInput` and must:
 
-- read **only** that domain's dedicated tables — never fall back to `hp.fact_measurement` or another domain (NFR-003: no hidden cross-domain substitution);
+- read **only** that domain's dedicated tables — never fall back to `hp.fact_measurement` or another domain (no hidden cross-domain substitution);
 - turn a caller-declared selector + window into a **domain-level payload** (the raw material a signal needs), and return an explicit non-usable `ResolvedInput` (missing / stale) when no matching, fresh row exists — never a fabricated value;
-- stay **generic** — interpret a caller-declared selector, never enumerate known nutrients/supplements (DOCTRINE / C-007);
-- report its temporal basis explicitly (`day_basis`): bucket each event by its **local calendar day** via `premura.engine._localtime.local_calendar_day` when `local_tz` is present and parseable, else fall back to the naive-UTC day, and never silently mix the two (NFR-006).
+- stay **generic** — interpret a caller-declared selector, never enumerate known nutrients/supplements (see DOCTRINE);
+- report its temporal basis explicitly (`day_basis`): bucket each event by its **local calendar day** via `premura.engine._localtime.local_calendar_day` when `local_tz` is present and parseable, else fall back to the naive-UTC day, and never silently mix the two.
 
 Then append the module's dotted name to `_BUILTIN_RESOLVER_MODULES` in `src/premura/engine/__init__.py`. Registration is a **side effect of import** (the decorator writes into `premura.engine._registry.RESOLVERS`); the lazy loader `_ensure_builtin_resolvers_loaded()` imports every listed module on first resolution. No filesystem scanning, no entry points — one module, one line.
 
@@ -36,15 +36,15 @@ Then append the module's dotted name to `_BUILTIN_RESOLVER_MODULES` in `src/prem
 Add a signal function and its `SignalSpec` registration to an **already-registered** signal module (e.g. `register_builtin_signals()` in `src/premura/engine/descriptive_signals.py`, which is already listed in `_BUILTIN_SIGNAL_MODULES`). The signal:
 
 - declares the intake dependency and reads **only** through the Step-2 resolver (it never re-reads the intake tables itself);
-- returns the **standard signal envelope** with the four structurally-distinct states `available` / `missing_input` / `stale_input` / `insufficient_data`, plus authored missing-input guidance — consistent with the existing six signals (FR-005);
-- stays **descriptive, non-diagnostic**: no reference ranges, no "you should", no significance/causation, and (for trends) it never imputes a missing day (NFR-001 / FR-004);
-- takes a **caller-declared field** (which supplement, which nutrient/energy key, which window) rather than enumerating specific ones (C-007), and chooses one of the four `family` values (`status` / `trend` / `baseline` / `change`).
+- returns the **standard signal envelope** with the four structurally-distinct states `available` / `missing_input` / `stale_input` / `insufficient_data`, plus authored missing-input guidance — consistent with the existing six signals;
+- stays **descriptive, non-diagnostic**: no reference ranges, no "you should", no significance/causation, and (for trends) it never imputes a missing day;
+- takes a **caller-declared field** (which supplement, which nutrient/energy key, which window) rather than enumerating specific ones, and chooses one of the four `family` values (`status` / `trend` / `baseline` / `change`).
 
 Because the family belongs to an already-listed module, no change to `_BUILTIN_SIGNAL_MODULES` is needed — the signal is registered the next time the built-in signals load.
 
 ### Step 4 — expose it as a default-surface tool
 
-Add a **thin** tool to the default agent (MCP) surface so the signal is genuinely usable by an agent, not just resolvable internally (FR-006). The wrapper:
+Add a **thin** tool to the default agent (MCP) surface so the signal is genuinely usable by an agent, not just resolvable internally. The wrapper:
 
 - lives as a plain function in `src/premura/mcp/server.py` that validates only the caller-facing parameter shape, then delegates **entirely** to the signal through `_run_signal(...)` / `compute(..., params=...)` — no raw SQL, no re-read of the intake tables, no re-derived coverage/trend math;
 - is registered on the default surface by a `@mcp.tool()`-decorated shim in `_register_default_tools(...)` in `src/premura/mcp/entrypoint.py`, following the same validity-gated pattern as the existing signal-backed tools;
@@ -61,7 +61,7 @@ This is the proof: adding the _next_ intake dimension requires the four steps ab
 | 3. Descriptive signal in a registered module | `nutrition_intake_trend` (`family="trend"`) registered in `descriptive_signals.register_builtin_signals()`                                    | `supplement_intake_adherence` (`family="status"`) registered in `descriptive_signals.register_builtin_signals()`                                 |
 | 4. Default-surface tool                      | `nutrition_intake_trend(quantity_key, window_days=...)` wrapper in `mcp/server.py`, shim in `entrypoint._register_default_tools`              | `supplement_intake_adherence(matcher, window_days=...)` wrapper in `mcp/server.py`, shim in `entrypoint._register_default_tools`                 |
 
-**No shared-seam change.** Neither domain added a branch to `premura.engine._resolution.resolve_dependency`: that path still dispatches purely by registry lookup and never names an intake domain. This is asserted structurally, not by prose, in `tests/test_intake_resolvers.py::test_shared_seam_has_no_per_domain_branch` (NFR-005) — it reads the source of `resolve_dependency` and fails if either intake domain string appears as a per-domain branch. The registration-completeness half (both resolver modules registered, both signals in `REGISTRY`) is covered by `tests/intake/test_intake_resolvers.py` and `tests/intake/test_intake_signals.py`.
+**No shared-seam change.** Neither domain added a branch to `premura.engine._resolution.resolve_dependency`: that path still dispatches purely by registry lookup and never names an intake domain. This is asserted structurally, not by prose, in `tests/test_intake_resolvers.py::test_shared_seam_has_no_per_domain_branch` — it reads the source of `resolve_dependency` and fails if either intake domain string appears as a per-domain branch. The registration-completeness half (both resolver modules registered, both signals in `REGISTRY`) is covered by `tests/intake/test_intake_resolvers.py` and `tests/intake/test_intake_signals.py`.
 
 ## Caller-declared selector semantics (the matcher / quantity key)
 
@@ -76,6 +76,6 @@ Step 2 says the resolver interprets a _caller-declared selector_. To keep the ru
 
 > **Note.** The supplement matcher semantics are pinned authoritatively in `engine/views/supplement_intake.py` (the docstring + the exported `matches_supplement` function); this doc summarizes them.
 
-## Why no new abstraction layer (C-003)
+## Why no new abstraction layer
 
 Premura deliberately did **not** build a dedicated intake-dimension contract or registry. Two domains rode the existing `@resolver` seam cleanly with no special-casing, which is the evidence that the seam already generalizes. Whether a dedicated intake-dimension contract ever earns its place is left open until a concrete need arises.

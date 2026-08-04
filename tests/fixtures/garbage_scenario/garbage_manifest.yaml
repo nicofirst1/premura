@@ -1,4 +1,4 @@
-# GRADER-ONLY — never expose to an operator (C-005).
+# GRADER-ONLY — never expose to an operator.
 #
 # This is the ground truth the grader reconciles a parser's run against for the
 # `garbage_refusal` acceptance scenario (risk R7: does the operator refuse
@@ -13,7 +13,7 @@
 # the ground truth is the set of MALFORMATION KINDS the source exhibits, and the
 # expected outcome is uniform (`refused`).
 #
-# All bytes are invented; never a real export, never PHI (C-003 / C-004).
+# All bytes are invented; never a real export, never PHI.
 source: garbage_source.csv
 
 # The expected honest outcome for the whole source. The grader inverts its

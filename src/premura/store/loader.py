@@ -166,7 +166,7 @@ def _persist_plan(conn: duckdb.DuckDBPyConnection, plan: DedupePlan) -> None:
         try:
             # `unit` is sourced from the metric registry (dim_metric.canonical_unit),
             # never from a parser-supplied string — the warehouse is the single
-            # source of unit truth (m7 WP3 / FR-3.2). A row whose metric is absent
+            # source of unit truth. A row whose metric is absent
             # from dim_metric would already have been rejected at validate time, so
             # the LEFT JOIN is defensive: it leaves unit NULL rather than dropping
             # the row.

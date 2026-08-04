@@ -1,6 +1,6 @@
 """Reference intake parser for the synthetic *alien* meals+supplements source.
 
-This is the **layer-1 known-good operator** (FR-004): the honest baseline the
+This is the **layer-1 known-good operator**: the honest baseline the
 acceptance grader reconciles against. It is a test fixture, NOT a shipped
 production parser — the "alien" source is a deliberately unsupported live-trial
 target (foreign column names, epoch-microsecond timestamps, non-SI units), so
@@ -34,7 +34,7 @@ source the structural intake columns (``item``/``qty``/``qty_uom``) map by their
 bare-English meaning to the intake quantity representation; ``note`` resolves to
 nothing and so becomes a declared gap. ``MAPPED_SOURCE_COLUMNS`` records only the
 columns this parser actually consumed (the self-reconcile gate reads it; it never
-infers the consumed set from the produced batch — C-005).
+infers the consumed set from the produced batch).
 """
 
 from __future__ import annotations
@@ -68,7 +68,7 @@ SOURCE_LOCAL_TZ = "America/New_York"
 # The source columns this parser actually consumes. Declared explicitly (NOT
 # inferred from the produced batch) so the self-reconcile gate has an honest
 # witness of "what the parser claims to handle" — `note` is intentionally absent
-# because it is a declared gap, not a consumed column (C-005).
+# because it is a declared gap, not a consumed column.
 MAPPED_SOURCE_COLUMNS: tuple[str, ...] = (
     "logged_at_us",
     "kind",

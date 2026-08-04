@@ -1,30 +1,30 @@
-"""Black-box tests for the session-log store (WP01).
+"""Black-box tests for the session-log store.
 
 These exercise the **public writer API** of ``premura.session_log.store`` and
 assert on what a later reader sees in the session-log **file** (DuckDB rows,
 raised exceptions), never on internal collaborators. The store is the substrate
-WP03/WP05/WP06 consume; its observable shape is what those packages depend on.
+other packages consume; its observable shape is what those packages depend on.
 
 Fidelity coverage map (reviewers check each):
 
-* FR-070 / C-001 — the session log is its **own** local DuckDB file, applied by
+* the session log is its **own** local DuckDB file, applied by
   the package's own ``init_schema`` (idempotent), separate from the warehouse and
   from ``trace.*``: ``test_own_file_separate_from_warehouse_and_trace``,
   ``test_init_schema_idempotent``.
-* FR-003 — fixed ``result_status`` vocabulary: ``test_result_status_vocab``.
-* FR-032 — fixed ``run_kind`` vocabulary: ``test_run_kind_vocab``.
+* fixed ``result_status`` vocabulary: ``test_result_status_vocab``.
+* fixed ``run_kind`` vocabulary: ``test_run_kind_vocab``.
 * ``kind`` vocabulary (data-model): ``test_step_kind_vocab``.
-* FR-010..FR-013 — two-origin ingest provenance (loader-measured ints vs parser
+* two-origin ingest provenance (loader-measured ints vs parser
   claims), declared vs emitted as separate captured sets, grader-only
   ``contract_pass``: ``test_ingest_provenance_two_origin_round_trip``,
   ``test_contract_pass_is_caller_supplied``.
-* FR-031/FR-032 — session captures operator_model/driver_model/run_kind/
+* session captures operator_model/driver_model/run_kind/
   premura_version/isolation_tag: ``test_session_captures_run_identity``.
-* FR-021 / NFR-008 — single writer: ``test_single_writer``.
-* FR-080 — steps + ingest outcome reachable from the log alone:
+* single writer: ``test_single_writer``.
+* steps + ingest outcome reachable from the log alone:
   ``test_session_and_steps_round_trip``.
-* NFR-003 — zero new third-party deps: ``test_no_new_third_party_dependency``.
-* FR-005 (config) — ``session_log_path`` sibling of ``warehouse_path``:
+* zero new third-party deps: ``test_no_new_third_party_dependency``.
+* (config) — ``session_log_path`` sibling of ``warehouse_path``:
   ``test_config_session_log_path``.
 """
 
@@ -55,7 +55,7 @@ def _open_initialized(db_path: Path) -> duckdb.DuckDBPyConnection:
 
 
 # ---------------------------------------------------------------------------
-# Schema / own-file fidelity (FR-070 / C-001)
+# Schema / own-file fidelity
 # ---------------------------------------------------------------------------
 
 
@@ -81,7 +81,7 @@ def test_init_schema_idempotent(tmp_path: Path) -> None:
 
 
 def test_init_schema_idempotent_against_existing_file(tmp_path: Path) -> None:
-    """NFR-4: re-initializing a pre-existing on-disk log is a no-op, not a raise.
+    """Re-initializing a pre-existing on-disk log is a no-op, not a raise.
 
     The judge-AI schema change is additive (``CREATE TABLE IF NOT EXISTS``):
     opening a log file written by an earlier process and re-applying the schema
@@ -143,12 +143,12 @@ def test_own_file_separate_from_warehouse_and_trace(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Session + step round-trip (FR-080)
+# Session + step round-trip
 # ---------------------------------------------------------------------------
 
 
 def test_session_captures_run_identity(tmp_path: Path) -> None:
-    """FR-031/FR-032: the five run-identity fields persist verbatim."""
+    """The five run-identity fields persist verbatim."""
     conn = _open_initialized(tmp_path / "session_log.duckdb")
     sid = store.open_session(
         conn,
@@ -258,7 +258,7 @@ def _new_session(conn: duckdb.DuckDBPyConnection) -> str:
 
 
 def test_result_status_vocab(tmp_path: Path) -> None:
-    """FR-003: result_status is the fixed six-value vocabulary; others raise."""
+    """result_status is the fixed six-value vocabulary; others raise."""
     conn = _open_initialized(tmp_path / "session_log.duckdb")
     sid = _new_session(conn)
     for status in ("available", "missing", "stale", "insufficient", "refused", "error"):
@@ -295,7 +295,7 @@ def test_result_status_vocab(tmp_path: Path) -> None:
 
 
 def test_run_kind_vocab(tmp_path: Path) -> None:
-    """FR-032: run_kind is {repeatable_check, live_trial}; others raise."""
+    """run_kind is {repeatable_check, live_trial}; others raise."""
     conn = _open_initialized(tmp_path / "session_log.duckdb")
     for rk in ("repeatable_check", "live_trial"):
         assert store.open_session(
@@ -354,7 +354,7 @@ def test_step_kind_vocab(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Ingest provenance: two-origin split (FR-010..FR-013, FR-061/FR-065)
+# Ingest provenance: two-origin split
 # ---------------------------------------------------------------------------
 
 
@@ -369,7 +369,7 @@ class _FakeLoadStats:
 
 def test_ingest_provenance_two_origin_round_trip(tmp_path: Path) -> None:
     """Loader-measured ints land as columns; parser claims + declared/emitted
-    land as distinct JSON sets; all decode back to the inputs (FR-010..FR-013)."""
+    land as distinct JSON sets; all decode back to the inputs."""
     log_path = tmp_path / "session_log.duckdb"
     conn = _open_initialized(log_path)
     sid = _new_session(conn)
@@ -436,7 +436,7 @@ def test_ingest_provenance_two_origin_round_trip(tmp_path: Path) -> None:
 
 def test_contract_pass_is_caller_supplied(tmp_path: Path) -> None:
     """contract_pass is persisted exactly as the caller (the grader) supplies it;
-    this WP has no other source for it (FR-061/FR-065)."""
+    this test has no other source for it."""
     log_path = tmp_path / "session_log.duckdb"
     conn = _open_initialized(log_path)
     sid = _new_session(conn)
@@ -476,7 +476,7 @@ def test_contract_pass_is_caller_supplied(tmp_path: Path) -> None:
 
 
 def test_live_trial_attempt_round_trip(tmp_path: Path) -> None:
-    """FR-008: per-attempt self-reconciliation telemetry persists in the session log."""
+    """Per-attempt self-reconciliation telemetry persists in the session log."""
     log_path = tmp_path / "session_log.duckdb"
     conn = _open_initialized(log_path)
     sid = store.open_session(
@@ -527,12 +527,12 @@ def test_live_trial_attempt_round_trip(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Conversation-turn capture (m2 FR-1)
+# Conversation-turn capture
 # ---------------------------------------------------------------------------
 
 
 def test_record_turn_round_trip(tmp_path: Path) -> None:
-    """FR-1: a recorded turn replays from the log alone with all its fields.
+    """A recorded turn replays from the log alone with all its fields.
 
     The transcript is what the judge-AI follow-on reads; a round-trip through
     the file is the contract. The optional per-turn telemetry (``tool_name`` /
@@ -594,7 +594,7 @@ def test_record_turn_round_trip(tmp_path: Path) -> None:
 
 
 def test_turn_role_vocab(tmp_path: Path) -> None:
-    """FR-1: role is the fixed four-value vocabulary; others raise ValueError.
+    """Role is the fixed four-value vocabulary; others raise ValueError.
 
     Mirrors the ``result_status`` / ``run_kind`` / ``kind`` boundary checks: an
     out-of-vocabulary role is rejected at the store seam, never silently stored.
@@ -625,7 +625,7 @@ def test_turn_role_vocab(tmp_path: Path) -> None:
 
 
 def test_turn_index_unique_per_session(tmp_path: Path) -> None:
-    """FR-1: (session_id, turn_index) is unique — a slot cannot be reused.
+    """(session_id, turn_index) is unique — a slot cannot be reused.
 
     The ordered transcript cannot hold a duplicate position; a second write at
     the same index for the same session is rejected by the DB constraint.
@@ -643,7 +643,7 @@ def test_turn_index_unique_per_session(tmp_path: Path) -> None:
 
 
 def test_turn_index_independent_across_sessions(tmp_path: Path) -> None:
-    """FR-1: the same turn_index in a DIFFERENT session is allowed.
+    """The same turn_index in a DIFFERENT session is allowed.
 
     Uniqueness is per-session, so two sessions can each hold their own index 0.
     """
@@ -660,7 +660,7 @@ def test_turn_index_independent_across_sessions(tmp_path: Path) -> None:
 
 
 def test_record_turn_nullable_step_and_optionals(tmp_path: Path) -> None:
-    """FR-1: step_id and the optional telemetry are nullable.
+    """step_id and the optional telemetry are nullable.
 
     A turn need not be linked to a step, and the per-turn telemetry fields default
     to NULL when omitted — the transcript stays minimal for tiers that have none.
@@ -684,17 +684,17 @@ def test_record_turn_nullable_step_and_optionals(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Judgment surface (judge-ai m3 FR-1)
+# Judgment surface
 # ---------------------------------------------------------------------------
 
 
 def test_record_judgment_round_trip(tmp_path: Path) -> None:
-    """FR-1: a complete judgment replays from the log alone with its criteria JSON.
+    """A complete judgment replays from the log alone with its criteria JSON.
 
     The judgment is what the future improvement hook reads; a round-trip through
     the file is the contract. ``criteria`` is a mapping of rubric criterion id →
     ``{band, rationale}`` stored as JSON; ``overall_band`` and ``rationale`` are
-    optional descriptive fields (NFR-6: descriptive bands, no scores).
+    optional descriptive fields (descriptive bands, no scores).
     """
     log_path = tmp_path / "session_log.duckdb"
     conn = _open_initialized(log_path)
@@ -742,7 +742,7 @@ def test_record_judgment_round_trip(tmp_path: Path) -> None:
 
 
 def test_judgment_status_vocab(tmp_path: Path) -> None:
-    """FR-1: status is the fixed JUDGMENT_STATUSES vocabulary; others raise.
+    """Status is the fixed JUDGMENT_STATUSES vocabulary; others raise.
 
     Mirrors the ``result_status`` / ``run_kind`` / ``role`` boundary checks: an
     out-of-vocabulary status is rejected at the store seam, never silently stored.
@@ -780,9 +780,9 @@ def test_judgment_status_vocab(tmp_path: Path) -> None:
 
 
 def test_judgment_band_vocab(tmp_path: Path) -> None:
-    """FR-1: every criterion band and the overall band are validated against
+    """Every criterion band and the overall band are validated against
     CRITERION_BANDS; an out-of-vocabulary band raises. Criterion IDS are NOT
-    enumerated in code — they belong to the rubric (FR-3)."""
+    enumerated in code — they belong to the rubric."""
     conn = _open_initialized(tmp_path / "session_log.duckdb")
     sid = _new_session(conn)
     assert store.CRITERION_BANDS == frozenset({"strong", "adequate", "weak", "not_applicable"})
@@ -823,7 +823,7 @@ def test_judgment_band_vocab(tmp_path: Path) -> None:
 
 
 def test_judgment_error_status_is_honest(tmp_path: Path) -> None:
-    """FR-1: on an error status the row is honest — empty criteria, NULL
+    """On an error status the row is honest — empty criteria, NULL
     overall_band, and raw_output preserves whatever the model actually said."""
     log_path = tmp_path / "session_log.duckdb"
     conn = _open_initialized(log_path)
@@ -858,14 +858,14 @@ def test_judgment_error_status_is_honest(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Single writer (FR-021 / NFR-008)
+# Single writer
 # ---------------------------------------------------------------------------
 
 
 def test_single_writer(tmp_path: Path) -> None:
     """No second OS process can open the file for writing while the harness holds it.
 
-    The single-writer invariant (FR-021 / NFR-008) is across *processes*: the
+    The single-writer invariant is across *processes*: the
     parent harness is the sole writer, and the subprocess runner never opens this
     file. DuckDB enforces this at the file lock level — a *separate* process that
     tries to open the same file read-write while the harness holds a writable
@@ -880,7 +880,7 @@ def test_single_writer(tmp_path: Path) -> None:
     sid = _new_session(writer)
     assert sid
     # The transcript table is written only through this sole writable connection
-    # (NFR-1): record a turn so the cross-process lock below also guards log_turn.
+    # Record a turn so the cross-process lock below also guards log_turn.
     writer_turn = store.record_turn(
         writer,
         session_id=sid,
@@ -890,7 +890,7 @@ def test_single_writer(tmp_path: Path) -> None:
         content="synthetic single-writer probe turn",
     )
     assert writer_turn
-    # Judgments are written only through this sole writable connection (NFR-1):
+    # Judgments are written only through this sole writable connection:
     # record one so the cross-process lock below also guards log_judgment.
     writer_judgment = store.record_judgment(
         writer,
@@ -903,7 +903,7 @@ def test_single_writer(tmp_path: Path) -> None:
     )
     assert writer_judgment
     # Improvement proposals are written only through this sole writable connection
-    # (NFR-1): record one so the cross-process lock below also guards log_improvement.
+    # Record one so the cross-process lock below also guards log_improvement.
     writer_improvement = store.record_improvement(
         writer,
         session_id=sid,
@@ -945,17 +945,17 @@ def test_single_writer(tmp_path: Path) -> None:
     reader = store.connect(log_path, read_only=True)
     count = reader.execute("SELECT COUNT(*) FROM log_session").fetchone()
     assert count is not None and count[0] == 1
-    # The turn written through the sole writer is durable too (NFR-1).
+    # The turn written through the sole writer is durable too.
     turn_count = reader.execute(
         "SELECT COUNT(*) FROM log_turn WHERE session_id = ?", [sid]
     ).fetchone()
     assert turn_count is not None and turn_count[0] == 1
-    # The judgment written through the sole writer is durable too (NFR-1).
+    # The judgment written through the sole writer is durable too.
     judgment_count = reader.execute(
         "SELECT COUNT(*) FROM log_judgment WHERE session_id = ?", [sid]
     ).fetchone()
     assert judgment_count is not None and judgment_count[0] == 1
-    # The improvement proposal written through the sole writer is durable too (NFR-1).
+    # The improvement proposal written through the sole writer is durable too.
     improvement_count = reader.execute(
         "SELECT COUNT(*) FROM log_improvement WHERE session_id = ?", [sid]
     ).fetchone()
@@ -964,7 +964,7 @@ def test_single_writer(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Zero new dependencies (NFR-003)
+# Zero new dependencies
 # ---------------------------------------------------------------------------
 
 
@@ -972,7 +972,7 @@ def test_no_new_third_party_dependency() -> None:
     """The store imports only stdlib + already-declared deps (duckdb, ulid).
 
     Static import audit over store.py so a new runtime dependency cannot slip in
-    unnoticed (NFR-003). Allowed third-party top-level modules are the ones the
+    unnoticed. Allowed third-party top-level modules are the ones the
     project already declares.
     """
     src = Path(store.__file__).read_text(encoding="utf-8")
@@ -1003,7 +1003,7 @@ def test_no_new_third_party_dependency() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Config path (FR-005)
+# Config path
 # ---------------------------------------------------------------------------
 
 
