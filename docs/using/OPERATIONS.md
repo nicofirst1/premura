@@ -16,6 +16,10 @@ Run `premura --help` for the full list of commands and what each one does. On a 
 4. When you want a backup, run `premura export --month YYYY-MM`, then `premura upload --month YYYY-MM` if you want it on Drive.
 5. On a second machine or a fresh clone, run `premura download` to pull the latest encrypted warehouse back from Drive, decrypt it, and restore it locally. Any existing warehouse is backed up to a timestamped copy first, never overwritten. Pass `--month YYYY-MM` to restore a specific month.
 
+### Refreshing a source
+
+When a source has newer data, drop the updated export into `data/inbox/` and run the same `premura ingest` again, then `premura status` to confirm the latest reading moved forward. Re-ingest is idempotent by the export's contents: an unchanged export is skipped by its sha256 (nothing happens), and a changed export advances the warehouse. To reload an export whose contents did not change, add `--force` (`premura ingest --source SOURCE PATH --force`) to bypass the skip.
+
 ### Lab files (PDFs)
 
 Reading real lab PDFs needs an extra local package. Install it once with `uv sync --extra lab`. Then `premura ingest --source lab PATH` will extract them. (Stool-report PDFs on Apple Silicon use a separate package: `uv sync --extra lab-vlm`.)
