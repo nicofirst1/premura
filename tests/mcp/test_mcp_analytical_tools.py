@@ -27,43 +27,31 @@ from premura.mcp import server
 from premura.mcp.entrypoint import build_operator_server, build_server
 from premura.store import duck
 
-# The default surface adds the two analytical tools to the prior ten default
-# tools, then ``correlate``, the three trace tools, and rolling_mean +
-# paired_t_test (-> 18).
+# The collapsed default surface: catalog tools, the four parameterized tools
+# (signal/analyze/paired_test/condition_episode) replacing the old enumerated
+# tools, plus the unchanged remainder (23 tools total).
 _DEFAULT_TOOLS_WITH_ANALYTICAL = sorted(
     [
         "list_metrics",
         "metric_summary",
-        "resting_hr_status",
-        "resting_hr_trend",
-        "steps_trend",
-        "weight_trend",
-        "sleep_deep_pct_baseline",
-        "hrv_change_around_date",
-        "supplement_intake_adherence",
-        "nutrition_intake_trend",
+        "signal",
+        "analyze",
+        "correlate",
+        "paired_test",
+        "condition_episode",
         "profile_context_supported_fields",
         "profile_context_record",
-        "condition_episode_record",
-        "condition_episode_list",
-        "condition_episode_retract",
         "interview_route",
         "interview_devices",
         "operating_roles",
         "orchestrator_handoff",
         "answer_audit",
         "present_answer",
-        "change_point",
-        "smoothed_average",
-        "correlate",
-        "rolling_mean",
-        "paired_t_test",
-        "condition_paired_t_test",
-        "pubmed_search",
-        "pubmed_fetch",
         "research_trace_open",
         "research_trace_mark_surfaced",
         "research_trace_disclosure",
+        "pubmed_search",
+        "pubmed_fetch",
         "improvement_queue_record",
         "improvement_queue_list",
         "share_packet_render",
@@ -114,16 +102,28 @@ def _warehouse_with_series(tmp_path: Path, values: list[float]) -> Path:
 # --------------------------------------------------------------------------- #
 def test_default_surface_includes_change_point() -> None:
     async def run() -> None:
-        names = sorted(tool.name for tool in await build_server().list_tools())
-        assert "change_point" in names
+        srv = build_server()
+        names = sorted(tool.name for tool in await srv.list_tools())
+        assert "analyze" in names
+        # change_point is reachable as a method of the collapsed analyze tool.
+        _content, structured = await srv.call_tool(
+            "analyze", {"method": "change_point", "metric_id": "resting_hr"}
+        )
+        assert structured["tool_name"] == "change_point"
 
     asyncio.run(run())
 
 
 def test_default_surface_includes_smoothed_average() -> None:
     async def run() -> None:
-        names = sorted(tool.name for tool in await build_server().list_tools())
-        assert "smoothed_average" in names
+        srv = build_server()
+        names = sorted(tool.name for tool in await srv.list_tools())
+        assert "analyze" in names
+        # smoothed_average is reachable as a method of the collapsed analyze tool.
+        _content, structured = await srv.call_tool(
+            "analyze", {"method": "smoothed_average", "metric_id": "resting_hr"}
+        )
+        assert structured["tool_name"] == "smoothed_average"
 
     asyncio.run(run())
 
@@ -141,8 +141,8 @@ def test_query_warehouse_stays_operator_only() -> None:
         default_names = {tool.name for tool in await build_server().list_tools()}
         operator_names = {tool.name for tool in await build_operator_server().list_tools()}
         # The analytical tools are agent-safe and live on BOTH surfaces.
-        assert {"change_point", "smoothed_average"} <= default_names
-        assert {"change_point", "smoothed_average"} <= operator_names
+        assert {"analyze"} <= default_names
+        assert {"analyze"} <= operator_names
         # query_warehouse is the raw SQL escape hatch: operator-only.
         assert "query_warehouse" not in default_names
         assert "query_warehouse" in operator_names

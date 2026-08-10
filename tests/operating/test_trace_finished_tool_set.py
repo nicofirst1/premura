@@ -230,6 +230,7 @@ def _disclosure(server: FastMCP, session_id: str) -> dict[str, Any]:
 
 def _paired_args(session_id: str | None = None, **overrides: Any) -> dict[str, Any]:
     args: dict[str, Any] = {
+        "kind": "before_after",
         "metric_id": _METRIC,
         "anchor_date": _anchor(),
         "before_days": 18,
@@ -242,11 +243,19 @@ def _paired_args(session_id: str | None = None, **overrides: Any) -> dict[str, A
     return args
 
 
+def _rolling_mean_args(session_id: str | None = None, **overrides: Any) -> dict[str, Any]:
+    args: dict[str, Any] = {"method": "rolling_mean", "metric_id": _METRIC}
+    args.update(overrides)
+    if session_id is not None:
+        args["session_id"] = session_id
+    return args
+
+
 def test_traced_rolling_mean_records_exactly_one_call(tmp_path: Path) -> None:
     server = build_server(warehouse_path=_warehouse_with_series(tmp_path))
     session_id = _call(server, "research_trace_open", {})["session_id"]
 
-    payload = _call(server, "rolling_mean", {"metric_id": _METRIC, "session_id": session_id})
+    payload = _call(server, "analyze", _rolling_mean_args(session_id))
 
     assert payload["status"] == "available"
     assert payload["trace"]["session_id"] == session_id
@@ -262,7 +271,7 @@ def test_traced_paired_t_test_records_exactly_one_call(tmp_path: Path) -> None:
     server = build_server(warehouse_path=_warehouse_with_series(tmp_path))
     session_id = _call(server, "research_trace_open", {})["session_id"]
 
-    payload = _call(server, "paired_t_test", _paired_args(session_id))
+    payload = _call(server, "paired_test", _paired_args(session_id))
 
     assert payload["status"] == "available"
     assert payload["trace"]["call_id"]
@@ -277,12 +286,12 @@ def test_exact_retry_collapses_for_both_new_tools(tmp_path: Path) -> None:
     server = build_server(warehouse_path=_warehouse_with_series(tmp_path))
     session_id = _call(server, "research_trace_open", {})["session_id"]
 
-    rm = {"metric_id": _METRIC, "session_id": session_id}
-    _call(server, "rolling_mean", dict(rm))
-    _call(server, "rolling_mean", dict(rm))
+    rm = _rolling_mean_args(session_id)
+    _call(server, "analyze", dict(rm))
+    _call(server, "analyze", dict(rm))
     pt = _paired_args(session_id)
-    _call(server, "paired_t_test", dict(pt))
-    _call(server, "paired_t_test", dict(pt))
+    _call(server, "paired_test", dict(pt))
+    _call(server, "paired_test", dict(pt))
 
     d = _disclosure(server, session_id)
     assert d["raw_analytical_call_count"] == 4  # four recorded calls
@@ -293,10 +302,10 @@ def test_distinct_windows_and_anchors_increase_unique_count(tmp_path: Path) -> N
     server = build_server(warehouse_path=_warehouse_with_series(tmp_path))
     session_id = _call(server, "research_trace_open", {})["session_id"]
 
-    _call(server, "rolling_mean", {"metric_id": _METRIC, "window": 5, "session_id": session_id})
-    _call(server, "rolling_mean", {"metric_id": _METRIC, "window": 9, "session_id": session_id})
-    _call(server, "paired_t_test", _paired_args(session_id, before_days=10, after_days=10))
-    _call(server, "paired_t_test", _paired_args(session_id, before_days=15, after_days=15))
+    _call(server, "analyze", _rolling_mean_args(session_id, window=5))
+    _call(server, "analyze", _rolling_mean_args(session_id, window=9))
+    _call(server, "paired_test", _paired_args(session_id, before_days=10, after_days=10))
+    _call(server, "paired_test", _paired_args(session_id, before_days=15, after_days=15))
 
     d = _disclosure(server, session_id)
     assert d["raw_analytical_call_count"] == 4
@@ -309,8 +318,8 @@ def test_refused_new_tool_call_counts_as_examined_hypothesis(tmp_path: Path) -> 
     server = build_server(warehouse_path=_empty_warehouse(tmp_path))
     session_id = _call(server, "research_trace_open", {})["session_id"]
 
-    rm = _call(server, "rolling_mean", {"metric_id": _METRIC, "session_id": session_id})
-    pt = _call(server, "paired_t_test", _paired_args(session_id))
+    rm = _call(server, "analyze", _rolling_mean_args(session_id))
+    pt = _call(server, "paired_test", _paired_args(session_id))
 
     assert rm["status"] == "refused"
     assert pt["status"] == "refused"
@@ -325,7 +334,7 @@ def test_surfaced_mark_targets_a_new_tool_call(tmp_path: Path) -> None:
     server = build_server(warehouse_path=_warehouse_with_series(tmp_path))
     session_id = _call(server, "research_trace_open", {})["session_id"]
 
-    payload = _call(server, "paired_t_test", _paired_args(session_id))
+    payload = _call(server, "paired_test", _paired_args(session_id))
     call_id = payload["trace"]["call_id"]
 
     mark = _call(
@@ -394,11 +403,9 @@ def test_rolling_mean_envelope_byte_identical_traced_vs_untraced(
     _pin_engine_clock(monkeypatch)
     server = build_server(warehouse_path=_warehouse_with_series(tmp_path))
 
-    untraced = _call(server, "rolling_mean", {"metric_id": _METRIC, "window": 5})
+    untraced = _call(server, "analyze", _rolling_mean_args(window=5))
     session_id = _call(server, "research_trace_open", {})["session_id"]
-    traced = _call(
-        server, "rolling_mean", {"metric_id": _METRIC, "window": 5, "session_id": session_id}
-    )
+    traced = _call(server, "analyze", _rolling_mean_args(session_id, window=5))
 
     assert "trace" in traced
     assert "trace" not in untraced
@@ -414,9 +421,9 @@ def test_paired_t_test_envelope_byte_identical_traced_vs_untraced(
     server = build_server(warehouse_path=_warehouse_with_series(tmp_path))
 
     args = _paired_args()
-    untraced = _call(server, "paired_t_test", dict(args))
+    untraced = _call(server, "paired_test", dict(args))
     session_id = _call(server, "research_trace_open", {})["session_id"]
-    traced = _call(server, "paired_t_test", {**args, "session_id": session_id})
+    traced = _call(server, "paired_test", {**args, "session_id": session_id})
 
     assert "trace" in traced
     assert "trace" not in untraced

@@ -212,23 +212,31 @@ def _assert_non_diagnostic(payload: dict[str, Any]) -> None:
 
 
 def test_both_intake_tools_published_on_default_surface() -> None:
-    """Both intake tools are PUBLISHED (not just defined) on the default surface."""
+    """Both intake tools are PUBLISHED (not just defined) on the default surface,
+    reachable as signals through the collapsed ``signal`` tool."""
 
     async def run() -> None:
-        names = {tool.name for tool in await build_server().list_tools()}
-        assert _INTAKE_TOOLS <= names, f"intake tools missing from default surface: {names}"
+        srv = build_server()
+        names = {tool.name for tool in await srv.list_tools()}
+        assert "signal" in names
+        _content, catalog = await srv.call_tool("signal", {})
+        signal_names = {entry["name"] for entry in catalog["signals"]}
+        assert _INTAKE_TOOLS <= signal_names, (
+            f"intake tools missing from signal catalog: {signal_names}"
+        )
 
     asyncio.run(run())
 
 
 def test_intake_tools_add_exactly_two_to_default_surface() -> None:
-    """The two intake tools are an exact +2 delta over the rest of the surface."""
+    """The two intake tools are part of the eight-signal catalog behind ``signal``."""
 
     async def run() -> None:
-        names = {tool.name for tool in await build_server().list_tools()}
-        # Removing exactly the two intake tools leaves the prior surface; the
-        # delta is exactly two, neither collapsed into one nor over-registered.
-        assert len(names) - len(names - _INTAKE_TOOLS) == 2
+        srv = build_server()
+        _content, catalog = await srv.call_tool("signal", {})
+        assert catalog["count"] == 8
+        signal_names = {entry["name"] for entry in catalog["signals"]}
+        assert _INTAKE_TOOLS <= signal_names
 
     asyncio.run(run())
 
@@ -237,8 +245,12 @@ def test_both_intake_tools_inherited_by_operator_surface() -> None:
     """The operator surface inherits the default set, so both intake tools appear there too."""
 
     async def run() -> None:
-        names = {tool.name for tool in await build_operator_server().list_tools()}
-        assert _INTAKE_TOOLS <= names
+        srv = build_operator_server()
+        names = {tool.name for tool in await srv.list_tools()}
+        assert "signal" in names
+        _content, catalog = await srv.call_tool("signal", {})
+        signal_names = {entry["name"] for entry in catalog["signals"]}
+        assert _INTAKE_TOOLS <= signal_names
 
     asyncio.run(run())
 
@@ -282,11 +294,23 @@ def test_intake_tools_callable_through_published_surface(
             result = await srv.call_tool(name, args)
             return result[1] if isinstance(result, tuple) else result
 
-        sup = await call("supplement_intake_adherence", {"matcher": "vitamin d3", "window_days": 7})
+        sup = await call(
+            "signal",
+            {
+                "name": "supplement_intake_adherence",
+                "params": {"matcher": "vitamin d3", "window_days": 7},
+            },
+        )
         assert sup["tool_name"] == "supplement_intake_adherence"
         assert sup["status"] == "available"
 
-        nut = await call("nutrition_intake_trend", {"quantity_key": "energy", "window_days": 14})
+        nut = await call(
+            "signal",
+            {
+                "name": "nutrition_intake_trend",
+                "params": {"quantity_key": "energy", "window_days": 14},
+            },
+        )
         assert nut["tool_name"] == "nutrition_intake_trend"
         assert nut["status"] == "available"
 

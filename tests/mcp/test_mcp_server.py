@@ -172,51 +172,34 @@ def test_metric_summary_rejects_blank_metric_id(tmp_path: Path) -> None:
         metric_summary("   ", warehouse_path=_initialized_warehouse(tmp_path))
 
 
-# Default surface omits query_warehouse; the agent-safe tools = the six
-# Stage 2 signals + two catalog tools + the two bounded profile-capture tools,
-# the Stage 3 analytical tools (change_point / smoothed_average), the
-# pre-registered lagged-association tool ``correlate``, the three trace tools
-# (the trace IS the supported agent workflow), rolling_mean + paired_t_test,
-# and the two PubMed grounding tools (pubmed_search + pubmed_fetch). They are
-# the ONLY PubMed tools on the surface — no full-text/MeSH/Europe-PMC/Unpaywall/
-# related-article/deep-analysis tools are exposed (see the narrow-surface test).
-# operating-roles slice 1/2 added the four runtime-orchestrator tools
-# (operating_roles / orchestrator_handoff / answer_audit / present_answer),
-# twenty -> thirty. operating-roles slice 3 adds the private local
-# improvement-queue tools (improvement_queue_record / improvement_queue_list),
-# thirty -> thirty-two. operating-roles slice 4 adds share_packet_render,
-# thirty-two -> thirty-three. Phase 5 slice 2 adds interview_route,
-# thirty-three -> thirty-four. Onboarding arc gap #2 adds interview_devices,
-# thirty-four -> thirty-five.
+# Default surface omits query_warehouse. Enumerated per-instance tools are
+# collapsed into parameterized ones (ADR 0018): the eight Stage 2 signals behind
+# ``signal``, the three descriptive single-metric methods behind ``analyze``, the
+# two paired differences behind ``paired_test``, and record/list/retract behind
+# ``condition_episode``. Alongside them: the two catalog tools, the pre-registered
+# lagged-association ``correlate``, the two bounded profile-capture tools, the two
+# interview tools, the four runtime-orchestrator tools, the three trace tools (the
+# trace IS the supported agent workflow), the two PubMed grounding tools (the ONLY
+# PubMed tools — no full-text/MeSH/Europe-PMC/Unpaywall/related-article/deep-
+# analysis tools; see the narrow-surface test), and the improvement-queue +
+# share_packet_render tools — 23 tools in total.
 _DEFAULT_TOOLS = sorted(
     [
         "list_metrics",
         "metric_summary",
-        "resting_hr_status",
-        "resting_hr_trend",
-        "steps_trend",
-        "weight_trend",
-        "sleep_deep_pct_baseline",
-        "hrv_change_around_date",
-        "supplement_intake_adherence",
-        "nutrition_intake_trend",
+        "signal",
+        "analyze",
+        "correlate",
+        "paired_test",
+        "condition_episode",
         "profile_context_supported_fields",
         "profile_context_record",
-        "condition_episode_record",
-        "condition_episode_list",
-        "condition_episode_retract",
         "interview_route",
         "interview_devices",
         "operating_roles",
         "orchestrator_handoff",
         "answer_audit",
         "present_answer",
-        "change_point",
-        "smoothed_average",
-        "correlate",
-        "rolling_mean",
-        "paired_t_test",
-        "condition_paired_t_test",
         "research_trace_open",
         "research_trace_mark_surfaced",
         "research_trace_disclosure",

@@ -91,7 +91,11 @@ def test_mark_surfaced_succeeds_for_same_session_call(tmp_path: Path) -> None:
     session_id = _call(server, "research_trace_open", {})["session_id"]
 
     # A recorded analytical call (empty warehouse -> refused, but still recorded).
-    cp = _call(server, "change_point", {"metric_id": "resting_hr", "session_id": session_id})
+    cp = _call(
+        server,
+        "analyze",
+        {"method": "change_point", "metric_id": "resting_hr", "session_id": session_id},
+    )
     call_id = cp["trace"]["call_id"]
 
     marked = _call(
@@ -149,7 +153,11 @@ def test_mark_surfaced_call_from_other_session_is_invalid_reference(tmp_path: Pa
     session_a = _call(server, "research_trace_open", {})["session_id"]
     session_b = _call(server, "research_trace_open", {})["session_id"]
 
-    cp = _call(server, "change_point", {"metric_id": "resting_hr", "session_id": session_a})
+    cp = _call(
+        server,
+        "analyze",
+        {"method": "change_point", "metric_id": "resting_hr", "session_id": session_a},
+    )
     call_in_a = cp["trace"]["call_id"]
 
     payload = _call(
@@ -215,7 +223,11 @@ def test_disclosure_markdown_export_added_beside_structured_counts(tmp_path: Pat
 def test_disclosure_never_says_significant_results(tmp_path: Path) -> None:
     server = build_server(warehouse_path=_warehouse(tmp_path))
     session_id = _call(server, "research_trace_open", {})["session_id"]
-    _call(server, "change_point", {"metric_id": "resting_hr", "session_id": session_id})
+    _call(
+        server,
+        "analyze",
+        {"method": "change_point", "metric_id": "resting_hr", "session_id": session_id},
+    )
 
     payload = _call(server, "research_trace_disclosure", {"session_id": session_id})
 

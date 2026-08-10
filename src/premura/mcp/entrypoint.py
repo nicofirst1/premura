@@ -3,26 +3,28 @@
 Two entrypoints are provided:
 
 * **Default surface** (``premura-mcp``, :func:`build_server`) — the agent-safe
-  surface.  Exposes the catalog/summary helpers, all six approved Stage 2 signal
-  tools, the two parameterized intake signal tools
-  (``supplement_intake_adherence`` / ``nutrition_intake_trend``), the six Stage 3
-  analytical tools (``change_point`` / ``smoothed_average`` / ``correlate`` /
-  ``rolling_mean`` / ``paired_t_test`` / ``condition_paired_t_test``), the bounded
-  agent-mediated profile capture tools, the three condition-episode capture tools
-  (``condition_episode_record`` / ``condition_episode_list`` /
-  ``condition_episode_retract``), the three session research-trace tools
-  (``research_trace_open`` / ``research_trace_mark_surfaced`` /
-  ``research_trace_disclosure``), the two PubMed grounding tools
-  (``pubmed_search`` / ``pubmed_fetch``), and the six runtime-orchestrator
-  tools (``operating_roles`` / ``orchestrator_handoff`` / ``answer_audit`` /
-  ``present_answer`` / ``improvement_queue_record`` /
-  ``improvement_queue_list`` / ``share_packet_render``), and the interview
-  routing tool (``interview_route`` — resolves a chosen health direction to its
-  track) — 34 tools in total.  ``query_warehouse``
-  is intentionally absent; agents should use the signal-backed tools, the
-  analytical tools, the trace tools, the PubMed tools, and the catalog helpers
-  instead.  The authoritative tool list is asserted in
-  ``tests/test_mcp_server.py`` (``_DEFAULT_TOOLS``).
+  surface.  Enumerated per-instance tools are collapsed into parameterized ones
+  (guide, don't enumerate): the eight approved Stage 2 signal answers behind one
+  ``signal`` tool (``signal()`` with no name self-describes the catalog); the
+  three descriptive single-metric methods behind one ``analyze`` tool
+  (``change_point`` / ``smoothed_average`` / ``rolling_mean``); the two
+  pre-registered paired differences behind one ``paired_test`` tool (kinds
+  ``before_after`` / ``condition_label``); and record/list/retract behind one
+  ``condition_episode`` tool.  Alongside these it exposes the catalog/summary
+  helpers (``list_metrics`` / ``metric_summary``), the two-metric association
+  ``correlate``, the bounded agent-mediated profile capture tools
+  (``profile_context_supported_fields`` / ``profile_context_record``), the two
+  interview routing tools (``interview_route`` / ``interview_devices``), the three
+  session research-trace tools (``research_trace_open`` /
+  ``research_trace_mark_surfaced`` / ``research_trace_disclosure``), the two PubMed
+  grounding tools (``pubmed_search`` / ``pubmed_fetch``), and the runtime-
+  orchestrator tools (``operating_roles`` / ``orchestrator_handoff`` /
+  ``answer_audit`` / ``present_answer`` / ``improvement_queue_record`` /
+  ``improvement_queue_list`` / ``share_packet_render``) — 23 tools in total.
+  ``query_warehouse`` is intentionally absent; agents should use the ``signal`` /
+  ``analyze`` / ``paired_test`` / ``correlate`` tools, the trace tools, the PubMed
+  tools, and the catalog helpers instead.  The authoritative tool list is asserted
+  in ``tests/mcp/test_mcp_server.py`` (``_DEFAULT_TOOLS``).
 
 * **Operator surface** (``premura-mcp-operator``, :func:`build_operator_server``)
   — lower-guarantee expert mode intended for operator/developer use only,
@@ -266,6 +268,142 @@ def _finish_evidence_call(
     )
 
 
+#: The signal name-space exposed by the single ``signal`` tool. Each entry
+#: declares its agent-facing params (so ``signal()`` with no name self-describes)
+#: and the plain-English question lifted from the former per-signal tool
+#: docstrings. Dispatch (built per-server in :func:`_register_default_tools`)
+#: routes each name to the matching thin server wrapper, which keeps every
+#: per-signal window bound and the HRV explicit-anchor path exactly as before.
+#: Adding a signal is one entry here plus its engine registration — the agent
+#: still sees exactly one tool, never a growing menu (guide, don't enumerate).
+#: ponytail: internal routing table, not an agent-facing enumeration.
+_SIGNAL_CATALOG: tuple[dict[str, Any], ...] = (
+    {
+        "name": "resting_hr_status",
+        "question": "Latest resting heart rate with an explicit freshness verdict.",
+        "params": (),
+    },
+    {
+        "name": "resting_hr_trend",
+        "question": "Recent resting-heart-rate trend with gap and imputation visibility.",
+        "params": (
+            {
+                "name": "lookback_days",
+                "type": "int",
+                "required": False,
+                "hint": "trend span, 7..90 days",
+            },
+        ),
+    },
+    {
+        "name": "steps_trend",
+        "question": "Recent daily-steps trend; missing days stay gaps and are never imputed.",
+        "params": (
+            {
+                "name": "lookback_days",
+                "type": "int",
+                "required": False,
+                "hint": "trend span, 7..90 days",
+            },
+        ),
+    },
+    {
+        "name": "weight_trend",
+        "question": "Recent body-weight trend with freshness and carried-forward caveats.",
+        "params": (
+            {
+                "name": "lookback_days",
+                "type": "int",
+                "required": False,
+                "hint": "trend span, 7..120 days",
+            },
+        ),
+    },
+    {
+        "name": "sleep_deep_pct_baseline",
+        "question": "Compare the latest deep-sleep percentage to the user's own recent baseline.",
+        "params": (
+            {
+                "name": "baseline_days",
+                "type": "int",
+                "required": False,
+                "hint": "baseline span, 7..60 days",
+            },
+        ),
+    },
+    {
+        "name": "hrv_change_around_date",
+        "question": "Overnight HRV before/after a user-supplied anchor date; no causation claimed.",
+        "params": (
+            {
+                "name": "anchor_date",
+                "type": "str",
+                "required": True,
+                "hint": "YYYY-MM-DD change date the comparison is centered on",
+            },
+            {
+                "name": "window_days",
+                "type": "int",
+                "required": False,
+                "hint": "before/after span, 3..30 days",
+            },
+        ),
+    },
+    {
+        "name": "supplement_intake_adherence",
+        "question": "Logged-day coverage (K of N days) for a supplement you name.",
+        "params": (
+            {
+                "name": "matcher",
+                "type": "str",
+                "required": True,
+                "hint": "supplement product/ingredient your filter selects",
+            },
+            {
+                "name": "window_days",
+                "type": "int",
+                "required": False,
+                "hint": "coverage window, 1..365 days",
+            },
+            {
+                "name": "min_logged_days",
+                "type": "int",
+                "required": False,
+                "hint": "fewest distinct logged days before coverage is reported (default 1)",
+            },
+        ),
+    },
+    {
+        "name": "nutrition_intake_trend",
+        "question": "Plain up/down/flat direction for a nutrient/energy key you name.",
+        "params": (
+            {
+                "name": "quantity_key",
+                "type": "str",
+                "required": True,
+                "hint": "nutrient/energy key, e.g. energy or protein",
+            },
+            {
+                "name": "window_days",
+                "type": "int",
+                "required": False,
+                "hint": "trend window, 1..365 days",
+            },
+        ),
+    },
+)
+
+#: name -> declared params, derived from :data:`_SIGNAL_CATALOG` (single source).
+_SIGNAL_PARAMS: dict[str, tuple[dict[str, Any], ...]] = {
+    entry["name"]: entry["params"] for entry in _SIGNAL_CATALOG
+}
+
+
+def _signal_catalog() -> dict[str, Any]:
+    """Return the self-describing signal catalog (``signal()`` with no name)."""
+    return {"signals": [dict(entry) for entry in _SIGNAL_CATALOG], "count": len(_SIGNAL_CATALOG)}
+
+
 def _register_default_tools(
     mcp: FastMCP, *, warehouse_path: Path | None, session_log_path: Path | None
 ) -> None:
@@ -321,211 +459,158 @@ def _register_default_tools(
             )
         }
 
-    # --- Signal-backed tools ------------------------------------------- #
-    # These are the supported path for the six approved Stage 2 answers. Each
-    # delegates to the grounded signal engine and returns a structured payload
-    # whose ``status`` field distinguishes available / missing_input /
-    # stale_input / insufficient_data without collapsing into a generic error.
-
-    @mcp.tool()
-    def resting_hr_status() -> dict[str, Any]:
-        """Latest resting heart rate with an explicit freshness verdict."""
-        return warehouse_server.resting_hr_status(warehouse_path=warehouse_path)
-
-    @mcp.tool()
-    def resting_hr_trend(lookback_days: int | None = None) -> dict[str, Any]:
-        """Recent resting-heart-rate trend with gap and imputation visibility."""
-        return warehouse_server.resting_hr_trend(
-            lookback_days=lookback_days, warehouse_path=warehouse_path
-        )
-
-    @mcp.tool()
-    def steps_trend(lookback_days: int | None = None) -> dict[str, Any]:
-        """Recent daily-steps trend; missing days stay gaps and are never imputed."""
-        return warehouse_server.steps_trend(
-            lookback_days=lookback_days, warehouse_path=warehouse_path
-        )
-
-    @mcp.tool()
-    def weight_trend(lookback_days: int | None = None) -> dict[str, Any]:
-        """Recent body-weight trend with freshness and carried-forward caveats."""
-        return warehouse_server.weight_trend(
-            lookback_days=lookback_days, warehouse_path=warehouse_path
-        )
-
-    @mcp.tool()
-    def sleep_deep_pct_baseline(baseline_days: int | None = None) -> dict[str, Any]:
-        """Compare the latest deep-sleep percentage to the user's own recent baseline."""
-        return warehouse_server.sleep_deep_pct_baseline(
-            baseline_days=baseline_days, warehouse_path=warehouse_path
-        )
-
-    @mcp.tool()
-    def hrv_change_around_date(anchor_date: str, window_days: int | None = None) -> dict[str, Any]:
-        """Compare overnight HRV before/after the given anchor date (YYYY-MM-DD).
-
-        No significance or causation is claimed; ``anchor_date`` is the
-        user-supplied change date the comparison is centered on.
-        """
-        return warehouse_server.hrv_change_around_date(
-            anchor_date,
-            window_days=window_days,
+    # --- Signal-backed Stage 2 tools (one parameterized tool) -------------- #
+    # The eight approved Stage 2 signal answers are exposed as ONE ``signal``
+    # tool, not eight. ``signal()`` with no name returns a self-describing
+    # catalog (:data:`_SIGNAL_CATALOG`); ``signal(name, params)`` dispatches to
+    # the matching thin server wrapper below, which owns the resolver, the
+    # coverage/trend/freshness verdict, each per-signal window bound, and the HRV
+    # explicit-anchor path. This layer computes nothing and issues no raw SQL;
+    # the engine's four structurally-distinct states (available / missing_input /
+    # stale_input / insufficient_data) flow straight through, never a diagnosis
+    # or recommendation.
+    _signal_dispatch: dict[str, Any] = {
+        "resting_hr_status": lambda p: warehouse_server.resting_hr_status(
+            warehouse_path=warehouse_path
+        ),
+        "resting_hr_trend": lambda p: warehouse_server.resting_hr_trend(
+            lookback_days=p.get("lookback_days"), warehouse_path=warehouse_path
+        ),
+        "steps_trend": lambda p: warehouse_server.steps_trend(
+            lookback_days=p.get("lookback_days"), warehouse_path=warehouse_path
+        ),
+        "weight_trend": lambda p: warehouse_server.weight_trend(
+            lookback_days=p.get("lookback_days"), warehouse_path=warehouse_path
+        ),
+        "sleep_deep_pct_baseline": lambda p: warehouse_server.sleep_deep_pct_baseline(
+            baseline_days=p.get("baseline_days"), warehouse_path=warehouse_path
+        ),
+        "hrv_change_around_date": lambda p: warehouse_server.hrv_change_around_date(
+            p.get("anchor_date"),
+            window_days=p.get("window_days"),
             warehouse_path=warehouse_path,
-        )
-
-    # --- Intake signal-backed tools --------------------------------------- #
-    # The two parameterized intake signals on the DEFAULT agent-safe surface.
-    # Each is a thin wrapper that delegates to the signal through the
-    # warehouse server's ``_run_signal`` -> ``compute(..., params=...)`` seam: it
-    # computes no coverage/trend, re-reads no intake tables, and issues no raw
-    # SQL. The caller threads a matcher/quantity-key + optional window; the
-    # engine's own four structurally-distinct states (available / missing_input /
-    # stale_input / insufficient_data) flow straight back, never collapsed into a
-    # generic error and never a diagnosis or recommendation.
-
-    @mcp.tool()
-    def supplement_intake_adherence(
-        matcher: str,
-        window_days: int | None = None,
-        min_logged_days: int | None = None,
-    ) -> dict[str, Any]:
-        """Report logged-day coverage (K of N days) for a supplement you name.
-
-        You declare the supplement ``matcher`` (a product or ingredient your
-        filter selects, interpreted by Premura's pinned matcher semantics), an
-        optional bounded ``window_days``, and an optional ``min_logged_days`` —
-        the fewest distinct logged days you need before coverage is worth
-        reporting (default ``1``; raise it to have a too-thin history come back as
-        ``insufficient_data`` instead of ``available``). Returns plain coverage
-        only — how many distinct days in the window carried a logged dose — with
-        no adherence judgement, recommendation, or reference range. An empty,
-        stale, or too-thin domain comes back as one of the structurally-distinct
-        states (``missing_input`` / ``stale_input`` / ``insufficient_data``) with
-        a structured report, never substituted from another source.
-        """
-        return warehouse_server.supplement_intake_adherence(
-            matcher,
-            window_days=window_days,
-            min_logged_days=min_logged_days,
+        ),
+        "supplement_intake_adherence": lambda p: warehouse_server.supplement_intake_adherence(
+            p.get("matcher"),
+            window_days=p.get("window_days"),
+            min_logged_days=p.get("min_logged_days"),
             warehouse_path=warehouse_path,
-        )
+        ),
+        "nutrition_intake_trend": lambda p: warehouse_server.nutrition_intake_trend(
+            p.get("quantity_key"),
+            window_days=p.get("window_days"),
+            warehouse_path=warehouse_path,
+        ),
+    }
+    # Catalog and dispatch must cover the same signal names — cheap drift guard.
+    assert set(_signal_dispatch) == set(_SIGNAL_PARAMS)
 
     @mcp.tool()
-    def nutrition_intake_trend(quantity_key: str, window_days: int | None = None) -> dict[str, Any]:
-        """Report a plain up/down/flat direction for a nutrient/energy key you name.
+    def signal(name: str | None = None, params: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Answer one approved Stage 2 signal, or list the available signals.
 
-        You declare the nutrition ``quantity_key`` (e.g. ``energy`` or
-        ``protein``) and an optional bounded ``window_days``. Returns a plain
-        direction over your own logged days; missing days stay visible gaps and
-        are never imputed, and the answer carries no significance, reference
-        range, or causal claim. An empty, stale, or too-thin domain comes back as
-        one of the structurally-distinct states (``missing_input`` /
-        ``stale_input`` / ``insufficient_data``), never a generic error.
+        Call ``signal()`` with no ``name`` to get the catalog: each signal's
+        ``name``, the plain-English ``question`` it answers, and its declared
+        ``params`` (which are required, and their bounds). Then call
+        ``signal(name, params)`` to run one — for example
+        ``signal("resting_hr_status")`` or
+        ``signal("supplement_intake_adherence", {"matcher": "vitamin d",
+        "window_days": 30})``.
+
+        Each answer delegates to the grounded signal engine and returns a
+        structured payload whose ``status`` distinguishes available /
+        missing_input / stale_input / insufficient_data without collapsing into a
+        generic error. It is descriptive only: no diagnosis, recommendation, or
+        causal claim. An unknown ``name`` or a missing required param is rejected
+        with an explicit error rather than a fabricated answer.
         """
-        return warehouse_server.nutrition_intake_trend(
-            quantity_key, window_days=window_days, warehouse_path=warehouse_path
-        )
+        if name is None:
+            return _signal_catalog()
+        if name not in _signal_dispatch:
+            raise ValueError(
+                f"unknown signal {name!r}; call signal() with no name to list available signals"
+            )
+        supplied = params or {}
+        for pspec in _SIGNAL_PARAMS[name]:
+            if pspec["required"] and not supplied.get(pspec["name"]):
+                raise ValueError(f"signal {name!r} requires param {pspec['name']!r}")
+        return _signal_dispatch[name](supplied)
 
     # --- Stage 3 analytical tools ------------------------------------------ #
-    # change_point and smoothed_average live on the DEFAULT agent-safe surface.
-    # Each is a thin wrapper that delegates to the engine analytical path
-    # (premura.engine.invoke_analytical_tool) — it computes no statistics and
-    # issues no raw SQL. A stale / inadmissible / insufficient / out-of-bounds
-    # request returns a structured refusal with a distinct reason and no estimate.
+    # change_point / smoothed_average / rolling_mean — the three descriptive
+    # single-metric pattern tools — are exposed as ONE ``analyze`` tool selected
+    # by ``method``. Each method routes to the SAME thin server wrapper and the
+    # SAME ``_dispatch_analytical_with_trace`` call as before, preserving the
+    # per-method trace ``tool_name`` and request identity, so the multiplicity
+    # trace stays byte-identical to the pre-collapse surface. Pre-registered
+    # hypothesis tests (``paired_test``) and the two-metric association
+    # (``correlate``) stay separate tools: a descriptive pattern is a different
+    # epistemic kind from a hypothesis test and must not share one menu slot.
+    analyze_methods = ("change_point", "smoothed_average", "rolling_mean")
 
     @mcp.tool()
-    def change_point(
+    def analyze(
+        method: str,
         metric_id: str,
+        window: int | None = None,
+        min_coverage: float | None = None,
         min_side_observations: int | None = None,
         session_id: str | None = None,
     ) -> dict[str, Any]:
-        """Detect whether and when one metric shifted to a new level.
+        """Describe one metric's recent pattern with a chosen descriptive method.
 
-        Reports the most prominent single level shift in the metric's recent
-        admissible series (when, before/after levels, direction) with validity
-        metadata. Descriptive only: it never names a cause and carries no
-        p-value or significance claim. Stale, inadmissible, insufficient, or
-        out-of-bounds requests return a structured refusal with a distinct
-        reason and no estimate.
+        ``method`` selects the descriptive tool:
 
-        Pass the optional ``session_id`` from ``research_trace_open`` to record
-        this call in a research session's multiplicity trace; without it the tool
-        behaves exactly as before and writes no trace row.
-        """
-        return _dispatch_analytical_with_trace(
-            warehouse_path=warehouse_path,
-            tool_name="change_point",
-            session_id=session_id,
-            request={"metric_id": metric_id, "min_side_observations": min_side_observations},
-            dispatch=lambda: warehouse_server.change_point(
-                metric_id,
-                min_side_observations=min_side_observations,
-                warehouse_path=warehouse_path,
-            ),
-        )
+        * ``"change_point"`` — detect the single most prominent level shift (when,
+          before/after levels, direction). Uses ``min_side_observations``.
+        * ``"smoothed_average"`` — a conservative trailing average over the
+          recent admissible series. Uses ``window`` and ``min_coverage``.
+        * ``"rolling_mean"`` — a trailing moving-window mean across the series.
+          Uses ``window`` and ``min_coverage``.
 
-    @mcp.tool()
-    def smoothed_average(
-        metric_id: str,
-        window: int | None = None,
-        min_coverage: float | None = None,
-        session_id: str | None = None,
-    ) -> dict[str, Any]:
-        """Summarize one metric's recent pattern with a conservative trailing average.
-
-        Returns a trailing rolling mean over the metric's recent admissible
-        series with smoothing/window metadata; under-covered windows are left
-        blank so missing data stays visible. It is a description of past
-        observations, not a forecast, and implies no statistical significance.
-        Stale, inadmissible, insufficient, or out-of-bounds requests return a
-        structured refusal with a distinct reason and no estimate.
+        All three are descriptive only: they name no cause and carry no p-value or
+        significance claim, and under-covered windows are left blank so missing
+        data stays visible. Stale, inadmissible, insufficient, or out-of-bounds
+        requests return a structured refusal with a distinct reason and no
+        estimate. Params that do not belong to the chosen ``method`` must be left
+        unset. For a before/after or condition difference use ``paired_test``; for
+        a two-metric lagged association use ``correlate``.
 
         Pass the optional ``session_id`` from ``research_trace_open`` to record
         this call in a research session's multiplicity trace; without it the tool
         behaves exactly as before and writes no trace row.
         """
-        return _dispatch_analytical_with_trace(
-            warehouse_path=warehouse_path,
-            tool_name="smoothed_average",
-            session_id=session_id,
-            request={"metric_id": metric_id, "window": window, "min_coverage": min_coverage},
-            dispatch=lambda: warehouse_server.smoothed_average(
-                metric_id,
-                window=window,
-                min_coverage=min_coverage,
+        if method not in analyze_methods:
+            raise ValueError(
+                f"unknown analyze method {method!r}; expected one of {', '.join(analyze_methods)}"
+            )
+        if method == "change_point":
+            if window is not None or min_coverage is not None:
+                raise ValueError("analyze method 'change_point' takes only min_side_observations")
+            return _dispatch_analytical_with_trace(
                 warehouse_path=warehouse_path,
-            ),
+                tool_name="change_point",
+                session_id=session_id,
+                request={"metric_id": metric_id, "min_side_observations": min_side_observations},
+                dispatch=lambda: warehouse_server.change_point(
+                    metric_id,
+                    min_side_observations=min_side_observations,
+                    warehouse_path=warehouse_path,
+                ),
+            )
+        if min_side_observations is not None:
+            raise ValueError(f"analyze method {method!r} takes only window and min_coverage")
+        server_fn = (
+            warehouse_server.smoothed_average
+            if method == "smoothed_average"
+            else warehouse_server.rolling_mean
         )
-
-    @mcp.tool()
-    def rolling_mean(
-        metric_id: str,
-        window: int | None = None,
-        min_coverage: float | None = None,
-        session_id: str | None = None,
-    ) -> dict[str, Any]:
-        """Summarize how one metric's level moved over time with a trailing window.
-
-        Slides a declared trailing window across the metric's recent admissible
-        series; each emitted point averages only the observations inside its own
-        window and is left blank when non-imputed coverage falls below the declared
-        minimum, so missing data stays visible. You declare the metric and window
-        before computation; the tool never scans windows to pick the strongest. It
-        is a description of how the level moved, not a forecast, and implies no
-        statistical significance. Stale, inadmissible, insufficient, or
-        out-of-bounds requests return a structured refusal with a distinct reason
-        and no estimate.
-
-        Pass the optional ``session_id`` from ``research_trace_open`` to record this
-        call in a research session's multiplicity trace; without it the tool behaves
-        exactly as before and writes no trace row.
-        """
         return _dispatch_analytical_with_trace(
             warehouse_path=warehouse_path,
-            tool_name="rolling_mean",
+            tool_name=method,
             session_id=session_id,
             request={"metric_id": metric_id, "window": window, "min_coverage": min_coverage},
-            dispatch=lambda: warehouse_server.rolling_mean(
+            dispatch=lambda: server_fn(
                 metric_id,
                 window=window,
                 min_coverage=min_coverage,
@@ -599,127 +684,102 @@ def _register_default_tools(
             ),
         )
 
-    # --- Stage 3 simple anchor-date before/after difference --------------- #
-    # paired_t_test reports a simple before/after paired difference for one metric
-    # split by a caller-declared anchor date. It is a thin wrapper that delegates
-    # to the engine analytical path (prepare_before_after_paired_input ->
-    # invoke_analytical_tool): it computes no statistics, does no pairing, and
-    # issues no raw SQL. The agent MUST pre-register the split (anchor, windows,
-    # expected direction) before seeing the result; an inadmissible input, no valid
-    # pairs, too few pairs, or a constant difference returns a structured refusal
-    # with a distinct reason and no estimate. It never emits a p-value or a
-    # significance verdict.
+    # --- Stage 3 pre-registered paired difference (before/after or condition) #
+    # paired_t_test and condition_paired_t_test are exposed as ONE ``paired_test``
+    # tool selected by ``kind``. Each kind routes to the SAME thin server wrapper
+    # and the SAME ``_dispatch_analytical_with_trace`` call as before, preserving
+    # the per-kind trace ``tool_name`` (``paired_t_test`` /
+    # ``condition_paired_t_test``) and request identity, so the multiplicity trace
+    # stays byte-identical to the pre-collapse surface. Both are pre-registered:
+    # the agent MUST declare the split (anchor OR condition episodes), windows, and
+    # expected direction before seeing the result. Descriptive only — never a
+    # p-value or significance verdict, never a causal/diagnostic/population claim.
+    paired_kinds = ("before_after", "condition_label")
 
     @mcp.tool()
-    def paired_t_test(
+    def paired_test(
+        kind: str,
         metric_id: str,
-        anchor_date: str,
         before_days: int,
         after_days: int,
         expected_direction: str,
-        session_id: str | None = None,
-    ) -> dict[str, Any]:
-        """Report a simple before/after paired difference for one daily metric.
-
-        Answers one pre-registered question: around the ``anchor_date``
-        (YYYY-MM-DD), how did ``metric_id`` differ between the ``before_days``
-        before and the ``after_days`` after, in the ``expected_direction``
-        ("increase" or "decrease") you declare up front? Observations are matched
-        nearest-to-anchor outward and the paired differences (after minus before)
-        are summarized as a mean and its dispersion (standard deviation, standard
-        error, and a descriptive difference interval), plus whether the observed
-        direction matches your declared expectation.
-
-        It is descriptive only: it never reports a p-value or a "significant"
-        verdict, the anchor only splits the windows and is not shown to be the cause
-        of any change, and it makes no causal/diagnostic/treatment/population-norm
-        claim. Inadmissible, stale, no-valid-pairs, too-few-pairs, or
-        constant-difference requests return a structured refusal with a distinct
-        reason and no estimate.
-
-        Pass the optional ``session_id`` from ``research_trace_open`` to record this
-        pre-registered hypothesis in a research session's multiplicity trace;
-        without it the tool behaves exactly as before and writes no trace row.
-        """
-        return _dispatch_analytical_with_trace(
-            warehouse_path=warehouse_path,
-            tool_name="paired_t_test",
-            session_id=session_id,
-            request={
-                "metric_id": metric_id,
-                "anchor_date": anchor_date,
-                "before_days": before_days,
-                "after_days": after_days,
-                "expected_direction": expected_direction,
-            },
-            dispatch=lambda: warehouse_server.paired_t_test(
-                metric_id,
-                anchor_date=anchor_date,
-                before_days=before_days,
-                after_days=after_days,
-                expected_direction=expected_direction,
-                warehouse_path=warehouse_path,
-            ),
-        )
-
-    # --- Stage 3 condition-label paired difference (m8) ------------------ #
-    # condition_paired_t_test reports a condition-label paired difference for one
-    # metric, split into off/on periods by a set of caller-declared on-condition
-    # episodes. It is a thin wrapper that delegates to the engine analytical path
-    # (prepare_condition_label_paired_input -> invoke_analytical_tool): it computes
-    # no statistics, does no pairing, and issues no raw SQL. The agent MUST
-    # pre-register the label, episodes, windows, and expected direction before
-    # seeing the result; the label is one operator-declared string, never a list.
-    # An inadmissible input, too few declared/usable episodes, overlapping episodes,
-    # or a constant difference returns a structured refusal with a distinct reason
-    # and no estimate. It never emits a p-value or a significance verdict.
-
-    @mcp.tool()
-    def condition_paired_t_test(
-        metric_id: str,
-        condition_label: str,
-        before_days: int,
-        after_days: int,
-        expected_direction: str,
+        anchor_date: str | None = None,
+        condition_label: str | None = None,
         episodes: list[dict[str, str]] | None = None,
         session_id: str | None = None,
     ) -> dict[str, Any]:
-        """Report a condition-label paired difference for one daily metric.
+        """Report a pre-registered before/after paired difference for one metric.
 
-        Answers one pre-registered question: across the operator's declared
-        on-condition ``episodes`` (each ``{"start_day": "YYYY-MM-DD", "end_day":
-        "YYYY-MM-DD"}``) for one operator-declared ``condition_label`` (a single
-        non-empty string, never a list), how did ``metric_id`` differ between the
-        ``before_days`` off-label days before each episode and the ``after_days``
-        on-label days into it, in the ``expected_direction`` ("increase" or
-        "decrease") you declare up front? Each usable episode contributes one off/on
-        pair; the per-episode differences (on minus off) are summarized as a mean and
-        its dispersion, plus whether the observed direction matches your expectation.
+        ``kind`` selects how the before/after split is defined:
 
-        **Omit ``episodes`` to use the stored declaration:** the warehouse's
-        current closed episodes for this label (recorded earlier via
-        ``condition_episode_record``; label matching is exact and
-        case-sensitive) are loaded and used as the declared set,
-        and the response carries an ``episodes_source`` disclosure naming the
-        episode ids used. The stored set was declared before this analysis, so
-        the request stays pre-registered; an empty stored set flows into the
-        normal too-few-episodes refusal. Passing ``episodes`` explicitly behaves
-        exactly as before.
+        * ``"before_after"`` — split around a single ``anchor_date`` (YYYY-MM-DD):
+          the ``before_days`` before vs the ``after_days`` after, in the
+          ``expected_direction`` ("increase"/"decrease") declared up front.
+          ``condition_label`` / ``episodes`` must be left unset.
+        * ``"condition_label"`` — split by the operator's declared on-condition
+          ``episodes`` for one ``condition_label`` (a single non-empty string,
+          never a list): ``before_days`` off-label before each episode vs
+          ``after_days`` on-label into it. Omit ``episodes`` to use the stored
+          declaration recorded via ``condition_episode`` (label matching is exact,
+          case-sensitive); the response then carries an ``episodes_source``
+          disclosure naming the episode ids used. ``anchor_date`` must be unset.
 
-        It is descriptive only: it never reports a p-value or a "significant"
-        verdict; the label is operator-declared, not a verified condition, and only
-        splits the windows; and it makes no causal/diagnostic/treatment/
-        population-norm claim. Inadmissible, stale, too-few-episodes, overlapping,
-        too-few-usable-episodes, or constant-difference requests return a structured
+        Observations are matched into pairs and the paired differences summarized
+        as a mean and its dispersion (standard deviation, standard error, and a
+        descriptive difference interval), plus whether the observed direction
+        matches your expectation. It is descriptive only: never a p-value or
+        "significant" verdict; the anchor/label only splits the windows and is not
+        shown to cause any change; no causal/diagnostic/treatment/population-norm
+        claim. Inadmissible, stale, no-valid-pairs, too-few-pairs/episodes,
+        overlapping-episode, or constant-difference requests return a structured
         refusal with a distinct reason and no estimate.
 
-        Pass the optional ``session_id`` from ``research_trace_open`` to record this
-        pre-registered hypothesis in a research session's multiplicity trace;
+        Pass the optional ``session_id`` from ``research_trace_open`` to record
+        this pre-registered hypothesis in a research session's multiplicity trace;
         without it the tool behaves exactly as before and writes no trace row.
         """
-        # Resolve the stored declaration BEFORE building the trace request, so
-        # the recorded hypothesis identity carries the actual episode set used
-        # (two calls under different stored states are different hypotheses;
+        if kind not in paired_kinds:
+            raise ValueError(
+                f"unknown paired_test kind {kind!r}; expected one of {', '.join(paired_kinds)}"
+            )
+        if kind == "before_after":
+            if condition_label is not None or episodes is not None:
+                raise ValueError(
+                    "paired_test kind 'before_after' takes anchor_date, not "
+                    "condition_label/episodes"
+                )
+            if not anchor_date:
+                raise ValueError("paired_test kind 'before_after' requires anchor_date")
+            return _dispatch_analytical_with_trace(
+                warehouse_path=warehouse_path,
+                tool_name="paired_t_test",
+                session_id=session_id,
+                request={
+                    "metric_id": metric_id,
+                    "anchor_date": anchor_date,
+                    "before_days": before_days,
+                    "after_days": after_days,
+                    "expected_direction": expected_direction,
+                },
+                dispatch=lambda: warehouse_server.paired_t_test(
+                    metric_id,
+                    anchor_date=anchor_date,
+                    before_days=before_days,
+                    after_days=after_days,
+                    expected_direction=expected_direction,
+                    warehouse_path=warehouse_path,
+                ),
+            )
+        # kind == "condition_label"
+        if anchor_date is not None:
+            raise ValueError(
+                "paired_test kind 'condition_label' takes condition_label/episodes, not anchor_date"
+            )
+        if not condition_label:
+            raise ValueError("paired_test kind 'condition_label' requires condition_label")
+        # Resolve the stored declaration BEFORE building the trace request, so the
+        # recorded hypothesis identity carries the actual episode set used (two
+        # calls under different stored states are different hypotheses;
         # stored-vs-hand-declared of the same set is the same hypothesis).
         episodes_source: dict[str, Any] | None = None
         declared = episodes
@@ -735,7 +795,6 @@ def _register_default_tools(
                 "episodes": declared,
             }
         resolved = declared
-
         payload = _dispatch_analytical_with_trace(
             warehouse_path=warehouse_path,
             tool_name="condition_paired_t_test",
@@ -855,78 +914,82 @@ def _register_default_tools(
             return warehouse_server.device_inventory()
         return warehouse_server.device_route(device)
 
-    # --- Agent-mediated condition-episode capture ------------------------- #
-    # The warehouse home for operator-declared condition episodes, so off/on
-    # questions (condition_paired_t_test) stop re-declaring episodes per
-    # request. Same posture as profile capture: declarations are recorded, never
-    # verified; corrections supersede with history; withdrawals retract with a
-    # reason; episodes are NEVER auto-detected or suggested from the data. These
-    # live on the DEFAULT agent-safe surface because bounded capture is the
-    # supported agent workflow.
+    # --- Agent-mediated condition-episode capture (one parameterized tool) - #
+    # record / list / retract are exposed as ONE ``condition_episode`` tool
+    # selected by ``op``. Each op routes to the SAME store-boundary server method
+    # as before (the allowlist, supersede-with-history, and retract-with-reason
+    # rules live there, unchanged). Declarations are recorded, never verified;
+    # episodes are NEVER auto-detected or suggested from the data. This is the
+    # bounded agent-mediated write path behind off/on questions (``paired_test``
+    # with kind ``condition_label``).
 
     @mcp.tool()
-    def condition_episode_record(
-        condition_label: str,
-        start_day: str,
+    def condition_episode(
+        op: str,
+        condition_label: str | None = None,
+        start_day: str | None = None,
         end_day: str | None = None,
         supersedes_episode_id: int | None = None,
         note: str | None = None,
         source_ref: str | None = None,
-    ) -> dict[str, Any]:
-        """Record one operator-declared condition episode in the warehouse.
-
-        ``condition_label`` is the operator's own word for the condition (any
-        non-empty string — it is recorded, never verified). Matching is exact
-        after whitespace trimming and case-sensitive: ``"Cold"`` and ``"cold"``
-        are two different labels, so reuse the stored spelling. ``start_day`` /
-        ``end_day`` are local calendar days (``YYYY-MM-DD``); omit ``end_day``
-        while the episode is still ongoing (ongoing episodes are record-keeping
-        only; analyses use closed episodes). Pass ``supersedes_episode_id`` to
-        correct an earlier declaration — the old row stays in history. A
-        declaration that overlaps a current episode of the same label returns
-        ``status='rejected'`` with the reason (supersede or retract the
-        conflicting one instead).
-        """
-        return warehouse_server.record_condition_episode(
-            condition_label,
-            start_day,
-            end_day,
-            supersedes_episode_id=supersedes_episode_id,
-            note=note,
-            source_ref=source_ref,
-            warehouse_path=warehouse_path,
-        )
-
-    @mcp.tool()
-    def condition_episode_list(
-        condition_label: str | None = None,
         include_history: bool = False,
+        episode_id: int | None = None,
+        reason: str | None = None,
     ) -> dict[str, Any]:
-        """List stored condition-episode declarations (current by default).
+        """Record, list, or retract operator-declared condition episodes.
 
-        Use this to show the operator what is declared before running
-        ``condition_paired_t_test`` without explicit episodes. Filter by
-        ``condition_label``; pass ``include_history=True`` to also see
-        superseded and retracted declarations (the append-only trail).
+        ``op`` selects the operation:
+
+        * ``"record"`` — record one episode. Requires ``condition_label`` (the
+          operator's own word for the condition — any non-empty string, recorded
+          never verified; matching is exact after trimming and case-sensitive) and
+          ``start_day`` (``YYYY-MM-DD``). Omit ``end_day`` while ongoing (ongoing
+          episodes are record-keeping only; analyses use closed episodes). Pass
+          ``supersedes_episode_id`` to correct an earlier declaration (the old row
+          stays in history). A declaration overlapping a current episode of the
+          same label returns ``status='rejected'`` with the reason.
+        * ``"list"`` — list stored declarations (current by default). Filter by
+          ``condition_label``; pass ``include_history=True`` to also see superseded
+          and retracted declarations (the append-only trail). Use this before
+          running ``paired_test`` (kind ``condition_label``) without explicit
+          episodes.
+        * ``"retract"`` — withdraw one current declaration. Requires ``episode_id``
+          and ``reason``; the row stays in history marked retracted (nothing is
+          deleted). A missing, already-retracted, or superseded id returns
+          ``status='rejected'`` with the reason.
         """
-        return warehouse_server.list_condition_episodes(
-            condition_label,
-            include_history=include_history,
-            warehouse_path=warehouse_path,
-        )
-
-    @mcp.tool()
-    def condition_episode_retract(episode_id: int, reason: str) -> dict[str, Any]:
-        """Withdraw one current condition-episode declaration, with a reason.
-
-        The declaration stays in history marked retracted — nothing is deleted.
-        A missing, already-retracted, or superseded ``episode_id`` returns
-        ``status='rejected'`` with the reason rather than a silent success.
-        """
-        return warehouse_server.retract_condition_episode(
-            episode_id,
-            reason,
-            warehouse_path=warehouse_path,
+        if op == "record":
+            if not condition_label:
+                raise ValueError("condition_episode op 'record' requires condition_label")
+            if not start_day:
+                raise ValueError("condition_episode op 'record' requires start_day")
+            return warehouse_server.record_condition_episode(
+                condition_label,
+                start_day,
+                end_day,
+                supersedes_episode_id=supersedes_episode_id,
+                note=note,
+                source_ref=source_ref,
+                warehouse_path=warehouse_path,
+            )
+        if op == "list":
+            return warehouse_server.list_condition_episodes(
+                condition_label,
+                include_history=include_history,
+                warehouse_path=warehouse_path,
+            )
+        if op == "retract":
+            if episode_id is None:
+                raise ValueError("condition_episode op 'retract' requires episode_id")
+            if not reason:
+                raise ValueError("condition_episode op 'retract' requires reason")
+            return warehouse_server.retract_condition_episode(
+                episode_id,
+                reason,
+                warehouse_path=warehouse_path,
+            )
+        raise ValueError(
+            f"unknown condition_episode op {op!r}; expected one of record, list, retract"
         )
 
     # --- Runtime orchestrator: roles, handoff trace, blocking answer gate -- #

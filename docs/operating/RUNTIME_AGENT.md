@@ -18,7 +18,7 @@ The default operating surface is the validity-gated MCP server, `premura-mcp`:
 uv run premura-mcp
 ```
 
-Every tool on this surface delegates to the Stage 2 signal engine; there is no raw `hp.*` SQL here. Use it for catalog reads (`list_metrics`, `metric_summary`), status and trend tools (`resting_hr_status`, `steps_trend`, `weight_trend`, …), the bounded analytical tools (`change_point`, `correlate`, `paired_t_test`, …), and agent-mediated profile capture (`profile_context_record`).
+Every tool on this surface delegates to the Stage 2 signal engine; there is no raw `hp.*` SQL here. Use it for catalog reads (`list_metrics`, `metric_summary`), the grounded-signal tool (`signal`; call `signal()` with no name to list the available signals), the bounded analytical tools (`analyze`, `paired_test`, `correlate`), and agent-mediated profile capture (`profile_context_record`).
 
 Direct DuckDB, notebooks, and the raw CLI remain available as **expert fallback** paths, not your default. Reach for them only when the human asks for them or the bounded tools genuinely cannot answer the question.
 
