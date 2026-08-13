@@ -100,9 +100,13 @@ def _warehouse_with_series(tmp_path: Path, values: list[float]) -> Path:
 # Default surface exposes both analytical tools; query_warehouse stays
 # operator-only.
 # --------------------------------------------------------------------------- #
-def test_default_surface_includes_change_point() -> None:
+def test_default_surface_includes_change_point(tmp_path: Path) -> None:
+    # Seed a hermetic warehouse so the call never depends on the ambient default
+    # warehouse existing (it does not in CI).
+    db_path = _warehouse_with_series(tmp_path, [60, 61, 60, 59, 80, 81, 79, 80])
+
     async def run() -> None:
-        srv = build_server()
+        srv = build_server(warehouse_path=db_path)
         names = sorted(tool.name for tool in await srv.list_tools())
         assert "analyze" in names
         # change_point is reachable as a method of the collapsed analyze tool.
@@ -114,9 +118,13 @@ def test_default_surface_includes_change_point() -> None:
     asyncio.run(run())
 
 
-def test_default_surface_includes_smoothed_average() -> None:
+def test_default_surface_includes_smoothed_average(tmp_path: Path) -> None:
+    # Seed a hermetic warehouse so the call never depends on the ambient default
+    # warehouse existing (it does not in CI).
+    db_path = _warehouse_with_series(tmp_path, [60, 61, 62, 63, 64, 65, 66, 67])
+
     async def run() -> None:
-        srv = build_server()
+        srv = build_server(warehouse_path=db_path)
         names = sorted(tool.name for tool in await srv.list_tools())
         assert "analyze" in names
         # smoothed_average is reachable as a method of the collapsed analyze tool.
