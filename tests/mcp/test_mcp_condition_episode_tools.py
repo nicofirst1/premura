@@ -60,8 +60,9 @@ def test_record_list_retract_round_trip(tmp_path: Path) -> None:
 
     recorded = _call(
         server_,
-        "condition_episode_record",
+        "condition_episode",
         {
+            "op": "record",
             "condition_label": "cold",
             "start_day": "2026-03-03",
             "end_day": "2026-03-10",
@@ -76,23 +77,25 @@ def test_record_list_retract_round_trip(tmp_path: Path) -> None:
     assert episode["ongoing"] is False
     assert recorded["capture_session_id"]
 
-    listed = _call(server_, "condition_episode_list", {"condition_label": "cold"})
+    listed = _call(server_, "condition_episode", {"op": "list", "condition_label": "cold"})
     assert listed["count"] == 1
     assert listed["episodes"][0]["episode_id"] == episode["episode_id"]
 
     retracted = _call(
         server_,
-        "condition_episode_retract",
-        {"episode_id": episode["episode_id"], "reason": "was allergies"},
+        "condition_episode",
+        {"op": "retract", "episode_id": episode["episode_id"], "reason": "was allergies"},
     )
     assert retracted["status"] == "retracted"
     assert retracted["episode"]["retraction_reason"] == "was allergies"
 
-    assert _call(server_, "condition_episode_list", {"condition_label": "cold"})["count"] == 0
+    assert (
+        _call(server_, "condition_episode", {"op": "list", "condition_label": "cold"})["count"] == 0
+    )
     history = _call(
         server_,
-        "condition_episode_list",
-        {"condition_label": "cold", "include_history": True},
+        "condition_episode",
+        {"op": "list", "condition_label": "cold", "include_history": True},
     )
     assert history["count"] == 1
 
@@ -102,28 +105,38 @@ def test_rejections_are_structured_not_silent(tmp_path: Path) -> None:
 
     bad_date = _call(
         server_,
-        "condition_episode_record",
-        {"condition_label": "cold", "start_day": "March 3rd"},
+        "condition_episode",
+        {"op": "record", "condition_label": "cold", "start_day": "March 3rd"},
     )
     assert bad_date["status"] == "rejected"
     assert "YYYY-MM-DD" in bad_date["reason"]
 
     first = _call(
         server_,
-        "condition_episode_record",
-        {"condition_label": "cold", "start_day": "2026-03-03", "end_day": "2026-03-10"},
+        "condition_episode",
+        {
+            "op": "record",
+            "condition_label": "cold",
+            "start_day": "2026-03-03",
+            "end_day": "2026-03-10",
+        },
     )
     assert first["status"] == "recorded"
     overlap = _call(
         server_,
-        "condition_episode_record",
-        {"condition_label": "cold", "start_day": "2026-03-08", "end_day": "2026-03-12"},
+        "condition_episode",
+        {
+            "op": "record",
+            "condition_label": "cold",
+            "start_day": "2026-03-08",
+            "end_day": "2026-03-12",
+        },
     )
     assert overlap["status"] == "rejected"
     assert "overlaps current episode" in overlap["reason"]
 
     stale_retract = _call(
-        server_, "condition_episode_retract", {"episode_id": 999, "reason": "oops"}
+        server_, "condition_episode", {"op": "retract", "episode_id": 999, "reason": "oops"}
     )
     assert stale_retract["status"] == "rejected"
     assert "does not exist" in stale_retract["reason"]
@@ -135,13 +148,13 @@ def test_ongoing_episode_recordable_but_not_analyzable(tmp_path: Path) -> None:
 
     recorded = _call(
         server_,
-        "condition_episode_record",
-        {"condition_label": "new med", "start_day": "2026-05-01"},
+        "condition_episode",
+        {"op": "record", "condition_label": "new med", "start_day": "2026-05-01"},
     )
     assert recorded["status"] == "recorded"
     assert recorded["episode"]["ongoing"] is True
     # Listable for record-keeping…
-    assert _call(server_, "condition_episode_list", {})["count"] == 1
+    assert _call(server_, "condition_episode", {"op": "list"})["count"] == 1
     # …but never part of the analysis read path.
     assert server.stored_condition_episodes("new med", warehouse_path=warehouse) == []
 
@@ -150,14 +163,15 @@ def test_supersede_through_mcp_keeps_history(tmp_path: Path) -> None:
     server_ = build_server(warehouse_path=_warehouse(tmp_path))
     original = _call(
         server_,
-        "condition_episode_record",
-        {"condition_label": "med", "start_day": "2026-05-01"},
+        "condition_episode",
+        {"op": "record", "condition_label": "med", "start_day": "2026-05-01"},
     )["episode"]["episode_id"]
 
     corrected = _call(
         server_,
-        "condition_episode_record",
+        "condition_episode",
         {
+            "op": "record",
             "condition_label": "med",
             "start_day": "2026-05-01",
             "end_day": "2026-06-01",
@@ -167,7 +181,7 @@ def test_supersede_through_mcp_keeps_history(tmp_path: Path) -> None:
     assert corrected["status"] == "recorded"
     assert corrected["superseded_episode_id"] == original
 
-    current = _call(server_, "condition_episode_list", {"condition_label": "med"})
+    current = _call(server_, "condition_episode", {"op": "list", "condition_label": "med"})
     assert [ep["episode_id"] for ep in current["episodes"]] == [corrected["episode"]["episode_id"]]
 
 
@@ -263,6 +277,7 @@ def _pin_engine_clock(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def _analysis_args(episodes: list[dict[str, str]] | None) -> dict[str, Any]:
     args: dict[str, Any] = {
+        "kind": "condition_label",
         "metric_id": _METRIC,
         "condition_label": "on_magnesium",
         "before_days": 10,
@@ -285,14 +300,14 @@ def test_stored_declaration_matches_explicit_declaration(
     for start, end in _episode_bounds():
         payload = _call(
             server_,
-            "condition_episode_record",
-            {"condition_label": "on_magnesium", "start_day": start, "end_day": end},
+            "condition_episode",
+            {"op": "record", "condition_label": "on_magnesium", "start_day": start, "end_day": end},
         )
         assert payload["status"] == "recorded"
         recorded_ids.append(payload["episode"]["episode_id"])
 
-    explicit = _call(server_, "condition_paired_t_test", _analysis_args(_episodes_payload()))
-    stored = _call(server_, "condition_paired_t_test", _analysis_args(None))
+    explicit = _call(server_, "paired_test", _analysis_args(_episodes_payload()))
+    stored = _call(server_, "paired_test", _analysis_args(None))
 
     # The wrapper-layer disclosure is the ONLY difference: engine envelopes are
     # byte-identical between hand-declared and stored declarations of one set.
@@ -313,7 +328,7 @@ def test_empty_stored_declaration_flows_into_refusal(
     warehouse = _warehouse_with_episodic_series(tmp_path)
     server_ = build_server(warehouse_path=warehouse)
 
-    payload = _call(server_, "condition_paired_t_test", _analysis_args(None))
+    payload = _call(server_, "paired_test", _analysis_args(None))
     assert payload["status"] == "refused"
     assert payload["episodes_source"]["kind"] == "stored_declaration"
     assert payload["episodes_source"]["episode_ids"] == []
@@ -334,8 +349,8 @@ def test_trace_identity_carries_the_actual_stored_set(
     for start, end in _episode_bounds():
         payload = _call(
             server_,
-            "condition_episode_record",
-            {"condition_label": "on_magnesium", "start_day": start, "end_day": end},
+            "condition_episode",
+            {"op": "record", "condition_label": "on_magnesium", "start_day": start, "end_day": end},
         )
         ids.append(payload["episode"]["episode_id"])
 
@@ -343,15 +358,15 @@ def test_trace_identity_carries_the_actual_stored_set(
 
     explicit_args = {**_analysis_args(_episodes_payload()), "session_id": session_id}
     stored_args = {**_analysis_args(None), "session_id": session_id}
-    _call(server_, "condition_paired_t_test", explicit_args)
-    _call(server_, "condition_paired_t_test", stored_args)
+    _call(server_, "paired_test", explicit_args)
+    _call(server_, "paired_test", stored_args)
 
     disclosure = _call(server_, "research_trace_disclosure", {"session_id": session_id})
     assert disclosure["raw_analytical_call_count"] == 2
     assert disclosure["unique_hypothesis_count"] == 1  # same set, same hypothesis
 
-    _call(server_, "condition_episode_retract", {"episode_id": ids[1], "reason": "wrong"})
-    _call(server_, "condition_paired_t_test", stored_args)
+    _call(server_, "condition_episode", {"op": "retract", "episode_id": ids[1], "reason": "wrong"})
+    _call(server_, "paired_test", stored_args)
 
     disclosure = _call(server_, "research_trace_disclosure", {"session_id": session_id})
     assert disclosure["raw_analytical_call_count"] == 3
@@ -368,23 +383,33 @@ def test_stored_consumption_skips_ongoing_and_retracted(
     (ep1_start, ep1_end), (ep2_start, ep2_end) = _episode_bounds()
     kept = _call(
         server_,
-        "condition_episode_record",
-        {"condition_label": "on_magnesium", "start_day": ep1_start, "end_day": ep1_end},
+        "condition_episode",
+        {
+            "op": "record",
+            "condition_label": "on_magnesium",
+            "start_day": ep1_start,
+            "end_day": ep1_end,
+        },
     )["episode"]["episode_id"]
     dropped = _call(
         server_,
-        "condition_episode_record",
-        {"condition_label": "on_magnesium", "start_day": ep2_start, "end_day": ep2_end},
+        "condition_episode",
+        {
+            "op": "record",
+            "condition_label": "on_magnesium",
+            "start_day": ep2_start,
+            "end_day": ep2_end,
+        },
     )["episode"]["episode_id"]
-    _call(server_, "condition_episode_retract", {"episode_id": dropped, "reason": "wrong"})
+    _call(server_, "condition_episode", {"op": "retract", "episode_id": dropped, "reason": "wrong"})
     ongoing = _call(
         server_,
-        "condition_episode_record",
-        {"condition_label": "on_magnesium", "start_day": ep2_start},
+        "condition_episode",
+        {"op": "record", "condition_label": "on_magnesium", "start_day": ep2_start},
     )
     assert ongoing["status"] == "recorded"
 
-    payload = _call(server_, "condition_paired_t_test", _analysis_args(None))
+    payload = _call(server_, "paired_test", _analysis_args(None))
     assert payload["episodes_source"]["episode_ids"] == [kept]
     # One episode is below the declared-set minimum -> the normal refusal, with
     # the disclosure still naming exactly what was used.

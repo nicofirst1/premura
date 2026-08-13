@@ -35,42 +35,31 @@ from premura.mcp import server
 from premura.mcp.entrypoint import build_operator_server, build_server
 from premura.store import duck
 
-# ``correlate`` is added to the prior twelve default tools, then the three
-# trace tools join the same surface, then rolling_mean + paired_t_test (-> 18).
+# The collapsed default surface: catalog tools, the four parameterized tools
+# (signal/analyze/paired_test/condition_episode) replacing the old enumerated
+# tools, plus the unchanged remainder (23 tools total).
 _DEFAULT_TOOLS_WITH_CORRELATE = sorted(
     [
         "list_metrics",
         "metric_summary",
-        "resting_hr_status",
-        "resting_hr_trend",
-        "steps_trend",
-        "weight_trend",
-        "sleep_deep_pct_baseline",
-        "hrv_change_around_date",
-        "supplement_intake_adherence",
-        "nutrition_intake_trend",
+        "signal",
+        "analyze",
+        "correlate",
+        "paired_test",
+        "condition_episode",
         "profile_context_supported_fields",
         "profile_context_record",
-        "condition_episode_record",
-        "condition_episode_list",
-        "condition_episode_retract",
         "interview_route",
         "interview_devices",
         "operating_roles",
         "orchestrator_handoff",
         "answer_audit",
         "present_answer",
-        "change_point",
-        "smoothed_average",
-        "correlate",
-        "rolling_mean",
-        "paired_t_test",
-        "condition_paired_t_test",
-        "pubmed_search",
-        "pubmed_fetch",
         "research_trace_open",
         "research_trace_mark_surfaced",
         "research_trace_disclosure",
+        "pubmed_search",
+        "pubmed_fetch",
         "improvement_queue_record",
         "improvement_queue_list",
         "share_packet_render",
@@ -154,7 +143,6 @@ def test_default_surface_lists_exactly_the_expected_tools() -> None:
     async def run() -> None:
         names = sorted(tool.name for tool in await build_server().list_tools())
         assert names == _DEFAULT_TOOLS_WITH_CORRELATE
-        # rolling_mean + paired_t_test were added to the default surface (-> 18).
         assert len(names) == len(_DEFAULT_TOOLS_WITH_CORRELATE)
 
     asyncio.run(run())

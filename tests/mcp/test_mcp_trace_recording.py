@@ -88,7 +88,11 @@ def test_successful_analytical_call_is_recorded(tmp_path: Path) -> None:
     )
     session_id = _call(server, "research_trace_open", {})["session_id"]
 
-    payload = _call(server, "change_point", {"metric_id": _METRIC, "session_id": session_id})
+    payload = _call(
+        server,
+        "analyze",
+        {"method": "change_point", "metric_id": _METRIC, "session_id": session_id},
+    )
 
     # The engine envelope says available; the wrapper attached trace refs beside it.
     assert payload["status"] == "available"
@@ -109,7 +113,11 @@ def test_refused_analytical_call_is_recorded_and_counted(tmp_path: Path) -> None
     server = build_server(warehouse_path=_empty_warehouse(tmp_path))
     session_id = _call(server, "research_trace_open", {})["session_id"]
 
-    payload = _call(server, "change_point", {"metric_id": _METRIC, "session_id": session_id})
+    payload = _call(
+        server,
+        "analyze",
+        {"method": "change_point", "metric_id": _METRIC, "session_id": session_id},
+    )
 
     assert payload["status"] == "refused"
     assert payload["trace"]["terminal_status"] == "refused"
@@ -130,9 +138,9 @@ def test_exact_retry_increases_raw_but_not_unique(tmp_path: Path) -> None:
     )
     session_id = _call(server, "research_trace_open", {})["session_id"]
 
-    args = {"metric_id": _METRIC, "session_id": session_id}
-    _call(server, "change_point", args)
-    _call(server, "change_point", args)  # exact retry
+    args = {"method": "change_point", "metric_id": _METRIC, "session_id": session_id}
+    _call(server, "analyze", args)
+    _call(server, "analyze", args)  # exact retry
 
     d = _disclosure(server, session_id)
     assert d["raw_analytical_call_count"] == 2  # two recorded calls
@@ -145,12 +153,21 @@ def test_distinct_hypotheses_increase_unique_count(tmp_path: Path) -> None:
     )
     session_id = _call(server, "research_trace_open", {})["session_id"]
 
-    _call(server, "change_point", {"metric_id": _METRIC, "session_id": session_id})
+    _call(
+        server,
+        "analyze",
+        {"method": "change_point", "metric_id": _METRIC, "session_id": session_id},
+    )
     # Different tool => different hypothesis identity.
     _call(
         server,
-        "smoothed_average",
-        {"metric_id": _METRIC, "window": 3, "session_id": session_id},
+        "analyze",
+        {
+            "method": "smoothed_average",
+            "metric_id": _METRIC,
+            "window": 3,
+            "session_id": session_id,
+        },
     )
 
     d = _disclosure(server, session_id)
@@ -188,7 +205,7 @@ def test_analytical_call_without_session_writes_no_trace_row(tmp_path: Path) -> 
     # A session exists, but the analytical call is NOT associated with it.
     session_id = _call(server, "research_trace_open", {})["session_id"]
 
-    payload = _call(server, "change_point", {"metric_id": _METRIC})
+    payload = _call(server, "analyze", {"method": "change_point", "metric_id": _METRIC})
 
     assert payload["status"] == "available"
     # Untraced response shape is unchanged: no wrapper trace key.
@@ -214,7 +231,9 @@ def test_pre_question_validation_failure_is_not_recorded(tmp_path: Path) -> None
     # matters here is that it leaves NO trace row to inflate N / raw.
     async def attempt() -> None:
         try:
-            await server.call_tool("change_point", {"metric_id": "  ", "session_id": session_id})
+            await server.call_tool(
+                "analyze", {"method": "change_point", "metric_id": "  ", "session_id": session_id}
+            )
         except Exception:
             return
 
@@ -235,7 +254,9 @@ def test_unknown_session_refuses_without_dispatch(tmp_path: Path) -> None:
     )
 
     payload = _call(
-        server, "change_point", {"metric_id": _METRIC, "session_id": "sess_does_not_exist"}
+        server,
+        "analyze",
+        {"method": "change_point", "metric_id": _METRIC, "session_id": "sess_does_not_exist"},
     )
 
     # Refusal, not an analytical answer: no engine envelope/result is produced.
@@ -262,9 +283,13 @@ def test_change_point_envelope_byte_identical_traced_vs_untraced(tmp_path: Path)
         warehouse_path=_warehouse_with_series(tmp_path, [60, 61, 60, 59, 80, 81, 79, 80])
     )
 
-    untraced = _call(server, "change_point", {"metric_id": _METRIC})
+    untraced = _call(server, "analyze", {"method": "change_point", "metric_id": _METRIC})
     session_id = _call(server, "research_trace_open", {})["session_id"]
-    traced = _call(server, "change_point", {"metric_id": _METRIC, "session_id": session_id})
+    traced = _call(
+        server,
+        "analyze",
+        {"method": "change_point", "metric_id": _METRIC, "session_id": session_id},
+    )
 
     # Tracing added ONLY the wrapper-layer trace metadata; the engine envelope is
     # byte-identical. If this fails, fix the boundary — do NOT weaken the assert.

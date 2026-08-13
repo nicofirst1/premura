@@ -25,15 +25,41 @@ from premura.mcp import server
 from premura.mcp.entrypoint import build_server
 from premura.store import duck
 
-# query_warehouse moved to operator surface; the default surface carries
-# the catalog + six signal tools and the two bounded profile-capture tools,
-# the two Stage 3 analytical tools (change_point / smoothed_average), then
-# ``correlate`` (now thirteen default tools), then the three trace tools
-# (the ``_EIGHT_`` name predates every later addition and is kept stable).
+# query_warehouse moved to operator surface. The default surface is the
+# collapsed 23-tool set: catalog tools, the four parameterized tools
+# (signal/analyze/paired_test/condition_episode), and the unchanged remainder
+# (the ``_EIGHT_`` name predates the collapse and is kept stable).
 _EIGHT_DEFAULT_TOOLS = sorted(
     [
         "list_metrics",
         "metric_summary",
+        "signal",
+        "analyze",
+        "correlate",
+        "paired_test",
+        "condition_episode",
+        "profile_context_supported_fields",
+        "profile_context_record",
+        "interview_route",
+        "interview_devices",
+        "operating_roles",
+        "orchestrator_handoff",
+        "answer_audit",
+        "present_answer",
+        "research_trace_open",
+        "research_trace_mark_surfaced",
+        "research_trace_disclosure",
+        "pubmed_search",
+        "pubmed_fetch",
+        "improvement_queue_record",
+        "improvement_queue_list",
+        "share_packet_render",
+    ]
+)
+
+# The eight signal names published behind the collapsed ``signal`` tool.
+_EIGHT_SIGNAL_NAMES = sorted(
+    [
         "resting_hr_status",
         "resting_hr_trend",
         "steps_trend",
@@ -42,31 +68,6 @@ _EIGHT_DEFAULT_TOOLS = sorted(
         "hrv_change_around_date",
         "supplement_intake_adherence",
         "nutrition_intake_trend",
-        "profile_context_supported_fields",
-        "profile_context_record",
-        "condition_episode_record",
-        "condition_episode_list",
-        "condition_episode_retract",
-        "interview_route",
-        "interview_devices",
-        "operating_roles",
-        "orchestrator_handoff",
-        "answer_audit",
-        "present_answer",
-        "change_point",
-        "smoothed_average",
-        "correlate",
-        "rolling_mean",
-        "paired_t_test",
-        "condition_paired_t_test",
-        "pubmed_search",
-        "pubmed_fetch",
-        "research_trace_open",
-        "research_trace_mark_surfaced",
-        "research_trace_disclosure",
-        "improvement_queue_record",
-        "improvement_queue_list",
-        "share_packet_render",
     ]
 )
 
@@ -129,6 +130,12 @@ def test_build_server_publishes_all_eight_default_tools() -> None:
         srv = build_server()
         names = sorted(tool.name for tool in await srv.list_tools())
         assert names == _EIGHT_DEFAULT_TOOLS
+
+        # The collapsed ``signal`` tool's no-name catalog call publishes all
+        # eight signal names underneath it.
+        _content, catalog = await srv.call_tool("signal", {})
+        assert catalog["count"] == 8
+        assert sorted(entry["name"] for entry in catalog["signals"]) == _EIGHT_SIGNAL_NAMES
 
     asyncio.run(run())
 
@@ -967,32 +974,35 @@ def test_all_signal_tools_reachable_through_public_entrypoint(tmp_path: Path) ->
             # FastMCP returns (content, structured) for tools; assert on the structured payload.
             return result[1] if isinstance(result, tuple) else result
 
-        status_payload = await call("resting_hr_status", {})
+        status_payload = await call("signal", {"name": "resting_hr_status"})
         assert status_payload["status"] == "available"
         assert status_payload["result"]["metric_id"] == "resting_hr"
         assert status_payload["result"]["value"] == 66.0
 
-        rhr_trend_payload = await call("resting_hr_trend", {})
+        rhr_trend_payload = await call("signal", {"name": "resting_hr_trend"})
         assert rhr_trend_payload["status"] == "available"
         assert rhr_trend_payload["result"]["metric_id"] == "resting_hr"
         assert rhr_trend_payload["result"]["trend_direction"] == "up"
 
-        steps_payload = await call("steps_trend", {})
+        steps_payload = await call("signal", {"name": "steps_trend"})
         assert steps_payload["status"] == "available"
         assert steps_payload["result"]["metric_id"] == "steps"
         assert steps_payload["result"]["trend_direction"] == "up"
 
-        weight_payload = await call("weight_trend", {})
+        weight_payload = await call("signal", {"name": "weight_trend"})
         assert weight_payload["status"] == "available"
         assert weight_payload["result"]["metric_id"] == "weight"
         assert weight_payload["result"]["trend_direction"] == "down"
 
-        baseline_payload = await call("sleep_deep_pct_baseline", {})
+        baseline_payload = await call("signal", {"name": "sleep_deep_pct_baseline"})
         assert baseline_payload["status"] == "available"
         assert baseline_payload["result"]["metric_id"] == "sleep_deep_pct"
         assert baseline_payload["result"]["comparison_state"] == "below"
 
-        change_payload = await call("hrv_change_around_date", {"anchor_date": anchor.isoformat()})
+        change_payload = await call(
+            "signal",
+            {"name": "hrv_change_around_date", "params": {"anchor_date": anchor.isoformat()}},
+        )
         assert change_payload["status"] == "available"
         assert change_payload["result"]["metric_id"] == "hrv_rmssd_overnight"
         assert change_payload["result"]["anchor_date"] == anchor.isoformat()

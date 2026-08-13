@@ -54,50 +54,31 @@ def _ensure_live_analytical_registry() -> None:
         build_operator_server = entrypoint.build_operator_server
 
 
-# rolling_mean + paired_t_test are added to the prior sixteen default tools;
-# pubmed-grounding-tools later adds pubmed_search + pubmed_fetch (-> 20).
-# usable-intake-dimensions adds the two intake signal tools
-# (supplement_intake_adherence + nutrition_intake_trend) -> 22.
-# m8 adds condition_paired_t_test (the condition-label pairing extension) -> 23.
-# operating-roles slice 3 adds the private local improvement-queue tools
-# (improvement_queue_record / improvement_queue_list) -> 32.
-# operating-roles slice 4 adds share_packet_render -> 33.
-# Phase 5 slice 2 adds interview_route (interview phase-1 routing) -> 34.
-# Onboarding arc gap #2 adds interview_devices (interview device branch) -> 35.
+# The collapsed default surface: catalog tools, the four parameterized tools
+# (signal/analyze/paired_test/condition_episode) replacing the old enumerated
+# tools, plus the unchanged remainder (23 tools total).
 _DEFAULT_TOOLS_FINISHED = sorted(
     [
         "list_metrics",
         "metric_summary",
-        "resting_hr_status",
-        "resting_hr_trend",
-        "steps_trend",
-        "weight_trend",
-        "sleep_deep_pct_baseline",
-        "hrv_change_around_date",
-        "supplement_intake_adherence",
-        "nutrition_intake_trend",
+        "signal",
+        "analyze",
+        "correlate",
+        "paired_test",
+        "condition_episode",
         "profile_context_supported_fields",
         "profile_context_record",
-        "condition_episode_record",
-        "condition_episode_list",
-        "condition_episode_retract",
         "interview_route",
         "interview_devices",
         "operating_roles",
         "orchestrator_handoff",
         "answer_audit",
         "present_answer",
-        "change_point",
-        "smoothed_average",
-        "correlate",
-        "rolling_mean",
-        "paired_t_test",
-        "condition_paired_t_test",
-        "pubmed_search",
-        "pubmed_fetch",
         "research_trace_open",
         "research_trace_mark_surfaced",
         "research_trace_disclosure",
+        "pubmed_search",
+        "pubmed_fetch",
         "improvement_queue_record",
         "improvement_queue_list",
         "share_packet_render",
@@ -181,7 +162,7 @@ def test_default_surface_lists_exactly_the_pinned_tools() -> None:
         server_ = build_server()
         names = sorted(tool.name for tool in await server_.list_tools())
         assert names == _DEFAULT_TOOLS_FINISHED
-        assert len(names) == 35
+        assert len(names) == 23
 
     asyncio.run(run())
 
@@ -190,7 +171,9 @@ def test_default_surface_includes_both_new_tools() -> None:
     async def run() -> None:
         server_ = build_server()
         names = {tool.name for tool in await server_.list_tools()}
-        assert {"rolling_mean", "paired_t_test"} <= names
+        # rolling_mean lives behind analyze(method="rolling_mean");
+        # paired_t_test lives behind paired_test(kind="before_after").
+        assert {"analyze", "paired_test"} <= names
 
     asyncio.run(run())
 
@@ -199,7 +182,7 @@ def test_operator_surface_inherits_both_new_tools() -> None:
     async def run() -> None:
         server_ = build_operator_server()
         names = {tool.name for tool in await server_.list_tools()}
-        assert {"rolling_mean", "paired_t_test"} <= names
+        assert {"analyze", "paired_test"} <= names
 
     asyncio.run(run())
 
