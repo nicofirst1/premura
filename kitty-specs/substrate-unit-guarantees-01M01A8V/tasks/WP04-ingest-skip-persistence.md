@@ -1,0 +1,54 @@
+---
+work_package_id: "WP04"
+title: "Structured skip persistence (hp.ingest_skip)"
+dependencies:
+  - "WP02"
+requirement_refs:
+  - "FR-003"
+  - "NFR-002"
+  - "NFR-004"
+planning_base_branch: "master"
+merge_target_branch: "master"
+branch_strategy: "Planning artifacts were generated on master; completed changes must merge back into master."
+owned_files:
+  - "src/premura/store/migrations/009_ingest_skip.sql"
+  - "src/premura/store/loader.py"
+  - "tests/intake/test_ingest_skip_migration.py"
+  - "tests/intake/test_measurement_unit_ingest.py"
+subtasks:
+  - "T010"
+  - "T011"
+  - "T012"
+phase: "Phase 2 - Closed loops"
+assignee: ""
+agent: ""
+shell_pid: ""
+history:
+  - timestamp: "2026-08-15T00:00:00Z"
+    agent: "system"
+    action: "Prompt generated via /spec-kitty.tasks"
+---
+
+# Work Package Prompt: WP04 – Structured skip persistence
+
+## Objective
+
+Nothing computed is dropped: unit refusals (WP02), `batch.skipped_rows`, and `batch.unmapped_metrics` persist to a new queryable `hp.ingest_skip` table, joined to their ingest run.
+
+## Read first
+
+`kitty-specs/substrate-unit-guarantees-01M01A8V/data-model.md` (authoritative column spec); migration precedent `src/premura/store/migrations/005_trace_audit.sql`; idempotency-test precedent `tests/intake/test_interval_unit_migration.py` (shape); `store/loader.py` (`finish_ingest_run`, `_persist_plan`).
+
+## Subtasks
+
+- **T010**: `009_ingest_skip.sql` per data-model.md (CREATE TABLE IF NOT EXISTS + two indexes; append-only; idempotent).
+- **T011**: loader `_persist_skips(conn, batch, batch_id, unit_refusals)` called before `finish_ingest_run`, writing kinds `unit_unconvertible` (from WP02's refusals, with from/to units), `parser_skip` (from `batch.skipped_rows`), `unmapped_metric` (from `batch.unmapped_metrics`). `dup_priority` stays count-only on `ingest_run` (stretch goal only — do NOT restructure dedupe for row detail). `finish_ingest_run` and `ingest_run` columns unchanged.
+- **T012**: tests — migration exists/idempotent (double-run, no dupes/errors); extend WP02's refusal test: after `load()`, exactly one `hp.ingest_skip` row for the batch with `kind='unit_unconvertible'` and correct `from_unit`/`to_unit`/`metric_id`; loader-reported refusal count equals persisted rows (NFR-002).
+
+## Done criteria
+
+New + existing intake tests green; full suite + lint/type gates clean.
+
+## Constraints
+
+Additive migration only (C-002). No PHI. C-005 gate: one table, one helper — no skip-reporting framework.
