@@ -2,28 +2,60 @@
 
 **Input**: spec.md (FR-001..FR-010, NFR-001..NFR-004, C-001..C-005), plan.md (IC-01..IC-07) **Prerequisites**: plan.md, research.md, data-model.md, contracts/
 
-## Work Package Manifest
+Details, owned files, and done-criteria live in each `tasks/WPNN-*.md` prompt; WP frontmatter is authoritative for ownership and dependencies. Every WP review records the six-question over-engineering pass (spec C-005) and runs `ruff format --check` in addition to the standard gates.
 
-| WP   | Title                                                            | Depends on             | Phase            | Subtasks  |
-| ---- | ---------------------------------------------------------------- | ---------------------- | ---------------- | --------- |
-| WP01 | Shared units module + read-only connection default               | —                      | 1 Substrate      | T001–T003 |
-| WP02 | Load-boundary unit enforcement for measurements                  | WP01                   | 1 Substrate      | T004–T006 |
-| WP03 | Parsers stop converting (lab_pdf, bmt emit unit-as-observed)     | WP02                   | 2 Simplification | T007–T009 |
-| WP04 | Structured skip persistence (hp.ingest_skip)                     | WP02, WP03             | 2 Closed loops   | T010–T012 |
-| WP05 | Source-kind vocabulary rail + ingest_row MCP tool                | WP02, WP04             | 3 Rail and road  | T013–T016 |
-| WP06 | audit-integrity CLI verb + spelling-variant backfill migration   | WP01                   | 3 Detection      | T017–T019 |
-| WP07 | Labsheet remediation: one-shot delete script + runtime procedure | WP05                   | 4 Remediation    | T020–T021 |
-| WP08 | Docs made true + doctrine substrate test + live-doc sync         | WP03, WP05, WP06, WP07 | 4 Truth          | T022–T024 |
+## WP01 — Shared units module + read-only connection default
 
-Details, owned files, and done-criteria live in each `tasks/WPNN-*.md` prompt (frontmatter is authoritative for ownership and dependencies).
+Create `src/premura/units.py` (table-driven normalize/convert, byte-identical port of the two parser ladders) and flip `duck.connect` default to read-only. Phase 1 - Substrate.
 
-## Execution lanes
+- Dependencies: none
+- Subtasks: T001, T002, T003
 
-- WP01 first (unblocks everything).
-- Lane A (sequential, shared files): WP02 → WP03 → WP04 → WP05 → WP07.
-- Lane B (parallel to Lane A after WP01): WP06.
-- WP08 last — docs trail the code they describe.
+## WP02 — Load-boundary unit enforcement for measurements
 
-## Mission-wide review gate
+`loader.load()` converts every measurement to canonical or refuses row-level; stored unit always `dim_metric.canonical_unit`. Phase 1 - Substrate.
 
-Every WP review and the mission review record a written pass/fail on the six-question over-engineering checklist (spec C-005): existence, abstraction budget, shrink check, one-rule-one-chokepoint, process test, reuse ladder. Reviewers also run `ruff format --check` in addition to the standard gates.
+- Dependencies: WP01
+- Subtasks: T004, T005, T006
+
+## WP03 — Parsers stop converting
+
+Delete both parser-local conversion ladders; lab_pdf/bmt emit unit-as-observed; parsers shrink. Phase 2 - Simplification.
+
+- Dependencies: WP02
+- Subtasks: T007, T008, T009
+
+## WP04 — Structured skip persistence (hp.ingest_skip)
+
+Migration 009 + `_persist_skips`: refusals, parser skips, unmapped metrics become queryable rows. Phase 2 - Closed loops.
+
+- Dependencies: WP02, WP03
+- Subtasks: T010, T011, T012
+
+## WP05 — Source-kind vocabulary rail + ingest_row MCP tool
+
+Loader refuses unregistered source kinds pre-write; one parameterized MCP tool (metric lookup + manual load with mandatory provenance) routes through `loader.load()`. Phase 3 - Rail and road.
+
+- Dependencies: WP02, WP04
+- Subtasks: T013, T014, T015, T016
+
+## WP06 — audit-integrity CLI verb + spelling-variant backfill migration
+
+Detection queries (non-canonical units, out-of-vocabulary source kinds) + idempotent relabel of vetted spelling-only pairs. Phase 3 - Detection.
+
+- Dependencies: WP01
+- Subtasks: T017, T018, T019
+
+## WP07 — Labsheet remediation: one-shot delete script + runtime procedure
+
+`ops/delete_labsheet_rows.sql` (dry-run count first) + RUNTIME_AGENT.md paved-road procedure; execution post-merge on the operator machine. Phase 4 - Remediation.
+
+- Dependencies: WP05
+- Subtasks: T020, T021
+
+## WP08 — Docs made true + doctrine substrate test + live-doc sync
+
+Contract/docs claims name their enforcement home; DOCTRINE gains the substrate test; CHANGELOG + tool-count docstring synced. Phase 4 - Truth.
+
+- Dependencies: WP03, WP05, WP06, WP07
+- Subtasks: T022, T023, T024
