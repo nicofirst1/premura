@@ -17,7 +17,8 @@ history:
   agent: system
   action: Prompt generated via /spec-kitty.tasks
 authoritative_surface: ops/
-create_intent: []
+create_intent:
+- ops/delete_labsheet_rows.sql
 execution_mode: code_change
 owned_files:
 - ops/delete_labsheet_rows.sql

@@ -21,7 +21,10 @@ history:
   agent: system
   action: Prompt generated via /spec-kitty.tasks
 authoritative_surface: src/premura/store/
-create_intent: []
+create_intent:
+- src/premura/store/migrations/009_ingest_skip.sql
+- tests/intake/test_ingest_skip_migration.py
+- tests/intake/test_measurement_unit_ingest.py
 execution_mode: code_change
 owned_files:
 - src/premura/store/migrations/009_ingest_skip.sql

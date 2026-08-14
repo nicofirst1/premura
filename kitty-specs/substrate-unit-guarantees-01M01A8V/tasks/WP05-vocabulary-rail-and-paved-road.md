@@ -22,7 +22,10 @@ history:
   agent: system
   action: Prompt generated via /spec-kitty.tasks
 authoritative_surface: src/premura/mcp/
-create_intent: []
+create_intent:
+- src/premura/store/manual_load.py
+- tests/mcp/test_ingest_row_tool.py
+- tests/intake/test_measurement_unit_ingest.py
 execution_mode: code_change
 owned_files:
 - src/premura/store/loader.py

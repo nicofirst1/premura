@@ -18,7 +18,9 @@ history:
   agent: system
   action: Prompt generated via /spec-kitty.tasks
 authoritative_surface: src/premura/units.py
-create_intent: []
+create_intent:
+- src/premura/units.py
+- tests/test_units.py
 execution_mode: code_change
 owned_files:
 - src/premura/units.py

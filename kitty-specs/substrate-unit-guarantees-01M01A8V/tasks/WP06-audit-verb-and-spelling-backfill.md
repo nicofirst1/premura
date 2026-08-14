@@ -20,7 +20,10 @@ history:
   agent: system
   action: Prompt generated via /spec-kitty.tasks
 authoritative_surface: src/premura/cli.py
-create_intent: []
+create_intent:
+- src/premura/store/migrations/010_unit_spelling_backfill.sql
+- tests/intake/test_unit_spelling_migration.py
+- tests/test_cli_audit_integrity.py
 execution_mode: code_change
 owned_files:
 - src/premura/cli.py
