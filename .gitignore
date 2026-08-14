@@ -63,9 +63,9 @@ skills-lock.json
 .kittify/workspaces/
 .worktrees/
 
-# spec-kitty bookkeeping (local only)
+# spec-kitty bookkeeping (.kittify local; kitty-specs tracked — the 3.2.6
+# workflow guards require mission specs committed at HEAD)
 .kittify/
-kitty-specs/
 CONTEXT.md
 
 # Local throwaway Docker sandbox (Dockerfile, run.sh, Claude Code)
