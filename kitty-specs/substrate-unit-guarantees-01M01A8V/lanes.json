@@ -3,7 +3,7 @@
   "mission_slug": "substrate-unit-guarantees-01M01A8V",
   "mission_id": "01M01A8VZ16ATXZAYDVF3TNTGA",
   "mission_branch": "kitty/mission-substrate-unit-guarantees-01M01A8V",
-  "target_branch": "master",
+  "target_branch": "mission/substrate-unit-guarantees",
   "lanes": [
     {
       "lane_id": "lane-a",
@@ -102,7 +102,7 @@
       "parallel_group": 2
     }
   ],
-  "computed_at": "2026-08-14T23:57:21.330123+00:00",
+  "computed_at": "2026-08-14T23:58:47.076428+00:00",
   "computed_from": "dependency_graph+ownership",
   "planning_artifact_wps": [],
   "collapse_report": {
