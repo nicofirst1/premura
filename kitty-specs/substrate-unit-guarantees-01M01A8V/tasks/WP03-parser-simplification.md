@@ -1,32 +1,34 @@
 ---
-work_package_id: "WP03"
-title: "Parsers stop converting (lab_pdf, bmt emit unit-as-observed)"
+work_package_id: WP03
+title: Parsers stop converting (lab_pdf, bmt emit unit-as-observed)
 dependencies:
-  - "WP02"
+- WP02
 requirement_refs:
-  - "FR-004"
-  - "NFR-001"
-planning_base_branch: "master"
-merge_target_branch: "master"
-branch_strategy: "Planning artifacts were generated on master; completed changes must merge back into master."
-owned_files:
-  - "src/premura/parsers/lab_pdf.py"
-  - "src/premura/parsers/bmt.py"
-  - "tests/test_parsers/test_lab_pdf.py"
-  - "tests/test_parsers/test_bmt.py"
-  - "tests/intake/test_measurement_unit_ingest.py"
+- FR-004
+- NFR-001
+planning_base_branch: master
+merge_target_branch: master
+branch_strategy: Planning artifacts for this mission were generated on master. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into master unless the human explicitly redirects the landing branch.
 subtasks:
-  - "T007"
-  - "T008"
-  - "T009"
-phase: "Phase 2 - Simplification"
-assignee: ""
-agent: ""
-shell_pid: ""
+- T007
+- T008
+- T009
+phase: Phase 2 - Simplification
 history:
-  - timestamp: "2026-08-15T00:00:00Z"
-    agent: "system"
-    action: "Prompt generated via /spec-kitty.tasks"
+- timestamp: '2026-08-15T00:00:00Z'
+  agent: system
+  action: Prompt generated via /spec-kitty.tasks
+authoritative_surface: src/premura/parsers/
+create_intent: []
+execution_mode: code_change
+owned_files:
+- src/premura/parsers/lab_pdf.py
+- src/premura/parsers/bmt.py
+- tests/test_parsers/test_lab_pdf.py
+- tests/test_parsers/test_bmt.py
+- tests/intake/test_measurement_unit_ingest.py
+tags: []
+tracker_refs: []
 ---
 
 # Work Package Prompt: WP03 – Parsers stop converting

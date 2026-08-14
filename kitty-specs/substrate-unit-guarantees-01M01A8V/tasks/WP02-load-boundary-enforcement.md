@@ -1,30 +1,32 @@
 ---
-work_package_id: "WP02"
-title: "Load-boundary unit enforcement for measurements"
+work_package_id: WP02
+title: Load-boundary unit enforcement for measurements
 dependencies:
-  - "WP01"
+- WP01
 requirement_refs:
-  - "FR-002"
-  - "NFR-002"
-planning_base_branch: "master"
-merge_target_branch: "master"
-branch_strategy: "Planning artifacts were generated on master; completed changes must merge back into master."
-owned_files:
-  - "src/premura/store/loader.py"
-  - "src/premura/parsers/base.py"
-  - "tests/intake/test_measurement_unit_ingest.py"
+- FR-002
+- NFR-002
+planning_base_branch: master
+merge_target_branch: master
+branch_strategy: Planning artifacts for this mission were generated on master. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into master unless the human explicitly redirects the landing branch.
 subtasks:
-  - "T004"
-  - "T005"
-  - "T006"
-phase: "Phase 1 - Substrate"
-assignee: ""
-agent: ""
-shell_pid: ""
+- T004
+- T005
+- T006
+phase: Phase 1 - Substrate
 history:
-  - timestamp: "2026-08-15T00:00:00Z"
-    agent: "system"
-    action: "Prompt generated via /spec-kitty.tasks"
+- timestamp: '2026-08-15T00:00:00Z'
+  agent: system
+  action: Prompt generated via /spec-kitty.tasks
+authoritative_surface: src/premura/store/loader.py
+create_intent: []
+execution_mode: code_change
+owned_files:
+- src/premura/store/loader.py
+- src/premura/parsers/base.py
+- tests/intake/test_measurement_unit_ingest.py
+tags: []
+tracker_refs: []
 ---
 
 # Work Package Prompt: WP02 – Load-boundary unit enforcement for measurements

@@ -1,27 +1,29 @@
 ---
-work_package_id: "WP07"
-title: "Labsheet remediation: one-shot delete script + runtime procedure"
+work_package_id: WP07
+title: 'Labsheet remediation: one-shot delete script + runtime procedure'
 dependencies:
-  - "WP05"
+- WP05
 requirement_refs:
-  - "FR-009"
-planning_base_branch: "master"
-merge_target_branch: "master"
-branch_strategy: "Planning artifacts were generated on master; completed changes must merge back into master."
-owned_files:
-  - "ops/delete_labsheet_rows.sql"
-  - "docs/operating/RUNTIME_AGENT.md"
+- FR-009
+planning_base_branch: master
+merge_target_branch: master
+branch_strategy: Planning artifacts for this mission were generated on master. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into master unless the human explicitly redirects the landing branch.
 subtasks:
-  - "T020"
-  - "T021"
-phase: "Phase 4 - Remediation"
-assignee: ""
-agent: ""
-shell_pid: ""
+- T020
+- T021
+phase: Phase 4 - Remediation
 history:
-  - timestamp: "2026-08-15T00:00:00Z"
-    agent: "system"
-    action: "Prompt generated via /spec-kitty.tasks"
+- timestamp: '2026-08-15T00:00:00Z'
+  agent: system
+  action: Prompt generated via /spec-kitty.tasks
+authoritative_surface: ops/
+create_intent: []
+execution_mode: code_change
+owned_files:
+- ops/delete_labsheet_rows.sql
+- docs/operating/RUNTIME_AGENT.md
+tags: []
+tracker_refs: []
 ---
 
 # Work Package Prompt: WP07 – Labsheet remediation mechanism

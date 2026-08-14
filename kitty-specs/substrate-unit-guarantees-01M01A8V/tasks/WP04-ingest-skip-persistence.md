@@ -1,32 +1,35 @@
 ---
-work_package_id: "WP04"
-title: "Structured skip persistence (hp.ingest_skip)"
+work_package_id: WP04
+title: Structured skip persistence (hp.ingest_skip)
 dependencies:
-  - "WP02"
+- WP02
+- WP03
 requirement_refs:
-  - "FR-003"
-  - "NFR-002"
-  - "NFR-004"
-planning_base_branch: "master"
-merge_target_branch: "master"
-branch_strategy: "Planning artifacts were generated on master; completed changes must merge back into master."
-owned_files:
-  - "src/premura/store/migrations/009_ingest_skip.sql"
-  - "src/premura/store/loader.py"
-  - "tests/intake/test_ingest_skip_migration.py"
-  - "tests/intake/test_measurement_unit_ingest.py"
+- FR-003
+- NFR-002
+- NFR-004
+planning_base_branch: master
+merge_target_branch: master
+branch_strategy: Planning artifacts for this mission were generated on master. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into master unless the human explicitly redirects the landing branch.
 subtasks:
-  - "T010"
-  - "T011"
-  - "T012"
-phase: "Phase 2 - Closed loops"
-assignee: ""
-agent: ""
-shell_pid: ""
+- T010
+- T011
+- T012
+phase: Phase 2 - Closed loops
 history:
-  - timestamp: "2026-08-15T00:00:00Z"
-    agent: "system"
-    action: "Prompt generated via /spec-kitty.tasks"
+- timestamp: '2026-08-15T00:00:00Z'
+  agent: system
+  action: Prompt generated via /spec-kitty.tasks
+authoritative_surface: src/premura/store/
+create_intent: []
+execution_mode: code_change
+owned_files:
+- src/premura/store/migrations/009_ingest_skip.sql
+- src/premura/store/loader.py
+- tests/intake/test_ingest_skip_migration.py
+- tests/intake/test_measurement_unit_ingest.py
+tags: []
+tracker_refs: []
 ---
 
 # Work Package Prompt: WP04 – Structured skip persistence

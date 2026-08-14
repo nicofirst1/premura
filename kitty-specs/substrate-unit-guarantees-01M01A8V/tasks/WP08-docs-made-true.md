@@ -1,39 +1,41 @@
 ---
-work_package_id: "WP08"
-title: "Docs made true + doctrine substrate test + live-doc sync"
+work_package_id: WP08
+title: Docs made true + doctrine substrate test + live-doc sync
 dependencies:
-  - "WP03"
-  - "WP05"
-  - "WP06"
-  - "WP07"
+- WP03
+- WP05
+- WP06
+- WP07
 requirement_refs:
-  - "FR-010"
-planning_base_branch: "master"
-merge_target_branch: "master"
-branch_strategy: "Planning artifacts were generated on master; completed changes must merge back into master."
-owned_files:
-  - "src/premura/parsers/CONTRACT.md"
-  - "src/premura/parsers/PARSER_CONTRIBUTING.md"
-  - "docs/building/STAGES.md"
-  - "docs/shared/SPEC.md"
-  - "src/premura/store/UPDATE_STRATEGY.md"
-  - "docs/shared/DOCTRINE.md"
-  - "docs/shared/STATUS.md"
-  - "docs/shared/ROADMAP.md"
-  - "docs/shared/CHANGELOG.md"
-  - "src/premura/mcp/entrypoint.py"
+- FR-010
+planning_base_branch: master
+merge_target_branch: master
+branch_strategy: Planning artifacts for this mission were generated on master. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into master unless the human explicitly redirects the landing branch.
 subtasks:
-  - "T022"
-  - "T023"
-  - "T024"
-phase: "Phase 4 - Truth"
-assignee: ""
-agent: ""
-shell_pid: ""
+- T022
+- T023
+- T024
+phase: Phase 4 - Truth
 history:
-  - timestamp: "2026-08-15T00:00:00Z"
-    agent: "system"
-    action: "Prompt generated via /spec-kitty.tasks"
+- timestamp: '2026-08-15T00:00:00Z'
+  agent: system
+  action: Prompt generated via /spec-kitty.tasks
+authoritative_surface: docs/
+create_intent: []
+execution_mode: code_change
+owned_files:
+- src/premura/parsers/CONTRACT.md
+- src/premura/parsers/PARSER_CONTRIBUTING.md
+- docs/building/STAGES.md
+- docs/shared/SPEC.md
+- src/premura/store/UPDATE_STRATEGY.md
+- docs/shared/DOCTRINE.md
+- docs/shared/STATUS.md
+- docs/shared/ROADMAP.md
+- docs/shared/CHANGELOG.md
+- src/premura/mcp/entrypoint.py
+tags: []
+tracker_refs: []
 ---
 
 # Work Package Prompt: WP08 – Docs made true

@@ -1,29 +1,31 @@
 ---
-work_package_id: "WP01"
-title: "Shared units module + read-only connection default"
+work_package_id: WP01
+title: Shared units module + read-only connection default
 dependencies: []
 requirement_refs:
-  - "FR-001"
-  - "NFR-001"
-planning_base_branch: "master"
-merge_target_branch: "master"
-branch_strategy: "Planning artifacts were generated on master; completed changes must merge back into master."
-owned_files:
-  - "src/premura/units.py"
-  - "src/premura/store/duck.py"
-  - "tests/test_units.py"
+- FR-001
+- NFR-001
+planning_base_branch: master
+merge_target_branch: master
+branch_strategy: Planning artifacts for this mission were generated on master. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into master unless the human explicitly redirects the landing branch.
 subtasks:
-  - "T001"
-  - "T002"
-  - "T003"
-phase: "Phase 1 - Substrate"
-assignee: ""
-agent: ""
-shell_pid: ""
+- T001
+- T002
+- T003
+phase: Phase 1 - Substrate
 history:
-  - timestamp: "2026-08-15T00:00:00Z"
-    agent: "system"
-    action: "Prompt generated via /spec-kitty.tasks"
+- timestamp: '2026-08-15T00:00:00Z'
+  agent: system
+  action: Prompt generated via /spec-kitty.tasks
+authoritative_surface: src/premura/units.py
+create_intent: []
+execution_mode: code_change
+owned_files:
+- src/premura/units.py
+- src/premura/store/duck.py
+- tests/test_units.py
+tags: []
+tracker_refs: []
 ---
 
 # Work Package Prompt: WP01 – Shared units module + read-only connection default

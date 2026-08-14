@@ -1,32 +1,34 @@
 ---
-work_package_id: "WP06"
-title: "audit-integrity CLI verb + spelling-variant backfill migration"
+work_package_id: WP06
+title: audit-integrity CLI verb + spelling-variant backfill migration
 dependencies:
-  - "WP01"
+- WP01
 requirement_refs:
-  - "FR-007"
-  - "FR-008"
-  - "NFR-004"
-planning_base_branch: "master"
-merge_target_branch: "master"
-branch_strategy: "Planning artifacts were generated on master; completed changes must merge back into master."
-owned_files:
-  - "src/premura/cli.py"
-  - "src/premura/store/migrations/010_unit_spelling_backfill.sql"
-  - "tests/intake/test_unit_spelling_migration.py"
-  - "tests/test_cli_audit_integrity.py"
+- FR-007
+- FR-008
+- NFR-004
+planning_base_branch: master
+merge_target_branch: master
+branch_strategy: Planning artifacts for this mission were generated on master. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into master unless the human explicitly redirects the landing branch.
 subtasks:
-  - "T017"
-  - "T018"
-  - "T019"
-phase: "Phase 3 - Detection"
-assignee: ""
-agent: ""
-shell_pid: ""
+- T017
+- T018
+- T019
+phase: Phase 3 - Detection
 history:
-  - timestamp: "2026-08-15T00:00:00Z"
-    agent: "system"
-    action: "Prompt generated via /spec-kitty.tasks"
+- timestamp: '2026-08-15T00:00:00Z'
+  agent: system
+  action: Prompt generated via /spec-kitty.tasks
+authoritative_surface: src/premura/cli.py
+create_intent: []
+execution_mode: code_change
+owned_files:
+- src/premura/cli.py
+- src/premura/store/migrations/010_unit_spelling_backfill.sql
+- tests/intake/test_unit_spelling_migration.py
+- tests/test_cli_audit_integrity.py
+tags: []
+tracker_refs: []
 ---
 
 # Work Package Prompt: WP06 – Detection + legacy spelling cleanup
