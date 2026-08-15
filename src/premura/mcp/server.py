@@ -459,7 +459,7 @@ def stored_condition_episodes(
 
 
 # --------------------------------------------------------------------------- #
-# Manual single-row load (the `ingest_row` MCP tool's paved road, m8 WP05).
+# Manual single-row load (the `ingest_row` MCP tool's paved road; see issue #113).
 #
 # Two ops, both delegating entirely — zero conversion/validation logic lives in
 # this layer or above it:

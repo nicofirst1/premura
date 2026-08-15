@@ -996,7 +996,7 @@ def _register_default_tools(
             f"unknown condition_episode op {op!r}; expected one of record, list, retract"
         )
 
-    # --- Manual single-row load (the paved road, m8 WP05) - one parameterized #
+    # --- Manual single-row load (the paved road; issue #113) - one parameterized #
     # tool selected by ``op``. ``suggest_metric`` and ``load`` each delegate
     # entirely to ``warehouse_server`` / ``store.manual_load`` / ``store.loader``
     # — zero conversion or validation logic lives in this MCP layer. This is the

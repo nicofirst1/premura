@@ -1,4 +1,4 @@
-"""Load-boundary unit enforcement for measurements (m8 WP02).
+"""Load-boundary unit enforcement for measurements (issue #113).
 
 Structural mirror of test_interval_unit_ingest.py: after a real
 `loader.load()`, every persisted fact_measurement row's unit must equal its
@@ -105,7 +105,7 @@ def test_unrecognized_unit_refuses_row_not_batch(empty_warehouse, tmp_path):
     ).fetchone()
     assert absent is None
 
-    # NFR-002 parity: the loader-reported refusal count matches exactly one
+    # Parity: the loader-reported refusal count matches exactly one
     # persisted hp.ingest_skip row, carrying the same from/to units and metric.
     assert len(stats.unit_refusals) == 1
     skip_rows = empty_warehouse.execute(
@@ -122,7 +122,7 @@ def test_unrecognized_unit_refuses_row_not_batch(empty_warehouse, tmp_path):
     ]
 
 
-# --- e2e: real simplified parsers (observe) -> real loader (convert) (WP03 T009) ---
+# --- e2e: real simplified parsers (observe) -> real loader (convert) ---
 #
 # Pins that the two-step pipeline (parser emits observed unit, loader converts
 # to canonical) reproduces the same warehouse rows the old one-step pipeline
@@ -187,7 +187,7 @@ def test_bmt_long_format_e2e_inches_and_kg_match_pre_split_pipeline(empty_wareho
 
 
 # --- source-kind vocabulary rail: the test that would have caught the incident
-# (WP05 T013/T016e) ---
+# (source-kind rail; issue #113) ---
 #
 # `validate_batch_against_warehouse` must refuse an unregistered `source_kind`
 # BEFORE any write — not just skip the row, refuse the whole batch, and write

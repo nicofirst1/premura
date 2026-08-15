@@ -1,7 +1,7 @@
-"""MCP exposure of the `ingest_row` tool — the paved road for manual data (m8 WP05).
+"""MCP exposure of the `ingest_row` tool — the paved road for manual data (issue #113).
 
 Locks the two ops (`suggest_metric` / `load`) against the contract in
-``kitty-specs/substrate-unit-guarantees-01M01A8V/contracts/ingest-row-tool.md``:
+the ingest-row tool contract:
 `load` routes through the exact same boundary every parser uses
 (`store.loader.load`, via `store.manual_load`), so unit convert-or-refuse and
 `hp.ingest_skip` persistence apply with zero special-casing here. Synthetic

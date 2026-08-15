@@ -1,8 +1,8 @@
-"""Migration-level verification for 009_ingest_skip.sql (m8 WP04).
+"""Migration-level verification for 009_ingest_skip.sql.
 
 Black-box stance mirrors test_interval_unit_migration.py: the warehouse is
 always initialized through the public ``premura.store.duck`` path. Assertions
-target the storage contract WP04 owns: ``hp.ingest_skip`` exists with the
+target the storage contract: ``hp.ingest_skip`` exists with the
 documented columns, and re-running migrations is idempotent (no dupes, no
 errors).
 """

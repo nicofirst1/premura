@@ -171,7 +171,7 @@ def test_convert_known_pair_wrong_metric_returns_none() -> None:
     assert convert(1.0, from_unit="mmol_per_l", to_unit="mg_per_dl", metric_id="lab:sodium") is None
 
 
-# --- duck.connect / duck.initialize read-only default (T002) ---
+# --- duck.connect / duck.initialize read-only default ---
 
 
 def test_connect_defaults_to_read_only(tmp_path) -> None:

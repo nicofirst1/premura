@@ -163,7 +163,7 @@ def test_misfiled_intake_row_fails_loaded(empty_warehouse) -> None:
     misfiled = MisfiledIntakeAsObservationParser().parse(SOURCE_PATH)
     misfiled.attach_source_artifact(SOURCE_PATH)
     # "alien_intake_misfiled" is a synthetic in-test source_kind, not a real
-    # registered parser; disclosed collateral of WP05's T013 vocabulary rail.
+    # registered parser; deliberate for the source-kind vocabulary rail (issue #113).
     stats = load(empty_warehouse, misfiled, allow_unregistered_source_kind=True)
     assert stats.rows_inserted == 1  # the row really landed — in the WRONG drawer
 
