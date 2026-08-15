@@ -55,6 +55,7 @@ from ..engine import (
 )
 from ..engine import _query as engine_query
 from ..engine.policies._defaults import builtin_policies
+from ..parsers import lookup
 from ..parsers.registry import registered_source_kinds
 from ..profile_fields import (
     SUPPORTED_PROFILE_FIELDS,
@@ -63,7 +64,7 @@ from ..profile_fields import (
 )
 from ..session_log import store as session_log_store
 from ..store import condition_episodes as condition_episodes_store
-from ..store import duck, profile_intake
+from ..store import duck, manual_load, profile_intake
 from ..ui import device_tracks, improvement_kinds, interview_tracks
 from ..ui import roles as ui_roles
 from . import pubmed
@@ -455,6 +456,103 @@ def stored_condition_episodes(
             }
         )
     return episodes
+
+
+# --------------------------------------------------------------------------- #
+# Manual single-row load (the `ingest_row` MCP tool's paved road, m8 WP05).
+#
+# Two ops, both delegating entirely — zero conversion/validation logic lives in
+# this layer or above it:
+# * `ingest_row_suggest_metric` — a pass-through to
+#   `parsers.lookup.suggest_metric`; the same resolution a parser author gets.
+# * `ingest_row_load` — requires `source_ref` (refused before the loader if
+#   missing; provenance is never fabricated) and otherwise builds + loads a
+#   single-row batch via `store.manual_load`, which routes through
+#   `store.loader.load` — the identical boundary every parser uses. Unit
+#   convert-or-refuse and hp.ingest_skip persistence apply with no special-
+#   casing for this path.
+# --------------------------------------------------------------------------- #
+
+
+def ingest_row_suggest_metric(field_name: str) -> dict[str, Any]:
+    """Resolve a raw field/column label to a canonical metric_id, or None.
+
+    Delegates entirely to :func:`premura.parsers.lookup.suggest_metric` — the
+    same resolution step a parser author gets. A ``None`` result means the
+    caller follows the standards-first ladder (LOINC -> IEEE 1752.1 -> bare
+    English -> ``vendor:*``) or stops rather than guessing.
+    """
+    metric_id = lookup.suggest_metric(field_name)
+    return {"field_name": field_name, "metric_id": metric_id}
+
+
+def ingest_row_load(
+    metric_id: str,
+    ts_utc: str | datetime,
+    unit: str,
+    source_ref: str | None,
+    *,
+    value_num: float | None = None,
+    value_text: str | None = None,
+    warehouse_path: Path | None = None,
+) -> dict[str, Any]:
+    """Manually load one transcribed observation through the loader boundary.
+
+    ``source_ref`` (mandatory plain-text provenance, e.g. "operator
+    spreadsheet row 14") is checked here, before the loader opens: a missing
+    or empty value is refused rather than defaulted or fabricated. Every other
+    rule — unit convert-or-refuse, dedupe, ``hp.ingest_skip`` persistence — is
+    the loader boundary's alone; this function does not duplicate any of it.
+    """
+    if not source_ref or not source_ref.strip():
+        return {
+            "status": "refused",
+            "metric_id": metric_id,
+            "reason": "source_ref is mandatory plain-text provenance and was missing/empty",
+        }
+    if value_num is None and not value_text:
+        return {
+            "status": "refused",
+            "metric_id": metric_id,
+            "reason": "one of value_num or value_text is required",
+        }
+
+    ts = ts_utc if isinstance(ts_utc, datetime) else datetime.fromisoformat(ts_utc)
+
+    with _open_warehouse_writable(warehouse_path) as conn:
+        try:
+            stats = manual_load.load_manual_row(
+                conn,
+                metric_id=metric_id,
+                ts_utc=ts,
+                unit=unit,
+                source_ref=source_ref,
+                value_num=value_num,
+                value_text=value_text,
+            )
+        except ValueError as exc:
+            return {"status": "refused", "metric_id": metric_id, "reason": str(exc)}
+
+        if stats.unit_refusals:
+            refusal = stats.unit_refusals[0]
+            return {
+                "status": "refused",
+                "metric_id": metric_id,
+                "reason": refusal.reason,
+            }
+
+        stored_unit = conn.execute(
+            "SELECT canonical_unit FROM hp.dim_metric WHERE metric_id = ?", [metric_id]
+        ).fetchone()
+
+    return {
+        "status": "loaded",
+        "metric_id": metric_id,
+        "unit": stored_unit[0] if stored_unit else unit,
+        "rows_inserted": stats.rows_inserted,
+        "rows_skipped_dup": stats.rows_skipped_dup,
+        "batch_id": stats.batch_id,
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -2421,6 +2519,8 @@ __all__ = [
     "hrv_change_around_date",
     "improvement_queue_list",
     "improvement_queue_record",
+    "ingest_row_load",
+    "ingest_row_suggest_metric",
     "list_condition_episodes",
     "list_metrics",
     "metric_summary",

@@ -12,11 +12,18 @@ from ulid import ULID
 
 from .. import units
 from ..parsers.base import IngestBatch
+from ..parsers.registry import registered_source_kinds
 from .dedupe import DedupePlan, DedupePlanner
 from .duck import upsert_dim_source
 
 if TYPE_CHECKING:
     import duckdb
+
+#: The one non-parser source_kind the load boundary accepts: single-row manual
+#: transcription via `store.manual_load` (the `ingest_row` MCP tool's `load`
+#: op). Defined once here so `validate_batch_against_warehouse` and
+#: `manual_load` share the identical identifier — never a second literal copy.
+MANUAL_LOAD_SOURCE_KIND = "manual_load"
 
 
 @dataclass(slots=True)
@@ -93,14 +100,32 @@ def finish_ingest_run(
     )
 
 
-def load(conn: duckdb.DuckDBPyConnection, batch: IngestBatch) -> LoadStats:
-    """Persist one ingest batch. Returns insert / skip counts."""
+def load(
+    conn: duckdb.DuckDBPyConnection,
+    batch: IngestBatch,
+    *,
+    allow_unregistered_source_kind: bool = False,
+) -> LoadStats:
+    """Persist one ingest batch. Returns insert / skip counts.
+
+    ``allow_unregistered_source_kind`` defaults to ``False`` (deny): a batch
+    whose ``source_kind`` is not a registered parser kind or
+    ``MANUAL_LOAD_SOURCE_KIND`` is refused before any write. Only the
+    build-and-use runtime-parser door (``harness/ingest_runner.py``, ADR 0010's
+    sanctioned cold-built-parser entry) passes ``True`` in production code; the
+    unregistered kind still lands verbatim in ``hp.ingest_run.source_kind`` so
+    audit-integrity can see it. The flag widens vocabulary membership ONLY —
+    every other guarantee (unit convert-or-refuse, skip persistence, batch
+    validation) applies unchanged.
+    """
     if batch.source_path is None or batch.source_sha256 is None:
         raise ValueError("IngestBatch requires source_path + source_sha256 before loading")
 
     conn.execute("BEGIN")
     try:
-        validate_batch_against_warehouse(conn, batch)
+        validate_batch_against_warehouse(
+            conn, batch, allow_unregistered_source_kind=allow_unregistered_source_kind
+        )
         batch_id = start_ingest_run(
             conn,
             source_kind=batch.source_kind,
@@ -130,8 +155,17 @@ def load(conn: duckdb.DuckDBPyConnection, batch: IngestBatch) -> LoadStats:
 def validate_batch_against_warehouse(
     conn: duckdb.DuckDBPyConnection,
     batch: IngestBatch,
+    *,
+    allow_unregistered_source_kind: bool = False,
 ) -> None:
     batch.validate()
+    if not allow_unregistered_source_kind:
+        allowed_source_kinds = registered_source_kinds() | {MANUAL_LOAD_SOURCE_KIND}
+        if batch.source_kind not in allowed_source_kinds:
+            raise ValueError(
+                f"IngestBatch.source_kind {batch.source_kind!r} is not a registered parser "
+                f"source_kind and is not {MANUAL_LOAD_SOURCE_KIND!r}; refusing to load"
+            )
     metric_ids = batch.declared_metrics
     if not metric_ids:
         if batch.measurements or batch.intervals:
@@ -393,6 +427,7 @@ def _persist_clinical_notes(
 
 
 __all__ = [
+    "MANUAL_LOAD_SOURCE_KIND",
     "LoadStats",
     "UnitRefusal",
     "already_ingested",
