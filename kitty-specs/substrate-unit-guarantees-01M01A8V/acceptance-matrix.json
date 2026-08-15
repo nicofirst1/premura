@@ -2,107 +2,107 @@
   "mission_slug": "substrate-unit-guarantees-01M01A8V",
   "mission_number": "",
   "mission_type": "software-dev",
-  "overall_verdict": "pending",
+  "overall_verdict": "pass",
   "criteria": [
     {
       "criterion_id": "FR-001",
-      "description": "Verify FR-001 is satisfied",
+      "description": "Spec requirement FR-001 satisfied (see spec.md)",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
-      "notes": "TODO: replace with a real acceptance criterion"
+      "evidence": "Shared unit module src/premura/units.py: table-driven normalize_unit/convert, byte-identical port verified by reviewer's 117k-cell equivalence grid (zero divergence incl. division fidelity). tests/test_units.py (71 tests). Commits 561013e, 8f53f1f; WP01 review APPROVE, C-005 6/6.",
+      "pass_fail": "pass",
+      "verified_by": "claude-reviewer (independent per-WP review)",
+      "verified_at": "2026-08-15T02:44:52.446544+00:00",
+      "notes": "Verified in per-WP adversarial review with written C-005 over-engineering gate; full suite 1801 passed at WP08 review."
     },
     {
       "criterion_id": "FR-002",
-      "description": "Verify FR-002 is satisfied",
+      "description": "Spec requirement FR-002 satisfied (see spec.md)",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
-      "notes": "TODO: replace with a real acceptance criterion"
+      "evidence": "Loader convert-or-refuse at _enforce_canonical_units (store/loader.py); stored unit always dim_metric.canonical_unit; e2e tests/intake/test_measurement_unit_ingest.py (lb->kg conversion; unconvertible row refused, batch commits). Commit f31225f; WP02 review APPROVE with 4 adversarial probes, C-005 6/6.",
+      "pass_fail": "pass",
+      "verified_by": "claude-reviewer (independent per-WP review)",
+      "verified_at": "2026-08-15T02:44:52.446544+00:00",
+      "notes": "Verified in per-WP adversarial review with written C-005 over-engineering gate; full suite 1801 passed at WP08 review."
     },
     {
       "criterion_id": "FR-003",
-      "description": "Verify FR-003 is satisfied",
+      "description": "Spec requirement FR-003 satisfied (see spec.md)",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
-      "notes": "TODO: replace with a real acceptance criterion"
+      "evidence": "hp.ingest_skip (migration 009) + _persist_skips inside the load transaction; refusal-count parity asserted; rollback atomicity fault-injected by reviewer. Commit 2270767; WP04 review APPROVE, C-005 6/6.",
+      "pass_fail": "pass",
+      "verified_by": "claude-reviewer (independent per-WP review)",
+      "verified_at": "2026-08-15T02:44:52.446544+00:00",
+      "notes": "Verified in per-WP adversarial review with written C-005 over-engineering gate; full suite 1801 passed at WP08 review."
     },
     {
       "criterion_id": "FR-004",
-      "description": "Verify FR-004 is satisfied",
+      "description": "Spec requirement FR-004 satisfied (see spec.md)",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
-      "notes": "TODO: replace with a real acceptance criterion"
+      "evidence": "lab_pdf.py net -141, bmt.py net -33; parsers emit unit-as-observed; reviewer replayed 35 reconstructed old-ladder cases vs the two-step pipeline: 0 mismatches. Commit 1a87a62; WP03 review APPROVE, C-005 6/6.",
+      "pass_fail": "pass",
+      "verified_by": "claude-reviewer (independent per-WP review)",
+      "verified_at": "2026-08-15T02:44:52.446544+00:00",
+      "notes": "Verified in per-WP adversarial review with written C-005 over-engineering gate; full suite 1801 passed at WP08 review."
     },
     {
       "criterion_id": "FR-005",
-      "description": "Verify FR-005 is satisfied",
+      "description": "Spec requirement FR-005 satisfied (see spec.md)",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
-      "notes": "TODO: replace with a real acceptance criterion"
+      "evidence": "Vocabulary rail in validate_batch_against_warehouse: unregistered source_kind raises pre-write (incident replay test writes zero rows); ADR 0010 build-and-use preserved via explicit allow_unregistered_source_kind flag with exactly one production True-caller (harness/ingest_runner.py). Commit 8438c8e; WP05 review APPROVE, C-005 6/6.",
+      "pass_fail": "pass",
+      "verified_by": "claude-reviewer (independent per-WP review)",
+      "verified_at": "2026-08-15T02:44:52.446544+00:00",
+      "notes": "Verified in per-WP adversarial review with written C-005 over-engineering gate; full suite 1801 passed at WP08 review."
     },
     {
       "criterion_id": "FR-006",
-      "description": "Verify FR-006 is satisfied",
+      "description": "Spec requirement FR-006 satisfied (see spec.md)",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
-      "notes": "TODO: replace with a real acceptance criterion"
+      "evidence": "ingest_row MCP tool (op=load|suggest_metric) on the default surface, pure delegation, mandatory source_ref, source-kind spoofing structurally impossible (no source_kind parameter). tests/mcp/test_ingest_row_tool.py (10 tests). Commit 8438c8e; WP05 review APPROVE.",
+      "pass_fail": "pass",
+      "verified_by": "claude-reviewer (independent per-WP review)",
+      "verified_at": "2026-08-15T02:44:52.446544+00:00",
+      "notes": "Verified in per-WP adversarial review with written C-005 over-engineering gate; full suite 1801 passed at WP08 review."
     },
     {
       "criterion_id": "FR-007",
-      "description": "Verify FR-007 is satisfied",
+      "description": "Spec requirement FR-007 satisfied (see spec.md)",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
-      "notes": "TODO: replace with a real acceptance criterion"
+      "evidence": "premura audit-integrity CLI verb: read-only detection of non-canonical units + out-of-vocabulary source kinds. tests/test_cli_audit_integrity.py. Commit caea0d5; WP06 review APPROVE, C-005 pass.",
+      "pass_fail": "pass",
+      "verified_by": "claude-reviewer (independent per-WP review)",
+      "verified_at": "2026-08-15T02:44:52.446544+00:00",
+      "notes": "Verified in per-WP adversarial review with written C-005 over-engineering gate; full suite 1801 passed at WP08 review."
     },
     {
       "criterion_id": "FR-008",
-      "description": "Verify FR-008 is satisfied",
+      "description": "Spec requirement FR-008 satisfied (see spec.md)",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
-      "notes": "TODO: replace with a real acceptance criterion"
+      "evidence": "Migration 010_unit_spelling_backfill.sql: 57-pair hand-vetted allowlist, all pairs verified normalize_unit(stored)==canonical by reviewer, over-fire structurally impossible (triple WHERE guard), magnitude-wrong rows proven untouched, idempotent. Commit caea0d5; WP06 review APPROVE.",
+      "pass_fail": "pass",
+      "verified_by": "claude-reviewer (independent per-WP review)",
+      "verified_at": "2026-08-15T02:44:52.446544+00:00",
+      "notes": "Verified in per-WP adversarial review with written C-005 over-engineering gate; full suite 1801 passed at WP08 review."
     },
     {
       "criterion_id": "FR-009",
-      "description": "Verify FR-009 is satisfied",
-      "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
-      "notes": "TODO: replace with a real acceptance criterion"
+      "description": "Spec requirement FR-009 satisfied (see spec.md)",
+      "proof_type": "manual_verification",
+      "evidence": "ops/delete_labsheet_rows.sql (dry-run-first, idempotent, FK-order verified by reviewer's adversarial DB incl. divergent-bookkeeping trap: 12/12 assertions) + RUNTIME_AGENT.md paved-road procedure with explicit direct-write prohibition. Commit 028e075; WP07 review APPROVE, C-005 pass.",
+      "pass_fail": "pass",
+      "verified_by": "claude-reviewer (independent per-WP review)",
+      "verified_at": "2026-08-15T02:44:52.446544+00:00",
+      "notes": "Verified in per-WP adversarial review with written C-005 over-engineering gate; full suite 1801 passed at WP08 review."
     },
     {
       "criterion_id": "FR-010",
-      "description": "Verify FR-010 is satisfied",
-      "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
-      "notes": "TODO: replace with a real acceptance criterion"
+      "description": "Spec requirement FR-010 satisfied (see spec.md)",
+      "proof_type": "manual_verification",
+      "evidence": "Docs made true: CONTRACT.md failure split, PARSER_CONTRIBUTING observed-unit rule, STAGES/SPEC enforcement homes + display-vs-storage spellings, UPDATE_STRATEGY delete-and-re-enter variant, DOCTRINE substrate test, CHANGELOG sync; every claim spot-checked against shipped code by reviewer. Commit f16cbbd; WP08 review APPROVE, C-005 6/6.",
+      "pass_fail": "pass",
+      "verified_by": "claude-reviewer (independent per-WP review)",
+      "verified_at": "2026-08-15T02:44:52.446544+00:00",
+      "notes": "Verified in per-WP adversarial review with written C-005 over-engineering gate; full suite 1801 passed at WP08 review."
     }
   ],
   "negative_invariants": []

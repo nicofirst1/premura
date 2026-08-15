@@ -1,19 +1,19 @@
 {
-  "event_count": 50,
-  "last_event_id": "01M01MCSY081P9RNGBQ9QJF664",
-  "materialized_at": "2026-08-15T02:35:40.864104+00:00",
+  "event_count": 51,
+  "last_event_id": "01M01MQG0E422H2Z7CRP7T944T",
+  "materialized_at": "2026-08-15T02:41:31.150486+00:00",
   "mission_number": "",
   "mission_slug": "substrate-unit-guarantees-01M01A8V",
   "mission_type": "software-dev",
   "summary": {
-    "approved": 7,
+    "approved": 8,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
     "done": 0,
     "for_review": 0,
     "in_progress": 0,
-    "in_review": 1,
+    "in_review": 0,
     "planned": 0
   },
   "work_packages": {
@@ -188,17 +188,18 @@
       }
     },
     "WP08": {
-      "actor": "claude-reviewer",
+      "actor": "user",
       "agent": "claude-reviewer",
       "agent_profile": "__resolved_profile_absent__",
       "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
-      "lane": "in_review",
-      "last_event_id": "01M01MCSY081P9RNGBQ9QJF664",
-      "last_transition_at": "2026-08-15T02:35:40.864104+00:00",
+      "lane": "approved",
+      "last_event_id": "01M01MQG0E422H2Z7CRP7T944T",
+      "last_transition_at": "2026-08-15T02:41:31.150486+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "ready"
+        "ready",
+        "APPROVE. All 8 per-claim checks verified against shipped code. (1) CONTRACT.md failure-split matches loader.py exactly (batch-atomic ValueError vs row-skip _enforce_canonical_units/_persist_skips); the unregistered-source_kind claim omits the allow_unregistered_source_kind ADR0010 flag but points at loader.py's docstring (the flag's one home) and CHANGELOG+DOCTRINE surface it correctly = point-at-home, not overstatement. (2) PARSER_CONTRIBUTING observed-unit true: lab_pdf only spelling-normalizes, no rescale; bmt narrow emits-as-observed (wide-format LB_TO_KG is a code-documented edge exception). (3) STAGES loader-as-home true for measurements (convert-or-refuse) AND intervals (persist stamps dm.canonical_unit). (4) SPEC storage spellings: 11/14 spot-checked vs dim_metric.yaml, all match. (5) UPDATE_STRATEGY delete-and-re-enter matches lane-d delete_labsheet_rows.sql (dry-run-first, ops one-shot, idempotent, not a migration). (6) DOCTRINE substrate test: worked example accurate to issue#113, cites ADR0010, no mission/WP/FR tokens, no provenance-dating. (7) CHANGELOG correctly credits lane-c (audit-integrity+backfill migration) and lane-d (delete script). (8) entrypoint.py 24-tools matches _DEFAULT_TOOLS (24 entries) exactly; WP08 correctly left file unedited. Gates: check_no_mission_citations PASS, ruff format PASS (275 files), pytest 1801 passed. C-005: Q1 every edit traces to FR-010; Q2 one new DOCTRINE section only, no new framework; Q3 terse, no bloot; Q4 claims point at enforcement homes (loader docstring, premura.units), no rule duplicated; Q5 no new ceremony; Q6 links ADR0010/CONTRACT/loader rather than restating. NON-BLOCKERS (not WP08's scope): (a) lint_docs.sh exits 1 but all 6 banned buzzwords ('end-to-end') are pre-existing in ADRs untouched by WP08 (lane-c fails identically); fixing them = out-of-scope edits to unowned files. (b) DOCTRINE heading 'THE SUBSTRATE TEST' is ALL-CAPS while both sibling rules are sentence-case - minor parallel-structure nit. (c) pre-existing broken DOCTRINE link to architecture/STAGES.md from commit 90f7d54, outside WP08 diff."
       ],
       "provider": "__resolved_provider_absent__",
       "role": "reviewer",
