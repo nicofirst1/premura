@@ -70,3 +70,17 @@ def test_missing_warehouse_is_graceful(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(settings, "data_dir", data_dir)
     result = runner.invoke(cli.app, ["audit-integrity"])
     assert result.exit_code == 0, result.output
+
+
+def test_manual_load_kind_is_not_reported(monkeypatch, tmp_path: Path) -> None:
+    """The paved road's own source kind is sanctioned vocabulary, not a finding."""
+    db_path = _point_warehouse(monkeypatch, tmp_path)
+    conn = duck.initialize(db_path)
+    conn.execute(
+        "INSERT INTO hp.ingest_run (batch_id, source_kind) VALUES ('batch-m', 'manual_load')"
+    )
+    conn.close()
+
+    result = runner.invoke(cli.app, ["audit-integrity"])
+    assert result.exit_code == 0, result.output
+    assert "manual_load" not in result.output

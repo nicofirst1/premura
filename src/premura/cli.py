@@ -38,7 +38,14 @@ from .parsers.ai_chat_recall import FORMAT_MARKER as AI_CHAT_RECALL_MARKER
 from .parsers.base import file_sha256, normalize_parse_output
 from .parsers.registry import PARSER_REGISTRY, registered_source_kinds
 from .store import duck
-from .store.loader import LoadStats, already_ingested, finish_ingest_run, load, start_ingest_run
+from .store.loader import (
+    MANUAL_LOAD_SOURCE_KIND,
+    LoadStats,
+    already_ingested,
+    finish_ingest_run,
+    load,
+    start_ingest_run,
+)
 from .store.profile_intake import persist_intake_batch
 
 app = typer.Typer(
@@ -762,7 +769,7 @@ def audit_integrity() -> None:
         else:
             console.print("[green]no fact_measurement unit mismatches[/green]")
 
-        known_kinds = registered_source_kinds()
+        known_kinds = registered_source_kinds() | {MANUAL_LOAD_SOURCE_KIND}
         seen_kinds = conn.execute(
             "SELECT DISTINCT source_kind FROM hp.ingest_run WHERE source_kind IS NOT NULL"
         ).fetchall()
