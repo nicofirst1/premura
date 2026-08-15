@@ -2,7 +2,7 @@
 
 > Status: authoritative. Source of truth for the product's operational stance and intended beneficiary.
 >
-> Companion to [SPEC.md](SPEC.md), [USERJOURNEY.md](../using/USERJOURNEY.md), and [STAGES.md](../building/architecture/STAGES.md).
+> Companion to [SPEC.md](SPEC.md), [USERJOURNEY.md](../using/USERJOURNEY.md), and [STAGES.md](../building/STAGES.md).
 
 ## Core statement
 
@@ -31,7 +31,7 @@ The target is the middle: _guide agents to create their own policies; don't stri
 
 **Right (a level above):** the federated parser seam — a `PluginParser` contract, a fixed `suggest_metric()` resolution order, and an `unmapped_metrics` surface — so any agent can add a vendor without anyone editing a central list. **Wrong (enumerated):** an `if source == "garmin" … elif source == "fitbit" …` ladder, or a spec that lists every supported metric instead of the rule for admitting a new one.
 
-## THE SUBSTRATE TEST
+## The substrate test
 
 A guarantee stated in a doc or a docstring is not a guarantee until something enforces it mechanically. For each guarantee, ask:
 
