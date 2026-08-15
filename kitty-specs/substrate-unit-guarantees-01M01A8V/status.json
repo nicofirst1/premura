@@ -1,7 +1,7 @@
 {
-  "event_count": 14,
-  "last_event_id": "01M01CSA7R6ZG3EGGHEYVNVG88",
-  "materialized_at": "2026-08-15T00:22:42.168682+00:00",
+  "event_count": 15,
+  "last_event_id": "01M01CTFRC3NB55FC8JKJHJMZV",
+  "materialized_at": "2026-08-15T00:23:20.589033+00:00",
   "mission_number": "",
   "mission_slug": "substrate-unit-guarantees-01M01A8V",
   "mission_type": "software-dev",
@@ -11,9 +11,9 @@
     "canceled": 0,
     "claimed": 0,
     "done": 0,
-    "for_review": 1,
+    "for_review": 0,
     "in_progress": 0,
-    "in_review": 0,
+    "in_review": 1,
     "planned": 7
   },
   "work_packages": {
@@ -23,18 +23,19 @@
       "agent_profile": "__resolved_profile_absent__",
       "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
-      "lane": "for_review",
-      "last_event_id": "01M01CSA7R6ZG3EGGHEYVNVG88",
-      "last_transition_at": "2026-08-15T00:22:42.168682+00:00",
+      "lane": "in_review",
+      "last_event_id": "01M01CTFRC3NB55FC8JKJHJMZV",
+      "last_transition_at": "2026-08-15T00:23:20.589033+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
         "Ready for review",
-        "REJECT: non-byte-identical port. units.py:121 (mm->cm) uses value*0.1 but bmt.py:107 used value/10 -> diverges (3.3/10=0.32999999999999996 vs 3.3*0.1=0.33), reachable for circumference metrics, untested. Also units.py:116 g->kg turned /1000 into *(1/1000). WP requires byte-identical port. Fix: apply these two originally-divided bmt pairs as divisions (e.g. store 10.0/1000.0 and divide, or a _SIMPLE_DIVISORS branch); add a test pinning mm->cm at an input where /10 != *0.1. C-005: 6/6 pass. All gates green; port otherwise faithful across full grid."
+        "REJECT: non-byte-identical port. units.py:121 (mm->cm) uses value*0.1 but bmt.py:107 used value/10 -> diverges (3.3/10=0.32999999999999996 vs 3.3*0.1=0.33), reachable for circumference metrics, untested. Also units.py:116 g->kg turned /1000 into *(1/1000). WP requires byte-identical port. Fix: apply these two originally-divided bmt pairs as divisions (e.g. store 10.0/1000.0 and divide, or a _SIMPLE_DIVISORS branch); add a test pinning mm->cm at an input where /10 != *0.1. C-005: 6/6 pass. All gates green; port otherwise faithful across full grid.",
+        "division fidelity restored"
       ],
       "provider": "__resolved_provider_absent__",
       "role": "reviewer",
-      "shell_pid": 54820,
-      "shell_pid_created_at": "1786752839.601782",
+      "shell_pid": 62190,
+      "shell_pid_created_at": "1786753399.559651",
       "subtasks": {
         "T001": "done",
         "T002": "done",
