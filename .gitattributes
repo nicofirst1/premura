@@ -1,4 +1,6 @@
 kitty-specs/**/status.events.jsonl merge=spec-kitty-event-log
+# Collapse the whole mission-spec tree in PR diffs — agent bookkeeping, not review surface
+kitty-specs/** linguist-generated=true
 kitty-specs/**/status.json linguist-generated=true
 kitty-specs/**/status.events.jsonl linguist-generated=true
 kitty-specs/**/lanes.json linguist-generated=true
