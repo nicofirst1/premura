@@ -1,7 +1,7 @@
 {
-  "event_count": 41,
-  "last_event_id": "01M01JVRB7WJV4SCFVQS7JDMHF",
-  "materialized_at": "2026-08-15T02:08:53.607053+00:00",
+  "event_count": 43,
+  "last_event_id": "01M01JX2JJFET6X4FPQY3BP9SN",
+  "materialized_at": "2026-08-15T02:09:36.850492+00:00",
   "mission_number": "",
   "mission_slug": "substrate-unit-guarantees-01M01A8V",
   "mission_type": "software-dev",
@@ -12,9 +12,9 @@
     "claimed": 0,
     "done": 0,
     "for_review": 0,
-    "in_progress": 0,
+    "in_progress": 1,
     "in_review": 0,
-    "planned": 2
+    "planned": 1
   },
   "work_packages": {
     "WP01": {
@@ -126,7 +126,8 @@
       "last_transition_at": "2026-08-15T02:08:53.607053+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "ready; rail refined per ADR 0010"
+        "ready; rail refined per ADR 0010",
+        "APPROVE. FR-005/FR-006/NFR-003 met. Incident-replay (labsheet->ValueError, 0 rows in fact_measurement AND ingest_run) verified live. Flag widens VOCABULARY ONLY: adversarial probe (flag=True + unregistered kind + unconvertible unit) shows row refused, ingest_skip written, batch commits, raw kind preserved in ingest_run. Exactly ONE production True-caller (ingest_runner.py:145, ADR 0010 comment); CLI+manual_load strict. ROAD: MCP layers pure delegation, zero conv/validation; no source_kind param -> spoofing structurally impossible; +1 tool (24 total), _DEFAULT_TOOLS+docstring updated. Collateral (3 test call-sites + 6 inventory tests) minimal, disclosed, weakens nothing. Lane kitty-specs byte-identical to mission branch; code commit has zero kitty-specs paths. Gates: full suite 1801 passed, ruff check clean, ruff format clean, mypy clean. C-005: Q1 flag is minimal (one keyword, default-deny, greppable, audit-visible) not a bypass hole. Q2 manual_load thin, MCP delegation-only, single keyword over policy object = right call. Q3 size proportionate. Q4 vocabulary decided in exactly one function (validate_batch_against_warehouse). Q5 flag deliberately skippable-by-declaration; greppability+audit-visibility satisfy the substrate test. Q6 reuse ladder clean (delegates to loader/manual_load/lookup)."
       ],
       "provider": "__resolved_provider_absent__",
       "role": "reviewer",
@@ -164,11 +165,19 @@
       }
     },
     "WP07": {
-      "actor": "finalize-tasks",
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
-      "lane": "planned",
-      "last_event_id": "01M01B2MQ4R17FYGAS7N3V8955",
-      "last_transition_at": "2026-08-14T23:52:50.660821+00:00"
+      "lane": "in_progress",
+      "last_event_id": "01M01JX2JJFET6X4FPQY3BP9SN",
+      "last_transition_at": "2026-08-15T02:09:36.850492+00:00",
+      "model": "__resolved_model_absent__",
+      "provider": "__resolved_provider_absent__",
+      "role": "implementer",
+      "shell_pid": 67109,
+      "shell_pid_created_at": "1786759773.362726"
     },
     "WP08": {
       "actor": "finalize-tasks",
