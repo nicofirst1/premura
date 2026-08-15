@@ -29,6 +29,7 @@ create_intent:
 execution_mode: code_change
 owned_files:
 - src/premura/store/loader.py
+- src/premura/harness/ingest_runner.py
 - src/premura/store/manual_load.py
 - src/premura/mcp/server.py
 - src/premura/mcp/entrypoint.py
@@ -51,7 +52,7 @@ Close the incident's hole and pave the road: `loader.load()` refuses unregistere
 
 ## Subtasks
 
-- **T013**: define `MANUAL_LOAD_SOURCE_KIND` once (store layer); `validate_batch_against_warehouse` raises `ValueError` when `batch.source_kind` ∉ `registered_source_kinds()` ∪ {manual kind} — before any write.
+- **T013**: define `MANUAL_LOAD_SOURCE_KIND` once (store layer); `validate_batch_against_warehouse` raises `ValueError` when `batch.source_kind` ∉ `registered_source_kinds()` ∪ {manual kind} — before any write — UNLESS the caller passes an explicit `allow_unregistered_source_kind=True` keyword on `loader.load()`. Only the harness build-and-use entry (`harness/ingest_runner.py`, ADR 0010's sanctioned runtime-parser door) passes it in production code. Direct-load tests exercising registry-independent behavior pass it explicitly (disclosed collateral). The default stays deny; the flag is greppable; audit-integrity still surfaces unregistered kinds from ingest_run.
 - **T014**: `store/manual_load.py`: thin builder — one `Measurement` + `SourceDescriptor` → single-row `IngestBatch(source_kind=MANUAL_LOAD_SOURCE_KIND)` → `loader.load()`. No unit logic, no validation duplication (the boundary owns both).
 - **T015**: `ingest_row(op="load"|"suggest_metric", ...)` tool on the DEFAULT surface per the contract doc: `suggest_metric` delegates to `parsers.lookup.suggest_metric`; `load` requires `source_ref` (refuse pre-loader if missing) and returns `status='loaded'|'refused'` with reason. Update entrypoint docstring/tool-count prose and `_DEFAULT_TOOLS` deliberately.
 - **T016**: tests — **the bypass regression test: `loader.load()` with `source_kind='labsheet'` (any unregistered string) raises and writes zero rows — this is the test that would have caught the incident**; MCP e2e: valid load lands in `fact_measurement` under the manual kind; unconvertible unit → `status='refused'` + `hp.ingest_skip` row; missing `source_ref` → refused before the loader; `suggest_metric` op returns what `parsers.lookup.suggest_metric` returns; combined-hardening smoke: bare `duck.connect(path)` write attempt fails.
