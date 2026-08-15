@@ -1,0 +1,10 @@
+{
+  "created_at": "1970-01-01T00:00:00+00:00",
+  "friendly_name": "cheap-operator-live-trial-01KT6PSA",
+  "mission_id": "4A2TRQ8KAAR5RXXX5K792C0K57",
+  "mission_number": null,
+  "mission_slug": "cheap-operator-live-trial-01KT6PSA",
+  "mission_type": "software-dev",
+  "slug": "cheap-operator-live-trial-01KT6PSA",
+  "target_branch": "main"
+}

@@ -77,3 +77,7 @@ kitty-ops/ops-index.jsonl
 .kittify/migrations/
 .kittify/logs/
 .kittify/skills-manifest.json
+
+# stale pre-kitty worktrees + op-record logs (local only)
+.worktree/
+kitty-ops/

@@ -1,0 +1,10 @@
+{
+  "created_at": "1970-01-01T00:00:00+00:00",
+  "friendly_name": "session-log-substrate-01KT45S1",
+  "mission_id": "4W9NGXABZHDYQHSA00FXPT5K6G",
+  "mission_number": null,
+  "mission_slug": "session-log-substrate-01KT45S1",
+  "mission_type": "software-dev",
+  "slug": "session-log-substrate-01KT45S1",
+  "target_branch": "main"
+}
