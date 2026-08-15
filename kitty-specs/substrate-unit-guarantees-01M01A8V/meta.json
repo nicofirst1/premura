@@ -11,5 +11,7 @@
   "purpose_tldr": "substrate unit guarantees",
   "slug": "substrate-unit-guarantees-01M01A8V",
   "target_branch": "mission/substrate-unit-guarantees",
-  "topology": "lanes_with_coord"
+  "topology": "lanes_with_coord",
+  "vcs": "git",
+  "vcs_locked_at": "2026-08-15T00:02:07.107924+00:00"
 }
