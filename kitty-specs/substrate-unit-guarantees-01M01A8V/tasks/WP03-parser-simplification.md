@@ -23,8 +23,6 @@ create_intent:
 - tests/intake/test_measurement_unit_ingest.py
 execution_mode: code_change
 owned_files:
-- src/premura/units.py
-- tests/test_units.py
 - src/premura/parsers/lab_pdf.py
 - src/premura/parsers/bmt.py
 - tests/test_parsers/test_lab_pdf.py
@@ -48,7 +46,6 @@ WP02's merged loader change; `src/premura/parsers/lab_pdf.py` (`_UNIT_ALIASES` 4
 
 - **T007**: `lab_pdf.py` — delete `_UNIT_ALIASES` and `_convert_value_to_canonical`; `_normalize_unit` becomes a thin call to `units.normalize_unit`; `_measurement_from_row` emits the normalized observed unit unconditionally and drops its local `unit_mismatch` skip branch (the loader decides now). Keep `original_unit` in `raw_payload`.
 - **T008**: `bmt.py` — delete `_convert_to_canonical` (its silent pass-through and its claim-canonical-without-converting branch die with it); long-format emits raw value + observed unit. Wide-format keeps its config-declared unit toggle (no per-row unit string exists) with a one-line comment naming it the documented scope exception.
-- **T008b**: `units.py` — add the Italian alias fold `"ui/ml"` → `IU_per_ml` to the alias table (WP06 review found real-warehouse rows in this spelling that the vetting rule currently rejects) + one test pinning `normalize_unit("UI/ml") == "IU_per_ml"`; also fix the stale docstring at units.py:131 referencing a nonexistent `_apply_metric_scoped`.
 - **T009**: rewrite the now-obsolete parser conversion assertions as emits-observed-unit assertions; extend `tests/intake/test_measurement_unit_ingest.py` with e2e runs through the REAL simplified `LabPdfParser` and `BMTParser` fixtures asserting the two-step pipeline (parser observes → loader converts) yields the same canonical warehouse rows the old one-step pipeline did.
 
 ## Done criteria
