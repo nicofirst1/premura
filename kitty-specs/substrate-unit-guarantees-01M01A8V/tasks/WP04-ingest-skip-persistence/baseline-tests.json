@@ -1,0 +1,79 @@
+{
+  "wp_id": "WP04",
+  "captured_at": "2026-08-15T01:12:37Z",
+  "base_branch": "mission/substrate-unit-guarantees",
+  "base_commit": "1d44a1230491bd81d8b1c16e407d346f62a9de92",
+  "test_runner": "pytest",
+  "total": 13,
+  "passed": 0,
+  "failed": 13,
+  "skipped": 0,
+  "failures": [
+    {
+      "test": "tests.live_trial.test_live_trial_edge_cases.test_cap_exhaustion_records_fail_not_crash_end_to_end",
+      "error": "assert 0 == 1",
+      "file": "unknown:?"
+    },
+    {
+      "test": "tests.live_trial.test_live_trial_tool_loop.test_happy_path_records_tier_tagged_result",
+      "error": "assert None is not None",
+      "file": "unknown:?"
+    },
+    {
+      "test": "tests.live_trial.test_live_trial_edge_cases.test_keep_sandboxes_retains_synthetic_sandbox",
+      "error": "AssertionError: assert None is not None",
+      "file": "unknown:?"
+    },
+    {
+      "test": "tests.live_trial.test_live_trial_tool_loop_edges.test_regression_across_turns_reports_both_verdicts",
+      "error": "assert None is not None",
+      "file": "unknown:?"
+    },
+    {
+      "test": "tests.live_trial.test_live_trial_edge_cases.test_judge_off_by_default_leaves_zero_judgments",
+      "error": "AssertionError: assert None is not None",
+      "file": "unknown:?"
+    },
+    {
+      "test": "tests.live_trial.test_live_trial_tool_loop.test_tool_loop_transcript_persists_to_session_log",
+      "error": "assert None is not None",
+      "file": "unknown:?"
+    },
+    {
+      "test": "tests.live_trial.test_live_trial_edge_cases.test_judge_on_records_one_judgment_and_keeps_verdict",
+      "error": "AssertionError: assert None is not None",
+      "file": "unknown:?"
+    },
+    {
+      "test": "tests.live_trial.test_live_trial_tool_loop_edges.test_no_parser_ever_produced_ends_in_complete_persisted_fail_record",
+      "error": "AssertionError: assert None is not None",
+      "file": "unknown:?"
+    },
+    {
+      "test": "tests.live_trial.test_live_trial_edge_cases.test_judge_failure_never_flips_verdict_or_raises",
+      "error": "AssertionError: assert None is not None",
+      "file": "unknown:?"
+    },
+    {
+      "test": "tests.live_trial.test_live_trial_edge_cases.test_improve_off_by_default_leaves_zero_proposals",
+      "error": "AssertionError: assert None is not None",
+      "file": "unknown:?"
+    },
+    {
+      "test": "tests.live_trial.test_live_trial_tool_loop.test_cap_exhaustion_terminates_into_complete_graded_record",
+      "error": "assert 0 == 1",
+      "file": "unknown:?"
+    },
+    {
+      "test": "tests.live_trial.test_live_trial_edge_cases.test_improve_on_records_proposals_and_keeps_verdict",
+      "error": "AssertionError: assert None is not None",
+      "file": "unknown:?"
+    },
+    {
+      "test": "tests.live_trial.test_live_trial_edge_cases.test_improve_failure_never_flips_verdict_or_raises",
+      "error": "AssertionError: assert None is not None",
+      "file": "unknown:?"
+    }
+  ],
+  "source_identity": "GateCoverageScopeSource/junit_xml"
+}
