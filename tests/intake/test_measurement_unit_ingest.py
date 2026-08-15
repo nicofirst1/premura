@@ -103,6 +103,22 @@ def test_unrecognized_unit_refuses_row_not_batch(empty_warehouse, tmp_path):
     ).fetchone()
     assert absent is None
 
+    # NFR-002 parity: the loader-reported refusal count matches exactly one
+    # persisted hp.ingest_skip row, carrying the same from/to units and metric.
+    assert len(stats.unit_refusals) == 1
+    skip_rows = empty_warehouse.execute(
+        """
+        SELECT kind, metric_id, from_unit, to_unit
+        FROM hp.ingest_skip
+        WHERE batch_id = ?
+        """,
+        [stats.batch_id],
+    ).fetchall()
+    assert len(skip_rows) == len(stats.unit_refusals)
+    assert skip_rows == [
+        ("unit_unconvertible", "heart_rate", "furlongs_per_fortnight", "bpm"),
+    ]
+
 
 # --- e2e: real simplified parsers (observe) -> real loader (convert) (WP03 T009) ---
 #

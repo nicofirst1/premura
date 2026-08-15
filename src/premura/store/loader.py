@@ -118,6 +118,7 @@ def load(conn: duckdb.DuckDBPyConnection, batch: IngestBatch) -> LoadStats:
         stats.rows_skipped_priority = plan.rows_skipped_priority
         stats.rows_skipped_unit = len(refusals)
         stats.unit_refusals = refusals
+        _persist_skips(conn, batch, batch_id, refusals)
         finish_ingest_run(conn, batch_id=batch_id, stats=stats, notes=batch.notes)
         conn.execute("COMMIT")
         return stats
@@ -284,6 +285,73 @@ def _persist_plan(conn: duckdb.DuckDBPyConnection, plan: DedupePlan) -> None:
             )
         finally:
             conn.unregister("planned_intervals")
+
+
+def _persist_skips(
+    conn: duckdb.DuckDBPyConnection,
+    batch: IngestBatch,
+    batch_id: str,
+    unit_refusals: list[UnitRefusal],
+) -> None:
+    """Durable record of everything this batch refused or skipped.
+
+    Nothing computed is dropped: unit refusals, unmapped metrics, and
+    parser-skipped rows each become an ``hp.ingest_skip`` row joined to this
+    ingest run, so they stay queryable after the in-process ``LoadStats`` /
+    ``IngestBatch`` are gone.
+    """
+    rows: list[tuple[str, str, str, str | None, str | None, str | None, str | None, str]] = []
+    for refusal in unit_refusals:
+        rows.append(
+            (
+                str(ULID()),
+                batch_id,
+                "unit_unconvertible",
+                None,
+                refusal.metric_id,
+                refusal.from_unit,
+                refusal.to_unit,
+                refusal.reason,
+            )
+        )
+    for skipped in batch.skipped_rows:
+        rows.append(
+            (
+                str(ULID()),
+                batch_id,
+                "parser_skip",
+                skipped.raw_field,
+                None,
+                None,
+                None,
+                skipped.reason,
+            )
+        )
+    for raw_field in batch.unmapped_metrics:
+        rows.append(
+            (
+                str(ULID()),
+                batch_id,
+                "unmapped_metric",
+                raw_field,
+                None,
+                None,
+                None,
+                "no canonical metric resolved for this field",
+            )
+        )
+
+    if not rows:
+        return
+
+    conn.executemany(
+        """
+        INSERT INTO hp.ingest_skip
+            (skip_id, batch_id, kind, raw_field, metric_id, from_unit, to_unit, reason)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        rows,
+    )
 
 
 def _persist_clinical_notes(
