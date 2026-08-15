@@ -10,6 +10,6 @@
   "purpose_context": "This mission advances substrate unit guarantees on master so stakeholders can track the work from mission creation onward.",
   "purpose_tldr": "substrate unit guarantees",
   "slug": "substrate-unit-guarantees-01M01A8V",
-  "target_branch": "master",
+  "target_branch": "mission/substrate-unit-guarantees",
   "topology": "lanes_with_coord"
 }
