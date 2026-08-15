@@ -1,20 +1,20 @@
 {
-  "event_count": 35,
-  "last_event_id": "01M01GC2YYWGYCHM39S3PQY57Y",
-  "materialized_at": "2026-08-15T01:25:23.039000+00:00",
+  "event_count": 38,
+  "last_event_id": "01M01GPK7QB5VH2G00PJ9088YT",
+  "materialized_at": "2026-08-15T01:31:07.330131+00:00",
   "mission_number": "",
   "mission_slug": "substrate-unit-guarantees-01M01A8V",
   "mission_type": "software-dev",
   "summary": {
-    "approved": 4,
+    "approved": 5,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
     "done": 0,
     "for_review": 0,
-    "in_progress": 0,
-    "in_review": 1,
-    "planned": 3
+    "in_progress": 1,
+    "in_review": 0,
+    "planned": 2
   },
   "work_packages": {
     "WP01": {
@@ -92,17 +92,18 @@
       }
     },
     "WP04": {
-      "actor": "claude-reviewer",
+      "actor": "user",
       "agent": "claude-reviewer",
       "agent_profile": "__resolved_profile_absent__",
       "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
-      "lane": "in_review",
-      "last_event_id": "01M01GC2YYWGYCHM39S3PQY57Y",
-      "last_transition_at": "2026-08-15T01:25:23.039000+00:00",
+      "lane": "approved",
+      "last_event_id": "01M01GND37G684NZ7XQB8FKKY0",
+      "last_transition_at": "2026-08-15T01:30:28.327087+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "ready"
+        "ready",
+        "APPROVE. FR-003/NFR-002/NFR-004 satisfied: every unit refusal, parser_skip, and unmapped_metric persists one hp.ingest_skip row joined to ingest_run; NFR-002 count-parity test asserts reported==persisted. 5 adversarial probes pass: (1) all-3-kinds one batch -> 3 correct-kind FK-valid rows same batch_id; (2) ROLLBACK atomicity -> forcing failure after _persist_skips wipes skip+run+facts; (3) empty batch -> 0 rows via early return; (4) re-ingest -> fresh ULID skip_ids, no PK collision; (5) migration double-run + fresh init idempotent. C-005: Q1 exists; Q2 one table+one helper, skip_id=str(ULID()) matches batch_id idiom + 005 precedent; Q3 68-line helper+26-line SQL, minimal; Q4 single chokepoint inside load() transaction, no 2nd write path; Q5 automatic in load(), no agent-remembered call; Q6 mirrors 005, executemany, no new deps. Two collateral 1-line test edits (test_store enumeration + test_trace known_hp allowlist) VERIFIED mechanically forced by any new hp.* table; same shape as the 007/condition_episode precedent named in-code -> acceptable. Gates: intake 205 passed, full 1789 passed, ruff check+format clean, mypy 106 files clean. No kitty-specs in commit 2270767."
       ],
       "provider": "__resolved_provider_absent__",
       "role": "reviewer",
@@ -115,11 +116,19 @@
       }
     },
     "WP05": {
-      "actor": "finalize-tasks",
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
-      "lane": "planned",
-      "last_event_id": "01M01B2JXQAPKJS16F1M7ZVM87",
-      "last_transition_at": "2026-08-14T23:52:48.823132+00:00"
+      "lane": "in_progress",
+      "last_event_id": "01M01GPK7QB5VH2G00PJ9088YT",
+      "last_transition_at": "2026-08-15T01:31:07.330131+00:00",
+      "model": "__resolved_model_absent__",
+      "provider": "__resolved_provider_absent__",
+      "role": "implementer",
+      "shell_pid": 33804,
+      "shell_pid_created_at": "1786757466.05634"
     },
     "WP06": {
       "actor": "user",
