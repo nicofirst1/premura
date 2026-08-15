@@ -109,22 +109,22 @@
     {
       "invariant_id": "NI-001",
       "description": "Bare loader.load() with an unregistered source_kind writes zero rows (incident replay)",
-      "proof_type": "automated_test",
       "evidence": "tests/intake/test_measurement_unit_ingest.py::test_unregistered_source_kind_raises_and_writes_nothing",
       "pass_fail": "pass",
       "verified_by": "claude-reviewer",
       "verified_at": "2026-08-15T02:44:52.446544+00:00",
-      "notes": "NFR-003"
+      "notes": "NFR-003",
+      "verification_method": "automated_test"
     },
     {
       "invariant_id": "NI-002",
       "description": "No PHI in repo fixtures; no mission-citation tokens in tracked src/tests/docs",
-      "proof_type": "automated_test",
       "evidence": "ops/check_no_mission_citations.sh OK; synthetic fixtures only (C-001)",
       "pass_fail": "pass",
       "verified_by": "claude-reviewer",
       "verified_at": "2026-08-15T02:44:52.446544+00:00",
-      "notes": "C-001"
+      "notes": "C-001",
+      "verification_method": "automated_test"
     }
   ]
 }
