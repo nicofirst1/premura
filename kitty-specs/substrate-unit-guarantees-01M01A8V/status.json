@@ -1,7 +1,7 @@
 {
-  "event_count": 26,
-  "last_event_id": "01M01EAFXDHXZ5MSFJXEGSVD95",
-  "materialized_at": "2026-08-15T00:49:33.613248+00:00",
+  "event_count": 28,
+  "last_event_id": "01M01EBG4HGN0JBC4T15T2Q9WN",
+  "materialized_at": "2026-08-15T00:50:06.556028+00:00",
   "mission_number": "",
   "mission_slug": "substrate-unit-guarantees-01M01A8V",
   "mission_type": "software-dev",
@@ -12,9 +12,9 @@
     "claimed": 0,
     "done": 0,
     "for_review": 0,
-    "in_progress": 0,
+    "in_progress": 1,
     "in_review": 0,
-    "planned": 5
+    "planned": 4
   },
   "work_packages": {
     "WP01": {
@@ -68,11 +68,19 @@
       }
     },
     "WP03": {
-      "actor": "finalize-tasks",
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
-      "lane": "planned",
-      "last_event_id": "01M01B2H3Z8N71RAMR315X09EW",
-      "last_transition_at": "2026-08-14T23:52:46.975588+00:00"
+      "lane": "in_progress",
+      "last_event_id": "01M01EBG4HGN0JBC4T15T2Q9WN",
+      "last_transition_at": "2026-08-15T00:50:06.556028+00:00",
+      "model": "__resolved_model_absent__",
+      "provider": "__resolved_provider_absent__",
+      "role": "implementer",
+      "shell_pid": 97836,
+      "shell_pid_created_at": "1786755005.301447"
     },
     "WP04": {
       "actor": "finalize-tasks",
@@ -99,7 +107,8 @@
       "last_transition_at": "2026-08-15T00:49:33.613248+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "ready"
+        "ready",
+        "APPROVE. All 57 allowlist pairs verified normalize_unit(stored)==canonical (0 magnitude-rescaling pairs; triple WHERE-guard on dm.canonical_unit prevents over-fire, proven by seeded mg/dl-under-mmol_per_l row staying untouched). UI/ml deviation CORRECT: normalize_unit('UI/ml')='UI/ml' unchanged, fails the vetting rule, rightly excluded; iu/ml+IU/ml included. FOLLOW-UP for mission review (NOT a WP06 blocker; units.py is out of WP06 owned files): Italian UI/ml→IU folding is a units.py alias GAP — real-warehouse UI/ml rows won't fold; add 'ui/ml':'IU_per_ml' to units._ALIASES in a units-owning WP, then a follow-up migration can relabel. g/g→ug_per_g equivalence originates in WP01 units.py port (538758de/561013e), not WP06; migration is mechanically faithful and loader-consistent. Audit verb opens read_only=True (cli.py:743), always exit 0, graceful on missing warehouse — probed all 3 paths. C-005 PASS: Q1 exists (FR-007/008/NFR-004); Q2 no framework, reuses rich Table (cli.py convention) + registered_source_kinds(); Q3 57 SQL insertions + 59 cli LOC, proportionate; Q4 DETECTION-only, no enforcement dup of loader; Q5 process test present; Q6 reuses registry + 006 idempotent-UPDATE precedent. Gates: new tests 7 passed, full suite 1789 passed, ruff check clean, ruff format clean, mypy 106 files clean."
       ],
       "provider": "__resolved_provider_absent__",
       "role": "reviewer",
