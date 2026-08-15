@@ -57,7 +57,7 @@ def test_install_warehouse_backs_up_existing_never_overwrites(tmp_path: Path) ->
 
 def test_verify_warehouse_opens_accepts_real_db(tmp_path: Path) -> None:
     db = tmp_path / "health.duckdb"
-    duck.connect(db).close()  # materialize a valid DuckDB file
+    duck.connect(db, read_only=False).close()  # materialize a valid DuckDB file
     restore.verify_warehouse_opens(db)  # does not raise
 
 
