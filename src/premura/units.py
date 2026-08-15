@@ -113,12 +113,19 @@ _SIMPLE_FACTORS: dict[tuple[str, str], float] = {
     ("mIU_per_ml", "mIU_per_l"): 1000.0,
     # bmt.py mass/length conversions.
     ("lb", "kg"): 0.45359237,
-    ("g", "kg"): 1.0 / 1000.0,
     ("cm", "m"): 0.01,
     ("in", "m"): 0.0254,
     ("in", "cm"): 2.54,
     ("m", "cm"): 100.0,
-    ("mm", "cm"): 0.1,
+}
+
+# Metric-agnostic (from, to) -> divisor. Kept separate from _SIMPLE_FACTORS
+# (rather than pre-inverted to a factor) to reproduce the original bmt.py
+# division exactly — dividing and multiplying by the reciprocal differ at
+# the float ULP.
+_SIMPLE_DIVISORS: dict[tuple[str, str], float] = {
+    ("g", "kg"): 1000.0,
+    ("mm", "cm"): 10.0,
 }
 
 # (from, to) -> {metric_id: factor-or-divisor}. `_apply_metric_scoped` below
@@ -170,7 +177,7 @@ def normalize_unit(raw: str) -> str:
 def convert(value: float, *, from_unit: str, to_unit: str, metric_id: str) -> float | None:
     """Convert `value` from `from_unit` to `to_unit` for `metric_id`.
 
-    Dispatch order: identity -> metric-agnostic factor -> metric-scoped
+    Dispatch order: identity -> metric-agnostic factor/divisor -> metric-scoped
     (equivalence / divisor / factor) -> affine -> refuse (`None`).
     """
     if from_unit == to_unit:
@@ -179,6 +186,10 @@ def convert(value: float, *, from_unit: str, to_unit: str, metric_id: str) -> fl
     factor = _SIMPLE_FACTORS.get((from_unit, to_unit))
     if factor is not None:
         return value * factor
+
+    simple_divisor = _SIMPLE_DIVISORS.get((from_unit, to_unit))
+    if simple_divisor is not None:
+        return value / simple_divisor
 
     if metric_id in _METRIC_SCOPED_EQUIVALENT.get((from_unit, to_unit), set()):
         return value

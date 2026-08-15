@@ -149,6 +149,12 @@ def test_convert_bmt_inches_to_cm() -> None:
     assert result == pytest.approx(81.28, abs=1e-6)
 
 
+def test_convert_bmt_mm_to_cm_uses_division_not_reciprocal_multiply() -> None:
+    # Pins the original bmt.py `value / 10` behavior exactly (not `value * 0.1`,
+    # which differs at the float ULP: 3.3/10 == 0.32999999999999996).
+    assert convert(3.3, from_unit="mm", to_unit="cm", metric_id="waist_circumference") == 3.3 / 10
+
+
 # --- refusal ---
 
 
