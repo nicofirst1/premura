@@ -31,22 +31,24 @@ Per-source parsing behavior is the parser [CONTRACT](../../src/premura/parsers/C
 
 ### Canonical units (`dim_metric.canonical_unit`)
 
-| Domain                                     | Unit                                   |
-| ------------------------------------------ | -------------------------------------- |
-| body mass (weight, lean, water, bone, fat) | kg                                     |
-| body fat percentage                        | %                                      |
-| length (height)                            | m                                      |
-| heart rate, resting HR                     | bpm                                    |
-| HRV (rMSSD)                                | ms                                     |
-| respiratory rate                           | breaths/min                            |
-| oxygen saturation                          | %                                      |
-| temperature                                | °C                                     |
-| blood pressure                             | mmHg                                   |
-| blood glucose                              | mmol/L                                 |
-| distance                                   | m                                      |
-| energy                                     | kcal                                   |
-| VO₂ max                                    | mL/kg/min                              |
-| stress, Body Battery, training load        | dimensionless 0–100 (scale per Garmin) |
+Display spelling is for prose and UI; storage spelling is the literal `dim_metric.canonical_unit` value persisted on every row. `premura.units.normalize_unit` is the one mapping between them (and between any observed spelling and its canonical form) — this table restates it for readability, not as a second source of truth.
+
+| Domain                                     | Display unit                           | Storage spelling    |
+| ------------------------------------------ | -------------------------------------- | ------------------- |
+| body mass (weight, lean, water, bone, fat) | kg                                     | `kg`                |
+| body fat percentage                        | %                                      | `pct`               |
+| length (height)                            | m                                      | `m`                 |
+| heart rate, resting HR                     | bpm                                    | `bpm`               |
+| HRV (rMSSD)                                | ms                                     | `ms`                |
+| respiratory rate                           | breaths/min                            | `breaths_per_min`   |
+| oxygen saturation                          | %                                      | `pct`               |
+| temperature                                | °C                                     | `celsius`           |
+| blood pressure                             | mmHg                                   | `mmHg`              |
+| blood glucose                              | mmol/L                                 | `mmol_per_l`        |
+| distance                                   | m                                      | `m`                 |
+| energy                                     | kcal                                   | `kcal`              |
+| VO₂ max                                    | mL/kg/min                              | `ml_per_kg_per_min` |
+| stress, Body Battery, training load        | dimensionless 0–100 (scale per Garmin) | `score_0_100`       |
 
 ### Timestamps
 

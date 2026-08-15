@@ -31,6 +31,16 @@ The target is the middle: _guide agents to create their own policies; don't stri
 
 **Right (a level above):** the federated parser seam — a `PluginParser` contract, a fixed `suggest_metric()` resolution order, and an `unmapped_metrics` surface — so any agent can add a vendor without anyone editing a central list. **Wrong (enumerated):** an `if source == "garmin" … elif source == "fitbit" …` ladder, or a spec that lists every supported metric instead of the rule for admitting a new one.
 
+## THE SUBSTRATE TEST
+
+A guarantee stated in a doc or a docstring is not a guarantee until something enforces it mechanically. For each guarantee, ask:
+
+> **What happens if an agent simply doesn't follow the process?**
+
+If the answer is "bad data lands silently," the guarantee is fiction — move the enforcement to the chokepoint that cannot be bypassed, not the convention that can.
+
+**Worked example: the unit-integrity incident (issue #113).** Unit conversion lived per-parser: each parser was expected to convert its own values to the canonical unit before emitting them. An agent transcribing lab values wrote directly to the warehouse instead of going through a parser or a loader call, skipping every per-parser conversion — and the values landed under the wrong canonical unit with no error, because nothing at the write boundary checked. The fix did not add a reminder to convert; it moved conversion into `store/loader.py`, the one seam every write passes through, so a row is converted or refused regardless of who wrote it — and paved a cheaper road (`ingest_row`, the MCP tool) so bypassing the loader is no longer the easy option. See [ADR 0010](../building/adr/0010-runtime-orchestrator-and-operating-roles.md) for the build-and-use boundary this sits inside.
+
 ## Docs altitude: separate the audiences
 
 Premura is roughly **agent-first in execution, human-first in purpose** ("~80% for agents, 20% for humans"). Documentation must keep three audiences distinct rather than blur them into one developer-facing voice (tracked in issue #8):

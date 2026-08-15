@@ -22,6 +22,10 @@ If no step applies, do not invent a `metric_id`. Skip the field at parse time an
 
 Aliases recorded in `dim_metric.yaml` are restricted to **clinically standard names and abbreviations only** — not free-text search terms or marketing phrasing.
 
+## Units: emit as observed, never convert
+
+A parser emits `Measurement.unit` exactly as the source states it — never pre-converted, never relabeled. Conversion to `dim_metric.canonical_unit` (or refusal when no rule exists) happens once, at the load boundary (`store/loader.py`), backed by `premura.units`. A parser adding its own conversion table duplicates that seam and risks silently disagreeing with it.
+
 ## Where to read next
 
 - **Parser plugin contract (agent-agnostic, authoritative):** `src/premura/parsers/CONTRACT.md` — defines `PluginParser`, `IngestBatch`, the full decision tree, the `derived:` namespace rule, and the same-PR ontology rule.
@@ -42,18 +46,9 @@ The policy above is defined now. **Renaming the legacy v1 `metric_id`s to the fi
 
 ## Mixed-domain reports
 
-Some source artifacts mix several domains in one table, for example standard
-clinical chemistry, pathogen microbiology, commercial ecology scores, and
-qualitative descriptors. Apply the standards-first rule per field, not per
-report, and keep each field in the narrowest reusable home that matches its
-meaning, method, and scale.
+Some source artifacts mix several domains in one table, for example standard clinical chemistry, pathogen microbiology, commercial ecology scores, and qualitative descriptors. Apply the standards-first rule per field, not per report, and keep each field in the narrowest reusable home that matches its meaning, method, and scale.
 
-Do not promote a whole vendor domain into the global ontology because one report
-contains it. If a field is reusable and standards-backed, add the canonical row
-in the same PR as the parser change. If it is source-specific, ambiguous, or
-lacks an admitted Premura domain, leave it in `unmapped_metrics` or propose a
-`vendor:<source>:<field>` metric with a PR note. Parsers still must not emit
-computed `derived:*` rows.
+Do not promote a whole vendor domain into the global ontology because one report contains it. If a field is reusable and standards-backed, add the canonical row in the same PR as the parser change. If it is source-specific, ambiguous, or lacks an admitted Premura domain, leave it in `unmapped_metrics` or propose a `vendor:<source>:<field>` metric with a PR note. Parsers still must not emit computed `derived:*` rows.
 
 ## Federated vs. core
 
