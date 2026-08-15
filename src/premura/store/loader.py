@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import polars as pl
 from ulid import ULID
 
+from .. import units
 from ..parsers.base import IngestBatch
 from .dedupe import DedupePlan, DedupePlanner
 from .duck import upsert_dim_source
@@ -18,15 +20,27 @@ if TYPE_CHECKING:
 
 
 @dataclass(slots=True)
+class UnitRefusal:
+    """One measurement row refused at the load boundary: no conversion rule."""
+
+    metric_id: str
+    from_unit: str
+    to_unit: str
+    reason: str
+
+
+@dataclass(slots=True)
 class LoadStats:
     batch_id: str
     rows_inserted: int = 0
     rows_skipped_dup: int = 0
     rows_skipped_priority: int = 0
+    rows_skipped_unit: int = 0
+    unit_refusals: list[UnitRefusal] = field(default_factory=list)
 
     @property
     def rows_skipped(self) -> int:
-        return self.rows_skipped_dup + self.rows_skipped_priority
+        return self.rows_skipped_dup + self.rows_skipped_priority + self.rows_skipped_unit
 
 
 def new_batch_id() -> str:
@@ -96,11 +110,14 @@ def load(conn: duckdb.DuckDBPyConnection, batch: IngestBatch) -> LoadStats:
         stats = LoadStats(batch_id=batch_id)
         _upsert_source_descriptors(conn, batch)
         plan = DedupePlanner().plan(conn, batch, batch_id=batch_id)
+        plan.measurement_rows, refusals = _enforce_canonical_units(conn, plan.measurement_rows)
         _persist_plan(conn, plan)
         note_count = _persist_clinical_notes(conn, batch, batch_id=batch_id)
         stats.rows_inserted = plan.rows_inserted + note_count
         stats.rows_skipped_dup = plan.rows_skipped_dup
         stats.rows_skipped_priority = plan.rows_skipped_priority
+        stats.rows_skipped_unit = len(refusals)
+        stats.unit_refusals = refusals
         finish_ingest_run(conn, batch_id=batch_id, stats=stats, notes=batch.notes)
         conn.execute("COMMIT")
         return stats
@@ -142,6 +159,88 @@ def _upsert_source_descriptors(conn: duckdb.DuckDBPyConnection, batch: IngestBat
             device_manufacturer=descriptor.device_manufacturer,
             device_model=descriptor.device_model,
         )
+
+
+def _enforce_canonical_units(
+    conn: duckdb.DuckDBPyConnection, rows: pl.DataFrame
+) -> tuple[pl.DataFrame, list[UnitRefusal]]:
+    """The load boundary's sole unit decision point for measurements.
+
+    Every surviving row's `unit` is rewritten to its metric's
+    `dim_metric.canonical_unit` and `value_num` is rescaled via `units.convert`
+    to match — never merely relabeled. A row whose observed unit has no
+    registered conversion rule for its metric is dropped and reported as a
+    :class:`UnitRefusal` rather than passed through or silently relabeled.
+    """
+    if rows.height == 0:
+        return rows, []
+
+    metric_ids = rows["metric_id"].unique().to_list()
+    placeholders = ", ".join(["?"] * len(metric_ids))
+    canonical_by_metric = dict(
+        conn.execute(
+            f"SELECT metric_id, canonical_unit FROM hp.dim_metric "
+            f"WHERE metric_id IN ({placeholders})",
+            metric_ids,
+        ).fetchall()
+    )
+
+    kept_indices: list[int] = []
+    new_value_num: list[float | None] = []
+    new_unit: list[str] = []
+    refusals: list[UnitRefusal] = []
+
+    for i, row in enumerate(rows.iter_rows(named=True)):
+        metric_id = row["metric_id"]
+        canonical_unit = canonical_by_metric.get(metric_id)
+        if canonical_unit is None:
+            # No dim_metric row for this metric_id would already have failed
+            # validate_batch_against_warehouse; defensive no-op pass-through.
+            kept_indices.append(i)
+            new_value_num.append(row["value_num"])
+            new_unit.append(row["unit"])
+            continue
+
+        observed_unit = units.normalize_unit(row["unit"])
+        if observed_unit == canonical_unit:
+            kept_indices.append(i)
+            new_value_num.append(row["value_num"])
+            new_unit.append(canonical_unit)
+            continue
+
+        value_num = row["value_num"]
+        if value_num is None:
+            # Nothing to rescale (e.g. text-valued row); relabeling a value-less
+            # row does not violate the "convert, never relabel" guarantee.
+            kept_indices.append(i)
+            new_value_num.append(None)
+            new_unit.append(canonical_unit)
+            continue
+
+        converted = units.convert(
+            value_num, from_unit=observed_unit, to_unit=canonical_unit, metric_id=metric_id
+        )
+        if converted is None:
+            refusals.append(
+                UnitRefusal(
+                    metric_id=metric_id,
+                    from_unit=observed_unit,
+                    to_unit=canonical_unit,
+                    reason=f"no conversion rule from {observed_unit!r} to {canonical_unit!r} "
+                    f"for metric {metric_id!r}",
+                )
+            )
+            continue
+
+        kept_indices.append(i)
+        new_value_num.append(converted)
+        new_unit.append(canonical_unit)
+
+    survivors = rows[kept_indices].with_columns(
+        pl.Series("value_num", new_value_num, dtype=rows.schema["value_num"]),
+        pl.Series("unit", new_unit, dtype=rows.schema["unit"]),
+    )
+    return survivors, refusals
 
 
 def _persist_plan(conn: duckdb.DuckDBPyConnection, plan: DedupePlan) -> None:
@@ -227,6 +326,7 @@ def _persist_clinical_notes(
 
 __all__ = [
     "LoadStats",
+    "UnitRefusal",
     "already_ingested",
     "finish_ingest_run",
     "load",

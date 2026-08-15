@@ -30,6 +30,9 @@ class Measurement:
     ts_utc: datetime
     metric_id: str
     unit: str
+    """Unit as observed in the source. Never pre-converted by the parser; the
+    load boundary (`premura.store.loader.load`) is the sole authority that
+    rewrites value + unit to `dim_metric.canonical_unit`."""
     source_id: str
     source_kind: str
     value_num: float | None = None
