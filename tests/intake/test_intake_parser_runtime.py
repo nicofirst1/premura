@@ -170,7 +170,10 @@ def test_normalize_rejects_unknown_output() -> None:
 def _route(conn, output) -> None:
     observation, intake = normalize_parse_output(output)
     if observation is not None:
-        load(conn, observation)
+        # "testsrc" is a synthetic in-test source_kind exercising seam routing,
+        # not a real registered parser; disclosed collateral of WP05's T013
+        # vocabulary rail (bisected — see WP05 report).
+        load(conn, observation, allow_unregistered_source_kind=True)
     if intake is not None:
         persist_intake_batch(conn, intake)
 

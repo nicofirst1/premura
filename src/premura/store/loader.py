@@ -3,18 +3,37 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import polars as pl
 from ulid import ULID
 
+from .. import units
 from ..parsers.base import IngestBatch
+from ..parsers.registry import registered_source_kinds
 from .dedupe import DedupePlan, DedupePlanner
 from .duck import upsert_dim_source
 
 if TYPE_CHECKING:
     import duckdb
+
+#: The one non-parser source_kind the load boundary accepts: single-row manual
+#: transcription via `store.manual_load` (the `ingest_row` MCP tool's `load`
+#: op). Defined once here so `validate_batch_against_warehouse` and
+#: `manual_load` share the identical identifier — never a second literal copy.
+MANUAL_LOAD_SOURCE_KIND = "manual_load"
+
+
+@dataclass(slots=True)
+class UnitRefusal:
+    """One measurement row refused at the load boundary: no conversion rule."""
+
+    metric_id: str
+    from_unit: str
+    to_unit: str
+    reason: str
 
 
 @dataclass(slots=True)
@@ -23,10 +42,12 @@ class LoadStats:
     rows_inserted: int = 0
     rows_skipped_dup: int = 0
     rows_skipped_priority: int = 0
+    rows_skipped_unit: int = 0
+    unit_refusals: list[UnitRefusal] = field(default_factory=list)
 
     @property
     def rows_skipped(self) -> int:
-        return self.rows_skipped_dup + self.rows_skipped_priority
+        return self.rows_skipped_dup + self.rows_skipped_priority + self.rows_skipped_unit
 
 
 def new_batch_id() -> str:
@@ -79,14 +100,32 @@ def finish_ingest_run(
     )
 
 
-def load(conn: duckdb.DuckDBPyConnection, batch: IngestBatch) -> LoadStats:
-    """Persist one ingest batch. Returns insert / skip counts."""
+def load(
+    conn: duckdb.DuckDBPyConnection,
+    batch: IngestBatch,
+    *,
+    allow_unregistered_source_kind: bool = False,
+) -> LoadStats:
+    """Persist one ingest batch. Returns insert / skip counts.
+
+    ``allow_unregistered_source_kind`` defaults to ``False`` (deny): a batch
+    whose ``source_kind`` is not a registered parser kind or
+    ``MANUAL_LOAD_SOURCE_KIND`` is refused before any write. Only the
+    build-and-use runtime-parser door (``harness/ingest_runner.py``, ADR 0010's
+    sanctioned cold-built-parser entry) passes ``True`` in production code; the
+    unregistered kind still lands verbatim in ``hp.ingest_run.source_kind`` so
+    audit-integrity can see it. The flag widens vocabulary membership ONLY —
+    every other guarantee (unit convert-or-refuse, skip persistence, batch
+    validation) applies unchanged.
+    """
     if batch.source_path is None or batch.source_sha256 is None:
         raise ValueError("IngestBatch requires source_path + source_sha256 before loading")
 
     conn.execute("BEGIN")
     try:
-        validate_batch_against_warehouse(conn, batch)
+        validate_batch_against_warehouse(
+            conn, batch, allow_unregistered_source_kind=allow_unregistered_source_kind
+        )
         batch_id = start_ingest_run(
             conn,
             source_kind=batch.source_kind,
@@ -96,11 +135,15 @@ def load(conn: duckdb.DuckDBPyConnection, batch: IngestBatch) -> LoadStats:
         stats = LoadStats(batch_id=batch_id)
         _upsert_source_descriptors(conn, batch)
         plan = DedupePlanner().plan(conn, batch, batch_id=batch_id)
+        plan.measurement_rows, refusals = _enforce_canonical_units(conn, plan.measurement_rows)
         _persist_plan(conn, plan)
         note_count = _persist_clinical_notes(conn, batch, batch_id=batch_id)
         stats.rows_inserted = plan.rows_inserted + note_count
         stats.rows_skipped_dup = plan.rows_skipped_dup
         stats.rows_skipped_priority = plan.rows_skipped_priority
+        stats.rows_skipped_unit = len(refusals)
+        stats.unit_refusals = refusals
+        _persist_skips(conn, batch, batch_id, refusals)
         finish_ingest_run(conn, batch_id=batch_id, stats=stats, notes=batch.notes)
         conn.execute("COMMIT")
         return stats
@@ -112,8 +155,17 @@ def load(conn: duckdb.DuckDBPyConnection, batch: IngestBatch) -> LoadStats:
 def validate_batch_against_warehouse(
     conn: duckdb.DuckDBPyConnection,
     batch: IngestBatch,
+    *,
+    allow_unregistered_source_kind: bool = False,
 ) -> None:
     batch.validate()
+    if not allow_unregistered_source_kind:
+        allowed_source_kinds = registered_source_kinds() | {MANUAL_LOAD_SOURCE_KIND}
+        if batch.source_kind not in allowed_source_kinds:
+            raise ValueError(
+                f"IngestBatch.source_kind {batch.source_kind!r} is not a registered parser "
+                f"source_kind and is not {MANUAL_LOAD_SOURCE_KIND!r}; refusing to load"
+            )
     metric_ids = batch.declared_metrics
     if not metric_ids:
         if batch.measurements or batch.intervals:
@@ -142,6 +194,88 @@ def _upsert_source_descriptors(conn: duckdb.DuckDBPyConnection, batch: IngestBat
             device_manufacturer=descriptor.device_manufacturer,
             device_model=descriptor.device_model,
         )
+
+
+def _enforce_canonical_units(
+    conn: duckdb.DuckDBPyConnection, rows: pl.DataFrame
+) -> tuple[pl.DataFrame, list[UnitRefusal]]:
+    """The load boundary's sole unit decision point for measurements.
+
+    Every surviving row's `unit` is rewritten to its metric's
+    `dim_metric.canonical_unit` and `value_num` is rescaled via `units.convert`
+    to match — never merely relabeled. A row whose observed unit has no
+    registered conversion rule for its metric is dropped and reported as a
+    :class:`UnitRefusal` rather than passed through or silently relabeled.
+    """
+    if rows.height == 0:
+        return rows, []
+
+    metric_ids = rows["metric_id"].unique().to_list()
+    placeholders = ", ".join(["?"] * len(metric_ids))
+    canonical_by_metric = dict(
+        conn.execute(
+            f"SELECT metric_id, canonical_unit FROM hp.dim_metric "
+            f"WHERE metric_id IN ({placeholders})",
+            metric_ids,
+        ).fetchall()
+    )
+
+    kept_indices: list[int] = []
+    new_value_num: list[float | None] = []
+    new_unit: list[str] = []
+    refusals: list[UnitRefusal] = []
+
+    for i, row in enumerate(rows.iter_rows(named=True)):
+        metric_id = row["metric_id"]
+        canonical_unit = canonical_by_metric.get(metric_id)
+        if canonical_unit is None:
+            # No dim_metric row for this metric_id would already have failed
+            # validate_batch_against_warehouse; defensive no-op pass-through.
+            kept_indices.append(i)
+            new_value_num.append(row["value_num"])
+            new_unit.append(row["unit"])
+            continue
+
+        observed_unit = units.normalize_unit(row["unit"])
+        if observed_unit == canonical_unit:
+            kept_indices.append(i)
+            new_value_num.append(row["value_num"])
+            new_unit.append(canonical_unit)
+            continue
+
+        value_num = row["value_num"]
+        if value_num is None:
+            # Nothing to rescale (e.g. text-valued row); relabeling a value-less
+            # row does not violate the "convert, never relabel" guarantee.
+            kept_indices.append(i)
+            new_value_num.append(None)
+            new_unit.append(canonical_unit)
+            continue
+
+        converted = units.convert(
+            value_num, from_unit=observed_unit, to_unit=canonical_unit, metric_id=metric_id
+        )
+        if converted is None:
+            refusals.append(
+                UnitRefusal(
+                    metric_id=metric_id,
+                    from_unit=observed_unit,
+                    to_unit=canonical_unit,
+                    reason=f"no conversion rule from {observed_unit!r} to {canonical_unit!r} "
+                    f"for metric {metric_id!r}",
+                )
+            )
+            continue
+
+        kept_indices.append(i)
+        new_value_num.append(converted)
+        new_unit.append(canonical_unit)
+
+    survivors = rows[kept_indices].with_columns(
+        pl.Series("value_num", new_value_num, dtype=rows.schema["value_num"]),
+        pl.Series("unit", new_unit, dtype=rows.schema["unit"]),
+    )
+    return survivors, refusals
 
 
 def _persist_plan(conn: duckdb.DuckDBPyConnection, plan: DedupePlan) -> None:
@@ -187,6 +321,73 @@ def _persist_plan(conn: duckdb.DuckDBPyConnection, plan: DedupePlan) -> None:
             conn.unregister("planned_intervals")
 
 
+def _persist_skips(
+    conn: duckdb.DuckDBPyConnection,
+    batch: IngestBatch,
+    batch_id: str,
+    unit_refusals: list[UnitRefusal],
+) -> None:
+    """Durable record of everything this batch refused or skipped.
+
+    Nothing computed is dropped: unit refusals, unmapped metrics, and
+    parser-skipped rows each become an ``hp.ingest_skip`` row joined to this
+    ingest run, so they stay queryable after the in-process ``LoadStats`` /
+    ``IngestBatch`` are gone.
+    """
+    rows: list[tuple[str, str, str, str | None, str | None, str | None, str | None, str]] = []
+    for refusal in unit_refusals:
+        rows.append(
+            (
+                str(ULID()),
+                batch_id,
+                "unit_unconvertible",
+                None,
+                refusal.metric_id,
+                refusal.from_unit,
+                refusal.to_unit,
+                refusal.reason,
+            )
+        )
+    for skipped in batch.skipped_rows:
+        rows.append(
+            (
+                str(ULID()),
+                batch_id,
+                "parser_skip",
+                skipped.raw_field,
+                None,
+                None,
+                None,
+                skipped.reason,
+            )
+        )
+    for raw_field in batch.unmapped_metrics:
+        rows.append(
+            (
+                str(ULID()),
+                batch_id,
+                "unmapped_metric",
+                raw_field,
+                None,
+                None,
+                None,
+                "no canonical metric resolved for this field",
+            )
+        )
+
+    if not rows:
+        return
+
+    conn.executemany(
+        """
+        INSERT INTO hp.ingest_skip
+            (skip_id, batch_id, kind, raw_field, metric_id, from_unit, to_unit, reason)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        rows,
+    )
+
+
 def _persist_clinical_notes(
     conn: duckdb.DuckDBPyConnection,
     batch: IngestBatch,
@@ -226,7 +427,9 @@ def _persist_clinical_notes(
 
 
 __all__ = [
+    "MANUAL_LOAD_SOURCE_KIND",
     "LoadStats",
+    "UnitRefusal",
     "already_ingested",
     "finish_ingest_run",
     "load",
