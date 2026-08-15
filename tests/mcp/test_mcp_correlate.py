@@ -37,7 +37,7 @@ from premura.store import duck
 
 # The collapsed default surface: catalog tools, the four parameterized tools
 # (signal/analyze/paired_test/condition_episode) replacing the old enumerated
-# tools, plus the unchanged remainder (23 tools total).
+# tools, plus the unchanged remainder (24 tools total, including ingest_row).
 _DEFAULT_TOOLS_WITH_CORRELATE = sorted(
     [
         "list_metrics",
@@ -47,6 +47,7 @@ _DEFAULT_TOOLS_WITH_CORRELATE = sorted(
         "correlate",
         "paired_test",
         "condition_episode",
+        "ingest_row",
         "profile_context_supported_fields",
         "profile_context_record",
         "interview_route",

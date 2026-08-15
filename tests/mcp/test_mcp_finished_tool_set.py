@@ -56,7 +56,7 @@ def _ensure_live_analytical_registry() -> None:
 
 # The collapsed default surface: catalog tools, the four parameterized tools
 # (signal/analyze/paired_test/condition_episode) replacing the old enumerated
-# tools, plus the unchanged remainder (23 tools total).
+# tools, plus the unchanged remainder (24 tools total, including ingest_row).
 _DEFAULT_TOOLS_FINISHED = sorted(
     [
         "list_metrics",
@@ -66,6 +66,7 @@ _DEFAULT_TOOLS_FINISHED = sorted(
         "correlate",
         "paired_test",
         "condition_episode",
+        "ingest_row",
         "profile_context_supported_fields",
         "profile_context_record",
         "interview_route",
@@ -162,7 +163,7 @@ def test_default_surface_lists_exactly_the_pinned_tools() -> None:
         server_ = build_server()
         names = sorted(tool.name for tool in await server_.list_tools())
         assert names == _DEFAULT_TOOLS_FINISHED
-        assert len(names) == 23
+        assert len(names) == 24
 
     asyncio.run(run())
 

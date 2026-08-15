@@ -192,7 +192,9 @@ def test_both_targets_each_graded_on_its_own_drawer(empty_warehouse) -> None:
 
     # Real loads into the SAME warehouse, each in its own home.
     observation_batch.attach_source_artifact(SOURCE_PATH)
-    obs_stats = load(empty_warehouse, observation_batch)
+    # "alien_both" is a synthetic in-test source_kind, not a real registered
+    # parser; deliberate for the source-kind vocabulary rail (issue #113).
+    obs_stats = load(empty_warehouse, observation_batch, allow_unregistered_source_kind=True)
     intake_stats = persist_intake_batch(empty_warehouse, intake_batch)
 
     # --- intake target, intake strategy ---

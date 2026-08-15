@@ -110,7 +110,7 @@ WBC | <1.0 x 10^4 | 10^9/L
     assert result.skipped_rows == []
 
 
-def test_lab_pdf_parser_records_unit_mismatches_instead_of_dropping_silently(
+def test_lab_pdf_parser_emits_observed_unit_without_converting(
     tmp_path: Path,
 ) -> None:
     report = _write_report(
@@ -127,14 +127,14 @@ Hb | 14.1 | mmol/l | 13.0-17.0
 
     result = LabPdfParser().parse(report)
 
-    assert result.measurements == []
+    assert result.skipped_rows == []
     assert result.source_descriptors["lab:centro-analisi-alfa"].source_kind == "lab_pdf"
-    assert [(row.raw_field, row.reason) for row in result.skipped_rows] == [("Hb", "unit_mismatch")]
-    assert result.notes is not None
-    assert "does not match 'g_per_dl'" in result.notes
+    by_metric = {measurement.metric_id: measurement for measurement in result.measurements}
+    assert by_metric["lab:hemoglobin"].value_num == pytest.approx(14.1)
+    assert by_metric["lab:hemoglobin"].unit == "mmol_per_l"
 
 
-def test_lab_pdf_parser_normalizes_common_lab_units_and_converts_when_safe(
+def test_lab_pdf_parser_normalizes_unit_spelling_without_converting_value(
     tmp_path: Path,
 ) -> None:
     report = _write_report(
@@ -158,16 +158,16 @@ Albumin | 44 | g/l | 35 - 52
     by_metric = {measurement.metric_id: measurement for measurement in result.measurements}
     assert by_metric["lab:mch"].value_num == pytest.approx(30.1)
     assert by_metric["lab:mch"].unit == "pg"
-    assert by_metric["lab:iron"].value_num == pytest.approx(102.0)
-    assert by_metric["lab:iron"].unit == "ug_per_dl"
-    assert by_metric["lab:calcium"].value_num == pytest.approx(10.02)
-    assert by_metric["lab:calcium"].unit == "mg_per_dl"
+    assert by_metric["lab:iron"].value_num == pytest.approx(1.02)
+    assert by_metric["lab:iron"].unit == "mg_per_l"
+    assert by_metric["lab:calcium"].value_num == pytest.approx(2.50)
+    assert by_metric["lab:calcium"].unit == "mmol_per_l"
     assert by_metric["lab:tsh"].value_num == pytest.approx(2.4)
-    assert by_metric["lab:tsh"].unit == "mIU_per_l"
+    assert by_metric["lab:tsh"].unit == "microU_per_ml"
     assert by_metric["lab:wbc"].value_num == pytest.approx(6.2)
     assert by_metric["lab:wbc"].unit == "10^9_per_l"
-    assert by_metric["lab:albumin"].value_num == pytest.approx(4.4)
-    assert by_metric["lab:albumin"].unit == "g_per_dl"
+    assert by_metric["lab:albumin"].value_num == pytest.approx(44.0)
+    assert by_metric["lab:albumin"].unit == "g_per_l"
 
 
 def test_lab_pdf_parser_rejects_unrecognized_text_values(tmp_path: Path) -> None:

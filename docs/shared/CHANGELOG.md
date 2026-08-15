@@ -2,6 +2,17 @@
 
 > One block per released version, newest first, capability-level highlights only. The per-change narrative history lives in git.
 
+## Unreleased — substrate unit guarantees
+
+Prompted by issue #113: a unit-corrupted warehouse traced to an unguarded write path that bypassed every parser's per-source conversion.
+
+- **Unit conversion moved to the load boundary.** `store/loader.py` now converts every measurement to `dim_metric.canonical_unit` or refuses the row — parsers emit the unit as observed and never convert; conversion logic lives once in `premura.units`. A batch-level violation (undeclared metric, unregistered source kind, missing descriptor) still fails the whole batch; a row-level unit or parse failure skips only that row and is recorded in `hp.ingest_skip`.
+- **A cheaper paved road for manual entry.** The `ingest_row` MCP tool (`suggest_metric` / `load` ops) is the one sanctioned path for manually-transcribed data, routing through the same load-boundary guarantees as every parser, with mandatory source-ref provenance.
+- **Vocabulary rail at the boundary.** `load()` refuses any batch whose `source_kind` is not a registered parser kind or the manual-load kind, unless the caller passes the explicit ADR 0010 build-and-use capability flag — closing the path issue #113's incident used.
+- **`audit-integrity` CLI verb** surfaces unit and vocabulary drift across the warehouse for operator review, plus a backfill migration correcting historical unit-spelling inconsistencies.
+- **Remediation path for already-polluted rows.** `ops/delete_labsheet_rows.sql` is the reviewed, hand-run template for the delete-and-re-enter pattern: remove rows written outside the load boundary, then re-enter through `ingest_row`.
+- **Doctrine gained the substrate test.** For any stated guarantee: what happens if an agent simply doesn't follow the process? If bad data lands silently, the guarantee moves to the chokepoint that cannot be bypassed — this incident is doctrine's worked example.
+
 ## 2026-07-14 — v1.0.0
 
 The user-facing threshold: v1 tagged once the release-confidence gates closed.

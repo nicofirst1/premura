@@ -60,7 +60,9 @@ The parser-to-loader seam for one source artifact. `IngestBatch` contains only l
 - `language_detected` — code returned by `_lang.detect_language()` when used.
 - `confidence` — parser self-rating for the batch.
 
-The parser validates the batch before returning it. The loader validates it again before persistence. If any emitted row violates the contract, the whole batch fails.
+The parser validates the batch before returning it. The loader validates it again before persistence, per the split enforced at `store/loader.py`: batch-level violations (an undeclared metric, an unregistered `source_kind`, a missing source descriptor) fail the whole batch atomically; row-level issues (an unconvertible unit, an unparseable value) skip only that row and record it in `hp.ingest_skip` — the rest of the batch still commits. See `store/loader.py`'s own contract docstring for the authoritative statement.
+
+Parsers emit `Measurement.unit` **as observed** in the source and never convert. Conversion to `dim_metric.canonical_unit` — or refusal when no rule exists — happens once, at the load boundary, via `premura.units`. A parser that pre-converts a unit duplicates logic the loader already owns and risks disagreeing with it silently.
 
 ### `IntakeBatch`
 

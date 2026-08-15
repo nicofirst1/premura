@@ -138,7 +138,7 @@ def test_default_surface_includes_condition_tool() -> None:
         names = {tool.name for tool in await server_.list_tools()}
         # condition_paired_t_test lives behind paired_test(kind="condition_label").
         assert "paired_test" in names
-        assert len(names) == 23
+        assert len(names) == 24
 
     asyncio.run(run())
 

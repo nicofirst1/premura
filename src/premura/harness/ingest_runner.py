@@ -138,7 +138,11 @@ def run(*, source: Path, parser_spec: str, warehouse: Path) -> dict[str, Any]:
                 # parser has not already done so.
                 if observation.source_path is None:
                     observation.attach_source_artifact(source)
-                stats = loader.load(conn, observation)
+                # ADR 0010: this runner IS the sanctioned build-and-use door for a
+                # cold-built runtime parser, whose source_kind is legitimately not
+                # yet in the static registry. The unregistered kind still lands
+                # verbatim in hp.ingest_run for audit-integrity visibility.
+                stats = loader.load(conn, observation, allow_unregistered_source_kind=True)
         finally:
             conn.close()
 
