@@ -76,13 +76,12 @@ def test_long_format_circumference_rows_map_to_cm(tmp_path):
     assert abs(hip.value_num - 98.0) < 1e-6
 
 
-def test_long_format_inches_converts_to_cm(tmp_path):
+def test_long_format_inches_emits_observed_unit_without_converting(tmp_path):
     p = _write_long_csv(tmp_path, "waist,2024-04-01,32.0,in,,,,\n")
     res = BMTParser().parse(p)
     waist = next(m for m in res.measurements if m.metric_id == "waist_circumference")
-    assert waist.unit == "cm"
-    # 32 in, hand-computed: 81.28 cm
-    assert abs(waist.value_num - 81.28) < 1e-6
+    assert waist.unit == "in"
+    assert abs(waist.value_num - 32.0) < 1e-6
 
 
 def test_wide_format_circumference_columns_map_to_cm(tmp_path):

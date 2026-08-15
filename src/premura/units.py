@@ -47,6 +47,7 @@ _ALIASES = {
     "g/100g": "g_per_100g",
     "g/l": "g_per_l",
     "iu/ml": "IU_per_ml",
+    "ui/ml": "IU_per_ml",
     "k/ul": "10^9_per_l",
     "k/microl": "10^9_per_l",
     "k/microl.": "10^9_per_l",
@@ -128,9 +129,9 @@ _SIMPLE_DIVISORS: dict[tuple[str, str], float] = {
     ("mm", "cm"): 10.0,
 }
 
-# (from, to) -> {metric_id: factor-or-divisor}. `_apply_metric_scoped` below
-# encodes which of the two historical shapes (multiply vs. divide, or a fixed
-# equivalence) each entry uses, matching the original per-call-site logic.
+# (from, to) -> {metric_id: factor-or-divisor}. `convert` below dispatches
+# through equivalence, divisor, then factor shapes in that order, matching
+# the original per-call-site logic.
 _METRIC_SCOPED_EQUIVALENT: dict[tuple[str, str], set[str]] = {
     ("mEq_per_l", "mmol_per_l"): {"lab:sodium", "lab:potassium"},
 }
@@ -160,6 +161,16 @@ _AFFINE: dict[tuple[str, str], dict[str, tuple[float, float]]] = {
 def _normalize_text(value: str) -> str:
     normalized = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
     return re.sub(r"\s+", " ", normalized.lower()).strip()
+
+
+def known_spellings() -> dict[str, str]:
+    """Raw unit spellings (lowercased) this module has an alias for.
+
+    Used by lab_pdf's value/unit splitter to find a trailing unit token
+    embedded in a value cell (e.g. ``"14.1g/dl"`` with no separate unit
+    column). Not for general use — call `normalize_unit` instead.
+    """
+    return dict(_ALIASES)
 
 
 def normalize_unit(raw: str) -> str:
@@ -210,4 +221,4 @@ def convert(value: float, *, from_unit: str, to_unit: str, metric_id: str) -> fl
     return None
 
 
-__all__ = ["normalize_unit", "convert"]
+__all__ = ["normalize_unit", "convert", "known_spellings"]

@@ -92,6 +92,10 @@ def test_normalize_unit_unknown_passes_through_stripped() -> None:
     assert normalize_unit("  weird_unit  ") == "weird_unit"
 
 
+def test_normalize_unit_italian_ui_ml_alias() -> None:
+    assert normalize_unit("UI/ml") == "IU_per_ml"
+
+
 # --- conversion cases reproduced from test_lab_pdf.py:137 (unit normalization test) ---
 
 

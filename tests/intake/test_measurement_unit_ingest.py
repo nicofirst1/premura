@@ -12,6 +12,8 @@ from __future__ import annotations
 from datetime import datetime
 
 from premura.parsers.base import IngestBatch, Measurement, SourceDescriptor
+from premura.parsers.bmt import BMTParser
+from premura.parsers.lab_pdf import LabPdfParser
 from premura.store.loader import load
 
 
@@ -100,3 +102,67 @@ def test_unrecognized_unit_refuses_row_not_batch(empty_warehouse, tmp_path):
         "SELECT 1 FROM hp.fact_measurement WHERE source_uuid = 'bmt:hr:bad'"
     ).fetchone()
     assert absent is None
+
+
+# --- e2e: real simplified parsers (observe) -> real loader (convert) (WP03 T009) ---
+#
+# Pins that the two-step pipeline (parser emits observed unit, loader converts
+# to canonical) reproduces the same warehouse rows the old one-step pipeline
+# (parser converted internally) used to produce.
+
+
+def test_lab_pdf_e2e_unit_normalization_matches_pre_split_pipeline(empty_warehouse, tmp_path):
+    report = tmp_path / "2026-04-12-unit-normalization.pdf"
+    report.write_text(
+        """
+Laboratory: Centro Analisi Alfa
+Accettazione del: 2026-04-12
+Test | Value | Unit | Range
+MCH | 30,1 | pg/eritr. | 26,0 - 32,0
+Sideremia | 1.02 | mg/l | 0.6 - 1.7
+Calcium | 2.50 | mmol/l | 2.15 - 2.55
+TSH | 2.4 | microU/ml | 0.4 - 4.0
+Leukozyten | 6.2 | G/l | 4.0 - 10.0
+Albumin | 44 | g/l | 35 - 52
+""",
+        encoding="utf-8",
+    )
+
+    batch = LabPdfParser().parse(report)
+    stats = load(empty_warehouse, batch)
+
+    assert stats.rows_skipped_unit == 0
+    rows = dict(
+        empty_warehouse.execute(
+            "SELECT metric_id, unit || ':' || value_num FROM hp.fact_measurement"
+        ).fetchall()
+    )
+    # Same canonical unit + value the old one-step (parser-converts) pipeline produced.
+    assert rows["lab:mch"] == "pg:30.1"
+    assert rows["lab:iron"] == f"ug_per_dl:{102.0}"
+    assert rows["lab:calcium"] == f"mg_per_dl:{2.50 * 4.008}"
+    assert rows["lab:tsh"] == "mIU_per_l:2.4"
+    assert rows["lab:wbc"] == "10^9_per_l:6.2"
+    assert rows["lab:albumin"] == "g_per_dl:4.4"
+
+
+def test_bmt_long_format_e2e_inches_and_kg_match_pre_split_pipeline(empty_warehouse, tmp_path):
+    csv_path = tmp_path / "bmt_long.csv"
+    csv_path.write_text(
+        "Measurement,Date,Value,Unit,Notes,DefinedKey,MeasurementType,LeftRight\n"
+        "waist,2024-04-01,32.0,in,,,,\n"
+        "weight,2024-04-01,154.0,lb,,,,\n",
+        encoding="utf-8",
+    )
+
+    batch = BMTParser().parse(csv_path)
+    stats = load(empty_warehouse, batch)
+
+    assert stats.rows_skipped_unit == 0
+    rows = dict(
+        empty_warehouse.execute(
+            "SELECT metric_id, unit || ':' || value_num FROM hp.fact_measurement"
+        ).fetchall()
+    )
+    assert rows["waist_circumference"] == f"cm:{32.0 * 2.54}"
+    assert rows["weight"] == f"kg:{154.0 * 0.45359237}"

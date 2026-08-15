@@ -13,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from .. import units
 from .base import ClinicalNote, IngestBatch, Measurement, SkippedRow, SourceDescriptor
 from .lab_extract import contains_diagnostic_language, extract_report
 from .lookup import metric_definition, metric_ids, suggest_metric
@@ -38,61 +39,6 @@ _DATE_PATTERNS = (
     re.compile(r"(?:entnahmetag|eingang)\s*:?\s*(?P<value>\d{2}\.\d{2}\.\d{4})", re.IGNORECASE),
 )
 _FILENAME_DATE = re.compile(r"(?P<value>\d{4}[-_]?\d{2}[-_]?\d{2})")
-_UNIT_ALIASES = {
-    "%": "pct",
-    "eu/dl": "EU_per_dl",
-    "f": "fl",
-    "fl": "fl",
-    "pg": "pg",
-    "pg/eritr": "pg",
-    "pg/eritr.": "pg",
-    "pg/ml": "pg_per_ml",
-    "g/dl": "g_per_dl",
-    "gr/dl": "g_per_dl",
-    "g/g": "ug_per_g",
-    "g/100g": "g_per_100g",
-    "g/l": "g_per_l",
-    "iu/ml": "IU_per_ml",
-    "k/ul": "10^9_per_l",
-    "k/microl": "10^9_per_l",
-    "k/microl.": "10^9_per_l",
-    "m/ul": "10^12_per_l",
-    "meq/l": "mEq_per_l",
-    "mila/mmc": "10^9_per_l",
-    "mg/dl": "mg_per_dl",
-    "mg/l": "mg_per_l",
-    "mg/1": "mg_per_l",
-    "miu/l": "mIU_per_l",
-    "miu/ml": "mIU_per_ml",
-    "microiu/ml": "mIU_per_ml",
-    "microu/ml": "microU_per_ml",
-    "ml/min/1.73m2": "ml_per_min_per_173m2",
-    "mm/h": "mm_per_h",
-    "mmol/l": "mmol_per_l",
-    "mmol/mol": "mmol_per_mol",
-    "mu/l": "mU_per_l",
-    "mu/ml": "mU_per_ml",
-    "u/l": "U_per_l",
-    "u/": "U_per_l",
-    "ng/dl": "ng_per_dl",
-    "ng/ml": "ng_per_ml",
-    "pmol/l": "pmol_per_l",
-    "sec": "s",
-    "sek": "s",
-    "t/l": "10^12_per_l",
-    "ug/g": "ug_per_g",
-    "ug/dl": "ug_per_dl",
-    "ug/l": "ug_per_l",
-    "ug/ml": "ug_per_ml",
-    "umol/l": "umol_per_l",
-    "molli": "umol_per_l",
-    "/nl": "10^9_per_l",
-    "/pl": "10^12_per_l",
-    "10^9/l": "10^9_per_l",
-    "10^12/l": "10^12_per_l",
-    "10e9/l": "10^9_per_l",
-    "10e12/l": "10^12_per_l",
-}
 
 
 @dataclass(slots=True)
@@ -239,23 +185,7 @@ def _measurement_from_row(
     canonical_unit = definition["canonical_unit"]
     if normalized_unit is not None and _looks_like_non_unit_token(row.raw_unit or ""):
         normalized_unit = None
-
     normalized_unit = normalized_unit or canonical_unit
-    if parsed_num is not None and normalized_unit != canonical_unit:
-        converted_num = _convert_value_to_canonical(
-            parsed_num,
-            from_unit=normalized_unit,
-            to_unit=canonical_unit,
-            metric_id=metric_id,
-        )
-        if converted_num is None:
-            return None, _RowIssue(
-                "unit_mismatch",
-                f"skipped {row.test_name}: unit {normalized_unit!r} does not match "
-                f"{canonical_unit!r}",
-            )
-        parsed_num = converted_num
-        normalized_unit = canonical_unit
 
     payload: dict[str, Any] = {
         "original_test_name": row.test_name,
@@ -268,7 +198,7 @@ def _measurement_from_row(
         Measurement(
             ts_utc=collection_dt,
             metric_id=metric_id,
-            unit=canonical_unit if parsed_num is not None else normalized_unit,
+            unit=normalized_unit,
             source_id=source_id,
             source_kind=SOURCE_KIND,
             value_num=parsed_num,
@@ -315,7 +245,7 @@ def _parse_value(raw_value: str) -> tuple[float | None, str | None]:
 def _split_value_and_unit(raw_value: str) -> tuple[float | None, str | None, str | None]:
     compact = raw_value.replace(" ", "")
     ordered_units = sorted(
-        _UNIT_ALIASES.items(),
+        units.known_spellings().items(),
         key=lambda item: len(item[0]),
         reverse=True,
     )
@@ -372,78 +302,7 @@ def _parse_date(value: str) -> datetime | None:
 
 
 def _normalize_unit(value: str) -> str:
-    stripped = value.strip()
-    # German CBC reports use capital G/l and T/l as count units (Giga/Tera per
-    # litre). Lower-case g/l is grams per litre for proteins, so handle the
-    # case-sensitive forms before the general lower-case lookup.
-    if stripped == "G/l":
-        return "10^9_per_l"
-    if stripped == "T/l":
-        return "10^12_per_l"
-    normalized = _normalize_text(value.replace("µ", "u").replace("μ", "u"))
-    return _UNIT_ALIASES.get(normalized, value.strip())
-
-
-def _convert_value_to_canonical(
-    value: float,
-    *,
-    from_unit: str,
-    to_unit: str,
-    metric_id: str,
-) -> float | None:
-    if from_unit == to_unit:
-        return value
-
-    simple_factors: dict[tuple[str, str], float] = {
-        ("mg_per_l", "mg_per_dl"): 0.1,
-        ("mg_per_dl", "mg_per_l"): 10.0,
-        ("g_per_l", "g_per_dl"): 0.1,
-        ("ug_per_l", "ng_per_ml"): 1.0,
-        ("mg_per_l", "ug_per_dl"): 100.0,
-        ("mU_per_ml", "U_per_l"): 1.0,
-        ("mU_per_l", "mIU_per_l"): 1.0,
-        ("microU_per_ml", "mIU_per_l"): 1.0,
-        ("mIU_per_ml", "mIU_per_l"): 1000.0,
-    }
-    factor = simple_factors.get((from_unit, to_unit))
-    if factor is not None:
-        return value * factor
-
-    if (
-        from_unit == "mEq_per_l"
-        and to_unit == "mmol_per_l"
-        and metric_id
-        in {
-            "lab:sodium",
-            "lab:potassium",
-        }
-    ):
-        return value
-
-    mg_l_to_mmol_l = {
-        "lab:sodium": 22.98976928,
-        "lab:potassium": 39.0983,
-    }
-    divisor = mg_l_to_mmol_l.get(metric_id)
-    if from_unit == "mg_per_l" and to_unit == "mmol_per_l" and divisor is not None:
-        return value / divisor
-
-    mmol_l_to_mg_dl = {
-        "lab:calcium": 4.008,
-        "lab:magnesium": 2.431,
-        "lab:phosphorus": 3.097,
-    }
-    factor = mmol_l_to_mg_dl.get(metric_id)
-    if from_unit == "mmol_per_l" and to_unit == "mg_per_dl" and factor is not None:
-        return value * factor
-
-    if from_unit == "pmol_per_l" and to_unit == "pg_per_ml" and metric_id == "lab:vitamin_b12":
-        return value * 1.355
-
-    if from_unit == "mmol_per_mol" and to_unit == "pct" and metric_id == "lab:hba1c":
-        return 0.09148 * value + 2.152
-
-    return None
+    return units.normalize_unit(value)
 
 
 def _normalize_test_name(value: str) -> str:
