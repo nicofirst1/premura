@@ -8,6 +8,9 @@ requirement_refs:
 planning_base_branch: mission/substrate-unit-guarantees
 merge_target_branch: mission/substrate-unit-guarantees
 branch_strategy: Planning artifacts for this mission were generated on mission/substrate-unit-guarantees. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into mission/substrate-unit-guarantees unless the human explicitly redirects the landing branch.
+base_branch: kitty/mission-substrate-unit-guarantees-01M01A8V
+base_commit: 06f886666fb5b69a37d5bbb1cb850d7bfc39c70b
+created_at: '2026-08-15T00:02:07.603911+00:00'
 subtasks:
 - T001
 - T002
