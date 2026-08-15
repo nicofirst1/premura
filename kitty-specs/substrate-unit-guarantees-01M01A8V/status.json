@@ -1,20 +1,20 @@
 {
-  "event_count": 30,
-  "last_event_id": "01M01F1P5SNWMQCYAX2EKK28JW",
-  "materialized_at": "2026-08-15T01:02:13.690022+00:00",
+  "event_count": 33,
+  "last_event_id": "01M01FJ7DMK2MS13WJ5AAT586Q",
+  "materialized_at": "2026-08-15T01:11:15.580500+00:00",
   "mission_number": "",
   "mission_slug": "substrate-unit-guarantees-01M01A8V",
   "mission_type": "software-dev",
   "summary": {
-    "approved": 3,
+    "approved": 4,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
     "done": 0,
     "for_review": 0,
-    "in_progress": 0,
-    "in_review": 1,
-    "planned": 4
+    "in_progress": 1,
+    "in_review": 0,
+    "planned": 3
   },
   "work_packages": {
     "WP01": {
@@ -68,17 +68,18 @@
       }
     },
     "WP03": {
-      "actor": "claude-reviewer",
+      "actor": "user",
       "agent": "claude-reviewer",
       "agent_profile": "__resolved_profile_absent__",
       "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
-      "lane": "in_review",
-      "last_event_id": "01M01F1P5SNWMQCYAX2EKK28JW",
-      "last_transition_at": "2026-08-15T01:02:13.690022+00:00",
+      "lane": "approved",
+      "last_event_id": "01M01FGNNMH7AHXDXFE6KCCMQQ",
+      "last_transition_at": "2026-08-15T01:10:24.692869+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "ready"
+        "ready",
+        "APPROVE. Gates green: pytest 1787 passed, targeted 301 passed (incl 2 new e2e), ruff check + format clean, mypy 106 files clean. NET-NEGATIVE (NFR-001) PASS: lab_pdf.py +4/-145 (net -141), bmt.py +7/-40 (net -33) vs mission base; both strictly smaller. units.py +224 is WP01's stacked base (WP03's own delta +15/-4, not NFR-001-gated). 50f2546 is planning-doc-only (restores WP03 task file to mission-branch parity, zero functional code); owned_files compliant. EQUIVALENCE (load-bearing) VERIFIED via adversarial old-one-step-vs-new-two-step probe: 18 lab cases (mg/l->mg_per_dl, mEq/l Na, mmol/mol HbA1c affine, pmol/l B12, mmol/l Ca/Mg/P, g/l albumin, case-sensitive G/l, plus 3 that USED to skip as unit_mismatch and now become loader refusals - row absent either way) = 0 mismatches; 17 bmt long cases (lb/in/g/cm/mm + 4 flagged-bug unitless rows) = 0 mismatches. RULING unit_in-or-target: behavior-preserving, NOT worse than old - unitless-pounds weight row mislabels kg identically OLD and NEW; pre-existing bug carried forward unchanged (correct WP scope). RULING known_spellings(): justified (one home, no duplicate alias table); one over-generalization noted - it returns the full _ALIASES incl bmt tokens (kg/g/m/cm/in) which _split_value_and_unit consumes, so bmt tokens can theoretically split a bare lab cell (only lab:stool_weight canon=g collides), BUT proven UNREACHABLE: _parse_value extracts the number before the splitter guard fires, so no digit-bearing cell reaches it; latent, not a regression. C-005 six-question PASS: (1)existence - deletions delete two ladders, no new mechanism; (2)abstraction budget - one accessor, minor over-generality noted-not-blocking; (3)SHRINK - net -174 across parsers, headline gate met; (4)one-rule-one-chokepoint - conversion now solely at loader boundary; (5)process test - no ceremony added; (6)reuse ladder - delegates to WP01 units.py, no reimplementation."
       ],
       "provider": "__resolved_provider_absent__",
       "role": "reviewer",
@@ -91,11 +92,19 @@
       }
     },
     "WP04": {
-      "actor": "finalize-tasks",
+      "actor": "claude",
+      "agent": "claude",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
-      "lane": "planned",
-      "last_event_id": "01M01B2J16SQYGDB2W1E6HC9MB",
-      "last_transition_at": "2026-08-14T23:52:47.910293+00:00"
+      "lane": "in_progress",
+      "last_event_id": "01M01FJ7DMK2MS13WJ5AAT586Q",
+      "last_transition_at": "2026-08-15T01:11:15.580500+00:00",
+      "model": "__resolved_model_absent__",
+      "provider": "__resolved_provider_absent__",
+      "role": "implementer",
+      "shell_pid": 18224,
+      "shell_pid_created_at": "1786756274.348814"
     },
     "WP05": {
       "actor": "finalize-tasks",
