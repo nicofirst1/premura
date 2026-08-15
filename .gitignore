@@ -49,6 +49,8 @@ skills-lock.json
 .kiro/
 .agent/
 .github/copilot/
+.github/agents/
+.github/copilot-instructions.md
 .kittify/.dashboard
 .kittify/charter/context-state.json
 .kittify/charter/directives.yaml
