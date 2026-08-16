@@ -1,0 +1,10 @@
+{
+  "created_at": "1970-01-01T00:00:00+00:00",
+  "friendly_name": "usable-intake-dimensions-01KT950A",
+  "mission_id": "4P2DQY39VRJKRT3GPJ2JXN4EDK",
+  "mission_number": null,
+  "mission_slug": "usable-intake-dimensions-01KT950A",
+  "mission_type": "software-dev",
+  "slug": "usable-intake-dimensions-01KT950A",
+  "target_branch": "main"
+}

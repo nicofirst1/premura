@@ -1,0 +1,10 @@
+{
+  "created_at": "1970-01-01T00:00:00+00:00",
+  "friendly_name": "tool-loop-live-trial-tier-01KTVG26",
+  "mission_id": "443W46G5N2EG2NFD7Y53C01AQV",
+  "mission_number": null,
+  "mission_slug": "tool-loop-live-trial-tier-01KTVG26",
+  "mission_type": "software-dev",
+  "slug": "tool-loop-live-trial-tier-01KTVG26",
+  "target_branch": "main"
+}

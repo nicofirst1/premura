@@ -49,6 +49,8 @@ skills-lock.json
 .kiro/
 .agent/
 .github/copilot/
+.github/agents/
+.github/copilot-instructions.md
 .kittify/.dashboard
 .kittify/charter/context-state.json
 .kittify/charter/directives.yaml
@@ -63,10 +65,21 @@ skills-lock.json
 .kittify/workspaces/
 .worktrees/
 
-# spec-kitty bookkeeping (local only)
+# spec-kitty bookkeeping (.kittify local; kitty-specs tracked — the 3.2.6
+# workflow guards require mission specs committed at HEAD)
 .kittify/
-kitty-specs/
 CONTEXT.md
 
 # Local throwaway Docker sandbox (Dockerfile, run.sh, Claude Code)
 throwawaydocker/
+.kittify/sync-state.json
+.kittify/encoding-provenance/
+kitty-ops/ops-index.jsonl
+.kittify/derived/
+.kittify/migrations/
+.kittify/logs/
+.kittify/skills-manifest.json
+
+# stale pre-kitty worktrees + op-record logs (local only)
+.worktree/
+kitty-ops/
