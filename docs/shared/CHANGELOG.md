@@ -2,7 +2,7 @@
 
 > One block per released version, newest first, capability-level highlights only. The per-change narrative history lives in git.
 
-## Unreleased — substrate unit guarantees
+## 2026-08-16 — v1.2.0 — substrate unit guarantees
 
 Prompted by issue #113: a unit-corrupted warehouse traced to an unguarded write path that bypassed every parser's per-source conversion.
 
@@ -12,6 +12,20 @@ Prompted by issue #113: a unit-corrupted warehouse traced to an unguarded write 
 - **`audit-integrity` CLI verb** surfaces unit and vocabulary drift across the warehouse for operator review, plus a backfill migration correcting historical unit-spelling inconsistencies.
 - **Remediation path for already-polluted rows.** `ops/delete_labsheet_rows.sql` is the reviewed, hand-run template for the delete-and-re-enter pattern: remove rows written outside the load boundary, then re-enter through `ingest_row`.
 - **Doctrine gained the substrate test.** For any stated guarantee: what happens if an agent simply doesn't follow the process? If bad data lands silently, the guarantee moves to the chokepoint that cannot be bypassed — this incident is doctrine's worked example.
+- **Collapsed MCP tool surface.** Enumerated per-domain tools folded into a parameterized surface (ADR 0018), shrinking the default server to 24 tools without losing capability (#112).
+- **Warehouse restore + refresh.** Non-destructive `premura download` restores the warehouse from the encrypted Drive export (#107); full source refresh (re-download + re-ingest) documented and tested as one command (#108, #101).
+- **New signals and sources.** Navy body-fat % derived as a Stage 2 signal (#109, #100); Daylio mood ingested with mood correlations admitted (#104); Garmin workout activities recovered from `summarizedActivities` (#89).
+- **Ontology and parser fixes.** ~39 Italian/German lab names mapped to canonical metrics (#92); lab unit normalization and note-only batches (#105); BMT circumferences stored as canonical cm (#103, #97); trend windows anchored to the latest observation and honoring `lookback_days` (#102, #98).
+- **Operations.** Config overrides load from XDG `config.toml` (#96); `premura ingest --force` bypasses the sha256 already-ingested skip (#94); `status` reports every domain table with atomic intake runs (#90, #88); a mission-citation CI gate keeps agent bookkeeping tokens out of durable docs (#110).
+
+## 2026-07-16 — v1.1.0
+
+Onboarding and structure: a fresh clone becomes an operating install in one command.
+
+- **One-command onboarding.** `uvx` MCP install with a durable XDG data dir, clone-first install flow, portable age-keypair setup, and the CLI renamed `hpipe` → `premura`; a `/premura` first-run skill chains install-check → direction → devices → collection → analysis.
+- **Interview device branch.** Parser-keyed track registry plus `interview_devices`; the cardio track bridged into the engine's `cardiovascular` signal domain so it no longer drops out.
+- **Contracts beside code.** Architecture contracts migrated into `src/` next to what they govern (ADR 0017); ADRs made self-contained; `STATUS.md` retired in favor of live sources.
+- **Test layout.** Flat `tests/` reorganized into subsystem folders; brittle prose-freeze and color-forcing tests cut.
 
 ## 2026-07-14 — v1.0.0
 
