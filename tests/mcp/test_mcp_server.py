@@ -175,14 +175,15 @@ def test_metric_summary_rejects_blank_metric_id(tmp_path: Path) -> None:
 # Default surface omits query_warehouse. Enumerated per-instance tools are
 # collapsed into parameterized ones (ADR 0018): the eight Stage 2 signals behind
 # ``signal``, the three descriptive single-metric methods behind ``analyze``, the
-# two paired differences behind ``paired_test``, and record/list/retract behind
-# ``condition_episode``. Alongside them: the two catalog tools, the pre-registered
+# two paired differences behind ``paired_test``, record/list/retract behind
+# ``condition_episode``, and metric lookup + manual single-row load behind
+# ``ingest_row``. Alongside them: the two catalog tools, the pre-registered
 # lagged-association ``correlate``, the two bounded profile-capture tools, the two
 # interview tools, the four runtime-orchestrator tools, the three trace tools (the
 # trace IS the supported agent workflow), the two PubMed grounding tools (the ONLY
 # PubMed tools — no full-text/MeSH/Europe-PMC/Unpaywall/related-article/deep-
 # analysis tools; see the narrow-surface test), and the improvement-queue +
-# share_packet_render tools — 23 tools in total.
+# share_packet_render tools — 24 tools in total.
 _DEFAULT_TOOLS = sorted(
     [
         "list_metrics",
@@ -192,6 +193,7 @@ _DEFAULT_TOOLS = sorted(
         "correlate",
         "paired_test",
         "condition_episode",
+        "ingest_row",
         "profile_context_supported_fields",
         "profile_context_record",
         "interview_route",

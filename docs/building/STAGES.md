@@ -34,7 +34,7 @@ Data moves through the system in a strict order. Each stage has a different cont
 
 Parsers turn a vendor artifact into rows in `hp.fact_measurement` / `hp.fact_interval` per the long-format star schema. The registered parsers define what is supported; adding a source is parser work, not a change to this stage.
 
-- No derivation, no imputation, no analysis. Ingest stores **what was observed, in canonical units, with provenance**.
+- No derivation, no imputation, no analysis. Ingest stores **what was observed, in canonical units, with provenance** — parsers emit the unit as observed, and `store/loader.py`'s load boundary converts to `dim_metric.canonical_unit` or refuses the row; see the parser [CONTRACT](../../src/premura/parsers/CONTRACT.md).
 - Idempotent (sha256 + `dedupe_key UNIQUE`), append-only.
 
 ### 2. Signal processing

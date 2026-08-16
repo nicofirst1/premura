@@ -26,9 +26,9 @@ from premura.mcp.entrypoint import build_server
 from premura.store import duck
 
 # query_warehouse moved to operator surface. The default surface is the
-# collapsed 23-tool set: catalog tools, the four parameterized tools
-# (signal/analyze/paired_test/condition_episode), and the unchanged remainder
-# (the ``_EIGHT_`` name predates the collapse and is kept stable).
+# collapsed 24-tool set: catalog tools, the five parameterized tools
+# (signal/analyze/paired_test/condition_episode/ingest_row), and the unchanged
+# remainder (the ``_EIGHT_`` name predates the collapse and is kept stable).
 _EIGHT_DEFAULT_TOOLS = sorted(
     [
         "list_metrics",
@@ -38,6 +38,7 @@ _EIGHT_DEFAULT_TOOLS = sorted(
         "correlate",
         "paired_test",
         "condition_episode",
+        "ingest_row",
         "profile_context_supported_fields",
         "profile_context_record",
         "interview_route",

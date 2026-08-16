@@ -9,18 +9,22 @@ Two entrypoints are provided:
   three descriptive single-metric methods behind one ``analyze`` tool
   (``change_point`` / ``smoothed_average`` / ``rolling_mean``); the two
   pre-registered paired differences behind one ``paired_test`` tool (kinds
-  ``before_after`` / ``condition_label``); and record/list/retract behind one
-  ``condition_episode`` tool.  Alongside these it exposes the catalog/summary
-  helpers (``list_metrics`` / ``metric_summary``), the two-metric association
-  ``correlate``, the bounded agent-mediated profile capture tools
-  (``profile_context_supported_fields`` / ``profile_context_record``), the two
-  interview routing tools (``interview_route`` / ``interview_devices``), the three
-  session research-trace tools (``research_trace_open`` /
-  ``research_trace_mark_surfaced`` / ``research_trace_disclosure``), the two PubMed
-  grounding tools (``pubmed_search`` / ``pubmed_fetch``), and the runtime-
-  orchestrator tools (``operating_roles`` / ``orchestrator_handoff`` /
-  ``answer_audit`` / ``present_answer`` / ``improvement_queue_record`` /
-  ``improvement_queue_list`` / ``share_packet_render``) — 23 tools in total.
+  ``before_after`` / ``condition_label``); record/list/retract behind one
+  ``condition_episode`` tool; and metric lookup + manual single-row load
+  behind one ``ingest_row`` tool (ops ``suggest_metric`` / ``load`` — the only
+  sanctioned path for manually-transcribed data, delegating entirely to
+  ``store.manual_load`` / ``store.loader.load``).  Alongside these it exposes
+  the catalog/summary helpers (``list_metrics`` / ``metric_summary``), the
+  two-metric association ``correlate``, the bounded agent-mediated profile
+  capture tools (``profile_context_supported_fields`` /
+  ``profile_context_record``), the two interview routing tools
+  (``interview_route`` / ``interview_devices``), the three session
+  research-trace tools (``research_trace_open`` / ``research_trace_mark_surfaced``
+  / ``research_trace_disclosure``), the two PubMed grounding tools
+  (``pubmed_search`` / ``pubmed_fetch``), and the runtime-orchestrator tools
+  (``operating_roles`` / ``orchestrator_handoff`` / ``answer_audit`` /
+  ``present_answer`` / ``improvement_queue_record`` / ``improvement_queue_list``
+  / ``share_packet_render``) — 24 tools in total.
   ``query_warehouse`` is intentionally absent; agents should use the ``signal`` /
   ``analyze`` / ``paired_test`` / ``correlate`` tools, the trace tools, the PubMed
   tools, and the catalog helpers instead.  The authoritative tool list is asserted
@@ -991,6 +995,70 @@ def _register_default_tools(
         raise ValueError(
             f"unknown condition_episode op {op!r}; expected one of record, list, retract"
         )
+
+    # --- Manual single-row load (the paved road; issue #113) - one parameterized #
+    # tool selected by ``op``. ``suggest_metric`` and ``load`` each delegate
+    # entirely to ``warehouse_server`` / ``store.manual_load`` / ``store.loader``
+    # — zero conversion or validation logic lives in this MCP layer. This is the
+    # only sanctioned path for manually-transcribed data; a batch importer is a
+    # parser (see ``src/premura/parsers/PARSER_CONTRIBUTING.md``), not this tool.
+
+    @mcp.tool()
+    def ingest_row(
+        op: str,
+        field_name: str | None = None,
+        metric_id: str | None = None,
+        ts_utc: str | None = None,
+        unit: str | None = None,
+        source_ref: str | None = None,
+        value_num: float | None = None,
+        value_text: str | None = None,
+    ) -> dict[str, Any]:
+        """Look up a metric id, or manually load one transcribed observation.
+
+        ``op`` selects the operation:
+
+        * ``"suggest_metric"`` — requires ``field_name`` (a raw column/test
+          label). Resolves it to a canonical ``metric_id`` exactly as
+          ``parsers.lookup.suggest_metric`` would for a parser author; a null
+          result means follow the standards-first ladder or stop.
+        * ``"load"`` — requires ``metric_id``, ``ts_utc`` (ISO 8601),
+          ``unit`` (as observed — what the source states, never pre-converted),
+          ``source_ref`` (mandatory plain-text provenance, e.g. "operator
+          spreadsheet row 14"), and one of ``value_num`` / ``value_text``.
+          Builds a single-row batch and loads it through the exact same
+          boundary every parser uses (``store.loader.load``): unit
+          convert-or-refuse and ``hp.ingest_skip`` persistence apply with zero
+          special-casing. Missing/empty ``source_ref`` is refused before the
+          loader is even opened — provenance is never fabricated. Returns
+          ``status='loaded'`` with the stored canonical unit, or
+          ``status='refused'`` with the reason (also queryable in
+          ``hp.ingest_skip`` for unit refusals).
+
+        Not a bulk importer: one row per call, by design. Batches of real
+        source artifacts deserve a parser.
+        """
+        if op == "suggest_metric":
+            if not field_name:
+                raise ValueError("ingest_row op 'suggest_metric' requires field_name")
+            return warehouse_server.ingest_row_suggest_metric(field_name)
+        if op == "load":
+            if not metric_id:
+                raise ValueError("ingest_row op 'load' requires metric_id")
+            if not ts_utc:
+                raise ValueError("ingest_row op 'load' requires ts_utc")
+            if not unit:
+                raise ValueError("ingest_row op 'load' requires unit")
+            return warehouse_server.ingest_row_load(
+                metric_id,
+                ts_utc,
+                unit,
+                source_ref,
+                value_num=value_num,
+                value_text=value_text,
+                warehouse_path=warehouse_path,
+            )
+        raise ValueError(f"unknown ingest_row op {op!r}; expected one of suggest_metric, load")
 
     # --- Runtime orchestrator: roles, handoff trace, blocking answer gate -- #
     # Slice 1 of src/premura/ui/OPERATING_ROLES.md (decision note

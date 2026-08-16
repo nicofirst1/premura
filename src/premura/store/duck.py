@@ -71,7 +71,7 @@ def domain_table_summaries(
     return summaries
 
 
-def connect(db_path: Path, *, read_only: bool = False) -> duckdb.DuckDBPyConnection:
+def connect(db_path: Path, *, read_only: bool = True) -> duckdb.DuckDBPyConnection:
     """Open the warehouse. Creates parent dir if missing.
 
     Caller is responsible for calling run_migrations() once after creation.
@@ -180,7 +180,7 @@ def upsert_dim_source(
 
 def initialize(db_path: Path) -> duckdb.DuckDBPyConnection:
     """One-call helper: connect + migrate + seed."""
-    conn = connect(db_path)
+    conn = connect(db_path, read_only=False)
     run_migrations(conn)
     seed_dim_metric(conn)
     return conn

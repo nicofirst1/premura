@@ -22,6 +22,14 @@ Every tool on this surface delegates to the Stage 2 signal engine; there is no r
 
 Direct DuckDB, notebooks, and the raw CLI remain available as **expert fallback** paths, not your default. Reach for them only when the human asks for them or the bounded tools genuinely cannot answer the question.
 
+## Getting one-off / manually-transcribed data in
+
+For a single value or a small hand-transcribed batch (a spreadsheet cell, a value read off a printed labsheet), use the `ingest_row` tool: `op="suggest_metric"` to resolve the column label to a `metric_id`, then `op="load"` per row with mandatory `source_ref` provenance. It loads through the same boundary as every parser — unit convert-or-refuse applies with no special-casing.
+
+Opening or writing the warehouse DuckDB file directly is **out of bounds for a runtime agent, no exceptions** — no dataset size justifies it.
+
+A recurring format still deserves a build-and-use parser, not repeated `ingest_row` calls — see "Proposing changes" below and [ADR 0010](../building/adr/0010-runtime-orchestrator-and-operating-roles.md).
+
 ## Stay honest about data state
 
 Signal-backed tools return structured verdicts rather than free-form claims. Carry those verdicts through to the human instead of papering over them:

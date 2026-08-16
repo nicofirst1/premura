@@ -132,6 +132,7 @@ def test_trace_migration_adds_no_new_hp_provenance_tables(empty_warehouse) -> No
     # 007 (condition episodes — a health-fact home, not provenance).
     known_hp = EXISTING_HP_TABLES | {
         "ingest_run",
+        "ingest_skip",
         "profile_capture_session",
         "profile_context_assertion",
         "nutrition_intake_event",

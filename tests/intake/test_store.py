@@ -20,6 +20,7 @@ def test_schema_creates_expected_tables(empty_warehouse):
         "fact_interval",
         "fact_measurement",
         "ingest_run",
+        "ingest_skip",
         "nutrition_intake_event",
         "nutrition_intake_item",
         "nutrition_quantity",

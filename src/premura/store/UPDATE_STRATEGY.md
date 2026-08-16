@@ -48,6 +48,8 @@ A clean rebuild of `hp.fact_measurement` / `hp.fact_interval` from the raw artif
 - Concrete near-term consumer: the legacy v1 `metric_id` → final canonical vocabulary rename happens via rebuild, not in-place migration.
 - There is no `premura rebuild` verb yet; the canonical-vocabulary rewrite is the change that introduces it.
 
+**Delete-and-re-enter — the variant for manually-entered data with no raw artifact.** Rebuild-from-raw assumes an export to re-parse; manually-transcribed rows (entered outside `ingest_row`, e.g. via a direct write bypassing the load boundary) have none. Same shape, smaller scope: delete the polluted rows via a reviewed, hand-run `ops/*.sql` one-shot (dry-run counts, then delete, idempotent by construction), then re-enter through `ingest_row` so unit convert-or-refuse and provenance apply correctly. Never hand-fix values in place — that reintroduces the unguarded-write failure mode being corrected.
+
 ### (f) Parser updates — **not yet built**
 
 When an existing parser's mapping logic changes (a vendor field was previously dropped and is now mapped, an alias was wrong, a unit was mis-converted), the already-ingested rows from that parser need to be re-derived.
@@ -58,11 +60,11 @@ When an existing parser's mapping logic changes (a vendor field was previously d
 
 ## Quick reference
 
-| Update kind                     | Status      | Mechanism                                                  |
-| ------------------------------- | ----------- | ---------------------------------------------------------- |
-| (a) new ingest                  | implemented | `premura ingest`                                           |
-| (b) schema migration            | implemented | `src/premura/store/migrations/NNN_*.sql`                   |
-| (c) ontology seed refresh       | implemented | `src/premura/dim_metric.yaml` + `seed_dim_metric`          |
+| Update kind                     | Status        | Mechanism                                                  |
+| ------------------------------- | ------------- | ---------------------------------------------------------- |
+| (a) new ingest                  | implemented   | `premura ingest`                                           |
+| (b) schema migration            | implemented   | `src/premura/store/migrations/NNN_*.sql`                   |
+| (c) ontology seed refresh       | implemented   | `src/premura/dim_metric.yaml` + `seed_dim_metric`          |
 | (d) derived-signal invalidation | not yet built | future `premura revalidate` keyed on `SignalSpec.revision` |
 | (e) full rebuild from raw       | not yet built | future `premura rebuild` over `data/raw/`                  |
 | (f) parser updates              | not yet built | future re-ingest / rebuild flow                            |

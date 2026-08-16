@@ -8,7 +8,8 @@ Long-format header (after any leading `#`-prefixed user-metadata lines):
 
 A `Measurement` value of e.g. `weight | height | bodyfat | hips | waist | neck | ...`
 maps to a stable metric_id; unknown ones become `bmt_custom:<slug>`. The `Unit`
-column drives canonical conversion (kg, m, °C, etc.).
+column is emitted as observed; the load boundary converts to canonical (kg, m,
+°C, etc.).
 
 We also keep light support for the older **wide format** (one row per date with
 `Weight,BodyFat,Muscle,...` columns) for backward compatibility with users still on
@@ -34,7 +35,6 @@ SOURCE_KIND = "bmt"
 
 LB_TO_KG = 0.45359237
 IN_TO_M = 0.0254
-CM_TO_M = 0.01
 
 # Long-format header signature.
 LONG_HEADER = ("Measurement", "Date", "Value", "Unit")
@@ -70,43 +70,6 @@ def _parse_date(s: str) -> datetime | None:
         return dtparser.parse(s, dayfirst=False)
     except (ValueError, TypeError):
         return None
-
-
-def _convert_to_canonical(
-    value: float, src_unit: str | None, target_unit: str
-) -> tuple[float, str]:
-    """Return (value_in_target, target_unit). Unknown conversions pass through."""
-    if not src_unit:
-        return value, target_unit
-    u = src_unit.strip().lower()
-    if target_unit == "kg":
-        if u in ("kg",):
-            return value, "kg"
-        if u in ("lb", "lbs"):
-            return value * LB_TO_KG, "kg"
-        if u in ("g",):
-            return value / 1000.0, "kg"
-    elif target_unit == "m":
-        if u in ("m",):
-            return value, "m"
-        if u in ("cm",):
-            return value * CM_TO_M, "m"
-        if u in ("in", "inch", "inches"):
-            return value * IN_TO_M, "m"
-    elif target_unit == "pct":
-        if u in ("%", "pct"):
-            return value, "pct"
-    elif target_unit == "cm":
-        if u in ("cm",):
-            return value, "cm"
-        if u in ("in", "inch", "inches"):
-            return value * 2.54, "cm"
-        if u in ("m",):
-            return value * 100, "cm"
-        if u in ("mm",):
-            return value / 10, "cm"
-    # Unknown: keep as-is and use the source unit so downstream code can see it.
-    return value, src_unit
 
 
 class BMTParser:
@@ -186,7 +149,7 @@ class BMTParser:
         spec = LONG_METRIC_MAP.get(m_name)
         if spec:
             metric_id, target_unit = spec
-            value, unit_out = _convert_to_canonical(value, unit_in, target_unit)
+            unit_out = unit_in or target_unit
         else:
             unmapped = _slugify(m_name)
             if side in ("left", "right"):
@@ -210,6 +173,10 @@ class BMTParser:
     # --- legacy wide format ---
 
     def _parse_wide_format(self, lines: list[str], result: IngestBatch) -> None:
+        # Scope exception: wide-format rows carry no per-row unit string (each
+        # column is a bare number), so there is nothing for the load boundary
+        # to observe-and-convert. This config-declared kg/lb + in/cm toggle
+        # stays the source of truth for wide-format unit conversion.
         reader = csv.DictReader(lines)
         w_unit = settings.parsers.bmt.weight_unit
         h_unit = settings.parsers.bmt.length_unit

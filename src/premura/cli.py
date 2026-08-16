@@ -1,7 +1,7 @@
 """`premura` CLI — entry point for the premura pipeline.
 
 Verbs: bootstrap, ingest, inspect, status, export, upload, download, run-monthly,
-doctor, gc, install-launchd, uninstall-launchd, install-skills.
+doctor, audit-integrity, gc, install-launchd, uninstall-launchd, install-skills.
 """
 
 from __future__ import annotations
@@ -36,9 +36,16 @@ from .mcp import server as mcp_server
 from .ops import encrypt, notify, restore, upload
 from .parsers.ai_chat_recall import FORMAT_MARKER as AI_CHAT_RECALL_MARKER
 from .parsers.base import file_sha256, normalize_parse_output
-from .parsers.registry import PARSER_REGISTRY
+from .parsers.registry import PARSER_REGISTRY, registered_source_kinds
 from .store import duck
-from .store.loader import LoadStats, already_ingested, finish_ingest_run, load, start_ingest_run
+from .store.loader import (
+    MANUAL_LOAD_SOURCE_KIND,
+    LoadStats,
+    already_ingested,
+    finish_ingest_run,
+    load,
+    start_ingest_run,
+)
 from .store.profile_intake import persist_intake_batch
 
 app = typer.Typer(
@@ -722,6 +729,61 @@ def doctor() -> None:
     console.print(tbl)
     if any("FAIL" in s for _, s, _ in rows):
         raise typer.Exit(code=1)
+
+
+# ============================================================================
+# audit-integrity
+# ============================================================================
+
+
+@app.command(name="audit-integrity")
+def audit_integrity() -> None:
+    """Report substrate integrity findings: unit mismatches + unregistered source kinds.
+
+    Read-only detection, not a gate — always exits 0. Findings mean a human
+    should look (and, for unit spelling variants, that a migration like
+    010_unit_spelling_backfill.sql may be warranted); they never block ingest.
+    """
+    if not settings.warehouse_path.exists():
+        console.print("[yellow]warehouse does not exist yet — run `premura ingest` first[/yellow]")
+        raise typer.Exit(code=0)
+    conn = duck.connect(settings.warehouse_path, read_only=True)
+    try:
+        unit_mismatches = conn.execute(
+            """
+            SELECT fm.metric_id, fm.unit, dm.canonical_unit, COUNT(*) AS n
+            FROM hp.fact_measurement AS fm
+            JOIN hp.dim_metric AS dm ON fm.metric_id = dm.metric_id
+            WHERE fm.unit != dm.canonical_unit
+            GROUP BY fm.metric_id, fm.unit, dm.canonical_unit
+            ORDER BY n DESC
+            """
+        ).fetchall()
+        if unit_mismatches:
+            tbl = Table(title="fact_measurement.unit != dim_metric.canonical_unit")
+            for col in ("metric_id", "unit", "canonical_unit", "rows"):
+                tbl.add_column(col)
+            for metric_id, unit, canonical_unit, n in unit_mismatches:
+                tbl.add_row(metric_id, unit, canonical_unit, f"{n:,}")
+            console.print(tbl)
+        else:
+            console.print("[green]no fact_measurement unit mismatches[/green]")
+
+        known_kinds = registered_source_kinds() | {MANUAL_LOAD_SOURCE_KIND}
+        seen_kinds = conn.execute(
+            "SELECT DISTINCT source_kind FROM hp.ingest_run WHERE source_kind IS NOT NULL"
+        ).fetchall()
+        unregistered = sorted(kind for (kind,) in seen_kinds if kind not in known_kinds)
+        if unregistered:
+            tbl = Table(title="ingest_run.source_kind not in registered_source_kinds()")
+            tbl.add_column("source_kind")
+            for kind in unregistered:
+                tbl.add_row(kind)
+            console.print(tbl)
+        else:
+            console.print("[green]no unregistered ingest_run source kinds[/green]")
+    finally:
+        conn.close()
 
 
 # ============================================================================
