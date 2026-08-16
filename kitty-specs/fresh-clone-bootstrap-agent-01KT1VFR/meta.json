@@ -1,0 +1,10 @@
+{
+  "created_at": "1970-01-01T00:00:00+00:00",
+  "friendly_name": "fresh-clone-bootstrap-agent-01KT1VFR",
+  "mission_id": "4K7CGR0QEMNXR40RMC0X1S62M6",
+  "mission_number": null,
+  "mission_slug": "fresh-clone-bootstrap-agent-01KT1VFR",
+  "mission_type": "software-dev",
+  "slug": "fresh-clone-bootstrap-agent-01KT1VFR",
+  "target_branch": "main"
+}

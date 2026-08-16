@@ -1,0 +1,10 @@
+{
+  "created_at": "1970-01-01T00:00:00+00:00",
+  "friendly_name": "intake-parser-acceptance-scenario-01KTBT72",
+  "mission_id": "5TWKET3GCCTZKT797BNR82FPT0",
+  "mission_number": null,
+  "mission_slug": "intake-parser-acceptance-scenario-01KTBT72",
+  "mission_type": "software-dev",
+  "slug": "intake-parser-acceptance-scenario-01KTBT72",
+  "target_branch": "main"
+}
