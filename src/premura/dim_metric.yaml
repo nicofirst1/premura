@@ -2827,3 +2827,36 @@
     it: [nichel]
     de: [nickel]
   loinc: "5702-6"
+
+# === Digital wellbeing / screen time ===
+# Bare English canonical names (CONTRACT.md decision tree rung 4): not a LOINC
+# lab marker, not an IEEE 1752.1 wearable/physiological signal, but a concept
+# common to many apps (Android Digital Wellbeing, iOS Screen Time, RescueTime,
+# StayFree). App/domain identity is carried per-measurement in value_text, not
+# as a metric_id per app (DOCTRINE.md rule 2 - guide, don't enumerate).
+- metric_id: screen_time_usage
+  display_name: Screen time usage
+  canonical_unit: s
+  value_kind: aggregate
+  description: Daily screen-time duration for one app or browsed domain.
+  category: wellness
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: app_open_count
+  display_name: App open count
+  canonical_unit: count
+  value_kind: aggregate
+  description: Daily open/launch count for one app or browsed domain.
+  category: wellness
+  validity_window: P1D
+  missing_data_policy: none
+
+- metric_id: device_unlock_count
+  display_name: Device unlock count
+  canonical_unit: count
+  value_kind: aggregate
+  description: Daily device-level unlock count (no per-app breakdown).
+  category: wellness
+  validity_window: P1D
+  missing_data_policy: none
