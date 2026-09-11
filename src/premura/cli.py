@@ -76,8 +76,10 @@ def ingest(
     source: Annotated[
         str,
         typer.Option(
-            help="hc | garmin | saa | bmt | daylio | lab | mfp | aichat | withings | fitbit"
-            " | stayfree | all"
+            help=(
+                "hc | garmin | saa | bmt | daylio | feelings | lab | mfp | aichat | "
+                "withings | fitbit | stayfree | all"
+            )
         ),
     ] = "all",
     path: Annotated[
@@ -209,7 +211,7 @@ def _discover_input(source_key: str) -> Path | None:
     elif source_key == "withings":
         zips = sorted(inbox.glob("*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
         candidates = [p for p in zips if _zip_is_withings(p)]
-    elif source_key in ("saa", "bmt", "daylio"):
+    elif source_key in ("saa", "bmt", "daylio", "feelings"):
         csvs = sorted(inbox.glob("*.csv"), key=lambda p: p.stat().st_mtime, reverse=True)
         candidates = [p for p in csvs if _csv_kind(p) == source_key]
     elif source_key == "lab":
@@ -245,6 +247,7 @@ def _csv_kind(path: Path) -> str:
     SAA headers always contain the literal tokens 'Id', 'Tz', 'From', 'To' on row one.
     A MyFitnessPal nutrition summary always carries 'Date', 'Meal', 'Calories'.
     Daylio exports carry 'full_date', 'time', 'mood'.
+    FeelingsJournal exports carry 'Date', 'Primary Feeling'.
     Everything else is treated as BMT.
     """
     try:
@@ -259,6 +262,8 @@ def _csv_kind(path: Path) -> str:
         return "mfp"
     if {"full_date", "time", "mood"}.issubset(cols):
         return "daylio"
+    if {"Date", "Primary Feeling"}.issubset(cols):
+        return "feelings"
     return "bmt"
 
 

@@ -124,6 +124,17 @@
   aliases:
     en: [mood, mood score, self-reported mood]
 
+- metric_id: feeling
+  display_name: Feeling
+  canonical_unit: enum
+  value_kind: instantaneous
+  description: Self-reported feelings-wheel emotion label from a journal entry (e.g. Happy, Sad, Fearful); a categorical concept shared across mood-journaling apps, distinct from Daylio's numeric mood_score.
+  category: mental_health
+  validity_window: P1D
+  missing_data_policy: none
+  aliases:
+    en: [feeling, emotion, primary feeling, feeling label]
+
 - metric_id: training_load
   display_name: Training load
   canonical_unit: score
