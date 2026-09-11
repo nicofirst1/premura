@@ -76,7 +76,8 @@ def ingest(
     source: Annotated[
         str,
         typer.Option(
-            help="hc | garmin | saa | bmt | daylio | lab | mfp | aichat | withings | fitbit | all"
+            help="hc | garmin | saa | bmt | daylio | lab | mfp | aichat | withings | fitbit"
+            " | stayfree | all"
         ),
     ] = "all",
     path: Annotated[
@@ -231,6 +232,8 @@ def _discover_input(source_key: str) -> Path | None:
         )
         zips = sorted(inbox.glob("*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
         candidates = dirs + [p for p in zips if _zip_is_fitbit(p)]
+    elif source_key == "stayfree":
+        candidates = sorted(inbox.glob("*.xls"), key=lambda p: p.stat().st_mtime, reverse=True)
     else:
         return None
     return candidates[0] if candidates else None
@@ -356,6 +359,8 @@ def _resolve_source_key(path: Path) -> str | None:
         return "lab"
     if suffix == ".json" and _json_is_chat_recall(path):
         return "aichat"
+    if suffix == ".xls":
+        return "stayfree"
     return None
 
 

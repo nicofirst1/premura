@@ -27,6 +27,7 @@ from .health_connect import HealthConnectParser
 from .lab_pdf import LabPdfParser
 from .myfitnesspal import MyFitnessPalParser
 from .sleep_as_android import SleepAsAndroidParser
+from .stayfree import StayFreeParser
 from .withings import WithingsParser
 
 
@@ -47,6 +48,7 @@ PARSER_REGISTRY: dict[str, tuple[PARSER_FACTORY, str]] = {
     "aichat": (AiChatRecallParser, "ai_chat_recall"),
     "withings": (WithingsParser, "withings"),
     "fitbit": (FitbitTakeoutParser, "fitbit_takeout"),
+    "stayfree": (StayFreeParser, "stayfree"),
 }
 
 
